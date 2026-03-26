@@ -116,4 +116,6 @@ Stable and beta installs are fully separate. Reinstalling stable only replaces s
 - Set `CODEX_DESKTOP_FORCE_SANDBOX=1` if you manually configured `chrome-sandbox` correctly and want the wrapper to preserve Chromium sandboxing.
 - Set `CODEX_DESKTOP_FORCE_NO_SANDBOX=1` to force the no-sandbox launcher path explicitly.
 - The installer preserves the upstream resource layout and replaces mac-only helper binaries with Linux equivalents where needed.
+- Linux editor discovery is patched into the desktop runtime for supported IDEs. It checks CLI commands on PATH, common `.desktop` launchers, and JetBrains Toolbox scripts under `~/.local/share/JetBrains/Toolbox/scripts`.
+- The current Linux editor targets include VS Code, VS Code Insiders, Cursor, Windsurf, Zed, Android Studio, IntelliJ IDEA, Rider, GoLand, RustRover, PyCharm, WebStorm, and PhpStorm.
 - If a requested version is not present in the selected feed, the command prints the versions currently available from that feed.
