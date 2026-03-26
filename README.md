@@ -70,6 +70,18 @@ install-desktop --beta
 install-desktop --beta --version 26.324.21329
 ```
 
+Remove all repo-owned desktop installs created by this repo:
+
+```bash
+./uninstall-desktop
+```
+
+If you ran `npm link`:
+
+```bash
+uninstall-desktop
+```
+
 ## What Gets Installed
 
 - Stable app files: `~/.local/share/codex-linux-app/channels/stable`
@@ -82,14 +94,26 @@ install-desktop --beta --version 26.324.21329
 
 Stable and beta installs are fully separate. Reinstalling stable only replaces stable. Reinstalling beta only replaces beta.
 
+## What Uninstall Removes
+
+- `~/.local/share/codex-linux-app`
+- `~/.local/state/codex-linux-app`
+- `~/.cache/codex-linux-app`
+- `~/.local/share/applications/codex.desktop`
+- `~/.local/share/applications/codex-beta.desktop`
+
+`uninstall-desktop` does not remove the separately installed global `codex` CLI.
+
 ## Notes
 
 - The installer only supports Linux `amd64` in this version.
 - The installer uses the live appcast at runtime, so plain `install-desktop` always tracks the newest stable release from the stable feed.
 - `install-desktop --beta` always tracks the newest beta release from the beta feed.
-- The installer requires a Linux `codex` CLI on PATH, or `CODEX_CLI_PATH` set to an existing Codex CLI binary.
+- The installer requires a Linux `codex` CLI on PATH, or `CODEX_CLI_PATH` set to an existing Codex CLI binary. The installed desktop app uses a bundled wrapper at `resources/bin/codex` so the desktop runtime can find it reliably.
+- The installer also requires `rg` on PATH, or `RG_PATH` set to an existing Linux ripgrep binary.
 - The build/install stages retry forever on failure and keep logs under `~/.local/state/codex-linux-app/logs`.
 - The generated launcher auto-falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is the normal case for a per-user install.
 - Set `CODEX_DESKTOP_FORCE_SANDBOX=1` if you manually configured `chrome-sandbox` correctly and want the wrapper to preserve Chromium sandboxing.
 - Set `CODEX_DESKTOP_FORCE_NO_SANDBOX=1` to force the no-sandbox launcher path explicitly.
+- The installer preserves the upstream resource layout and replaces mac-only helper binaries with Linux equivalents where needed.
 - If a requested version is not present in the selected feed, the command prints the versions currently available from that feed.

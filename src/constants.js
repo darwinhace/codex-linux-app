@@ -7,8 +7,7 @@ export const BETA_FEED_URL =
   'https://persistent.oaistatic.com/codex-app-beta/appcast.xml';
 export const SUPPORTED_PLATFORM = 'linux';
 export const SUPPORTED_ARCH = 'x64';
-export const ELECTRON_VERSION = '40.0.0';
-export const NODE_ABI = '143';
+export const FALLBACK_ELECTRON_VERSION = '40.0.0';
 export const CHANNELS = {
   stable: {
     id: 'stable',
@@ -48,7 +47,7 @@ export function getPaths() {
   };
 }
 
-export const NATIVE_MODULES = [
+export const NATIVE_MODULE_HINTS = [
   'better-sqlite3',
   'node-pty',
   'bufferutil',

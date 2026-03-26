@@ -4,10 +4,12 @@
   "description": "Linux installer and repackager for the upstream Codex desktop app",
   "type": "module",
   "bin": {
-    "install-desktop": "./install-desktop"
+    "install-desktop": "./install-desktop",
+    "uninstall-desktop": "./uninstall-desktop"
   },
   "scripts": {
     "install-desktop": "node ./src/cli.js",
+    "uninstall-desktop": "node ./src/uninstall-cli.js",
     "test": "node --test"
   },
   "engines": {

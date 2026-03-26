@@ -1,15 +1,14 @@
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPackage, extractAll } from 'asar';
 import { rebuild } from '@electron/rebuild';
 import {
   CHANNELS,
-  ELECTRON_VERSION,
-  NATIVE_MODULES,
-  NODE_ABI,
+  FALLBACK_ELECTRON_VERSION,
+  NATIVE_MODULE_HINTS,
   SUPPORTED_ARCH,
-  SUPPORTED_PLATFORM,
   getPaths
 } from './constants.js';
 import {
@@ -110,7 +109,9 @@ export async function installDesktop(options, logger) {
   await ensureDir(channelLogDir);
 
   const codexCliPath = await resolveCodexCliPath();
-  logger.info(`Using Codex CLI at ${codexCliPath}`);
+  const rgPath = await resolveRipgrepPath();
+  logger.info(`Validated Codex CLI at ${codexCliPath}`);
+  logger.info(`Using ripgrep at ${rgPath}`);
 
   const zipPath = path.join(downloadDir, `${release.version}.zip`);
   const downloadStage = `download-${channel.id}-${release.version}`;
@@ -144,14 +145,27 @@ export async function installDesktop(options, logger) {
 
   const appPackagePath = path.join(extractedAppDir, 'package.json');
   const appPackage = await parseJsonFile(appPackagePath);
+  const electronVersion = extractElectronVersion(appPackage);
+  const nativeModules = detectNativeModules(extractedAppDir);
+  const nativeModuleVersions = await getNativeModuleVersions({
+    extractedAppDir,
+    nativeModules
+  });
   logger.info(
-    `Upstream packaged app: ${appPackage.productName} ${appPackage.version} (flavor=${appPackage.codexBuildFlavor})`
+    `Upstream packaged app: ${appPackage.productName} ${appPackage.version} (flavor=${appPackage.codexBuildFlavor}, electron=${electronVersion})`
   );
 
   patchPackageJson(appPackage, channel);
   await fs.promises.writeFile(appPackagePath, JSON.stringify(appPackage, null, 2), 'utf8');
   await patchBootstrap(extractedAppDir);
-  await replaceNativeModules(extractedAppDir, logger);
+  await replaceNativeModules({
+    cacheHome: paths.cacheHome,
+    extractedAppDir,
+    electronVersion,
+    nativeModules,
+    nativeModuleVersions,
+    logger
+  });
 
   const packagedAsarDir = path.join(workDir, 'packaged');
   const packagedAsarPath = path.join(packagedAsarDir, 'app.asar');
@@ -162,10 +176,11 @@ export async function installDesktop(options, logger) {
     await createPackage(extractedAppDir, packagedAsarPath);
   });
 
-  const runtimeSourceDir = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'dist');
-  if (!(await fileExists(runtimeSourceDir))) {
-    throw new Error('Electron runtime was not found. Run npm install in this repo first.');
-  }
+  const runtimeSourceDir = await resolveRuntimeSourceDir({
+    cacheHome: paths.cacheHome,
+    electronVersion,
+    logger
+  });
 
   const iconPath = await installChannelRuntime({
     channel,
@@ -175,8 +190,10 @@ export async function installDesktop(options, logger) {
     channelStateDir,
     runtimeSourceDir,
     packagedAsarPath,
+    upstreamResourcesDir,
     unpackedSourceRoot: extractedAppDir,
-    codexCliPath,
+    rgPath,
+    nativeModules,
     logger
   });
 
@@ -212,6 +229,18 @@ function patchPackageJson(appPackage, channel) {
   }
 }
 
+function extractElectronVersion(appPackage) {
+  const rawVersion =
+    appPackage?.devDependencies?.electron ??
+    appPackage?.dependencies?.electron ??
+    FALLBACK_ELECTRON_VERSION;
+  const normalizedVersion = String(rawVersion).replace(/^[^\d]*/, '');
+  if (!/^\d+\.\d+\.\d+/.test(normalizedVersion)) {
+    throw new Error(`Could not determine the upstream Electron version from package metadata: ${rawVersion}`);
+  }
+  return normalizedVersion.match(/^\d+\.\d+\.\d+/)[0];
+}
+
 async function patchBootstrap(extractedAppDir) {
   const bootstrapDir = path.join(extractedAppDir, '.vite', 'build');
   const files = await fs.promises.readdir(bootstrapDir);
@@ -221,39 +250,71 @@ async function patchBootstrap(extractedAppDir) {
   }
   const bootstrapPath = path.join(bootstrapDir, bootstrapFile);
   const original = await fs.promises.readFile(bootstrapPath, 'utf8');
-  const search = 'await a.initialize();';
-  if (!original.includes(search)) {
-    throw new Error('Could not patch bootstrap updater initialization.');
+  if (original.includes('if(process.platform===`darwin`){await a.initialize();}')) {
+    return;
   }
   const updated = original.replace(
-    search,
-    'if(process.platform===`darwin`){await a.initialize();}'
+    /await\s+([A-Za-z_$][\w$]*)\.initialize\(\);/,
+    'if(process.platform===`darwin`){await $1.initialize();}'
   );
+  if (updated === original) {
+    throw new Error('Could not patch bootstrap updater initialization for Linux.');
+  }
   await fs.promises.writeFile(bootstrapPath, updated, 'utf8');
 }
 
-async function replaceNativeModules(extractedAppDir, logger) {
-  await retryForever('rebuild-native-modules', logger, async () => {
+function detectNativeModules(extractedAppDir) {
+  return NATIVE_MODULE_HINTS.filter((moduleName) =>
+    fs.existsSync(path.join(extractedAppDir, 'node_modules', moduleName))
+  );
+}
+
+async function getNativeModuleVersions({ extractedAppDir, nativeModules }) {
+  const versions = {};
+  for (const moduleName of nativeModules) {
+    const packageJsonPath = path.join(extractedAppDir, 'node_modules', moduleName, 'package.json');
+    const packageJson = await parseJsonFile(packageJsonPath);
+    versions[moduleName] = packageJson.version;
+  }
+  return versions;
+}
+
+async function replaceNativeModules({
+  cacheHome,
+  extractedAppDir,
+  electronVersion,
+  nativeModules,
+  nativeModuleVersions,
+  logger
+}) {
+  if (nativeModules.length === 0) {
+    logger.warn('No known native modules were detected in the extracted upstream app.');
+    return;
+  }
+
+  const rebuildWorkspace = await prepareNativeRebuildWorkspace({
+    cacheHome,
+    electronVersion,
+    nativeModuleVersions,
+    logger
+  });
+
+  await retryForever(`rebuild-native-modules-electron-${electronVersion}`, logger, async () => {
     await rebuild({
-      buildPath: PROJECT_ROOT,
-      electronVersion: ELECTRON_VERSION,
+      buildPath: rebuildWorkspace,
+      electronVersion,
       arch: process.arch,
       force: true,
-      onlyModules: NATIVE_MODULES
+      onlyModules: nativeModules
     });
   });
 
-  const extractedNodeModules = path.join(extractedAppDir, 'node_modules');
-  await ensureDir(extractedNodeModules);
-
-  for (const moduleName of NATIVE_MODULES) {
-    const source = path.join(PROJECT_ROOT, 'node_modules', moduleName);
-    const destination = path.join(extractedNodeModules, moduleName);
-    if (await fileExists(source)) {
-      await removeIfExists(destination);
-      await copyDir(source, destination);
-      logger.info(`Replaced native module ${moduleName} with rebuilt Linux copy`);
-    }
+  for (const moduleName of nativeModules) {
+    const source = path.join(rebuildWorkspace, 'node_modules', moduleName);
+    const destination = path.join(extractedAppDir, 'node_modules', moduleName);
+    await removeIfExists(destination);
+    await copyDir(source, destination);
+    logger.info(`Replaced native module ${moduleName} with rebuilt Linux copy`);
   }
 }
 
@@ -265,8 +326,10 @@ async function installChannelRuntime({
   channelStateDir,
   runtimeSourceDir,
   packagedAsarPath,
+  upstreamResourcesDir,
   unpackedSourceRoot,
-  codexCliPath,
+  rgPath,
+  nativeModules,
   logger
 }) {
   await removeIfExists(channelAppDir);
@@ -281,11 +344,19 @@ async function installChannelRuntime({
   const resourcesDir = path.join(channelAppDir, 'resources');
   await ensureDir(resourcesDir);
 
+  await copyUpstreamResources({
+    upstreamResourcesDir,
+    resourcesDir
+  });
   await copyFile(packagedAsarPath, path.join(resourcesDir, 'app.asar'));
   await installUnpackedRuntime({
+    upstreamResourcesDir,
     unpackedSourceRoot,
-    destinationRoot: path.join(resourcesDir, 'app.asar.unpacked')
+    destinationRoot: path.join(resourcesDir, 'app.asar.unpacked'),
+    nativeModules
   });
+  await installBundledCodexCli(resourcesDir);
+  await installBundledRipgrep(resourcesDir, rgPath);
 
   const iconPath = await installIcons({
     channel,
@@ -297,7 +368,7 @@ async function installChannelRuntime({
   const wrapper = buildWrapperScript({
     channel,
     electronBinary: packagedBinaryPath,
-    codexCliPath,
+    bundledCodexCliPath: path.join(resourcesDir, 'bin', 'codex'),
     userDataDir: path.join(channelStateDir, 'user-data')
   });
   await writeExecutable(executablePath, wrapper);
@@ -305,65 +376,27 @@ async function installChannelRuntime({
   return iconPath;
 }
 
-async function installUnpackedRuntime({ unpackedSourceRoot, destinationRoot }) {
-  await ensureDir(destinationRoot);
-  const copyPairs = [
-    {
-      source: path.join(
-        unpackedSourceRoot,
-        'node_modules',
-        'better-sqlite3',
-        'build',
-        'Release'
-      ),
-      destination: path.join(
-        destinationRoot,
-        'node_modules',
-        'better-sqlite3',
-        'build',
-        'Release'
-      )
-    },
-    {
-      source: path.join(unpackedSourceRoot, 'node_modules', 'node-pty', 'build', 'Release'),
-      destination: path.join(
-        destinationRoot,
-        'node_modules',
-        'node-pty',
-        'build',
-        'Release'
-      )
-    },
-    {
-      source: path.join(
-        unpackedSourceRoot,
-        'node_modules',
-        'node-pty',
-        'bin',
-        `${SUPPORTED_PLATFORM}-${SUPPORTED_ARCH}-${NODE_ABI}`
-      ),
-      destination: path.join(
-        destinationRoot,
-        'node_modules',
-        'node-pty',
-        'bin',
-        `${SUPPORTED_PLATFORM}-${SUPPORTED_ARCH}-${NODE_ABI}`
-      )
-    },
-    {
-      source: path.join(unpackedSourceRoot, 'node_modules', 'bufferutil'),
-      destination: path.join(destinationRoot, 'node_modules', 'bufferutil')
-    },
-    {
-      source: path.join(unpackedSourceRoot, 'node_modules', 'utf-8-validate'),
-      destination: path.join(destinationRoot, 'node_modules', 'utf-8-validate')
-    }
-  ];
+async function installUnpackedRuntime({
+  upstreamResourcesDir,
+  unpackedSourceRoot,
+  destinationRoot,
+  nativeModules
+}) {
+  const upstreamUnpackedDir = path.join(upstreamResourcesDir, 'app.asar.unpacked');
+  await removeIfExists(destinationRoot);
+  if (await fileExists(upstreamUnpackedDir)) {
+    await copyDir(upstreamUnpackedDir, destinationRoot);
+  } else {
+    await ensureDir(destinationRoot);
+  }
 
-  for (const pair of copyPairs) {
-    if (await fileExists(pair.source)) {
-      await ensureDir(path.dirname(pair.destination));
-      await copyDir(pair.source, pair.destination);
+  for (const moduleName of nativeModules) {
+    const source = path.join(unpackedSourceRoot, 'node_modules', moduleName);
+    const destination = path.join(destinationRoot, 'node_modules', moduleName);
+    if (await fileExists(source)) {
+      await removeIfExists(destination);
+      await ensureDir(path.dirname(destination));
+      await copyDir(source, destination);
     }
   }
 }
@@ -396,12 +429,12 @@ async function installIcons({ channel, channelIconDir, unpackedSourceRoot }) {
   return betaIconPath;
 }
 
-function buildWrapperScript({ channel, electronBinary, codexCliPath, userDataDir }) {
+function buildWrapperScript({ channel, electronBinary, bundledCodexCliPath, userDataDir }) {
   const classArg = channel.wmClass;
   return `#!/usr/bin/env bash
 set -euo pipefail
 mkdir -p "${userDataDir}"
-export CODEX_CLI_PATH="${codexCliPath}"
+export CODEX_CLI_PATH="\${CODEX_CLI_PATH:-${bundledCodexCliPath}}"
 chrome_sandbox="$(dirname "${electronBinary}")/chrome-sandbox"
 sandbox_args=()
 
@@ -479,4 +512,196 @@ async function resolveCodexCliPath() {
   throw new Error(
     'Could not locate a Linux Codex CLI. Install it first with `npm install -g @openai/codex@latest`, or set CODEX_CLI_PATH to an existing codex binary before running install-desktop.'
   );
+}
+
+async function resolveRipgrepPath() {
+  const candidatePaths = [];
+
+  if (process.env.RG_PATH) {
+    candidatePaths.push(process.env.RG_PATH);
+  }
+
+  try {
+    const { stdout } = await runCommand('which', ['rg']);
+    const resolved = stdout.trim();
+    if (resolved) {
+      candidatePaths.push(resolved);
+    }
+  } catch {
+    // Ignore PATH lookup failures so we can emit a clearer message below.
+  }
+
+  for (const candidatePath of candidatePaths) {
+    if (candidatePath && (await fileExists(candidatePath))) {
+      return candidatePath;
+    }
+  }
+
+  throw new Error(
+    'Could not locate a Linux ripgrep binary. Install `rg` or set RG_PATH before running install-desktop.'
+  );
+}
+
+async function resolveRuntimeSourceDir({ cacheHome, electronVersion, logger }) {
+  const localRuntimeDir = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'dist');
+  const localPackageJsonPath = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'package.json');
+  if (await fileExists(localPackageJsonPath)) {
+    const localPackage = await parseJsonFile(localPackageJsonPath);
+    if (localPackage.version === electronVersion && (await fileExists(localRuntimeDir))) {
+      logger.info(`Using local Electron runtime ${electronVersion}`);
+      return localRuntimeDir;
+    }
+  }
+
+  const runtimeRoot = path.join(cacheHome, 'electron-runtime', electronVersion);
+  const runtimePackageJsonPath = path.join(runtimeRoot, 'package.json');
+  const runtimeSourceDir = path.join(runtimeRoot, 'node_modules', 'electron', 'dist');
+  await ensureDir(runtimeRoot);
+  if (!(await fileExists(runtimePackageJsonPath))) {
+    await fs.promises.writeFile(runtimePackageJsonPath, JSON.stringify({ private: true }, null, 2), 'utf8');
+  }
+
+  if (!(await fileExists(runtimeSourceDir))) {
+    await retryForever(`install-electron-runtime-${electronVersion}`, logger, async () => {
+      await runCommand(
+        'npm',
+        ['install', '--no-save', `electron@${electronVersion}`],
+        {
+          cwd: runtimeRoot,
+          env: {
+            npm_config_cache: path.join(cacheHome, 'npm'),
+            npm_config_update_notifier: 'false',
+            npm_config_fund: 'false',
+            npm_config_audit: 'false'
+          },
+          logger
+        }
+      );
+    });
+  }
+
+  if (!(await fileExists(runtimeSourceDir))) {
+    throw new Error(`Electron runtime ${electronVersion} could not be installed for Linux.`);
+  }
+
+  return runtimeSourceDir;
+}
+
+async function prepareNativeRebuildWorkspace({
+  cacheHome,
+  electronVersion,
+  nativeModuleVersions,
+  logger
+}) {
+  const dependencyFingerprint = crypto
+    .createHash('sha1')
+    .update(
+      JSON.stringify({
+        electronVersion,
+        nativeModuleVersions
+      })
+    )
+    .digest('hex')
+    .slice(0, 12);
+  const workspaceRoot = path.join(cacheHome, 'native-rebuild', dependencyFingerprint);
+  const packageJsonPath = path.join(workspaceRoot, 'package.json');
+  const dependencies = {
+    electron: electronVersion,
+    ...nativeModuleVersions
+  };
+
+  await ensureDir(workspaceRoot);
+  await fs.promises.writeFile(
+    packageJsonPath,
+    JSON.stringify(
+      {
+        private: true,
+        dependencies
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
+
+  if (!(await workspaceHasDependencies(workspaceRoot, dependencies))) {
+    await retryForever(`install-native-rebuild-workspace-${dependencyFingerprint}`, logger, async () => {
+      await runCommand('npm', ['install'], {
+        cwd: workspaceRoot,
+        env: {
+          npm_config_cache: path.join(cacheHome, 'npm'),
+          npm_config_update_notifier: 'false',
+          npm_config_fund: 'false',
+          npm_config_audit: 'false'
+        },
+        logger
+      });
+    });
+  }
+
+  return workspaceRoot;
+}
+
+async function workspaceHasDependencies(workspaceRoot, dependencies) {
+  for (const [packageName, expectedVersion] of Object.entries(dependencies)) {
+    const packageJsonPath = path.join(workspaceRoot, 'node_modules', packageName, 'package.json');
+    if (!(await fileExists(packageJsonPath))) {
+      return false;
+    }
+    const installedPackage = await parseJsonFile(packageJsonPath);
+    if (installedPackage.version !== String(expectedVersion).replace(/^[^\d]*/, '')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+async function copyUpstreamResources({ upstreamResourcesDir, resourcesDir }) {
+  const entries = await fs.promises.readdir(upstreamResourcesDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.name === 'app.asar' || entry.name === 'app.asar.unpacked') {
+      continue;
+    }
+    if (entry.name === 'codex' || entry.name === 'rg') {
+      continue;
+    }
+    if (entry.name === 'native') {
+      continue;
+    }
+
+    const sourcePath = path.join(upstreamResourcesDir, entry.name);
+    const destinationPath = path.join(resourcesDir, entry.name);
+    if (entry.isDirectory()) {
+      await copyDir(sourcePath, destinationPath);
+    } else {
+      await copyFile(sourcePath, destinationPath);
+    }
+  }
+}
+
+async function installBundledCodexCli(resourcesDir) {
+  const bundledCliPath = path.join(resourcesDir, 'bin', 'codex');
+  const script = `#!/usr/bin/env bash
+set -euo pipefail
+self_path="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
+if [[ -n "\${CODEX_CLI_PATH:-}" && "\${CODEX_CLI_PATH}" != "$self_path" ]]; then
+  exec "\${CODEX_CLI_PATH}" "$@"
+fi
+
+if command -v codex >/dev/null 2>&1; then
+  exec "$(command -v codex)" "$@"
+fi
+
+echo "Codex CLI not found. Install it with: npm install -g @openai/codex@latest" >&2
+exit 127
+`;
+  await writeExecutable(bundledCliPath, script);
+  await writeExecutable(path.join(resourcesDir, 'codex'), script);
+}
+
+async function installBundledRipgrep(resourcesDir, rgPath) {
+  const bundledRipgrepPath = path.join(resourcesDir, 'rg');
+  await copyFile(rgPath, bundledRipgrepPath);
+  await fs.promises.chmod(bundledRipgrepPath, 0o755);
 }
