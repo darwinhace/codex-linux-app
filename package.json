@@ -1,0 +1,25 @@
+{
+  "name": "codex-linux-app",
+  "version": "0.1.0",
+  "description": "Linux installer and repackager for the upstream Codex desktop app",
+  "type": "module",
+  "bin": {
+    "install-desktop": "./install-desktop"
+  },
+  "scripts": {
+    "install-desktop": "node ./src/cli.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@electron/rebuild": "^3.7.2",
+    "asar": "^3.2.0",
+    "better-sqlite3": "12.4.6",
+    "bufferutil": "4.0.9",
+    "electron": "40.0.0",
+    "node-pty": "1.1.0",
+    "utf-8-validate": "6.0.5"
+  }
+}
