@@ -269,17 +269,16 @@ async function patchBootstrap(extractedAppDir) {
 
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
 const OPEN_TARGETS_BLOCK_PATTERN =
-  /var ua=\[(?<targetList>[A-Za-z0-9_$,]+)\],da=e\.sn\(`open-in-targets`\);function fa\(e\)\{return ua\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var pa=fa\(process\.platform\),ma=Ca\(pa\),ha=new Set\(pa\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),ga=null,_a=null;/;
+  /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=e\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
-const TERMINAL_COMPONENT_MARKER = 'function vDe(e){';
-const TERMINAL_COMPONENT_FILE_MARKERS = ['data-codex-terminal', 'St.register(t,{onInitLog'];
-const TERMINAL_SESSION_CREATE_SNIPPET =
-  'let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;';
+const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
+const TERMINAL_SESSION_CREATE_PATTERN =
+  /let t=o\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:n,hostId:r\?\?null,cwd:i\?\?null\}\);O\.current=t,k\.current=!1;/;
 const TERMINAL_POST_INIT_SNIPPET = 'p(),M.current=!1;';
-const TERMINAL_ATTACH_SNIPPET =
-  'o&&requestAnimationFrame(()=>{a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});';
-const TERMINAL_CLEANUP_SNIPPET =
-  'return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||St.close(t),s.dispose(),E.current=null}';
+const TERMINAL_ATTACH_PATTERN =
+  /o&&requestAnimationFrame\(\(\)=>\{a\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:o,conversationId:n,hostId:r\?\?null,cwd:i\?\?null,cols:s\.cols,rows:s\.rows\}\)\}\);/;
+const TERMINAL_CLEANUP_PATTERN =
+  /return v\.observe\(e\),\(\)=>\{a=!0,c!=null&&\(cancelAnimationFrame\(c\),c=null\),v\.disconnect\(\),g\.dispose\(\),_\.dispose\(\),h\(\),D\.current=null,O\.current=null,k\.current=!1,o\|\|(?<service>[A-Za-z_$][\w$]*)\.close\(t\),s\.dispose\(\),E\.current=null\}/;
 
 async function patchMainProcessBundle(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
@@ -291,29 +290,42 @@ async function patchMainProcessBundle(extractedAppDir, logger) {
 
   const mainPath = path.join(buildDir, mainFile);
   const original = await fs.promises.readFile(mainPath, 'utf8');
-  const updated = injectLinuxOpenTargetsPatch(original);
+  logger.info(`Resolved upstream Electron main bundle ${mainFile}`);
+  const updated = injectLinuxOpenTargetsPatch(original, { sourceName: mainFile });
   if (updated !== original) {
     await fs.promises.writeFile(mainPath, updated, 'utf8');
     logger.info('Patched Linux open-in-targets support into the Electron main bundle');
   }
 }
 
-export function injectLinuxOpenTargetsPatch(bundleSource) {
+export function injectLinuxOpenTargetsPatch(bundleSource, options = {}) {
   if (bundleSource.includes(LINUX_OPEN_TARGETS_PATCH_MARKER)) {
     return bundleSource;
   }
 
   const match = bundleSource.match(OPEN_TARGETS_BLOCK_PATTERN);
-  if (!match?.groups?.targetList) {
-    throw new Error('Could not patch the upstream open-in-targets registry for Linux.');
+  if (!match?.groups?.targetList || !match.groups.targetVar) {
+    throw new Error(buildOpenTargetsPatchErrorMessage(bundleSource, options.sourceName));
   }
 
-  const replacement = buildLinuxOpenTargetsBlock(match.groups.targetList);
+  const replacement = buildLinuxOpenTargetsBlock(match.groups);
   return bundleSource.replace(OPEN_TARGETS_BLOCK_PATTERN, replacement);
 }
 
-function buildLinuxOpenTargetsBlock(targetList) {
-  return `var codexLinuxDesktopExecCache=null;function codexLinuxDetectCommand(e){let t=z(e);return t?H(t):null}function codexLinuxStripDesktopExec(e){if(typeof e!==\`string\`)return null;let t=e.replace(/%[fFuUdDnNickvm]/g,\` \`).trim();if(t.length===0)return null;let n=t.match(/^"([^"]+)"/);if(n?.[1])return n[1];let[r]=t.split(/\\s+/);return r??null}function codexLinuxDesktopExecs(){if(codexLinuxDesktopExecCache)return codexLinuxDesktopExecCache;let e=new Map,t=[(0,r.join)((0,n.homedir)(),\`.local\`,\`share\`,\`applications\`),\`/usr/share/applications\`];for(let n of t){let t;try{t=(0,a.readdirSync)(n)}catch{continue}for(let i of t){if(!i.endsWith(\`.desktop\`))continue;let t=(0,r.join)(n,i),o;try{o=(0,a.readFileSync)(t,\`utf8\`)}catch{continue}let s=o.match(/^Exec=(.+)$/m),c=codexLinuxStripDesktopExec(s?.[1]??\`\`);if(!c)continue;let l=(0,r.basename(c)).toLowerCase().replace(/\\.(sh|bin|appimage)$/,\`\`);e.has(l)||e.set(l,c)}}return codexLinuxDesktopExecCache=e,e}function codexLinuxDetectDesktopExec(e){let t=codexLinuxDesktopExecs().get(e.toLowerCase());if(!t)return null;if((0,r.isAbsolute)(t)&&(0,a.existsSync)(t))return t;let n=z(t);return n?H(n):null}function codexLinuxDetectAny(e){for(let t of e){let n=codexLinuxDetectCommand(t)??codexLinuxDetectDesktopExec(t);if(n)return n}return null}function codexLinuxJetBrainsScript(e){let t=(0,r.join)((0,n.homedir)(),\`.local\`,\`share\`,\`JetBrains\`,\`Toolbox\`,\`scripts\`,e);return(0,a.existsSync)(t)?t:null}function codexLinuxDetectJetBrains(e){return codexLinuxDetectAny([e])??codexLinuxJetBrainsScript(e)}var codexLinuxTargets=[Tr({id:\`vscode\`,label:\`VS Code\`,icon:\`apps/vscode.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`code\`,\`code-url-handler\`]),args:hr}}),Tr({id:\`vscodeInsiders\`,label:\`VS Code Insiders\`,icon:\`apps/vscode-insiders.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`code-insiders\`]),args:hr}}),Tr({id:\`cursor\`,label:\`Cursor\`,icon:\`apps/cursor.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`cursor\`]),args:hr}}),Tr({id:\`windsurf\`,label:\`Windsurf\`,icon:\`apps/windsurf.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`windsurf\`]),args:hr}}),Tr({id:\`zed\`,label:\`Zed\`,icon:\`apps/zed.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`zed\`]),args:Cr}}),Tr({id:\`androidStudio\`,label:\`Android Studio\`,icon:\`apps/android-studio.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`studio\`),args:Mi}}),Tr({id:\`intellij\`,label:\`IntelliJ IDEA\`,icon:\`apps/intellij.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`idea\`),args:Mi}}),Tr({id:\`rider\`,label:\`Rider\`,icon:\`apps/rider.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`rider\`),args:Mi}}),Tr({id:\`goland\`,label:\`GoLand\`,icon:\`apps/goland.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`goland\`),args:Mi}}),Tr({id:\`rustrover\`,label:\`RustRover\`,icon:\`apps/rustrover.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`rustrover\`),args:Mi}}),Tr({id:\`pycharm\`,label:\`PyCharm\`,icon:\`apps/pycharm.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`pycharm\`),args:Mi}}),Tr({id:\`webstorm\`,label:\`WebStorm\`,icon:\`apps/webstorm.svg\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`webstorm\`),args:Mi}}),Tr({id:\`phpstorm\`,label:\`PhpStorm\`,icon:\`apps/phpstorm.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`phpstorm\`),args:Mi}})];var ua=[${targetList}],codexLinuxExistingTargetIds=new Set(ua.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&ua.push(...codexLinuxTargets.filter(e=>!codexLinuxExistingTargetIds.has(e.id))),da=e.sn(\`open-in-targets\`);function fa(e){return ua.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var pa=fa(process.platform),ma=Ca(pa),ha=new Set(pa.filter(e=>e.kind===\`editor\`).map(e=>e.id)),ga=null,_a=null;`;
+function buildLinuxOpenTargetsBlock({
+  targetVar,
+  targetList,
+  loggerVar,
+  loggerFactory,
+  platformFn,
+  platformTargetsVar,
+  normalizedTargetsVar,
+  normalizeFn,
+  editorTargetIdsVar,
+  stateVar1,
+  stateVar2
+}) {
+  return `var codexLinuxBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),os:process.getBuiltinModule(\`node:os\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,os:null,path:null},codexLinuxDesktopExecCache=null;function codexLinuxPathEntries(){let e=codexLinuxBuiltins.path;if(!e)return[];let t=process.env.PATH??\`\`;return t.split(e.delimiter).map(e=>e.trim()).filter(e=>e.length>0)}function codexLinuxIsExecutable(e){let t=codexLinuxBuiltins.fs;if(!t)return!1;try{return t.accessSync(e,t.constants.X_OK),!0}catch{return!1}}function codexLinuxDetectCommand(e){let t=codexLinuxBuiltins.path;if(!t)return null;for(let n of codexLinuxPathEntries()){let r=t.join(n,e);if(codexLinuxIsExecutable(r))return r}return null}function codexLinuxStripDesktopExec(e){if(typeof e!==\`string\`)return null;let t=e.replace(/%[fFuUdDnNickvm]/g,\` \`).trim();if(t.length===0)return null;let n=t.match(/^"([^"]+)"/);if(n?.[1])return n[1];let[r]=t.split(/\\s+/);return r??null}function codexLinuxDesktopExecs(){let e=codexLinuxBuiltins.fs,t=codexLinuxBuiltins.os,n=codexLinuxBuiltins.path;if(codexLinuxDesktopExecCache||!e||!n)return codexLinuxDesktopExecCache??new Map;let r=t?.homedir?.()??process.env.HOME??\`~\`,i=process.env.XDG_DATA_HOME??n.join(r,\`.local\`,\`share\`),a=new Map,o=[n.join(i,\`applications\`),\`/usr/share/applications\`];for(let t of o){let r;try{r=e.readdirSync(t)}catch{continue}for(let i of r){if(!i.endsWith(\`.desktop\`))continue;let r=n.join(t,i),o;try{o=e.readFileSync(r,\`utf8\`)}catch{continue}let s=o.match(/^Exec=(.+)$/m),c=codexLinuxStripDesktopExec(s?.[1]??\`\`);if(!c)continue;let l=n.basename(c).toLowerCase().replace(/\\.(sh|bin|appimage)$/,\`\`);a.has(l)||a.set(l,c)}}return codexLinuxDesktopExecCache=a,a}function codexLinuxDetectDesktopExec(e){let t=codexLinuxBuiltins.fs,n=codexLinuxBuiltins.path,r=codexLinuxDesktopExecs().get(e.toLowerCase());return!r?null:n&&t&&n.isAbsolute(r)&&t.existsSync(r)?r:codexLinuxDetectCommand(r)}function codexLinuxDetectAny(e){for(let t of e){let n=codexLinuxDetectCommand(t)??codexLinuxDetectDesktopExec(t);if(n)return n}return null}function codexLinuxJetBrainsScript(e){let t=codexLinuxBuiltins.fs,n=codexLinuxBuiltins.os,r=codexLinuxBuiltins.path;if(!t||!r)return null;let i=n?.homedir?.()??process.env.HOME;if(!i)return null;let a=r.join(i,\`.local\`,\`share\`,\`JetBrains\`,\`Toolbox\`,\`scripts\`,e);return t.existsSync(a)?a:null}function codexLinuxDetectJetBrains(e){return codexLinuxDetectAny([e])??codexLinuxJetBrainsScript(e)}function codexLinuxVscodeArgs(e,t){return t?[\`--goto\`,\`${"${"}e}:${"${"}t.line}:${"${"}t.column}\`]:[\`--goto\`,e]}function codexLinuxZedArgs(e,t){return t?[\`${"${"}e}:${"${"}t.line}:${"${"}t.column}\`]:[e]}function codexLinuxJetBrainsArgs(e,t){return t?[\`--line\`,t.line.toString(),\`--column\`,t.column.toString(),e]:[e]}var codexLinuxTargets=[{id:\`vscode\`,platforms:{linux:{label:\`VS Code\`,icon:\`apps/vscode.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`code\`,\`code-url-handler\`]),args:codexLinuxVscodeArgs}}},{id:\`vscodeInsiders\`,platforms:{linux:{label:\`VS Code Insiders\`,icon:\`apps/vscode-insiders.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`code-insiders\`]),args:codexLinuxVscodeArgs}}},{id:\`cursor\`,platforms:{linux:{label:\`Cursor\`,icon:\`apps/cursor.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`cursor\`]),args:codexLinuxVscodeArgs}}},{id:\`windsurf\`,platforms:{linux:{label:\`Windsurf\`,icon:\`apps/windsurf.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`windsurf\`]),args:codexLinuxVscodeArgs}}},{id:\`zed\`,platforms:{linux:{label:\`Zed\`,icon:\`apps/zed.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`zed\`]),args:codexLinuxZedArgs}}},{id:\`androidStudio\`,platforms:{linux:{label:\`Android Studio\`,icon:\`apps/android-studio.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`studio\`),args:codexLinuxJetBrainsArgs}}},{id:\`intellij\`,platforms:{linux:{label:\`IntelliJ IDEA\`,icon:\`apps/intellij.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`idea\`),args:codexLinuxJetBrainsArgs}}},{id:\`rider\`,platforms:{linux:{label:\`Rider\`,icon:\`apps/rider.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`rider\`),args:codexLinuxJetBrainsArgs}}},{id:\`goland\`,platforms:{linux:{label:\`GoLand\`,icon:\`apps/goland.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`goland\`),args:codexLinuxJetBrainsArgs}}},{id:\`rustrover\`,platforms:{linux:{label:\`RustRover\`,icon:\`apps/rustrover.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`rustrover\`),args:codexLinuxJetBrainsArgs}}},{id:\`pycharm\`,platforms:{linux:{label:\`PyCharm\`,icon:\`apps/pycharm.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`pycharm\`),args:codexLinuxJetBrainsArgs}}},{id:\`webstorm\`,platforms:{linux:{label:\`WebStorm\`,icon:\`apps/webstorm.svg\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`webstorm\`),args:codexLinuxJetBrainsArgs}}},{id:\`phpstorm\`,platforms:{linux:{label:\`PhpStorm\`,icon:\`apps/phpstorm.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`phpstorm\`),args:codexLinuxJetBrainsArgs}}}];var ${targetVar}=[${targetList}],codexLinuxExistingTargetIds=new Set(${targetVar}.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&${targetVar}.push(...codexLinuxTargets.filter(e=>!codexLinuxExistingTargetIds.has(e.id))),${loggerVar}=e.${loggerFactory}(\`open-in-targets\`);function ${platformFn}(e){return ${targetVar}.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var ${platformTargetsVar}=${platformFn}(process.platform),${normalizedTargetsVar}=${normalizeFn}(${platformTargetsVar}),${editorTargetIdsVar}=new Set(${platformTargetsVar}.filter(e=>e.kind===\`editor\`).map(e=>e.id)),${stateVar1}=null,${stateVar2}=null;`;
 }
 
 async function patchRendererTerminalBundle(extractedAppDir, logger) {
@@ -326,18 +338,17 @@ async function patchRendererTerminalBundle(extractedAppDir, logger) {
   for (const assetName of jsAssets) {
     const assetPath = path.join(assetsDir, assetName);
     const original = await fs.promises.readFile(assetPath, 'utf8');
-    const isCandidate =
-      original.includes(TERMINAL_COMPONENT_FILE_MARKERS[0]) &&
-      original.includes(TERMINAL_COMPONENT_FILE_MARKERS[1]);
+    const isCandidate = original.includes(TERMINAL_COMPONENT_FILE_MARKER);
 
     if (!isCandidate) {
       continue;
     }
 
     sawCandidate = true;
+    logger.info(`Resolved renderer terminal bundle ${assetName}`);
 
     try {
-      const updated = injectLinuxTerminalLifecyclePatch(original);
+      const updated = injectLinuxTerminalLifecyclePatch(original, { sourceName: assetName });
       if (updated !== original) {
         await fs.promises.writeFile(assetPath, updated, 'utf8');
         logger.info(`Patched Linux terminal lifecycle guard into renderer bundle ${assetName}`);
@@ -355,41 +366,38 @@ async function patchRendererTerminalBundle(extractedAppDir, logger) {
   throw lastError ?? new Error('Could not patch the renderer terminal lifecycle bundle for Linux.');
 }
 
-export function injectLinuxTerminalLifecyclePatch(bundleSource) {
+export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
   if (bundleSource.includes(LINUX_TERMINAL_PATCH_MARKER)) {
     return bundleSource;
   }
 
   let updated = bundleSource;
-  updated = replaceSnippetOrThrow(
+  updated = replaceRegexOrThrow(
     updated,
-    TERMINAL_COMPONENT_MARKER,
-    `${buildLinuxTerminalLifecycleHelpers()}${TERMINAL_COMPONENT_MARKER}`,
-    'Could not inject the Linux terminal lifecycle helpers into the renderer bundle.'
-  );
-  updated = replaceSnippetOrThrow(
-    updated,
-    TERMINAL_SESSION_CREATE_SNIPPET,
-    'let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null}),codexLinuxTerminalMountKey=`${r??`local`}:${t}`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);O.current=t,k.current=!1;',
-    'Could not patch the terminal session handoff in the renderer bundle.'
+    TERMINAL_SESSION_CREATE_PATTERN,
+    ({ service }) =>
+      `${buildLinuxTerminalLifecycleHelpers()}let t=o??${service}.create({conversationId:n,hostId:r??null,cwd:i??null}),codexLinuxTerminalMountKey=\`${'${r??`local`}'}:${'${t}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);O.current=t,k.current=!1;`,
+    buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
   updated = replaceSnippetOrThrow(
     updated,
     TERMINAL_POST_INIT_SNIPPET,
     'p(),M.current=!1;let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{};',
-    'Could not patch the terminal mount state in the renderer bundle.'
+    buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
-  updated = replaceSnippetOrThrow(
+  updated = replaceRegexOrThrow(
     updated,
-    TERMINAL_ATTACH_SNIPPET,
-    'o&&(codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})}));',
-    'Could not patch the terminal attach scheduling in the renderer bundle.'
+    TERMINAL_ATTACH_PATTERN,
+    ({ service }) =>
+      `o&&(codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,a||${service}.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})}));`,
+    buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
-  updated = replaceSnippetOrThrow(
+  updated = replaceRegexOrThrow(
     updated,
-    TERMINAL_CLEANUP_SNIPPET,
-    'return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(a)return;a=!0,c!=null&&(cancelAnimationFrame(c),c=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,codexLinuxPreserveSession||o||St.close(t),s.dispose(),E.current=null,codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),v.observe(e),codexLinuxDisposeCurrentMount',
-    'Could not patch the terminal cleanup handoff in the renderer bundle.'
+    TERMINAL_CLEANUP_PATTERN,
+    ({ service }) =>
+      `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(a)return;a=!0,c!=null&&(cancelAnimationFrame(c),c=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,codexLinuxPreserveSession||o||${service}.close(t),s.dispose(),E.current=null,codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),v.observe(e),codexLinuxDisposeCurrentMount`,
+    buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
   return updated;
 }
@@ -403,6 +411,92 @@ function replaceSnippetOrThrow(source, target, replacement, errorMessage) {
     throw new Error(errorMessage);
   }
   return source.replace(target, replacement);
+}
+
+function replaceRegexOrThrow(source, pattern, replacement, errorMessage) {
+  const match = source.match(pattern);
+  if (!match?.groups) {
+    throw new Error(errorMessage);
+  }
+  return source.replace(pattern, () =>
+    typeof replacement === 'function' ? replacement(match.groups) : replacement
+  );
+}
+
+function buildOpenTargetsPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    'Could not patch the upstream open-in-targets registry for Linux.',
+    sourceName,
+    analyzeOpenTargetsBundle(bundleSource)
+  );
+}
+
+function analyzeOpenTargetsBundle(bundleSource) {
+  const detected = {
+    openInTargets: bundleSource.includes('`open-in-targets`'),
+    targetRegistryDeclaration: /var [A-Za-z_$][\w$]*=\[[A-Za-z0-9_$,]+\],[A-Za-z_$][\w$]*=e\.[A-Za-z_$][\w$]*\(`open-in-targets`\)/.test(
+      bundleSource
+    ),
+    platformFlatten: /function [A-Za-z_$][\w$]*\(e\)\{return [A-Za-z_$][\w$]*\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}/.test(
+      bundleSource
+    ),
+    editorTargetIdSet: /new Set\([A-Za-z_$][\w$]*\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\)/.test(
+      bundleSource
+    )
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.openInTargets && 'open-in-targets marker',
+      !detected.targetRegistryDeclaration && 'target registry declaration',
+      !detected.platformFlatten && 'platform target flatten function',
+      !detected.editorTargetIdSet && 'editor target id set'
+    ].filter(Boolean)
+  };
+}
+
+function buildTerminalPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    'Could not patch the renderer terminal lifecycle bundle for Linux.',
+    sourceName,
+    analyzeTerminalBundle(bundleSource)
+  );
+}
+
+function analyzeTerminalBundle(bundleSource) {
+  const detected = {
+    terminalComponent: bundleSource.includes(TERMINAL_COMPONENT_FILE_MARKER),
+    initLogHandler: bundleSource.includes('onInitLog'),
+    sessionCreate: TERMINAL_SESSION_CREATE_PATTERN.test(bundleSource),
+    postInit: bundleSource.includes(TERMINAL_POST_INIT_SNIPPET),
+    attach: TERMINAL_ATTACH_PATTERN.test(bundleSource),
+    cleanup: TERMINAL_CLEANUP_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.terminalComponent && 'data-codex-terminal marker',
+      !detected.initLogHandler && 'terminal onInitLog handler',
+      !detected.sessionCreate && 'terminal session creation',
+      !detected.postInit && 'terminal post-init state reset',
+      !detected.attach && 'terminal attach scheduling',
+      !detected.cleanup && 'terminal cleanup handoff'
+    ].filter(Boolean)
+  };
+}
+
+function buildPatchErrorMessage(baseMessage, sourceName, analysis) {
+  const sourceDetail = sourceName ? ` Source: ${sourceName}.` : '';
+  const missingDetail =
+    analysis.missingAnchors.length > 0
+      ? ` Missing anchors: ${analysis.missingAnchors.join(', ')}.`
+      : '';
+  const detectedDetail = ` Detected anchors: ${Object.entries(analysis.detected)
+    .map(([name, value]) => `${name}=${value ? 'yes' : 'no'}`)
+    .join(', ')}.`;
+  return `${baseMessage}${sourceDetail}${missingDetail}${detectedDetail}`;
 }
 
 function detectNativeModules(extractedAppDir) {
