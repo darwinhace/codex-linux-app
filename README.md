@@ -43,6 +43,12 @@ Latest stable:
 ./install-desktop
 ```
 
+Latest stable plus a diagnostic manifest in the install log:
+
+```bash
+./install-desktop --diagnostic-manifest
+```
+
 Inspect installed releases plus the latest 3 prod and beta appcast entries:
 
 ```bash
@@ -67,6 +73,18 @@ Specific beta version from the beta feed:
 ./install-desktop --beta --version 26.324.21329
 ```
 
+Install without the Linux terminal lifecycle patch for A/B perf checks:
+
+```bash
+./install-desktop --skip-terminal-patch
+```
+
+Install without the Linux open-in-targets patch:
+
+```bash
+./install-desktop --skip-open-targets-patch
+```
+
 If you ran `npm link`, the same commands work as:
 
 ```bash
@@ -74,6 +92,9 @@ install-desktop
 install-desktop --version 26.324.21329
 install-desktop --beta
 install-desktop --beta --version 26.324.21329
+install-desktop --diagnostic-manifest
+install-desktop --skip-terminal-patch
+install-desktop --skip-open-targets-patch
 release-info
 ```
 
@@ -93,6 +114,9 @@ uninstall-desktop
 
 - Stable app files: `~/.local/share/codex-linux-app/channels/stable`
 - Beta app files: `~/.local/share/codex-linux-app/channels/beta`
+- Diagnostic manifest:
+  - `~/.local/share/codex-linux-app/channels/stable/install-diagnostic-manifest.json`
+  - `~/.local/share/codex-linux-app/channels/beta/install-diagnostic-manifest.json`
 - Desktop entries:
   - `~/.local/share/applications/codex.desktop`
   - `~/.local/share/applications/codex-beta.desktop`
@@ -119,10 +143,17 @@ Stable and beta installs are fully separate. Reinstalling stable only replaces s
 - The installer requires a Linux `codex` CLI on PATH, or `CODEX_CLI_PATH` set to an existing Codex CLI binary. The installed desktop app uses a bundled wrapper at `resources/bin/codex` so the desktop runtime can find it reliably.
 - The installer also requires `rg` on PATH, or `RG_PATH` set to an existing Linux ripgrep binary.
 - The build/install stages retry forever on failure and keep logs under `~/.local/state/codex-linux-app/logs`.
+- The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state.
 - The generated launcher auto-falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is the normal case for a per-user install.
 - Set `CODEX_DESKTOP_FORCE_SANDBOX=1` if you manually configured `chrome-sandbox` correctly and want the wrapper to preserve Chromium sandboxing.
 - Set `CODEX_DESKTOP_FORCE_NO_SANDBOX=1` to force the no-sandbox launcher path explicitly.
+- Set `CODEX_DESKTOP_DISABLE_GPU=1` to launch with `--disable-gpu` for experimental compositor/GPU checks. Some upstream builds can fail to start when GPU access is disabled, so this is not the preferred recovery path for a black window.
+- Set `CODEX_DESKTOP_OZONE_PLATFORM_HINT=x11`, `wayland`, or `auto` to pass Chromium ozone platform hints through the launcher.
+- Set `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING=1` to enable Chromium logging and write a per-channel Chromium log under `~/.local/state/codex-linux-app/logs`.
+- Set `CODEX_DESKTOP_TRACE_TERMINAL_PATCH=1` to enable low-volume terminal lifecycle trace warnings from the injected Linux terminal patch.
+- If a reinstall opens to a black spinner window, reinstall once with `./install-desktop --skip-terminal-patch` to bypass the renderer terminal patch while debugging.
 - The installer preserves the upstream resource layout and replaces mac-only helper binaries with Linux equivalents where needed.
 - Linux editor discovery is patched into the desktop runtime for supported IDEs. It checks CLI commands on PATH, common `.desktop` launchers, and JetBrains Toolbox scripts under `~/.local/share/JetBrains/Toolbox/scripts`.
 - The current Linux editor targets include VS Code, VS Code Insiders, Cursor, Windsurf, Zed, Android Studio, IntelliJ IDEA, Rider, GoLand, RustRover, PyCharm, WebStorm, and PhpStorm.
+- The launcher writes resolved runtime mode details, including sandbox mode, GPU mode, ozone hint, manifest path, and patch summary, to `~/.local/state/codex-linux-app/logs/runtime-launch-<channel>.log`.
 - If a requested version is not present in the selected feed, the command prints the versions currently available from that feed.

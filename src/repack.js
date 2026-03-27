@@ -27,12 +27,16 @@ import {
 import { fetchAppcastReleases, resolveRelease } from './appcast.js';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const INSTALL_DIAGNOSTIC_MANIFEST_FILE_NAME = 'install-diagnostic-manifest.json';
 
 export function parseArgs(argv) {
   const options = {
     beta: false,
     version: null,
-    help: false
+    help: false,
+    skipOpenTargetsPatch: false,
+    skipTerminalPatch: false,
+    diagnosticManifest: false
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -54,6 +58,18 @@ export function parseArgs(argv) {
       options.help = true;
       continue;
     }
+    if (arg === '--skip-open-targets-patch') {
+      options.skipOpenTargetsPatch = true;
+      continue;
+    }
+    if (arg === '--skip-terminal-patch') {
+      options.skipTerminalPatch = true;
+      continue;
+    }
+    if (arg === '--diagnostic-manifest') {
+      options.diagnosticManifest = true;
+      continue;
+    }
     throw new Error(`Unknown argument: ${arg}`);
   }
 
@@ -66,7 +82,12 @@ export function renderHelp() {
     '  install-desktop',
     '  install-desktop --version <version>',
     '  install-desktop --beta',
-    '  install-desktop --beta --version <version>'
+    '  install-desktop --beta --version <version>',
+    '',
+    'Options:',
+    '  --skip-open-targets-patch   leave the Linux editor target patch disabled',
+    '  --skip-terminal-patch       leave the Linux terminal lifecycle patch disabled',
+    '  --diagnostic-manifest       print the written diagnostic manifest to the install log'
   ].join('\n');
 }
 
@@ -104,9 +125,13 @@ export async function installDesktop(options, logger) {
   const channelIconDir = path.join(installRoot, 'icons');
   const channelStateDir = path.join(paths.stateHome, channel.id);
   const channelLogDir = path.join(channelStateDir, 'logs');
+  const runtimeLogDir = path.join(paths.stateHome, 'logs');
+  const diagnosticManifestPath = path.join(installRoot, INSTALL_DIAGNOSTIC_MANIFEST_FILE_NAME);
+  const installedAt = new Date().toISOString();
 
   await ensureDir(downloadDir);
   await ensureDir(channelLogDir);
+  await ensureDir(runtimeLogDir);
 
   const codexCliPath = await resolveCodexCliPath();
   const rgPath = await resolveRipgrepPath();
@@ -157,9 +182,19 @@ export async function installDesktop(options, logger) {
 
   patchPackageJson(appPackage, channel);
   await fs.promises.writeFile(appPackagePath, JSON.stringify(appPackage, null, 2), 'utf8');
-  await patchBootstrap(extractedAppDir);
-  await patchMainProcessBundle(extractedAppDir, logger);
-  await patchRendererTerminalBundle(extractedAppDir, logger);
+  const bootstrapPatch = await patchBootstrap(extractedAppDir);
+  const openTargetsPatch = options.skipOpenTargetsPatch
+    ? buildSkippedPatchResult('cli-option-disabled')
+    : await patchMainProcessBundle(extractedAppDir, logger);
+  const terminalPatch = options.skipTerminalPatch
+    ? buildSkippedPatchResult('cli-option-disabled')
+    : await patchRendererTerminalBundle(extractedAppDir, logger);
+  if (options.skipOpenTargetsPatch) {
+    logger.warn('Skipping Linux open-in-targets patch because --skip-open-targets-patch was set');
+  }
+  if (options.skipTerminalPatch) {
+    logger.warn('Skipping Linux terminal lifecycle patch because --skip-terminal-patch was set');
+  }
   await replaceNativeModules({
     cacheHome: paths.cacheHome,
     extractedAppDir,
@@ -178,24 +213,32 @@ export async function installDesktop(options, logger) {
     await createPackage(extractedAppDir, packagedAsarPath);
   });
 
-  const runtimeSourceDir = await resolveRuntimeSourceDir({
+  const runtime = await resolveRuntimeSourceDir({
     cacheHome: paths.cacheHome,
     electronVersion,
     logger
   });
 
+  const patchSummary = summarizePatchStates({
+    bootstrap: bootstrapPatch,
+    openTargets: openTargetsPatch,
+    terminalLifecycle: terminalPatch
+  });
   const iconPath = await installChannelRuntime({
     channel,
     channelAppDir,
     channelBinDir,
     channelIconDir,
     channelStateDir,
-    runtimeSourceDir,
+    runtimeSourceDir: runtime.runtimeSourceDir,
     packagedAsarPath,
     upstreamResourcesDir,
     unpackedSourceRoot: extractedAppDir,
     rgPath,
     nativeModules,
+    runtimeLogDir,
+    diagnosticManifestPath,
+    patchSummary,
     logger
   });
 
@@ -206,6 +249,30 @@ export async function installDesktop(options, logger) {
     executablePath: path.join(channelBinDir, channel.executableName),
     installRoot
   });
+
+  const diagnosticManifest = createInstallDiagnosticManifest({
+    installedAt,
+    channel,
+    release,
+    flavor: appPackage.codexBuildFlavor,
+    electronVersion,
+    runtimeSourceKind: runtime.sourceKind,
+    nativeModules,
+    nativeModuleVersions,
+    patches: {
+      bootstrap: bootstrapPatch,
+      openTargets: openTargetsPatch,
+      terminalLifecycle: terminalPatch
+    }
+  });
+  await writeInstallDiagnosticManifest({
+    manifestPath: diagnosticManifestPath,
+    manifest: diagnosticManifest
+  });
+  logger.info(`Diagnostic manifest: ${diagnosticManifestPath}`);
+  if (options.diagnosticManifest) {
+    logger.info(`Diagnostic manifest contents:\n${JSON.stringify(diagnosticManifest, null, 2)}`);
+  }
 
   logger.info(`Install complete for ${channel.productName} ${release.version}`);
   logger.info(`Desktop file: ${path.join(paths.desktopApplications, channel.desktopFileName)}`);
@@ -246,7 +313,10 @@ async function patchBootstrap(extractedAppDir) {
   const bootstrapPath = path.join(bootstrapDir, bootstrapFile);
   const original = await fs.promises.readFile(bootstrapPath, 'utf8');
   if (original.includes('if(process.platform===`darwin`){await a.initialize();}')) {
-    return;
+    return {
+      status: 'already-applied',
+      sourceName: bootstrapFile
+    };
   }
   const updated = original.replace(
     /await\s+([A-Za-z_$][\w$]*)\.initialize\(\);/,
@@ -256,6 +326,10 @@ async function patchBootstrap(extractedAppDir) {
     throw new Error('Could not patch bootstrap updater initialization for Linux.');
   }
   await fs.promises.writeFile(bootstrapPath, updated, 'utf8');
+  return {
+    status: 'applied',
+    sourceName: bootstrapFile
+  };
 }
 
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
@@ -268,8 +342,11 @@ const TERMINAL_SESSION_CREATE_PATTERN =
 const TERMINAL_POST_INIT_SNIPPET = 'p(),M.current=!1;';
 const TERMINAL_ATTACH_PATTERN =
   /o&&requestAnimationFrame\(\(\)=>\{a\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:o,conversationId:n,hostId:r\?\?null,cwd:i\?\?null,cols:s\.cols,rows:s\.rows\}\)\}\);/;
+const TERMINAL_ON_ATTACH_PREFIX_PATTERN =
+  /onAttach:\((?<eventVar>[A-Za-z_$][\w$]*),(?<detailsVar>[A-Za-z_$][\w$]*)\)=>\{a\|\|\(/;
 const TERMINAL_CLEANUP_PATTERN =
   /return v\.observe\(e\),\(\)=>\{a=!0,c!=null&&\(cancelAnimationFrame\(c\),c=null\),v\.disconnect\(\),g\.dispose\(\),_\.dispose\(\),h\(\),D\.current=null,O\.current=null,k\.current=!1,o\|\|(?<service>[A-Za-z_$][\w$]*)\.close\(t\),s\.dispose\(\),E\.current=null\}/;
+const INVALID_TERMINAL_HELPER_ESCAPE_PATTERN = '${"${"}';
 
 async function patchMainProcessBundle(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
@@ -282,11 +359,29 @@ async function patchMainProcessBundle(extractedAppDir, logger) {
   const mainPath = path.join(buildDir, mainFile);
   const original = await fs.promises.readFile(mainPath, 'utf8');
   logger.info(`Resolved upstream Electron main bundle ${mainFile}`);
-  const updated = injectLinuxOpenTargetsPatch(original, { sourceName: mainFile });
-  if (updated !== original) {
-    await fs.promises.writeFile(mainPath, updated, 'utf8');
+  const result = applyLinuxOpenTargetsPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
     logger.info('Patched Linux open-in-targets support into the Electron main bundle');
   }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+export function applyLinuxOpenTargetsPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxOpenTargetsPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
 }
 
 export function injectLinuxOpenTargetsPatch(bundleSource, options = {}) {
@@ -339,12 +434,15 @@ async function patchRendererTerminalBundle(extractedAppDir, logger) {
     logger.info(`Resolved renderer terminal bundle ${assetName}`);
 
     try {
-      const updated = injectLinuxTerminalLifecyclePatch(original, { sourceName: assetName });
-      if (updated !== original) {
-        await fs.promises.writeFile(assetPath, updated, 'utf8');
+      const result = applyLinuxTerminalLifecyclePatch(original, { sourceName: assetName });
+      if (result.updated !== original) {
+        await fs.promises.writeFile(assetPath, result.updated, 'utf8');
         logger.info(`Patched Linux terminal lifecycle guard into renderer bundle ${assetName}`);
       }
-      return;
+      return {
+        status: result.status,
+        sourceName: assetName
+      };
     } catch (error) {
       lastError = error;
     }
@@ -357,6 +455,20 @@ async function patchRendererTerminalBundle(extractedAppDir, logger) {
   throw lastError ?? new Error('Could not patch the renderer terminal lifecycle bundle for Linux.');
 }
 
+export function applyLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxTerminalLifecyclePatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
 export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
   if (bundleSource.includes(LINUX_TERMINAL_PATCH_MARKER)) {
     return bundleSource;
@@ -367,7 +479,7 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
     updated,
     TERMINAL_SESSION_CREATE_PATTERN,
     ({ service }) =>
-      `${buildLinuxTerminalLifecycleHelpers()}let t=o??${service}.create({conversationId:n,hostId:r??null,cwd:i??null}),codexLinuxTerminalMountKey=\`${'${r??`local`}'}:${'${t}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);O.current=t,k.current=!1;`,
+      `${buildLinuxTerminalLifecycleHelpers()}let t=o??${service}.create({conversationId:n,hostId:r??null,cwd:i??null}),codexLinuxTerminalMountKey=\`${'${r??`local`}'}:${'${t}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);codexLinuxTraceTerminalCreate(codexLinuxTerminalMountKey);O.current=t,k.current=!1;`,
     buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
   updated = replaceSnippetOrThrow(
@@ -380,21 +492,40 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
     updated,
     TERMINAL_ATTACH_PATTERN,
     ({ service }) =>
-      `o&&(codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,a||${service}.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})}));`,
+      `o&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,a||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows}))}));`,
+    buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    TERMINAL_ON_ATTACH_PREFIX_PATTERN,
+    ({ eventVar, detailsVar }) =>
+      `onAttach:(${eventVar},${detailsVar})=>{a||(codexLinuxTraceTerminalAttached(codexLinuxTerminalMountKey),`,
     buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
   updated = replaceRegexOrThrow(
     updated,
     TERMINAL_CLEANUP_PATTERN,
     ({ service }) =>
-      `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(a)return;a=!0,c!=null&&(cancelAnimationFrame(c),c=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,codexLinuxPreserveSession||o||${service}.close(t),s.dispose(),E.current=null,codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),v.observe(e),codexLinuxDisposeCurrentMount`,
+      `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(a)return;a=!0,c!=null&&(cancelAnimationFrame(c),c=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,codexLinuxPreserveSession||o||${service}.close(t),s.dispose(),E.current=null,codexLinuxTraceTerminalCleanup(codexLinuxTerminalMountKey),codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),v.observe(e),codexLinuxDisposeCurrentMount`,
     buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
+  assertValidLinuxTerminalLifecyclePatchOutput(updated, options.sourceName);
   return updated;
 }
 
 function buildLinuxTerminalLifecycleHelpers() {
-  return 'var codexLinuxTerminalMounts=globalThis.__codexLinuxTerminalMounts??(globalThis.__codexLinuxTerminalMounts=new Map);function codexLinuxResetTerminalMount(e){let t=codexLinuxTerminalMounts.get(e);t&&t(!0),codexLinuxTerminalMounts.delete(e)}function codexLinuxSetTerminalMount(e,t){codexLinuxTerminalMounts.set(e,t)}function codexLinuxReleaseTerminalMount(e,t){codexLinuxTerminalMounts.get(e)===t&&codexLinuxTerminalMounts.delete(e)}';
+  return 'var codexLinuxTerminalMounts=globalThis.__codexLinuxTerminalMounts??(globalThis.__codexLinuxTerminalMounts=new Map),codexLinuxTerminalTraceState=globalThis.__codexLinuxTerminalTraceState??(globalThis.__codexLinuxTerminalTraceState=new Map),codexLinuxTerminalTraceEnabled=!1;try{codexLinuxTerminalTraceEnabled=process?.env?.CODEX_DESKTOP_TRACE_TERMINAL_PATCH===`1`}catch{}function codexLinuxTerminalTraceNow(){return typeof performance<`u`&&typeof performance.now===`function`?performance.now():Date.now()}function codexLinuxTerminalTraceWarn(e,t,n){if(!codexLinuxTerminalTraceEnabled||typeof console>`u`||typeof console.warn!==`function`)return;let r=n?` ${n}`:``;console.warn(`[codex-linux-terminal] ${e} ${t}${r}`)}function codexLinuxTerminalTraceEntry(e){let t=codexLinuxTerminalTraceState.get(e);return t||(t={createdAt:codexLinuxTerminalTraceNow(),attachScheduleCount:0,attachCompleted:!1},codexLinuxTerminalTraceState.set(e,t)),t}function codexLinuxTraceTerminalCreate(e){codexLinuxTerminalTraceEnabled&&codexLinuxTerminalTraceEntry(e)}function codexLinuxTraceTerminalAttachScheduled(e){if(!codexLinuxTerminalTraceEnabled)return;let t=codexLinuxTerminalTraceEntry(e),n=codexLinuxTerminalTraceNow();t.attachScheduleCount=(t.attachScheduleCount??0)+1,t.attachScheduledAt??=n,t.lastAttachScheduledAt=n,t.attachScheduleCount>1&&codexLinuxTerminalTraceWarn(`repeat-attach-schedule`,e,`count=`+(t.attachScheduleCount??-1))}function codexLinuxTraceTerminalAttachStarted(e){if(!codexLinuxTerminalTraceEnabled)return;let t=codexLinuxTerminalTraceEntry(e);t.attachStartedAt=codexLinuxTerminalTraceNow()}function codexLinuxTraceTerminalAttached(e){if(!codexLinuxTerminalTraceEnabled)return;let t=codexLinuxTerminalTraceEntry(e),n=codexLinuxTerminalTraceNow(),r=t.attachScheduledAt==null?null:Math.round(n-t.attachScheduledAt),i=t.createdAt==null?null:Math.round(n-t.createdAt);t.attachCompleted=!0,t.attachCompletedAt=n,(r!=null&&r>250||i!=null&&i>500)&&codexLinuxTerminalTraceWarn(`slow-attach`,e,`scheduledMs=`+(r??-1)+` createdMs=`+(i??-1))}function codexLinuxTraceTerminalCleanup(e){if(!codexLinuxTerminalTraceEnabled)return;let t=codexLinuxTerminalTraceState.get(e);t&&(t.attachScheduleCount>0&&!t.attachCompleted&&codexLinuxTerminalTraceWarn(`cleanup-before-attach`,e,`attachSchedules=`+(t.attachScheduleCount??-1)),codexLinuxTerminalTraceState.delete(e))}function codexLinuxResetTerminalMount(e){let t=codexLinuxTerminalMounts.get(e);t&&(codexLinuxTerminalTraceWarn(`reset-existing-mount`,e),t(!0)),codexLinuxTerminalMounts.delete(e)}function codexLinuxSetTerminalMount(e,t){codexLinuxTerminalMounts.set(e,t)}function codexLinuxReleaseTerminalMount(e,t){codexLinuxTerminalMounts.get(e)===t&&codexLinuxTerminalMounts.delete(e)}';
+}
+
+function assertValidLinuxTerminalLifecyclePatchOutput(bundleSource, sourceName) {
+  if (!bundleSource.includes(INVALID_TERMINAL_HELPER_ESCAPE_PATTERN)) {
+    return;
+  }
+
+  const sourceDetail = sourceName ? ` Source: ${sourceName}.` : '';
+  throw new Error(
+    `Could not patch the renderer terminal lifecycle bundle for Linux.${sourceDetail} Generated invalid helper output containing ${INVALID_TERMINAL_HELPER_ESCAPE_PATTERN}.`
+  );
 }
 
 function replaceSnippetOrThrow(source, target, replacement, errorMessage) {
@@ -462,6 +593,7 @@ function analyzeTerminalBundle(bundleSource) {
     sessionCreate: TERMINAL_SESSION_CREATE_PATTERN.test(bundleSource),
     postInit: bundleSource.includes(TERMINAL_POST_INIT_SNIPPET),
     attach: TERMINAL_ATTACH_PATTERN.test(bundleSource),
+    onAttach: TERMINAL_ON_ATTACH_PREFIX_PATTERN.test(bundleSource),
     cleanup: TERMINAL_CLEANUP_PATTERN.test(bundleSource)
   };
 
@@ -473,6 +605,7 @@ function analyzeTerminalBundle(bundleSource) {
       !detected.sessionCreate && 'terminal session creation',
       !detected.postInit && 'terminal post-init state reset',
       !detected.attach && 'terminal attach scheduling',
+      !detected.onAttach && 'terminal attach completion hook',
       !detected.cleanup && 'terminal cleanup handoff'
     ].filter(Boolean)
   };
@@ -557,6 +690,9 @@ async function installChannelRuntime({
   unpackedSourceRoot,
   rgPath,
   nativeModules,
+  runtimeLogDir,
+  diagnosticManifestPath,
+  patchSummary,
   logger
 }) {
   await removeIfExists(channelAppDir);
@@ -596,7 +732,10 @@ async function installChannelRuntime({
     channel,
     electronBinary: packagedBinaryPath,
     bundledCodexCliPath: path.join(resourcesDir, 'bin', 'codex'),
-    userDataDir: path.join(channelStateDir, 'user-data')
+    userDataDir: path.join(channelStateDir, 'user-data'),
+    runtimeLogDir,
+    diagnosticManifestPath,
+    patchSummary
   });
   await writeExecutable(executablePath, wrapper);
   logger.info(`Installed wrapper ${executablePath}`);
@@ -656,26 +795,74 @@ async function installIcons({ channel, channelIconDir, unpackedSourceRoot }) {
   return betaIconPath;
 }
 
-function buildWrapperScript({ channel, electronBinary, bundledCodexCliPath, userDataDir }) {
+export function buildWrapperScript({
+  channel,
+  electronBinary,
+  bundledCodexCliPath,
+  userDataDir,
+  runtimeLogDir,
+  diagnosticManifestPath,
+  patchSummary
+}) {
   const classArg = channel.wmClass;
   return `#!/usr/bin/env bash
 set -euo pipefail
 mkdir -p "${userDataDir}"
+mkdir -p "${runtimeLogDir}"
 export CODEX_CLI_PATH="\${CODEX_CLI_PATH:-${bundledCodexCliPath}}"
+export CODEX_DESKTOP_INSTALL_MANIFEST="${diagnosticManifestPath}"
 chrome_sandbox="$(dirname "${electronBinary}")/chrome-sandbox"
 sandbox_args=()
+chromium_args=()
+sandbox_mode="sandbox"
+gpu_mode="default"
+ozone_hint="\${CODEX_DESKTOP_OZONE_PLATFORM_HINT:-}"
+chromium_logging="disabled"
+chromium_log_file=""
+runtime_launch_log="${runtimeLogDir}/runtime-launch-${channel.id}.log"
+timestamp="$(date -Iseconds 2>/dev/null || date --iso-8601=seconds)"
 
 if [[ "\${CODEX_DESKTOP_FORCE_NO_SANDBOX:-0}" == "1" ]]; then
   sandbox_args=(--no-sandbox --disable-setuid-sandbox)
+  sandbox_mode="forced-no-sandbox"
 elif [[ "\${CODEX_DESKTOP_FORCE_SANDBOX:-0}" == "1" ]]; then
   sandbox_args=()
+  sandbox_mode="forced-sandbox"
 elif [[ ! -u "$chrome_sandbox" ]]; then
   sandbox_args=(--no-sandbox --disable-setuid-sandbox)
+  sandbox_mode="chrome-sandbox-not-setuid"
 elif [[ "$(stat -c '%u' "$chrome_sandbox")" != "0" ]]; then
   sandbox_args=(--no-sandbox --disable-setuid-sandbox)
+  sandbox_mode="chrome-sandbox-not-root-owned"
 fi
 
-exec "${electronBinary}" "\${sandbox_args[@]}" --class="${classArg}" --user-data-dir="${userDataDir}" "$@"
+if [[ "\${CODEX_DESKTOP_DISABLE_GPU:-0}" == "1" ]]; then
+  chromium_args+=(--disable-gpu)
+  gpu_mode="disabled"
+fi
+
+case "$ozone_hint" in
+  "")
+    ozone_hint="unset"
+    ;;
+  x11|wayland|auto)
+    chromium_args+=(--enable-features=UseOzonePlatform "--ozone-platform-hint=$ozone_hint")
+    ;;
+  *)
+    printf '[%s] [WARN] ignored invalid ozone hint: %s\n' "$timestamp" "$ozone_hint" >> "$runtime_launch_log"
+    ozone_hint="invalid"
+    ;;
+esac
+
+if [[ "\${CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING:-0}" == "1" ]]; then
+  chromium_log_file="${runtimeLogDir}/chromium-${channel.id}.log"
+  chromium_args+=(--enable-logging "--log-file=$chromium_log_file")
+  chromium_logging="enabled"
+fi
+
+printf '[%s] [INFO] launch channel=${channel.id} sandbox_mode=%s gpu_mode=%s ozone_hint=%s chromium_logging=%s chromium_log_file=%s manifest_path=%s patches=%s\n' "$timestamp" "$sandbox_mode" "$gpu_mode" "$ozone_hint" "$chromium_logging" "${"$"}{chromium_log_file:-none}" "${diagnosticManifestPath}" "${patchSummary}" >> "$runtime_launch_log"
+
+exec "${electronBinary}" "\${sandbox_args[@]}" "\${chromium_args[@]}" --class="${classArg}" --user-data-dir="${userDataDir}" "$@"
 `;
 }
 
@@ -776,7 +963,10 @@ async function resolveRuntimeSourceDir({ cacheHome, electronVersion, logger }) {
     const localPackage = await parseJsonFile(localPackageJsonPath);
     if (localPackage.version === electronVersion && (await fileExists(localRuntimeDir))) {
       logger.info(`Using local Electron runtime ${electronVersion}`);
-      return localRuntimeDir;
+      return {
+        runtimeSourceDir: localRuntimeDir,
+        sourceKind: 'local'
+      };
     }
   }
 
@@ -811,7 +1001,10 @@ async function resolveRuntimeSourceDir({ cacheHome, electronVersion, logger }) {
     throw new Error(`Electron runtime ${electronVersion} could not be installed for Linux.`);
   }
 
-  return runtimeSourceDir;
+  return {
+    runtimeSourceDir,
+    sourceKind: 'cache'
+  };
 }
 
 async function prepareNativeRebuildWorkspace({
@@ -931,4 +1124,54 @@ async function installBundledRipgrep(resourcesDir, rgPath) {
   const bundledRipgrepPath = path.join(resourcesDir, 'rg');
   await copyFile(rgPath, bundledRipgrepPath);
   await fs.promises.chmod(bundledRipgrepPath, 0o755);
+}
+
+function buildSkippedPatchResult(reason) {
+  return {
+    status: 'skipped',
+    reason
+  };
+}
+
+function summarizePatchStates(patches) {
+  return Object.entries(patches)
+    .map(([name, result]) => `${name}=${result.status}`)
+    .join(',');
+}
+
+export function createInstallDiagnosticManifest({
+  installedAt,
+  channel,
+  release,
+  flavor,
+  electronVersion,
+  runtimeSourceKind,
+  nativeModules,
+  nativeModuleVersions,
+  patches
+}) {
+  return {
+    manifestVersion: 1,
+    installedAt,
+    channel: channel.id,
+    upstream: {
+      version: release.version,
+      buildNumber: release.buildNumber,
+      flavor
+    },
+    runtime: {
+      electronVersion,
+      sourceKind: runtimeSourceKind
+    },
+    nativeModules: nativeModules.map((moduleName) => ({
+      name: moduleName,
+      version: nativeModuleVersions[moduleName] ?? null
+    })),
+    patches
+  };
+}
+
+async function writeInstallDiagnosticManifest({ manifestPath, manifest }) {
+  await ensureDir(path.dirname(manifestPath));
+  await fs.promises.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 }
