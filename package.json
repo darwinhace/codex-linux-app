@@ -5,10 +5,12 @@
   "type": "module",
   "bin": {
     "install-desktop": "./install-desktop",
+    "release-info": "./release-info",
     "uninstall-desktop": "./uninstall-desktop"
   },
   "scripts": {
     "install-desktop": "node ./src/cli.js",
+    "release-info": "node ./src/release-info-cli.js",
     "uninstall-desktop": "node ./src/uninstall-cli.js",
     "test": "node --test"
   },

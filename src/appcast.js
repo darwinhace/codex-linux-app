@@ -17,6 +17,16 @@ function extractEnclosureUrl(itemXml) {
   return match ? decodeXmlEntities(match[1]) : null;
 }
 
+export async function fetchAppcastReleases(feedUrl, options = {}) {
+  const { fetchImpl = fetch } = options;
+  const response = await fetchImpl(feedUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${feedUrl}: HTTP ${response.status}`);
+  }
+  const xml = await response.text();
+  return parseAppcastXml(xml);
+}
+
 export function parseAppcastXml(xml) {
   const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((match) => {
     const itemXml = match[1];

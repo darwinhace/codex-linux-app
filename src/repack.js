@@ -24,7 +24,7 @@ import {
   runCommand,
   writeExecutable
 } from './utils.js';
-import { parseAppcastXml, resolveRelease } from './appcast.js';
+import { fetchAppcastReleases, resolveRelease } from './appcast.js';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -90,7 +90,7 @@ export async function installDesktop(options, logger) {
   logger.info(`Selected channel: ${channel.id}`);
   logger.info(`Selected feed: ${channel.feedUrl}`);
 
-  const releases = await fetchFeed(channel.feedUrl);
+  const releases = await fetchAppcastReleases(channel.feedUrl);
   const release = resolveRelease(releases, options.version);
   logger.info(
     `Selected release: version=${release.version} build=${release.buildNumber} published=${release.pubDate}`
@@ -211,15 +211,6 @@ export async function installDesktop(options, logger) {
   logger.info(`Desktop file: ${path.join(paths.desktopApplications, channel.desktopFileName)}`);
   logger.info(`Launcher: ${path.join(channelBinDir, channel.executableName)}`);
   logger.info(`Install root: ${installRoot}`);
-}
-
-async function fetchFeed(feedUrl) {
-  const response = await fetch(feedUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${feedUrl}: HTTP ${response.status}`);
-  }
-  const xml = await response.text();
-  return parseAppcastXml(xml);
 }
 
 function patchPackageJson(appPackage, channel) {

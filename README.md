@@ -13,7 +13,7 @@ Install these packages on Ubuntu before the first installer run:
 
 ```bash
 sudo apt update
-sudo apt install -y build-essential python3 make g++ curl unzip libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libdrm2 libgbm1 libasound2t64
+sudo apt install -y build-essential python3 make g++ curl unzip ripgrep libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libdrm2 libgbm1 libasound2t64
 ```
 
 Install the repo dependencies:
@@ -43,6 +43,12 @@ Latest stable:
 ./install-desktop
 ```
 
+Inspect installed releases plus the latest 3 prod and beta appcast entries:
+
+```bash
+./release-info
+```
+
 Specific stable version from the stable feed:
 
 ```bash
@@ -68,6 +74,7 @@ install-desktop
 install-desktop --version 26.324.21329
 install-desktop --beta
 install-desktop --beta --version 26.324.21329
+release-info
 ```
 
 Remove all repo-owned desktop installs created by this repo:
