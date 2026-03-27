@@ -159,6 +159,7 @@ export async function installDesktop(options, logger) {
   await fs.promises.writeFile(appPackagePath, JSON.stringify(appPackage, null, 2), 'utf8');
   await patchBootstrap(extractedAppDir);
   await patchMainProcessBundle(extractedAppDir, logger);
+  await patchRendererTerminalBundle(extractedAppDir, logger);
   await replaceNativeModules({
     cacheHome: paths.cacheHome,
     extractedAppDir,
@@ -269,6 +270,16 @@ async function patchBootstrap(extractedAppDir) {
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var ua=\[(?<targetList>[A-Za-z0-9_$,]+)\],da=e\.sn\(`open-in-targets`\);function fa\(e\)\{return ua\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var pa=fa\(process\.platform\),ma=Ca\(pa\),ha=new Set\(pa\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),ga=null,_a=null;/;
+const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
+const TERMINAL_COMPONENT_MARKER = 'function vDe(e){';
+const TERMINAL_COMPONENT_FILE_MARKERS = ['data-codex-terminal', 'St.register(t,{onInitLog'];
+const TERMINAL_SESSION_CREATE_SNIPPET =
+  'let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;';
+const TERMINAL_POST_INIT_SNIPPET = 'p(),M.current=!1;';
+const TERMINAL_ATTACH_SNIPPET =
+  'o&&requestAnimationFrame(()=>{a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});';
+const TERMINAL_CLEANUP_SNIPPET =
+  'return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||St.close(t),s.dispose(),E.current=null}';
 
 async function patchMainProcessBundle(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
@@ -303,6 +314,95 @@ export function injectLinuxOpenTargetsPatch(bundleSource) {
 
 function buildLinuxOpenTargetsBlock(targetList) {
   return `var codexLinuxDesktopExecCache=null;function codexLinuxDetectCommand(e){let t=z(e);return t?H(t):null}function codexLinuxStripDesktopExec(e){if(typeof e!==\`string\`)return null;let t=e.replace(/%[fFuUdDnNickvm]/g,\` \`).trim();if(t.length===0)return null;let n=t.match(/^"([^"]+)"/);if(n?.[1])return n[1];let[r]=t.split(/\\s+/);return r??null}function codexLinuxDesktopExecs(){if(codexLinuxDesktopExecCache)return codexLinuxDesktopExecCache;let e=new Map,t=[(0,r.join)((0,n.homedir)(),\`.local\`,\`share\`,\`applications\`),\`/usr/share/applications\`];for(let n of t){let t;try{t=(0,a.readdirSync)(n)}catch{continue}for(let i of t){if(!i.endsWith(\`.desktop\`))continue;let t=(0,r.join)(n,i),o;try{o=(0,a.readFileSync)(t,\`utf8\`)}catch{continue}let s=o.match(/^Exec=(.+)$/m),c=codexLinuxStripDesktopExec(s?.[1]??\`\`);if(!c)continue;let l=(0,r.basename(c)).toLowerCase().replace(/\\.(sh|bin|appimage)$/,\`\`);e.has(l)||e.set(l,c)}}return codexLinuxDesktopExecCache=e,e}function codexLinuxDetectDesktopExec(e){let t=codexLinuxDesktopExecs().get(e.toLowerCase());if(!t)return null;if((0,r.isAbsolute)(t)&&(0,a.existsSync)(t))return t;let n=z(t);return n?H(n):null}function codexLinuxDetectAny(e){for(let t of e){let n=codexLinuxDetectCommand(t)??codexLinuxDetectDesktopExec(t);if(n)return n}return null}function codexLinuxJetBrainsScript(e){let t=(0,r.join)((0,n.homedir)(),\`.local\`,\`share\`,\`JetBrains\`,\`Toolbox\`,\`scripts\`,e);return(0,a.existsSync)(t)?t:null}function codexLinuxDetectJetBrains(e){return codexLinuxDetectAny([e])??codexLinuxJetBrainsScript(e)}var codexLinuxTargets=[Tr({id:\`vscode\`,label:\`VS Code\`,icon:\`apps/vscode.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`code\`,\`code-url-handler\`]),args:hr}}),Tr({id:\`vscodeInsiders\`,label:\`VS Code Insiders\`,icon:\`apps/vscode-insiders.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`code-insiders\`]),args:hr}}),Tr({id:\`cursor\`,label:\`Cursor\`,icon:\`apps/cursor.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`cursor\`]),args:hr}}),Tr({id:\`windsurf\`,label:\`Windsurf\`,icon:\`apps/windsurf.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`windsurf\`]),args:hr}}),Tr({id:\`zed\`,label:\`Zed\`,icon:\`apps/zed.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectAny([\`zed\`]),args:Cr}}),Tr({id:\`androidStudio\`,label:\`Android Studio\`,icon:\`apps/android-studio.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`studio\`),args:Mi}}),Tr({id:\`intellij\`,label:\`IntelliJ IDEA\`,icon:\`apps/intellij.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`idea\`),args:Mi}}),Tr({id:\`rider\`,label:\`Rider\`,icon:\`apps/rider.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`rider\`),args:Mi}}),Tr({id:\`goland\`,label:\`GoLand\`,icon:\`apps/goland.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`goland\`),args:Mi}}),Tr({id:\`rustrover\`,label:\`RustRover\`,icon:\`apps/rustrover.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`rustrover\`),args:Mi}}),Tr({id:\`pycharm\`,label:\`PyCharm\`,icon:\`apps/pycharm.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`pycharm\`),args:Mi}}),Tr({id:\`webstorm\`,label:\`WebStorm\`,icon:\`apps/webstorm.svg\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`webstorm\`),args:Mi}}),Tr({id:\`phpstorm\`,label:\`PhpStorm\`,icon:\`apps/phpstorm.png\`,kind:\`editor\`,linux:{detect:()=>codexLinuxDetectJetBrains(\`phpstorm\`),args:Mi}})];var ua=[${targetList}],codexLinuxExistingTargetIds=new Set(ua.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&ua.push(...codexLinuxTargets.filter(e=>!codexLinuxExistingTargetIds.has(e.id))),da=e.sn(\`open-in-targets\`);function fa(e){return ua.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var pa=fa(process.platform),ma=Ca(pa),ha=new Set(pa.filter(e=>e.kind===\`editor\`).map(e=>e.id)),ga=null,_a=null;`;
+}
+
+async function patchRendererTerminalBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let lastError = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate =
+      original.includes(TERMINAL_COMPONENT_FILE_MARKERS[0]) &&
+      original.includes(TERMINAL_COMPONENT_FILE_MARKERS[1]);
+
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+
+    try {
+      const updated = injectLinuxTerminalLifecyclePatch(original);
+      if (updated !== original) {
+        await fs.promises.writeFile(assetPath, updated, 'utf8');
+        logger.info(`Patched Linux terminal lifecycle guard into renderer bundle ${assetName}`);
+      }
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!sawCandidate) {
+    throw new Error('Could not locate the renderer terminal bundle inside the extracted app.');
+  }
+
+  throw lastError ?? new Error('Could not patch the renderer terminal lifecycle bundle for Linux.');
+}
+
+export function injectLinuxTerminalLifecyclePatch(bundleSource) {
+  if (bundleSource.includes(LINUX_TERMINAL_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  let updated = bundleSource;
+  updated = replaceSnippetOrThrow(
+    updated,
+    TERMINAL_COMPONENT_MARKER,
+    `${buildLinuxTerminalLifecycleHelpers()}${TERMINAL_COMPONENT_MARKER}`,
+    'Could not inject the Linux terminal lifecycle helpers into the renderer bundle.'
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    TERMINAL_SESSION_CREATE_SNIPPET,
+    'let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null}),codexLinuxTerminalMountKey=`${r??`local`}:${t}`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);O.current=t,k.current=!1;',
+    'Could not patch the terminal session handoff in the renderer bundle.'
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    TERMINAL_POST_INIT_SNIPPET,
+    'p(),M.current=!1;let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{};',
+    'Could not patch the terminal mount state in the renderer bundle.'
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    TERMINAL_ATTACH_SNIPPET,
+    'o&&(codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})}));',
+    'Could not patch the terminal attach scheduling in the renderer bundle.'
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    TERMINAL_CLEANUP_SNIPPET,
+    'return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(a)return;a=!0,c!=null&&(cancelAnimationFrame(c),c=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,codexLinuxPreserveSession||o||St.close(t),s.dispose(),E.current=null,codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),v.observe(e),codexLinuxDisposeCurrentMount',
+    'Could not patch the terminal cleanup handoff in the renderer bundle.'
+  );
+  return updated;
+}
+
+function buildLinuxTerminalLifecycleHelpers() {
+  return 'var codexLinuxTerminalMounts=globalThis.__codexLinuxTerminalMounts??(globalThis.__codexLinuxTerminalMounts=new Map);function codexLinuxResetTerminalMount(e){let t=codexLinuxTerminalMounts.get(e);t&&t(!0),codexLinuxTerminalMounts.delete(e)}function codexLinuxSetTerminalMount(e,t){codexLinuxTerminalMounts.set(e,t)}function codexLinuxReleaseTerminalMount(e,t){codexLinuxTerminalMounts.get(e)===t&&codexLinuxTerminalMounts.delete(e)}';
+}
+
+function replaceSnippetOrThrow(source, target, replacement, errorMessage) {
+  if (!source.includes(target)) {
+    throw new Error(errorMessage);
+  }
+  return source.replace(target, replacement);
 }
 
 function detectNativeModules(extractedAppDir) {
