@@ -4,11 +4,15 @@ import {
   applyLinuxOpenTargetsPatch,
   applyLinuxNewThreadModelPatch,
   applyLinuxTerminalLifecyclePatch,
+  applyLinuxVisualCompatCssPatch,
+  applyLinuxVisualCompatJsPatch,
   buildWrapperScript,
   createInstallDiagnosticManifest,
   injectLinuxOpenTargetsPatch,
   injectLinuxNewThreadModelPatch,
   injectLinuxTerminalLifecyclePatch,
+  injectLinuxVisualCompatCssPatch,
+  injectLinuxVisualCompatJsPatch,
   parseArgs,
   renderHelp
 } from '../src/repack.js';
@@ -27,6 +31,10 @@ const NEW_THREAD_MODEL_SELECTOR_BLOCK_CURRENT =
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_CURRENT =
   'async function N({appServerManager:e=x,context:t,prompt:n,workspaceRoots:r,cwd:i}){let a=[{type:`text`,text:n,text_elements:[]},...t.imageAttachments.map(e=>o$(e.src,e.localPath))],o=await e.getUserSavedConfiguration(i);return{input:a,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:j,model:null,serviceTier:A.serviceTier,reasoningEffort:null,collaborationMode:w,config:o}}';
 const NEW_THREAD_MODEL_BUNDLE_CURRENT = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_CURRENT}function Sf(e){return e?.latestCollaborationMode?.settings?.reasoning_effort??null}function Cf(e){return e?.latestCollaborationMode?.settings?.model??null}function wf(e){return e!=null}${NEW_THREAD_MODEL_SUBMIT_BLOCK_CURRENT}let P=async(e,t,n,r)=>{return null};`;
+const LINUX_VISUAL_COMPAT_CSS_CURRENT =
+  '.window-fx-sidebar-surface{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}.app-header-tint{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}.sidebar-resize-handle-line{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}[data-codex-window-type=electron]:not([data-codex-os=win32]) body{background:0 0;background:var(--color-token-editor-background)}[data-codex-window-type=electron].electron-opaque body{background-color:var(--color-background-surface-under);--color-background-elevated-primary:var(--color-background-elevated-primary-opaque);background-image:none}';
+const LINUX_VISUAL_COMPAT_JS_CURRENT =
+  'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 
 test('parseArgs accepts diagnostic and patch skip flags', () => {
   const options = parseArgs([
@@ -197,6 +205,73 @@ test('injectLinuxNewThreadModelPatch reports diagnostics when the model bundle i
   );
 });
 
+test('injectLinuxVisualCompatCssPatch adds Linux sidebar rendering overrides', () => {
+  const updated = injectLinuxVisualCompatCssPatch(LINUX_VISUAL_COMPAT_CSS_CURRENT);
+
+  assert.match(updated, /codexLinuxVisualCompat/);
+  assert.match(updated, /codex-linux-visual-compat/);
+  assert.match(updated, /background:var\(--color-token-side-bar-background\)!important/);
+  assert.match(updated, /\.window-fx-sidebar-surface \*/);
+  assert.match(updated, /transition:none!important/);
+});
+
+test('injectLinuxVisualCompatCssPatch is idempotent', () => {
+  const once = injectLinuxVisualCompatCssPatch(LINUX_VISUAL_COMPAT_CSS_CURRENT);
+  const twice = injectLinuxVisualCompatCssPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxVisualCompatCssPatch skips patching when disabled', () => {
+  const result = applyLinuxVisualCompatCssPatch(LINUX_VISUAL_COMPAT_CSS_CURRENT, { skip: true });
+
+  assert.equal(result.updated, LINUX_VISUAL_COMPAT_CSS_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxVisualCompatCssPatch reports diagnostics when CSS anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxVisualCompatCssPatch('body{background:black}', { sourceName: 'index.css' }),
+    {
+      message:
+        /Could not patch the renderer Linux visual-compat stylesheet\. Source: index\.css\. Missing anchors: electron window type selector, sidebar surface class, sidebar resize handle class\. Detected anchors: electronWindowTypeSelector=no, sidebarSurfaceClass=no, sidebarResizeHandleClass=no\./
+    }
+  );
+});
+
+test('injectLinuxVisualCompatJsPatch enables Linux visual compat class and opaque windows', () => {
+  const updated = injectLinuxVisualCompatJsPatch(LINUX_VISUAL_COMPAT_JS_CURRENT);
+
+  assert.match(updated, /codexLinuxVisualCompat/);
+  assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT/);
+  assert.match(updated, /classList\.toggle\(`codex-linux-visual-compat`,r\)/);
+  assert.match(updated, /\(T\.opaqueWindows\|\|r\)&&!XZ\(\)/);
+});
+
+test('injectLinuxVisualCompatJsPatch is idempotent', () => {
+  const once = injectLinuxVisualCompatJsPatch(LINUX_VISUAL_COMPAT_JS_CURRENT);
+  const twice = injectLinuxVisualCompatJsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxVisualCompatJsPatch skips patching when disabled', () => {
+  const result = applyLinuxVisualCompatJsPatch(LINUX_VISUAL_COMPAT_JS_CURRENT, { skip: true });
+
+  assert.equal(result.updated, LINUX_VISUAL_COMPAT_JS_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxVisualCompatJsPatch reports diagnostics when JS anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxVisualCompatJsPatch('const noop = true;', { sourceName: 'index.js' }),
+    {
+      message:
+        /Could not patch the renderer Linux visual-compat script\. Source: index\.js\. Missing anchors: electron window selector, electron-opaque class, codexOs dataset access, opaque window effect block\. Detected anchors: electronWindowSelector=no, electronOpaqueClass=no, codexOsDataset=no, opaqueEffectBlock=no\./
+    }
+  );
+});
+
 test('buildWrapperScript includes perf toggles and runtime logging', () => {
   const script = buildWrapperScript({
     channel: CHANNELS.stable,
@@ -211,7 +286,8 @@ test('buildWrapperScript includes perf toggles and runtime logging', () => {
   assert.match(script, /CODEX_DESKTOP_DISABLE_GPU/);
   assert.match(script, /--disable-gpu/);
   assert.match(script, /CODEX_DESKTOP_OZONE_PLATFORM_HINT/);
-  assert.match(script, /--ozone-platform-hint=/);
+  assert.match(script, /--ozone-platform=/);
+  assert.doesNotMatch(script, /--ozone-platform-hint=/);
   assert.match(script, /CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING/);
   assert.match(script, /runtime-launch-stable\.log/);
   assert.match(script, /install-diagnostic-manifest\.json/);
@@ -247,6 +323,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'index.js'
       },
       newThreadModel: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
+      linuxVisualCompat: {
         status: 'applied',
         sourceName: 'index.js'
       }
@@ -290,6 +370,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'index.js'
       },
       newThreadModel: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
+      linuxVisualCompat: {
         status: 'applied',
         sourceName: 'index.js'
       }

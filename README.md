@@ -148,7 +148,8 @@ Stable and beta installs are fully separate. Reinstalling stable only replaces s
 - Set `CODEX_DESKTOP_FORCE_SANDBOX=1` if you manually configured `chrome-sandbox` correctly and want the wrapper to preserve Chromium sandboxing.
 - Set `CODEX_DESKTOP_FORCE_NO_SANDBOX=1` to force the no-sandbox launcher path explicitly.
 - Set `CODEX_DESKTOP_DISABLE_GPU=1` to launch with `--disable-gpu` for experimental compositor/GPU checks. Some upstream builds can fail to start when GPU access is disabled, so this is not the preferred recovery path for a black window.
-- Set `CODEX_DESKTOP_OZONE_PLATFORM_HINT=x11`, `wayland`, or `auto` to pass Chromium ozone platform hints through the launcher.
+- Set `CODEX_DESKTOP_OZONE_PLATFORM_HINT=x11`, `wayland`, or `auto` to pass `--ozone-platform=<value>` through the launcher.
+- Set `CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT=1` to disable the default Linux sidebar visual-compat patch for A/B rendering checks.
 - Set `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING=1` to enable Chromium logging and write a per-channel Chromium log under `~/.local/state/codex-linux-app/logs`.
 - Set `CODEX_DESKTOP_TRACE_TERMINAL_PATCH=1` to enable low-volume terminal lifecycle trace warnings from the injected Linux terminal patch.
 - If a reinstall opens to a black spinner window, reinstall once with `./install-desktop --skip-terminal-patch` to bypass the renderer terminal patch while debugging.

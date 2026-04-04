@@ -190,6 +190,7 @@ export async function installDesktop(options, logger) {
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTerminalBundle(extractedAppDir, logger);
   const newThreadModelPatch = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+  const linuxVisualCompatPatch = await patchRendererLinuxVisualCompat(extractedAppDir, logger);
   if (options.skipOpenTargetsPatch) {
     logger.warn('Skipping Linux open-in-targets patch because --skip-open-targets-patch was set');
   }
@@ -224,7 +225,8 @@ export async function installDesktop(options, logger) {
     bootstrap: bootstrapPatch,
     openTargets: openTargetsPatch,
     terminalLifecycle: terminalPatch,
-    newThreadModel: newThreadModelPatch
+    newThreadModel: newThreadModelPatch,
+    linuxVisualCompat: linuxVisualCompatPatch
   });
   const iconPath = await installChannelRuntime({
     channel,
@@ -265,7 +267,8 @@ export async function installDesktop(options, logger) {
       bootstrap: bootstrapPatch,
       openTargets: openTargetsPatch,
       terminalLifecycle: terminalPatch,
-      newThreadModel: newThreadModelPatch
+      newThreadModel: newThreadModelPatch,
+      linuxVisualCompat: linuxVisualCompatPatch
     }
   });
   await writeInstallDiagnosticManifest({
@@ -367,6 +370,21 @@ const NEW_THREAD_MODEL_SUBMIT_SNIPPET_CURRENT =
   'return{input:a,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:j,model:null,serviceTier:A.serviceTier,reasoningEffort:null,collaborationMode:w,config:o}';
 const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_CURRENT =
   'let s=w==null?null:{...w,settings:{...w.settings,model:w.settings?.model??o.model??null,reasoning_effort:w.settings?.reasoning_effort??o.model_reasoning_effort??null}};return{input:a,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:j,model:null,serviceTier:A.serviceTier,reasoningEffort:null,collaborationMode:s,config:o}';
+const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
+const LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT =
+  'if(e){if(T.opaqueWindows&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
+const LINUX_VISUAL_COMPAT_JS_REPLACEMENT_CURRENT =
+  'if(e){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===`linux`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===`1`}catch{}let r=t&&!n;e.classList.toggle(`codex-linux-visual-compat`,r);if((T.opaqueWindows||r)&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
+const LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKERS = [
+  '[data-codex-window-type=electron]',
+  '.window-fx-sidebar-surface',
+  '.sidebar-resize-handle-line'
+];
+const LINUX_VISUAL_COMPAT_JS_CANDIDATE_MARKERS = [
+  '[data-codex-window-type="electron"]',
+  'electron-opaque',
+  'dataset.codexOs'
+];
 
 async function patchMainProcessBundle(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
@@ -635,6 +653,219 @@ export function injectLinuxNewThreadModelPatch(bundleSource, options = {}) {
     errorMessage
   );
   return updated;
+}
+
+async function patchRendererLinuxVisualCompat(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const cssAssets = assetNames.filter((name) => name.endsWith('.css'));
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let cssResult = null;
+  let jsResult = null;
+  let cssSourceName = null;
+  let jsSourceName = null;
+  let cssError = null;
+  let jsError = null;
+
+  for (const assetName of cssAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+
+    if (!isCandidate) {
+      continue;
+    }
+
+    cssSourceName = assetName;
+    logger.info(`Resolved renderer Linux visual-compat stylesheet ${assetName}`);
+
+    try {
+      cssResult = applyLinuxVisualCompatCssPatch(original, { sourceName: assetName });
+      if (cssResult.updated !== original) {
+        await fs.promises.writeFile(assetPath, cssResult.updated, 'utf8');
+        logger.info(`Patched Linux visual-compat CSS into renderer asset ${assetName}`);
+      }
+      break;
+    } catch (error) {
+      cssError = error;
+    }
+  }
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_VISUAL_COMPAT_JS_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+
+    if (!isCandidate) {
+      continue;
+    }
+
+    jsSourceName = assetName;
+    logger.info(`Resolved renderer Linux visual-compat script ${assetName}`);
+
+    try {
+      jsResult = applyLinuxVisualCompatJsPatch(original, { sourceName: assetName });
+      if (jsResult.updated !== original) {
+        await fs.promises.writeFile(assetPath, jsResult.updated, 'utf8');
+        logger.info(`Patched Linux visual-compat JS into renderer asset ${assetName}`);
+      }
+      break;
+    } catch (error) {
+      jsError = error;
+    }
+  }
+
+  if (!cssResult) {
+    throw cssError ?? new Error('Could not locate the renderer Linux visual-compat stylesheet.');
+  }
+  if (!jsResult) {
+    throw jsError ?? new Error('Could not locate the renderer Linux visual-compat script.');
+  }
+
+  return {
+    status:
+      cssResult.status === 'already-applied' && jsResult.status === 'already-applied'
+        ? 'already-applied'
+        : 'applied',
+    sourceName: `${cssSourceName},${jsSourceName}`
+  };
+}
+
+export function applyLinuxVisualCompatCssPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxVisualCompatCssPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxVisualCompatCssPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_VISUAL_COMPAT_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  const analysis = analyzeLinuxVisualCompatCssBundle(bundleSource);
+  if (analysis.missingAnchors.length > 0) {
+    throw new Error(
+      buildPatchErrorMessage(
+        'Could not patch the renderer Linux visual-compat stylesheet.',
+        options.sourceName,
+        analysis
+      )
+    );
+  }
+
+  return `${bundleSource}\n${buildLinuxVisualCompatCssOverride()}\n`;
+}
+
+export function applyLinuxVisualCompatJsPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxVisualCompatJsPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxVisualCompatJsPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_VISUAL_COMPAT_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  return replaceSnippetOrThrow(
+    bundleSource,
+    LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT,
+    LINUX_VISUAL_COMPAT_JS_REPLACEMENT_CURRENT,
+    buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+function buildLinuxVisualCompatCssOverride() {
+  return `/* ${LINUX_VISUAL_COMPAT_PATCH_MARKER} */
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat{
+  background-color:var(--color-background-surface-under)!important;
+  background-image:none!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat body{
+  background:var(--color-background-surface-under)!important;
+  background-image:none!important;
+  --color-background-elevated-primary:var(--color-background-elevated-primary-opaque)
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface,
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .app-header-tint{
+  background:var(--color-token-side-bar-background)!important;
+  background-image:none!important;
+  transition:none!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .sidebar-resize-handle-line{
+  background:var(--color-token-border)!important;
+  transition:none!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface,
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface *{
+  transition:none!important;
+  animation:none!important
+}
+`;
+}
+
+function buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    'Could not patch the renderer Linux visual-compat script.',
+    sourceName,
+    analyzeLinuxVisualCompatJsBundle(bundleSource)
+  );
+}
+
+function analyzeLinuxVisualCompatCssBundle(bundleSource) {
+  const detected = {
+    electronWindowTypeSelector: bundleSource.includes('[data-codex-window-type=electron]'),
+    sidebarSurfaceClass: bundleSource.includes('.window-fx-sidebar-surface'),
+    sidebarResizeHandleClass: bundleSource.includes('.sidebar-resize-handle-line')
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.electronWindowTypeSelector && 'electron window type selector',
+      !detected.sidebarSurfaceClass && 'sidebar surface class',
+      !detected.sidebarResizeHandleClass && 'sidebar resize handle class'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxVisualCompatJsBundle(bundleSource) {
+  const detected = {
+    electronWindowSelector: bundleSource.includes('[data-codex-window-type="electron"]'),
+    electronOpaqueClass: bundleSource.includes('electron-opaque'),
+    codexOsDataset: bundleSource.includes('dataset.codexOs'),
+    opaqueEffectBlock: bundleSource.includes(LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.electronWindowSelector && 'electron window selector',
+      !detected.electronOpaqueClass && 'electron-opaque class',
+      !detected.codexOsDataset && 'codexOs dataset access',
+      !detected.opaqueEffectBlock && 'opaque window effect block'
+    ].filter(Boolean)
+  };
 }
 
 function replaceSnippetOrThrow(source, target, replacement, errorMessage) {
@@ -978,7 +1209,7 @@ elif [[ "$(stat -c '%u' "$chrome_sandbox")" != "0" ]]; then
   sandbox_mode="chrome-sandbox-not-root-owned"
 fi
 
-if [[ "\${CODEX_DESKTOP_DISABLE_GPU:-0}" == "1" ]]; then
+  if [[ "\${CODEX_DESKTOP_DISABLE_GPU:-0}" == "1" ]]; then
   chromium_args+=(--disable-gpu)
   gpu_mode="disabled"
 fi
@@ -988,7 +1219,7 @@ case "$ozone_hint" in
     ozone_hint="unset"
     ;;
   x11|wayland|auto)
-    chromium_args+=(--enable-features=UseOzonePlatform "--ozone-platform-hint=$ozone_hint")
+    chromium_args+=("--ozone-platform=$ozone_hint")
     ;;
   *)
     printf '[%s] [WARN] ignored invalid ozone hint: %s\n' "$timestamp" "$ozone_hint" >> "$runtime_launch_log"
