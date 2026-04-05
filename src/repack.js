@@ -816,10 +816,8 @@ function buildLinuxVisualCompatCssOverride() {
   background:var(--color-token-border)!important;
   transition:none!important
 }
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface,
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface *{
-  transition:none!important;
-  animation:none!important
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface{
+  transition:none!important
 }
 `;
 }

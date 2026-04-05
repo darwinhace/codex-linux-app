@@ -211,8 +211,9 @@ test('injectLinuxVisualCompatCssPatch adds Linux sidebar rendering overrides', (
   assert.match(updated, /codexLinuxVisualCompat/);
   assert.match(updated, /codex-linux-visual-compat/);
   assert.match(updated, /background:var\(--color-token-side-bar-background\)!important/);
-  assert.match(updated, /\.window-fx-sidebar-surface \*/);
   assert.match(updated, /transition:none!important/);
+  assert.doesNotMatch(updated, /\.window-fx-sidebar-surface \*/);
+  assert.doesNotMatch(updated, /animation:none!important/);
 });
 
 test('injectLinuxVisualCompatCssPatch is idempotent', () => {
