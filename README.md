@@ -1,22 +1,51 @@
 # Codex Linux App
 
-This repo repackages the published Codex desktop app for Linux, especially Ubuntu `amd64`. It reads the live OpenAI appcast feed, downloads the selected upstream build, swaps in a Linux Electron runtime, rebuilds the native modules for Linux, installs stable and beta side by side, and creates user-local desktop entries.
+This repo repackages the published Codex desktop app for Linux `amd64`/`x64` (including Ubuntu and Arch-based distros such as CachyOS). It reads the live OpenAI appcast feed, downloads the selected upstream build, swaps in a Linux Electron runtime, rebuilds the native modules for Linux, installs stable and beta side by side, and creates user-local desktop entries.
 
-Current upstream feed heads checked on March 26, 2026:
+Current upstream feed heads checked on April 7, 2026:
 
-- Stable: `26.324.21641` build `1228`
-- Beta: `26.324.21641` build `1227`
+- Stable: `26.325.31654` build `1272`
+- Beta: `26.401.11717` build `1329`
 
 ## First Run Requirements
 
-Install these packages on Ubuntu before the first installer run:
+Install these distro packages before the first installer run:
+
+| Requirement | Ubuntu/Debian | Arch/CachyOS |
+| --- | --- | --- |
+| Build toolchain | `build-essential python3 make g++` | `base-devel python` |
+| CLI/runtime tools | `curl unzip ripgrep bash` | `curl unzip ripgrep bash` |
+| Electron runtime libs | `libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libdrm2 libgbm1 libasound2t64` | `gtk3 libnotify nss libxss libxtst at-spi2-core libdrm mesa alsa-lib` |
+
+Ubuntu/Debian:
 
 ```bash
 sudo apt update
-sudo apt install -y build-essential python3 make g++ curl unzip ripgrep libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libdrm2 libgbm1 libasound2t64
+sudo apt install -y build-essential python3 make g++ curl unzip ripgrep bash libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libdrm2 libgbm1 libasound2t64
 ```
 
-Install the repo dependencies:
+Arch/CachyOS:
+
+```bash
+sudo pacman -S --needed base-devel python curl unzip ripgrep bash gtk3 libnotify nss libxss libxtst at-spi2-core libdrm mesa alsa-lib
+```
+
+Fish shell setup (recommended on Arch/CachyOS):
+
+```fish
+# Add npm global binaries to Fish PATH once.
+fish_add_path -U (npm config get prefix)/bin
+
+# Optional but useful on node-manager setups where PATH can rotate per shell.
+set -Ux CODEX_CLI_PATH (type -p codex)
+set -Ux RG_PATH (type -p rg)
+
+# Verify both required binaries are visible in Fish.
+type -a codex
+type -a rg
+```
+
+Install repo dependencies:
 
 ```bash
 npm install
@@ -34,6 +63,8 @@ Optional: link the command globally so you can run `install-desktop` without `./
 ```bash
 npm link
 ```
+
+Verified on April 7, 2026 on CachyOS (`ID_LIKE=arch`) with Fish `4.6.0`: `npm test` and `./release-info` both pass.
 
 ## Usage
 
@@ -58,7 +89,7 @@ Inspect installed releases plus the latest 3 prod and beta appcast entries:
 Specific stable version from the stable feed:
 
 ```bash
-./install-desktop --version 26.324.21329
+./install-desktop --version 26.325.21211
 ```
 
 Latest beta from the beta feed:
@@ -70,7 +101,7 @@ Latest beta from the beta feed:
 Specific beta version from the beta feed:
 
 ```bash
-./install-desktop --beta --version 26.324.21329
+./install-desktop --beta --version 26.401.11631
 ```
 
 Install without the Linux terminal lifecycle patch for A/B perf checks:
@@ -89,9 +120,9 @@ If you ran `npm link`, the same commands work as:
 
 ```bash
 install-desktop
-install-desktop --version 26.324.21329
+install-desktop --version 26.325.21211
 install-desktop --beta
-install-desktop --beta --version 26.324.21329
+install-desktop --beta --version 26.401.11631
 install-desktop --diagnostic-manifest
 install-desktop --skip-terminal-patch
 install-desktop --skip-open-targets-patch
@@ -142,6 +173,7 @@ Stable and beta installs are fully separate. Reinstalling stable only replaces s
 - `install-desktop --beta` always tracks the newest beta release from the beta feed.
 - The installer requires a Linux `codex` CLI on PATH, or `CODEX_CLI_PATH` set to an existing Codex CLI binary. The installed desktop app uses a bundled wrapper at `resources/bin/codex` so the desktop runtime can find it reliably.
 - The installer also requires `rg` on PATH, or `RG_PATH` set to an existing Linux ripgrep binary.
+- Binary discovery is done with direct PATH scanning in Node (not external `which`), so Fish/Arch setups work as long as PATH or the `CODEX_CLI_PATH`/`RG_PATH` overrides are correct.
 - The build/install stages retry forever on failure and keep logs under `~/.local/state/codex-linux-app/logs`.
 - The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state.
 - The generated launcher auto-falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is the normal case for a per-user install.

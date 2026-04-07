@@ -1269,6 +1269,69 @@ async function findAppBundle(extractDir) {
   return path.join(extractDir, bundle.name);
 }
 
+async function resolveExecutablePath(candidatePath) {
+  if (typeof candidatePath !== 'string') {
+    return null;
+  }
+
+  const trimmedPath = candidatePath.trim();
+  if (!trimmedPath) {
+    return null;
+  }
+
+  const absolutePath = path.isAbsolute(trimmedPath)
+    ? trimmedPath
+    : path.resolve(trimmedPath);
+  try {
+    await fs.promises.access(absolutePath, fs.constants.X_OK);
+  } catch {
+    return null;
+  }
+
+  try {
+    return await fs.promises.realpath(absolutePath);
+  } catch {
+    return absolutePath;
+  }
+}
+
+export async function resolveFirstExecutablePath(candidatePaths) {
+  for (const candidatePath of candidatePaths ?? []) {
+    const resolvedPath = await resolveExecutablePath(candidatePath);
+    if (resolvedPath) {
+      return resolvedPath;
+    }
+  }
+  return null;
+}
+
+export async function findExecutableInPath(commandName, envPath = process.env.PATH ?? '') {
+  if (typeof commandName !== 'string') {
+    return null;
+  }
+
+  const trimmedName = commandName.trim();
+  if (!trimmedName) {
+    return null;
+  }
+
+  if (trimmedName.includes(path.sep)) {
+    return resolveExecutablePath(trimmedName);
+  }
+
+  const pathEntries = String(envPath).split(path.delimiter);
+  for (const entry of pathEntries) {
+    const candidateDir = entry.trim() || process.cwd();
+    const candidatePath = path.join(candidateDir, trimmedName);
+    const resolvedPath = await resolveExecutablePath(candidatePath);
+    if (resolvedPath) {
+      return resolvedPath;
+    }
+  }
+
+  return null;
+}
+
 async function resolveCodexCliPath() {
   const candidatePaths = [];
 
@@ -1278,20 +1341,14 @@ async function resolveCodexCliPath() {
 
   candidatePaths.push(path.join(PROJECT_ROOT, 'node_modules', '.bin', 'codex'));
 
-  try {
-    const { stdout } = await runCommand('which', ['codex']);
-    const resolved = stdout.trim();
-    if (resolved) {
-      candidatePaths.push(resolved);
-    }
-  } catch {
-    // Ignore PATH lookup failures so we can emit a clearer message below.
+  const pathResolved = await findExecutableInPath('codex');
+  if (pathResolved) {
+    candidatePaths.push(pathResolved);
   }
 
-  for (const candidatePath of candidatePaths) {
-    if (candidatePath && (await fileExists(candidatePath))) {
-      return candidatePath;
-    }
+  const resolvedPath = await resolveFirstExecutablePath(candidatePaths);
+  if (resolvedPath) {
+    return resolvedPath;
   }
 
   throw new Error(
@@ -1306,20 +1363,14 @@ async function resolveRipgrepPath() {
     candidatePaths.push(process.env.RG_PATH);
   }
 
-  try {
-    const { stdout } = await runCommand('which', ['rg']);
-    const resolved = stdout.trim();
-    if (resolved) {
-      candidatePaths.push(resolved);
-    }
-  } catch {
-    // Ignore PATH lookup failures so we can emit a clearer message below.
+  const pathResolved = await findExecutableInPath('rg');
+  if (pathResolved) {
+    candidatePaths.push(pathResolved);
   }
 
-  for (const candidatePath of candidatePaths) {
-    if (candidatePath && (await fileExists(candidatePath))) {
-      return candidatePath;
-    }
+  const resolvedPath = await resolveFirstExecutablePath(candidatePaths);
+  if (resolvedPath) {
+    return resolvedPath;
   }
 
   throw new Error(

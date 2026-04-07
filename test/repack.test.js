@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
   applyLinuxOpenTargetsPatch,
   applyLinuxNewThreadModelPatch,
@@ -8,13 +11,15 @@ import {
   applyLinuxVisualCompatJsPatch,
   buildWrapperScript,
   createInstallDiagnosticManifest,
+  findExecutableInPath,
   injectLinuxOpenTargetsPatch,
   injectLinuxNewThreadModelPatch,
   injectLinuxTerminalLifecyclePatch,
   injectLinuxVisualCompatCssPatch,
   injectLinuxVisualCompatJsPatch,
   parseArgs,
-  renderHelp
+  renderHelp,
+  resolveFirstExecutablePath
 } from '../src/repack.js';
 import { CHANNELS } from '../src/constants.js';
 
@@ -62,6 +67,75 @@ test('renderHelp lists the diagnostic and patch skip flags', () => {
   assert.match(helpText, /--skip-open-targets-patch/);
   assert.match(helpText, /--skip-terminal-patch/);
   assert.match(helpText, /--diagnostic-manifest/);
+});
+
+test('findExecutableInPath returns the first executable in PATH order', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-path-order-'));
+  try {
+    const firstDir = path.join(rootDir, 'first');
+    const secondDir = path.join(rootDir, 'second');
+    await fs.promises.mkdir(firstDir, { recursive: true });
+    await fs.promises.mkdir(secondDir, { recursive: true });
+
+    const firstCandidate = path.join(firstDir, 'codex');
+    const secondCandidate = path.join(secondDir, 'codex');
+    await fs.promises.writeFile(firstCandidate, '#!/usr/bin/env bash\nexit 0\n', 'utf8');
+    await fs.promises.writeFile(secondCandidate, '#!/usr/bin/env bash\nexit 0\n', 'utf8');
+    await fs.promises.chmod(firstCandidate, 0o755);
+    await fs.promises.chmod(secondCandidate, 0o755);
+
+    const envPath = [firstDir, secondDir].join(path.delimiter);
+    const resolved = await findExecutableInPath('codex', envPath);
+
+    assert.equal(resolved, await fs.promises.realpath(firstCandidate));
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveFirstExecutablePath skips missing and non-executable candidates', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-candidate-skip-'));
+  try {
+    const missingCandidate = path.join(rootDir, 'missing', 'codex');
+    const nonExecutableCandidate = path.join(rootDir, 'nonexec', 'codex');
+    const executableCandidate = path.join(rootDir, 'exec', 'codex');
+    await fs.promises.mkdir(path.dirname(nonExecutableCandidate), { recursive: true });
+    await fs.promises.mkdir(path.dirname(executableCandidate), { recursive: true });
+    await fs.promises.writeFile(nonExecutableCandidate, '#!/usr/bin/env bash\nexit 0\n', 'utf8');
+    await fs.promises.writeFile(executableCandidate, '#!/usr/bin/env bash\nexit 0\n', 'utf8');
+    await fs.promises.chmod(nonExecutableCandidate, 0o644);
+    await fs.promises.chmod(executableCandidate, 0o755);
+
+    const resolved = await resolveFirstExecutablePath([
+      missingCandidate,
+      nonExecutableCandidate,
+      executableCandidate
+    ]);
+
+    assert.equal(resolved, await fs.promises.realpath(executableCandidate));
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveFirstExecutablePath preserves candidate precedence', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-candidate-order-'));
+  try {
+    const firstCandidate = path.join(rootDir, 'one', 'rg');
+    const secondCandidate = path.join(rootDir, 'two', 'rg');
+    await fs.promises.mkdir(path.dirname(firstCandidate), { recursive: true });
+    await fs.promises.mkdir(path.dirname(secondCandidate), { recursive: true });
+    await fs.promises.writeFile(firstCandidate, '#!/usr/bin/env bash\nexit 0\n', 'utf8');
+    await fs.promises.writeFile(secondCandidate, '#!/usr/bin/env bash\nexit 0\n', 'utf8');
+    await fs.promises.chmod(firstCandidate, 0o755);
+    await fs.promises.chmod(secondCandidate, 0o755);
+
+    const resolved = await resolveFirstExecutablePath([secondCandidate, firstCandidate]);
+
+    assert.equal(resolved, await fs.promises.realpath(secondCandidate));
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
 });
 
 for (const [label, fixture] of [
