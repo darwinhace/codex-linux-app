@@ -9,6 +9,8 @@ Current upstream feed heads checked on April 7, 2026:
 
 ## First Run Requirements
 
+Before using this project, run `npm install` in the repository root.
+
 Install these distro packages before the first installer run:
 
 | Requirement | Ubuntu/Debian | Arch/CachyOS |
@@ -52,6 +54,8 @@ npm install
 chmod +x ./install-desktop
 ```
 
+`npm install` is required before running `install-desktop`, `release-info`, or `uninstall-desktop`.
+
 Install the Linux Codex CLI that the desktop app talks to:
 
 ```bash
@@ -67,6 +71,8 @@ npm link
 Verified on April 7, 2026 on CachyOS (`ID_LIKE=arch`) with Fish `4.6.0`: `npm test` and `./release-info` both pass.
 
 ## Usage
+
+All commands below assume you already ran `npm install` in this repository.
 
 Latest stable:
 
@@ -166,24 +172,34 @@ Stable and beta installs are fully separate. Reinstalling stable only replaces s
 
 `uninstall-desktop` does not remove the separately installed global `codex` CLI.
 
+## Environment Variables
+
+Use this section as the single source of truth for env vars used by this project.
+
+| Variable | Where Used | Default | Effect |
+| --- | --- | --- | --- |
+| `CODEX_CLI_PATH` | Installer + launcher | Auto-detect from `PATH` (installer), bundled wrapper fallback (launcher) | Overrides which `codex` binary is used. |
+| `RG_PATH` | Installer | Auto-detect from `PATH` | Overrides which `rg` binary is used during install. |
+| `CODEX_DESKTOP_FORCE_SANDBOX` | Launcher | unset / `0` | Force Chromium sandbox mode (`1`). |
+| `CODEX_DESKTOP_FORCE_NO_SANDBOX` | Launcher | unset / `0` | Force `--no-sandbox --disable-setuid-sandbox` (`1`). |
+| `CODEX_DESKTOP_DISABLE_GPU` | Launcher | unset / `0` | Adds `--disable-gpu` (`1`). |
+| `CODEX_DESKTOP_OZONE_PLATFORM_HINT` | Launcher | unset | Passes `--ozone-platform=x11`, `wayland`, or `auto`. |
+| `CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR` | Patched app main bundle (Linux) | unset | Keeps native menu bar always visible when set to `1` (default behavior auto-hides it). |
+| `CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT` | Patched app renderer bundle (Linux) | unset | Disables Linux visual-compat patch when set to `1`. |
+| `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING` | Launcher | unset / `0` | Enables Chromium logging when set to `1`. |
+| `CODEX_DESKTOP_TRACE_TERMINAL_PATCH` | Patched app renderer bundle (Linux) | unset | Enables terminal patch trace warnings when set to `1`. |
+| `CODEX_DESKTOP_INSTALL_MANIFEST` | Launcher (internal) | Auto-set by launcher | Path to install diagnostic manifest. Do not set manually. |
+
 ## Notes
 
 - The installer only supports Linux `amd64` in this version.
 - The installer uses the live appcast at runtime, so plain `install-desktop` always tracks the newest stable release from the stable feed.
 - `install-desktop --beta` always tracks the newest beta release from the beta feed.
-- The installer requires a Linux `codex` CLI on PATH, or `CODEX_CLI_PATH` set to an existing Codex CLI binary. The installed desktop app uses a bundled wrapper at `resources/bin/codex` so the desktop runtime can find it reliably.
-- The installer also requires `rg` on PATH, or `RG_PATH` set to an existing Linux ripgrep binary.
 - Binary discovery is done with direct PATH scanning in Node (not external `which`), so Fish/Arch setups work as long as PATH or the `CODEX_CLI_PATH`/`RG_PATH` overrides are correct.
+- For all runtime and installer env vars, see the **Environment Variables** section above.
 - The build/install stages retry forever on failure and keep logs under `~/.local/state/codex-linux-app/logs`.
 - The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state.
 - The generated launcher auto-falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is the normal case for a per-user install.
-- Set `CODEX_DESKTOP_FORCE_SANDBOX=1` if you manually configured `chrome-sandbox` correctly and want the wrapper to preserve Chromium sandboxing.
-- Set `CODEX_DESKTOP_FORCE_NO_SANDBOX=1` to force the no-sandbox launcher path explicitly.
-- Set `CODEX_DESKTOP_DISABLE_GPU=1` to launch with `--disable-gpu` for experimental compositor/GPU checks. Some upstream builds can fail to start when GPU access is disabled, so this is not the preferred recovery path for a black window.
-- Set `CODEX_DESKTOP_OZONE_PLATFORM_HINT=x11`, `wayland`, or `auto` to pass `--ozone-platform=<value>` through the launcher.
-- Set `CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT=1` to disable the default Linux sidebar visual-compat patch for A/B rendering checks.
-- Set `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING=1` to enable Chromium logging and write a per-channel Chromium log under `~/.local/state/codex-linux-app/logs`.
-- Set `CODEX_DESKTOP_TRACE_TERMINAL_PATCH=1` to enable low-volume terminal lifecycle trace warnings from the injected Linux terminal patch.
 - If a reinstall opens to a black spinner window, reinstall once with `./install-desktop --skip-terminal-patch` to bypass the renderer terminal patch while debugging.
 - The installer preserves the upstream resource layout and replaces mac-only helper binaries with Linux equivalents where needed.
 - Linux editor discovery is patched into the desktop runtime for supported IDEs. It checks CLI commands on PATH, common `.desktop` launchers, and JetBrains Toolbox scripts under `~/.local/share/JetBrains/Toolbox/scripts`.

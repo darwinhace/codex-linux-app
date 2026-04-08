@@ -186,6 +186,7 @@ export async function installDesktop(options, logger) {
   const openTargetsPatch = options.skipOpenTargetsPatch
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchMainProcessBundle(extractedAppDir, logger);
+  const linuxMenuBarPatch = await patchMainProcessLinuxMenuBar(extractedAppDir, logger);
   const terminalPatch = options.skipTerminalPatch
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTerminalBundle(extractedAppDir, logger);
@@ -224,6 +225,7 @@ export async function installDesktop(options, logger) {
   const patchSummary = summarizePatchStates({
     bootstrap: bootstrapPatch,
     openTargets: openTargetsPatch,
+    linuxMenuBar: linuxMenuBarPatch,
     terminalLifecycle: terminalPatch,
     newThreadModel: newThreadModelPatch,
     linuxVisualCompat: linuxVisualCompatPatch
@@ -266,6 +268,7 @@ export async function installDesktop(options, logger) {
     patches: {
       bootstrap: bootstrapPatch,
       openTargets: openTargetsPatch,
+      linuxMenuBar: linuxMenuBarPatch,
       terminalLifecycle: terminalPatch,
       newThreadModel: newThreadModelPatch,
       linuxVisualCompat: linuxVisualCompatPatch
@@ -339,8 +342,12 @@ async function patchBootstrap(extractedAppDir) {
 }
 
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
+const LINUX_MENU_BAR_PATCH_MARKER = 'codexLinuxMenuBarAutoHide';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=e\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
+const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
+const LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT =
+  'process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{}';
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
@@ -408,6 +415,28 @@ async function patchMainProcessBundle(extractedAppDir, logger) {
   };
 }
 
+async function patchMainProcessLinuxMenuBar(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for Linux menu-bar patch`);
+  const result = applyLinuxMenuBarPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux native menu-bar auto-hide behavior into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
 export function applyLinuxOpenTargetsPatch(bundleSource, options = {}) {
   if (options.skip) {
     return {
@@ -434,6 +463,32 @@ export function injectLinuxOpenTargetsPatch(bundleSource, options = {}) {
 
   const replacement = buildLinuxOpenTargetsBlock(match.groups);
   return bundleSource.replace(OPEN_TARGETS_BLOCK_PATTERN, replacement);
+}
+
+export function applyLinuxMenuBarPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxMenuBarPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxMenuBarPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_MENU_BAR_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  return replaceSnippetOrThrow(
+    bundleSource,
+    LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT,
+    LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT,
+    buildLinuxMenuBarPatchErrorMessage(bundleSource, options.sourceName)
+  );
 }
 
 function buildLinuxOpenTargetsBlock({
@@ -912,6 +967,31 @@ function analyzeOpenTargetsBundle(bundleSource) {
       !detected.targetRegistryDeclaration && 'target registry declaration',
       !detected.platformFlatten && 'platform target flatten function',
       !detected.editorTargetIdSet && 'editor target id set'
+    ].filter(Boolean)
+  };
+}
+
+function buildLinuxMenuBarPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    'Could not patch Linux native menu-bar auto-hide behavior in the Electron main bundle.',
+    sourceName,
+    analyzeLinuxMenuBarBundle(bundleSource)
+  );
+}
+
+function analyzeLinuxMenuBarBundle(bundleSource) {
+  const detected = {
+    browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
+    autoHideMenuBarOption: bundleSource.includes('autoHideMenuBar:!0'),
+    win32AutoHideMenuBarTernary: bundleSource.includes(LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.browserWindowConstructor && 'BrowserWindow constructor',
+      !detected.autoHideMenuBarOption && 'autoHideMenuBar option',
+      !detected.win32AutoHideMenuBarTernary && 'win32-only autoHideMenuBar ternary'
     ].filter(Boolean)
   };
 }
