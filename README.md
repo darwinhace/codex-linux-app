@@ -122,6 +122,12 @@ Install without the Linux open-in-targets patch:
 ./install-desktop --skip-open-targets-patch
 ```
 
+Install without the Linux todo progress patch:
+
+```bash
+./install-desktop --skip-todo-progress-patch
+```
+
 If you ran `npm link`, the same commands work as:
 
 ```bash
@@ -132,6 +138,7 @@ install-desktop --beta --version 26.401.11631
 install-desktop --diagnostic-manifest
 install-desktop --skip-terminal-patch
 install-desktop --skip-open-targets-patch
+install-desktop --skip-todo-progress-patch
 release-info
 ```
 
@@ -186,6 +193,7 @@ Use this section as the single source of truth for env vars used by this project
 | `CODEX_DESKTOP_OZONE_PLATFORM_HINT` | Launcher | unset | Passes `--ozone-platform=x11`, `wayland`, or `auto`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR` | Patched app main bundle (Linux) | unset | Keeps native menu bar always visible when set to `1` (default behavior auto-hides it). |
 | `CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT` | Patched app renderer bundle (Linux) | unset | Disables Linux visual-compat patch when set to `1`. |
+| `CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH` | Patched app renderer bundle (Linux) | unset | Disables Linux todo progress patch when set to `1`. |
 | `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING` | Launcher | unset / `0` | Enables Chromium logging when set to `1`. |
 | `CODEX_DESKTOP_TRACE_TERMINAL_PATCH` | Patched app renderer bundle (Linux) | unset | Enables terminal patch trace warnings when set to `1`. |
 | `CODEX_DESKTOP_INSTALL_MANIFEST` | Launcher (internal) | Auto-set by launcher | Path to install diagnostic manifest. Do not set manually. |

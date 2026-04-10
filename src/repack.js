@@ -28,6 +28,8 @@ import { fetchAppcastReleases, resolveRelease } from './appcast.js';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INSTALL_DIAGNOSTIC_MANIFEST_FILE_NAME = 'install-diagnostic-manifest.json';
+const TODO_PROGRESS_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer todo progress bundle for Linux.';
 
 export function parseArgs(argv) {
   const options = {
@@ -36,6 +38,7 @@ export function parseArgs(argv) {
     help: false,
     skipOpenTargetsPatch: false,
     skipTerminalPatch: false,
+    skipTodoProgressPatch: false,
     diagnosticManifest: false
   };
 
@@ -66,6 +69,10 @@ export function parseArgs(argv) {
       options.skipTerminalPatch = true;
       continue;
     }
+    if (arg === '--skip-todo-progress-patch') {
+      options.skipTodoProgressPatch = true;
+      continue;
+    }
     if (arg === '--diagnostic-manifest') {
       options.diagnosticManifest = true;
       continue;
@@ -87,6 +94,7 @@ export function renderHelp() {
     'Options:',
     '  --skip-open-targets-patch   leave the Linux editor target patch disabled',
     '  --skip-terminal-patch       leave the Linux terminal lifecycle patch disabled',
+    '  --skip-todo-progress-patch  leave the Linux todo progress patch disabled',
     '  --diagnostic-manifest       print the written diagnostic manifest to the install log'
   ].join('\n');
 }
@@ -191,12 +199,18 @@ export async function installDesktop(options, logger) {
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTerminalBundle(extractedAppDir, logger);
   const newThreadModelPatch = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+  const todoProgressPatch = options.skipTodoProgressPatch
+    ? buildSkippedPatchResult('cli-option-disabled')
+    : await patchRendererTodoProgressBundle(extractedAppDir, logger);
   const linuxVisualCompatPatch = await patchRendererLinuxVisualCompat(extractedAppDir, logger);
   if (options.skipOpenTargetsPatch) {
     logger.warn('Skipping Linux open-in-targets patch because --skip-open-targets-patch was set');
   }
   if (options.skipTerminalPatch) {
     logger.warn('Skipping Linux terminal lifecycle patch because --skip-terminal-patch was set');
+  }
+  if (options.skipTodoProgressPatch) {
+    logger.warn('Skipping Linux todo progress patch because --skip-todo-progress-patch was set');
   }
   await replaceNativeModules({
     cacheHome: paths.cacheHome,
@@ -228,6 +242,7 @@ export async function installDesktop(options, logger) {
     linuxMenuBar: linuxMenuBarPatch,
     terminalLifecycle: terminalPatch,
     newThreadModel: newThreadModelPatch,
+    todoProgress: todoProgressPatch,
     linuxVisualCompat: linuxVisualCompatPatch
   });
   const iconPath = await installChannelRuntime({
@@ -271,6 +286,7 @@ export async function installDesktop(options, logger) {
       linuxMenuBar: linuxMenuBarPatch,
       terminalLifecycle: terminalPatch,
       newThreadModel: newThreadModelPatch,
+      todoProgress: todoProgressPatch,
       linuxVisualCompat: linuxVisualCompatPatch
     }
   });
@@ -392,6 +408,7 @@ const NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_406 =
   'return{input:o,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:M,model:null,serviceTier:j.serviceTier,reasoningEffort:null,collaborationMode:T,config:s}';
 const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_406 =
   'let c=T==null?null:{...T,settings:{...T.settings,model:T.settings?.model??s.model??null,reasoning_effort:T.settings?.reasoning_effort??s.model_reasoning_effort??null}};return{input:o,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:M,model:null,serviceTier:j.serviceTier,reasoningEffort:null,collaborationMode:c,config:s}';
+const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
 const LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT =
   'if(e){if(T.opaqueWindows&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
@@ -752,6 +769,151 @@ export function injectLinuxNewThreadModelPatch(bundleSource, options = {}) {
     NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_CURRENT,
     errorMessage
   );
+  return updated;
+}
+
+export async function patchRendererTodoProgressBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const analysis = analyzeTodoProgressBundle(original);
+    const isCandidate =
+      analysis.detected.todoListCase &&
+      analysis.detected.expandedTodoSummary &&
+      analysis.detected.compactTodoSummary;
+
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer todo progress bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxTodoProgressPatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(TODO_PROGRESS_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux todo progress patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(`Patched Linux todo progress rendering into renderer bundle ${assetName}`);
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux todo progress patch because no todo-progress renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux todo progress patch because renderer candidates were incompatible with the expected cache-shape anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxTodoProgressPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxTodoProgressPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxTodoProgressPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_TODO_PROGRESS_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  const errorMessage = buildTodoProgressPatchErrorMessage(bundleSource, options.sourceName);
+  const componentNames = resolveTodoComponentNames(bundleSource);
+  if (!componentNames.expanded || !componentNames.compact) {
+    throw new Error(errorMessage);
+  }
+
+  let includeMarker = true;
+  let updated = bundleSource;
+  updated = patchTodoPlanComponentCacheSignatures({
+    source: updated,
+    anchorMarker: 'localConversationPage.planItemsCompleted',
+    errorMessage,
+    includeMarker: () => {
+      const nextValue = includeMarker;
+      includeMarker = false;
+      return nextValue;
+    }
+  });
+  updated = patchTodoPlanComponentCacheSignatures({
+    source: updated,
+    anchorMarker: 'codex.plan.tasksCompletedSummary',
+    errorMessage,
+    includeMarker: () => {
+      const nextValue = includeMarker;
+      includeMarker = false;
+      return nextValue;
+    }
+  });
+  updated = patchTodoCompactItemRenderCache({
+    source: updated,
+    errorMessage,
+    compactComponentName: componentNames.compact,
+    includeMarker: () => {
+      const nextValue = includeMarker;
+      includeMarker = false;
+      return nextValue;
+    }
+  });
+  updated = patchTodoPortalRenderCache({
+    source: updated,
+    errorMessage,
+    expandedComponentName: componentNames.expanded,
+    includeMarker: () => {
+      const nextValue = includeMarker;
+      includeMarker = false;
+      return nextValue;
+    }
+  });
   return updated;
 }
 
@@ -1145,6 +1307,254 @@ function analyzeNewThreadModelBundle(bundleSource) {
       !detected.collaborationModeSubmit && 'fresh-thread collaborationMode payload'
     ].filter(Boolean)
   };
+}
+
+function patchTodoPlanComponentCacheSignatures({
+  source,
+  anchorMarker,
+  errorMessage,
+  includeMarker
+}) {
+  return replaceFunctionBlockContainingAnchorOrThrow(source, anchorMarker, (block) => {
+    const itemVarMatch = block.match(
+      /\{item:(?<itemVar>[A-Za-z_$][\w$]*)(?:,isComplete:[A-Za-z_$][\w$]*)?\}=e/
+    );
+    const itemVar = itemVarMatch?.groups?.itemVar;
+    if (!itemVar) {
+      throw new Error(errorMessage);
+    }
+
+    const todoPlanKey = buildTodoPlanCacheKeyExpression(`${itemVar}.plan`, {
+      includeMarker: includeMarker()
+    });
+    const itemVarPattern = escapeRegExp(itemVar);
+    let replacedCount = 0;
+    let updated = block;
+    updated = updated.replace(new RegExp(`t\\[(\\d+)\\]===${itemVarPattern}\\.plan`, 'g'), (_, idx) => {
+      replacedCount += 1;
+      return `t[${idx}]===${todoPlanKey}`;
+    });
+    updated = updated.replace(new RegExp(`t\\[(\\d+)\\]!==${itemVarPattern}\\.plan`, 'g'), (_, idx) => {
+      replacedCount += 1;
+      return `t[${idx}]!==${todoPlanKey}`;
+    });
+    updated = updated.replace(new RegExp(`t\\[(\\d+)\\]=${itemVarPattern}\\.plan`, 'g'), (_, idx) => {
+      replacedCount += 1;
+      return `t[${idx}]=${todoPlanKey}`;
+    });
+    if (replacedCount === 0) {
+      throw new Error(errorMessage);
+    }
+
+    return updated;
+  }, errorMessage);
+}
+
+function patchTodoCompactItemRenderCache({
+  source,
+  errorMessage,
+  includeMarker,
+  compactComponentName
+}) {
+  const compactComponentPattern = escapeRegExp(compactComponentName);
+  return replaceFunctionBlockContainingAnchorOrThrow(
+    source,
+    `(0,$.jsx)(${compactComponentName},{item:`,
+    (block) => {
+      const pattern = new RegExp(
+        `t\\[(?<depIdx>\\d+)\\]===(?<itemVar>[A-Za-z_$][\\w$]*)\\?(?<outVar>[A-Za-z_$][\\w$]*)=t\\[(?<cacheIdx>\\d+)\\]:\\(\\k<outVar>=\\(0,\\$\\.jsx\\)\\(${compactComponentPattern},\\{item:\\k<itemVar>\\}\\),t\\[\\k<depIdx>\\]=\\k<itemVar>,t\\[\\k<cacheIdx>\\]=\\k<outVar>\\),(?<resultVar>[A-Za-z_$][\\w$]*)=\\k<outVar>`
+      );
+      const match = block.match(pattern);
+      if (!match?.groups) {
+        throw new Error(errorMessage);
+      }
+      const { depIdx, itemVar, outVar, cacheIdx, resultVar } = match.groups;
+      const todoItemKey = buildTodoItemCacheKeyExpression(itemVar, {
+        includeMarker: includeMarker()
+      });
+      return block.replace(
+        pattern,
+        `t[${depIdx}]===${todoItemKey}?${outVar}=t[${cacheIdx}]:(${outVar}=(0,$.jsx)(${compactComponentName},{item:${itemVar}}),t[${depIdx}]=${todoItemKey},t[${cacheIdx}]=${outVar}),${resultVar}=${outVar}`
+      );
+    },
+    errorMessage
+  );
+}
+
+function patchTodoPortalRenderCache({
+  source,
+  errorMessage,
+  includeMarker,
+  expandedComponentName
+}) {
+  const patchBlock = (block) => {
+    if (!block.includes(`(0,$.jsx)(${expandedComponentName},{item:`)) {
+      throw new Error(errorMessage);
+    }
+
+    const todoVarMatch = block.match(/todoListItem:(?<todoVar>[A-Za-z_$][\w$]*)/);
+    const todoVar = todoVarMatch?.groups?.todoVar;
+    if (!todoVar) {
+      throw new Error(errorMessage);
+    }
+    const todoVarPattern = escapeRegExp(todoVar);
+    const todoItemKey = buildNullableTodoItemCacheKeyExpression(todoVar, {
+      includeMarker: includeMarker()
+    });
+    let replacedCompare = false;
+    let replacedAssign = false;
+    let updated = block;
+    updated = updated.replace(
+      new RegExp(`t\\[(\\d+)\\]!==${todoVarPattern}`),
+      (_, idx) => {
+        replacedCompare = true;
+        return `t[${idx}]!==${todoItemKey}`;
+      }
+    );
+    updated = updated.replace(
+      new RegExp(`t\\[(\\d+)\\]=${todoVarPattern}`),
+      (_, idx) => {
+        replacedAssign = true;
+        return `t[${idx}]=${todoItemKey}`;
+      }
+    );
+    if (!replacedCompare || !replacedAssign) {
+      throw new Error(errorMessage);
+    }
+    return updated;
+  };
+
+  if (source.includes('function lBe(') && source.includes('var uBe=')) {
+    return replaceFunctionBlockOrThrow(source, 'function lBe(', 'var uBe=', patchBlock, errorMessage);
+  }
+
+  return replaceFunctionBlockContainingAnchorOrThrow(
+    source,
+    'todoListItem:',
+    patchBlock,
+    errorMessage
+  );
+}
+
+function buildTodoPlanCacheKeyExpression(planExpr, options = {}) {
+  const marker = options.includeMarker ? `/* ${LINUX_TODO_PROGRESS_PATCH_MARKER} */` : '';
+  return `${marker}(typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH===\`1\`?${planExpr}:${planExpr}.map((e,t)=>String(t)+\`:\`+e.status+\`:\`+e.step).join(\`|\`))`;
+}
+
+function buildTodoItemCacheKeyExpression(itemExpr, options = {}) {
+  return `(typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH===\`1\`?${itemExpr}:${buildTodoPlanCacheKeyExpression(`${itemExpr}.plan`, options)})`;
+}
+
+function buildNullableTodoItemCacheKeyExpression(itemExpr, options = {}) {
+  return `(${itemExpr}==null?${itemExpr}:${buildTodoItemCacheKeyExpression(itemExpr, options)})`;
+}
+
+function replaceFunctionBlockOrThrow(source, startMarker, endMarker, replacementFn, errorMessage) {
+  const start = source.indexOf(startMarker);
+  const end = start === -1 ? -1 : source.indexOf(endMarker, start + startMarker.length);
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error(errorMessage);
+  }
+
+  const before = source.slice(0, start);
+  const block = source.slice(start, end);
+  const after = source.slice(end);
+  const updated = replacementFn(block);
+  if (updated === block) {
+    throw new Error(errorMessage);
+  }
+
+  return `${before}${updated}${after}`;
+}
+
+function replaceFunctionBlockContainingAnchorOrThrow(source, anchorMarker, replacementFn, errorMessage) {
+  const anchorIndex = source.indexOf(anchorMarker);
+  if (anchorIndex === -1) {
+    throw new Error(errorMessage);
+  }
+
+  const start = source.lastIndexOf('function ', anchorIndex);
+  const end = source.indexOf('function ', anchorIndex + anchorMarker.length);
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error(errorMessage);
+  }
+
+  const before = source.slice(0, start);
+  const block = source.slice(start, end);
+  const after = source.slice(end);
+  const updated = replacementFn(block);
+  if (updated === block) {
+    throw new Error(errorMessage);
+  }
+
+  return `${before}${updated}${after}`;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildTodoProgressPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    TODO_PROGRESS_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeTodoProgressBundle(bundleSource)
+  );
+}
+
+function analyzeTodoProgressBundle(bundleSource) {
+  const componentNames = resolveTodoComponentNames(bundleSource);
+  const compactRenderCachePattern = componentNames.compact
+    ? new RegExp(`\\(0,\\$\\.jsx\\)\\(${escapeRegExp(componentNames.compact)},\\{item:[A-Za-z_$][\\w$]*\\}\\)`)
+    : null;
+  const portalRenderCachePattern = componentNames.expanded
+    ? new RegExp(`\\(0,\\$\\.jsx\\)\\(${escapeRegExp(componentNames.expanded)},\\{item:[A-Za-z_$][\\w$]*\\}\\)`)
+    : null;
+
+  const detected = {
+    todoListCase: bundleSource.includes('case`todo-list`'),
+    expandedTodoComponent: componentNames.expanded != null,
+    expandedTodoSummary: bundleSource.includes('localConversationPage.planItemsCompleted'),
+    compactTodoComponent: componentNames.compact != null,
+    compactTodoSummary: bundleSource.includes('codex.plan.tasksCompletedSummary'),
+    compactTodoRenderCache: compactRenderCachePattern?.test(bundleSource) ?? false,
+    portalTodoRenderCache: portalRenderCachePattern?.test(bundleSource) ?? false
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.todoListCase && 'todo-list conversation item case',
+      !detected.expandedTodoComponent && 'expanded todo component',
+      !detected.expandedTodoSummary && 'expanded todo summary text',
+      !detected.compactTodoComponent && 'compact todo component',
+      !detected.compactTodoSummary && 'compact todo summary text',
+      !detected.compactTodoRenderCache && 'compact todo render cache branch',
+      !detected.portalTodoRenderCache && 'portal todo render cache branch'
+    ].filter(Boolean)
+  };
+}
+
+function resolveTodoComponentNames(bundleSource) {
+  return {
+    expanded: findFunctionNameContainingAnchor(bundleSource, 'localConversationPage.planItemsCompleted'),
+    compact: findFunctionNameContainingAnchor(bundleSource, 'codex.plan.tasksCompletedSummary')
+  };
+}
+
+function findFunctionNameContainingAnchor(bundleSource, anchorMarker) {
+  const anchorIndex = bundleSource.indexOf(anchorMarker);
+  if (anchorIndex === -1) {
+    return null;
+  }
+  const functionStart = bundleSource.lastIndexOf('function ', anchorIndex);
+  if (functionStart === -1) {
+    return null;
+  }
+  const headerMatch = bundleSource
+    .slice(functionStart, anchorIndex)
+    .match(/^function (?<functionName>[A-Za-z_$][\w$]*)\(/);
+  return headerMatch?.groups?.functionName ?? null;
 }
 
 function buildPatchErrorMessage(baseMessage, sourceName, analysis) {

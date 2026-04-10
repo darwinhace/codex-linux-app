@@ -8,6 +8,7 @@ import {
   applyLinuxMenuBarPatch,
   applyLinuxNewThreadModelPatch,
   applyLinuxTerminalLifecyclePatch,
+  applyLinuxTodoProgressPatch,
   applyLinuxVisualCompatCssPatch,
   applyLinuxVisualCompatJsPatch,
   buildWrapperScript,
@@ -17,8 +18,10 @@ import {
   injectLinuxMenuBarPatch,
   injectLinuxNewThreadModelPatch,
   injectLinuxTerminalLifecyclePatch,
+  injectLinuxTodoProgressPatch,
   injectLinuxVisualCompatCssPatch,
   injectLinuxVisualCompatJsPatch,
+  patchRendererTodoProgressBundle,
   parseArgs,
   renderHelp,
   resolveFirstExecutablePath
@@ -55,6 +58,17 @@ const LINUX_VISUAL_COMPAT_JS_CURRENT =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 const LINUX_VISUAL_COMPAT_JS_26_406 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!xY()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
+const TODO_PROGRESS_BUNDLE_CURRENT =
+  'case`todo-list`:return(0,$.jsx)(H8,{item:e});function H8(e){let t=(0,Q.c)(46),{item:n,isComplete:r}=e,i=r===void 0?!1:r,a=Br(),[o,s]=(0,Z.useState)(!0),{elementHeightPx:c,elementRef:l}=c$(),u=(0,Z.useRef)(null),d;t[0]===n.plan?d=t[1]:(d=(0,km.default)(n.plan,Aze),t[0]=n.plan,t[1]=d);let f=d,p=n.plan.length,m;t[2]===n.plan?m=t[3]:(m=n.plan.findIndex(kze),t[2]=n.plan,t[3]=m);let h=m,O;t[17]!==h||t[18]!==a||t[19]!==i||t[20]!==n.plan?(O=n.plan.map((e,t)=>(0,$.jsx)(`span`,{className:X(`x`,e.status===`completed`&&`line-through`),children:e.step},t)),t[17]=h,t[18]=a,t[19]=i,t[20]=n.plan,t[21]=O):O=t[21];let P;t[36]!==f||t[37]!==p?(P=(0,$.jsx)(Y,{id:`localConversationPage.planItemsCompleted`,defaultMessage:`{completedItems} out of {totalItems, plural, one {# task completed} other {# tasks completed}}`,values:{completedItems:f,totalItems:p}}),t[36]=f,t[37]=p,t[38]=P):P=t[38];return P}function Oze(e){return!e}function Qze(e){let t=(0,Q.c)(37),{item:n}=e,r=n.plan.length,i=n.plan.reduce(eBe,0),[a,o]=(0,Z.useState)(!1),{elementHeightPx:s,elementRef:c}=c$(),l=Br(),u=i===0?l.formatMessage({id:`codex.plan.todoListCreated`,defaultMessage:`To do list created with {total} tasks`},{total:r}):l.formatMessage({id:`codex.plan.tasksCompletedSummary`,defaultMessage:`{completed} out of {total} tasks completed`},{completed:i,total:r}),w;if(t[19]!==l||t[20]!==n.plan){let e;t[22]===l?e=t[23]:(e=(e,t)=>(0,$.jsx)(`span`,{className:X(`x`,e.status===`completed`&&`line-through`),children:e.step},t),t[22]=l,t[23]=e),w=n.plan.map(e),t[19]=l,t[20]=n.plan,t[21]=w}else w=t[21];return u}function $ze(e){return!e}function iBe(e){let t=(0,Q.c)(24),u;if(e.kind===`entry`){let e=e.entry.item;if(e.type===`todo-list`){let n;t[7]===e?n=t[8]:(n=(0,$.jsx)(Qze,{item:e}),t[7]=e,t[8]=n),u=n}}return u}function aBe(e){return e}function lBe(e){let t=(0,Q.c)(16),{conversationId:n,hasBlockingRequest:r,todoListItem:i,unifiedDiffItem:a,conversationDetailLevel:o,cwd:s}=e,[c,l]=(0,Z.useState)(null),f=i!=null,p=a!=null&&o!==`STEPS_PROSE`;if(!(c&&!r&&(f||p)))return null;let m;t[2]!==f||t[3]!==i?(m=f&&i!=null&&(0,$.jsx)(H8,{item:i}),t[2]=f,t[3]=i,t[4]=m):m=t[4];return m}var uBe=320;';
+const TODO_PROGRESS_BUNDLE_26_406 = TODO_PROGRESS_BUNDLE_CURRENT
+  .replace('{item:n,isComplete:r}=e', '{item:r,isComplete:n}=e')
+  .replace('{item:n}=e', '{item:r}=e')
+  .replaceAll('n.plan', 'r.plan');
+const TODO_PROGRESS_BUNDLE_26_406_RENAMED = TODO_PROGRESS_BUNDLE_26_406
+  .replace('function H8(e){', 'function n5(e){')
+  .replaceAll('(0,$.jsx)(H8,{item:', '(0,$.jsx)(n5,{item:')
+  .replace('function Qze(e){', 'function IAe(e){')
+  .replaceAll('(0,$.jsx)(Qze,{item:', '(0,$.jsx)(IAe,{item:');
 
 test('parseArgs accepts diagnostic and patch skip flags', () => {
   const options = parseArgs([
@@ -63,6 +77,7 @@ test('parseArgs accepts diagnostic and patch skip flags', () => {
     '26.325.21211',
     '--skip-open-targets-patch',
     '--skip-terminal-patch',
+    '--skip-todo-progress-patch',
     '--diagnostic-manifest'
   ]);
 
@@ -72,6 +87,7 @@ test('parseArgs accepts diagnostic and patch skip flags', () => {
     help: false,
     skipOpenTargetsPatch: true,
     skipTerminalPatch: true,
+    skipTodoProgressPatch: true,
     diagnosticManifest: true
   });
 });
@@ -81,6 +97,7 @@ test('renderHelp lists the diagnostic and patch skip flags', () => {
 
   assert.match(helpText, /--skip-open-targets-patch/);
   assert.match(helpText, /--skip-terminal-patch/);
+  assert.match(helpText, /--skip-todo-progress-patch/);
   assert.match(helpText, /--diagnostic-manifest/);
 });
 
@@ -345,6 +362,115 @@ test('injectLinuxNewThreadModelPatch reports diagnostics when the model bundle i
 });
 
 for (const [label, fixture] of [
+  ['current', TODO_PROGRESS_BUNDLE_CURRENT],
+  ['26.406', TODO_PROGRESS_BUNDLE_26_406],
+  ['26.406-renamed', TODO_PROGRESS_BUNDLE_26_406_RENAMED]
+]) {
+  test(`injectLinuxTodoProgressPatch updates todo render cache keys in the ${label} renderer bundle`, () => {
+    const updated = injectLinuxTodoProgressPatch(fixture);
+
+    assert.match(updated, /codexLinuxTodoProgress/);
+    assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH/);
+    assert.match(updated, /map\(\(e,t\)=>String\(t\)\+`:`\+e\.status\+`:`\+e\.step\)\.join\(`\|`\)/);
+    assert.doesNotMatch(updated, /t\[0\]===n\.plan|t\[0\]===r\.plan/);
+    assert.doesNotMatch(updated, /t\[20\]!==n\.plan|t\[20\]!==r\.plan/);
+  });
+}
+
+test('injectLinuxTodoProgressPatch is idempotent', () => {
+  const once = injectLinuxTodoProgressPatch(TODO_PROGRESS_BUNDLE_CURRENT);
+  const twice = injectLinuxTodoProgressPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxTodoProgressPatch skips patching when disabled', () => {
+  const result = applyLinuxTodoProgressPatch(TODO_PROGRESS_BUNDLE_CURRENT, { skip: true });
+
+  assert.equal(result.updated, TODO_PROGRESS_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxTodoProgressPatch reports diagnostics when todo anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxTodoProgressPatch('const noop = true;', { sourceName: 'index.js' }),
+    {
+      message:
+        /Could not patch the renderer todo progress bundle for Linux\. Source: index\.js\. Missing anchors: todo-list conversation item case, expanded todo component, expanded todo summary text, compact todo component, compact todo summary text, compact todo render cache branch, portal todo render cache branch\. Detected anchors: todoListCase=no, expandedTodoComponent=no, expandedTodoSummary=no, compactTodoComponent=no, compactTodoSummary=no, compactTodoRenderCache=no, portalTodoRenderCache=no\./
+    }
+  );
+});
+
+test('patchRendererTodoProgressBundle skips when todo render-cache anchors are incompatible', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-todo-anchor-mismatch-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const incompatibleBundle = TODO_PROGRESS_BUNDLE_26_406_RENAMED.replace(
+      '(0,$.jsx)(IAe,{item:e})',
+      '(0,$.jsx)(IAe,{item:e,highlight:!0})'
+    );
+    const bundlePath = path.join(assetsDir, 'index.js');
+    await fs.promises.writeFile(bundlePath, incompatibleBundle, 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererTodoProgressBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result.status, 'skipped');
+    assert.deepEqual(result.reason, 'anchor-mismatch');
+    assert.equal(result.sourceName, 'index.js');
+    assert.match(result.details ?? '', /Could not patch the renderer todo progress bundle for Linux/);
+    assert.equal(await fs.promises.readFile(bundlePath, 'utf8'), incompatibleBundle);
+    assert.equal(
+      warnings.some((message) => message.includes('Skipping Linux todo progress patch for index.js')),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererTodoProgressBundle skips when no todo-progress candidate bundle exists', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-todo-no-candidate-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(path.join(assetsDir, 'index.js'), 'const noop = true;', 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererTodoProgressBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    });
+    assert.equal(
+      warnings.some((message) => message.includes('no todo-progress renderer candidate')),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+for (const [label, fixture] of [
   ['current', LINUX_VISUAL_COMPAT_CSS_CURRENT],
   ['26.406', LINUX_VISUAL_COMPAT_CSS_26_406]
 ]) {
@@ -480,6 +606,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         status: 'applied',
         sourceName: 'index.js'
       },
+      todoProgress: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
       linuxVisualCompat: {
         status: 'applied',
         sourceName: 'index.js'
@@ -528,6 +658,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'index.js'
       },
       newThreadModel: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
+      todoProgress: {
         status: 'applied',
         sourceName: 'index.js'
       },
