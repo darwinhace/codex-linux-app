@@ -351,20 +351,27 @@ const LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT =
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
-  /let t=o\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:n,hostId:r\?\?null,cwd:i\?\?null\}\);O\.current=t,k\.current=!1;/;
-const TERMINAL_POST_INIT_SNIPPET = 'p(),M.current=!1;';
+  /let t=(?<sessionVar>[A-Za-z_$][\w$]*)\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:n,hostId:r\?\?null,cwd:i\?\?null\}\);(?<sessionRef>[A-Za-z_$][\w$]*)\.current=t,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1;/;
+const TERMINAL_POST_INIT_SNIPPETS = ['p(),M.current=!1;', 'm(),A.current=!1;'];
 const TERMINAL_ATTACH_PATTERN =
-  /o&&requestAnimationFrame\(\(\)=>\{a\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:o,conversationId:n,hostId:r\?\?null,cwd:i\?\?null,cols:s\.cols,rows:s\.rows\}\)\}\);/;
+  /(?<sessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:\k<sessionVar>,conversationId:n,hostId:r\?\?null,cwd:i\?\?null,cols:s\.cols,rows:s\.rows\}\)\}\);/;
 const TERMINAL_ON_ATTACH_PREFIX_PATTERN =
-  /onAttach:\((?<eventVar>[A-Za-z_$][\w$]*),(?<detailsVar>[A-Za-z_$][\w$]*)\)=>\{a\|\|\(/;
+  /onAttach:\((?<eventVar>[A-Za-z_$][\w$]*),(?<detailsVar>[A-Za-z_$][\w$]*)\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|\(/;
 const TERMINAL_CLEANUP_PATTERN =
-  /return v\.observe\(e\),\(\)=>\{a=!0,c!=null&&\(cancelAnimationFrame\(c\),c=null\),v\.disconnect\(\),g\.dispose\(\),_\.dispose\(\),h\(\),D\.current=null,O\.current=null,k\.current=!1,o\|\|(?<service>[A-Za-z_$][\w$]*)\.close\(t\),s\.dispose\(\),E\.current=null\}/;
+  /return v\.observe\(e\),\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)=!0,c!=null&&\(cancelAnimationFrame\(c\),c=null\),v\.disconnect\(\),g\.dispose\(\),_\.dispose\(\),h\(\),(?<fitRef>[A-Za-z_$][\w$]*)\.current=null,(?<sessionRef>[A-Za-z_$][\w$]*)\.current=null,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1,(?<sessionVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.close\(t\),s\.dispose\(\),(?<terminalRef>[A-Za-z_$][\w$]*)\.current=null\}/;
 const INVALID_TERMINAL_HELPER_ESCAPE_PATTERN = '${"${"}';
 const LINUX_NEW_THREAD_MODEL_PATCH_MARKER = 'codexLinuxPendingModelSettings';
-const NEW_THREAD_MODEL_CANDIDATE_MARKERS = ['function xf(e){', 'setDefaultModelConfig', 'collaborationMode:w,config:o'];
+const NEW_THREAD_MODEL_CANDIDATE_MARKER_SETS = [
+  ['function xf(e){', 'setDefaultModelConfig', 'collaborationMode:w,config:o'],
+  ['function vm(e=null){', 'set-default-model-config-for-host', 'collaborationMode:T,config:s']
+];
 const NEW_THREAD_MODEL_STATE_SNIPPET_CURRENT = 'let m=p,h=Dn(n,Sf),g=r===`copilot`,_;';
 const NEW_THREAD_MODEL_STATE_REPLACEMENT_CURRENT =
   'let m=p,h=Dn(n,Sf),g=r===`copilot`,codexLinuxIsFreshComposer=n==null,[codexLinuxPendingModelSettings,codexLinuxSetPendingModelSettings]=(0,Z.useState)(null),_;let codexLinuxFreshComposerBaseSettings=g?u:l;(0,Z.useEffect)(()=>{if(!codexLinuxIsFreshComposer){codexLinuxPendingModelSettings!=null&&codexLinuxSetPendingModelSettings(null);return}if(codexLinuxPendingModelSettings==null)return;if(codexLinuxPendingModelSettings.cwd!==s){codexLinuxSetPendingModelSettings(null);return}!codexLinuxFreshComposerBaseSettings.isLoading&&codexLinuxFreshComposerBaseSettings.model===codexLinuxPendingModelSettings.model&&codexLinuxFreshComposerBaseSettings.reasoningEffort===codexLinuxPendingModelSettings.reasoningEffort&&codexLinuxSetPendingModelSettings(null)},[codexLinuxIsFreshComposer,codexLinuxPendingModelSettings,s,codexLinuxFreshComposerBaseSettings.model,codexLinuxFreshComposerBaseSettings.reasoningEffort,codexLinuxFreshComposerBaseSettings.isLoading]);';
+const NEW_THREAD_MODEL_STATE_SNIPPET_26_406 =
+  'f=d!=null&&d.trim().length>0?d:null,p=Vr(e,e=>e?.latestCollaborationMode?.settings?.reasoning_effort??null),m=a?.authMethod===`copilot`,h=(0,Z.useCallback)(async(t,n)=>{e==null||r==null||await rm(r,e,t,n)},[e,r]),g=u?{model:f??c.model,reasoningEffort:p,profile:c.profile,isLoading:!1}:m?l:c,{setData:_}=Mo(`copilot-default-model`),v=Tee({hostId:i,cwd:s});';
+const NEW_THREAD_MODEL_STATE_REPLACEMENT_26_406 =
+  'f=d!=null&&d.trim().length>0?d:null,p=Vr(e,e=>e?.latestCollaborationMode?.settings?.reasoning_effort??null),m=a?.authMethod===`copilot`,codexLinuxIsFreshComposer=e==null,[codexLinuxPendingModelSettings,codexLinuxSetPendingModelSettings]=(0,Z.useState)(null),h=(0,Z.useCallback)(async(t,n)=>{e==null||r==null||await rm(r,e,t,n)},[e,r]),g=u?{model:f??c.model,reasoningEffort:p,profile:c.profile,isLoading:!1}:codexLinuxIsFreshComposer&&codexLinuxPendingModelSettings!=null?{model:codexLinuxPendingModelSettings.model,reasoningEffort:codexLinuxPendingModelSettings.reasoningEffort,profile:c.profile,isLoading:!1}:m?l:c,{setData:_}=Mo(`copilot-default-model`),v=Tee({hostId:i,cwd:s});(0,Z.useEffect)(()=>{if(!codexLinuxIsFreshComposer){codexLinuxPendingModelSettings!=null&&codexLinuxSetPendingModelSettings(null);return}if(codexLinuxPendingModelSettings==null)return;if(codexLinuxPendingModelSettings.cwd!==s){codexLinuxSetPendingModelSettings(null);return}!c.isLoading&&c.model===codexLinuxPendingModelSettings.model&&c.reasoningEffort===codexLinuxPendingModelSettings.reasoningEffort&&codexLinuxSetPendingModelSettings(null)},[codexLinuxIsFreshComposer,codexLinuxPendingModelSettings,s,c.isLoading,c.model,c.reasoningEffort]);';
 const NEW_THREAD_MODEL_SETTINGS_SNIPPET_CURRENT =
   '?(y=d?{model:m??l.model,reasoningEffort:h,isLoading:!1}:g?u:l,';
 const NEW_THREAD_MODEL_SETTINGS_REPLACEMENT_CURRENT =
@@ -373,19 +380,30 @@ const NEW_THREAD_MODEL_SETTER_SNIPPET_CURRENT =
   '?(D=async(e,t)=>{if(await v(e,t),g){C(e);return}try{await i.setDefaultModelConfig(e,t)}catch(e){let t=e;O.error(`Failed to set default model and reasoning effort`,{safe:{},sensitive:{error:t}});return}await E()},';
 const NEW_THREAD_MODEL_SETTER_REPLACEMENT_CURRENT =
   '?(D=async(e,t)=>{codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings({model:e,reasoningEffort:t,cwd:s});if(await v(e,t),g){C(e);return}try{await i.setDefaultModelConfig(e,t)}catch(e){let t=e;codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings(null);O.error(`Failed to set default model and reasoning effort`,{safe:{},sensitive:{error:t}});return}await E()},';
+const NEW_THREAD_MODEL_SETTER_SNIPPET_26_406 =
+  'return{setModelAndReasoningEffort:(0,Z.useCallback)(async(e,n)=>{try{if(await h(e,n),m){_(e);return}if(k.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:n,profile:c.profile}}),r==null)return;await Qc(`set-default-model-config-for-host`,{hostId:i,model:e,reasoningEffort:n,profile:c.profile}),await v()}catch(e){k.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:e}});let n=t.get(xl),r=Eee(o,e);um(e)?n.danger(r,{id:`composer.modelSettings.updateError`,description:(0,Z.createElement)(`div`,{className:`mt-4`},(0,Z.createElement)(Ro))}):n.danger(r,{id:`composer.modelSettings.updateError`})}},[o,m,_,h,c.profile,v,r,t]),modelSettings:g}';
+const NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_406 =
+  'return{setModelAndReasoningEffort:(0,Z.useCallback)(async(e,n)=>{try{codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings({model:e,reasoningEffort:n,cwd:s});if(await h(e,n),m){_(e);return}if(k.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:n,profile:c.profile}}),r==null)return;await Qc(`set-default-model-config-for-host`,{hostId:i,model:e,reasoningEffort:n,profile:c.profile}),await v()}catch(e){codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings(null);k.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:e}});let n=t.get(xl),r=Eee(o,e);um(e)?n.danger(r,{id:`composer.modelSettings.updateError`,description:(0,Z.createElement)(`div`,{className:`mt-4`},(0,Z.createElement)(Ro))}):n.danger(r,{id:`composer.modelSettings.updateError`})}},[o,m,_,h,c.profile,v,r,t]),modelSettings:g}';
 const NEW_THREAD_MODEL_SUBMIT_SNIPPET_CURRENT =
   'return{input:a,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:j,model:null,serviceTier:A.serviceTier,reasoningEffort:null,collaborationMode:w,config:o}';
 const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_CURRENT =
   'let s=w==null?null:{...w,settings:{...w.settings,model:w.settings?.model??o.model??null,reasoning_effort:w.settings?.reasoning_effort??o.model_reasoning_effort??null}};return{input:a,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:j,model:null,serviceTier:A.serviceTier,reasoningEffort:null,collaborationMode:s,config:o}';
+const NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_406 =
+  'return{input:o,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:M,model:null,serviceTier:j.serviceTier,reasoningEffort:null,collaborationMode:T,config:s}';
+const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_406 =
+  'let c=T==null?null:{...T,settings:{...T.settings,model:T.settings?.model??s.model??null,reasoning_effort:T.settings?.reasoning_effort??s.model_reasoning_effort??null}};return{input:o,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:M,model:null,serviceTier:j.serviceTier,reasoningEffort:null,collaborationMode:c,config:s}';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
 const LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT =
   'if(e){if(T.opaqueWindows&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
+const LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_26_406 =
+  'if(e){if(T.opaqueWindows&&!xY()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
 const LINUX_VISUAL_COMPAT_JS_REPLACEMENT_CURRENT =
   'if(e){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===`linux`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===`1`}catch{}let r=t&&!n;e.classList.toggle(`codex-linux-visual-compat`,r);if((T.opaqueWindows||r)&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
-const LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKERS = [
-  '[data-codex-window-type=electron]',
-  '.window-fx-sidebar-surface',
-  '.sidebar-resize-handle-line'
+const LINUX_VISUAL_COMPAT_JS_REPLACEMENT_26_406 =
+  'if(e){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===`linux`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===`1`}catch{}let r=t&&!n;e.classList.toggle(`codex-linux-visual-compat`,r);if((T.opaqueWindows||r)&&!xY()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
+const LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKER_SETS = [
+  ['[data-codex-window-type=electron]', '.window-fx-sidebar-surface', '.sidebar-resize-handle-line'],
+  ['[data-codex-window-type=electron]', '.app-header-tint', 'electron-opaque']
 ];
 const LINUX_VISUAL_COMPAT_JS_CANDIDATE_MARKERS = [
   '[data-codex-window-type="electron"]',
@@ -571,35 +589,37 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
   updated = replaceRegexOrThrow(
     updated,
     TERMINAL_SESSION_CREATE_PATTERN,
-    ({ service }) =>
-      `${buildLinuxTerminalLifecycleHelpers()}let t=o??${service}.create({conversationId:n,hostId:r??null,cwd:i??null}),codexLinuxTerminalMountKey=\`${'${r??`local`}'}:${'${t}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);codexLinuxTraceTerminalCreate(codexLinuxTerminalMountKey);O.current=t,k.current=!1;`,
+    ({ sessionVar, service, sessionRef, attachStateRef }) =>
+      `${buildLinuxTerminalLifecycleHelpers()}let t=${sessionVar}??${service}.create({conversationId:n,hostId:r??null,cwd:i??null}),codexLinuxTerminalMountKey=\`${'${r??`local`}'}:${'${t}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);codexLinuxTraceTerminalCreate(codexLinuxTerminalMountKey);${sessionRef}.current=t,${attachStateRef}.current=!1;`,
     buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
-  updated = replaceSnippetOrThrow(
+  updated = replaceFirstMatchingSnippetOrThrow(
     updated,
-    TERMINAL_POST_INIT_SNIPPET,
-    'p(),M.current=!1;let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{};',
+    TERMINAL_POST_INIT_SNIPPETS.map((target) => ({
+      target,
+      replacement: `${target}let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{};`
+    })),
     buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
   updated = replaceRegexOrThrow(
     updated,
     TERMINAL_ATTACH_PATTERN,
-    ({ service }) =>
-      `o&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,a||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows}))}));`,
+    ({ sessionVar, guardVar, service }) =>
+      `${sessionVar}&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,${guardVar}||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.attach({sessionId:${sessionVar},conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows}))}));`,
     buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
   updated = replaceRegexOrThrow(
     updated,
     TERMINAL_ON_ATTACH_PREFIX_PATTERN,
-    ({ eventVar, detailsVar }) =>
-      `onAttach:(${eventVar},${detailsVar})=>{a||(codexLinuxTraceTerminalAttached(codexLinuxTerminalMountKey),`,
+    ({ eventVar, detailsVar, guardVar }) =>
+      `onAttach:(${eventVar},${detailsVar})=>{${guardVar}||(codexLinuxTraceTerminalAttached(codexLinuxTerminalMountKey),`,
     buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
   updated = replaceRegexOrThrow(
     updated,
     TERMINAL_CLEANUP_PATTERN,
-    ({ service }) =>
-      `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(a)return;a=!0,c!=null&&(cancelAnimationFrame(c),c=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,codexLinuxPreserveSession||o||${service}.close(t),s.dispose(),E.current=null,codexLinuxTraceTerminalCleanup(codexLinuxTerminalMountKey),codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),v.observe(e),codexLinuxDisposeCurrentMount`,
+    ({ guardVar, fitRef, sessionRef, attachStateRef, sessionVar, service, terminalRef }) =>
+      `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(${guardVar})return;${guardVar}=!0,c!=null&&(cancelAnimationFrame(c),c=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),v.disconnect(),g.dispose(),_.dispose(),h(),${fitRef}.current=null,${sessionRef}.current=null,${attachStateRef}.current=!1,codexLinuxPreserveSession||${sessionVar}||${service}.close(t),s.dispose(),${terminalRef}.current=null,codexLinuxTraceTerminalCleanup(codexLinuxTerminalMountKey),codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),v.observe(e),codexLinuxDisposeCurrentMount`,
     buildTerminalPatchErrorMessage(bundleSource, options.sourceName)
   );
   assertValidLinuxTerminalLifecyclePatchOutput(updated, options.sourceName);
@@ -631,7 +651,9 @@ async function patchRendererNewThreadModelBundle(extractedAppDir, logger) {
   for (const assetName of jsAssets) {
     const assetPath = path.join(assetsDir, assetName);
     const original = await fs.promises.readFile(assetPath, 'utf8');
-    const isCandidate = NEW_THREAD_MODEL_CANDIDATE_MARKERS.every((marker) => original.includes(marker));
+    const isCandidate = NEW_THREAD_MODEL_CANDIDATE_MARKER_SETS.some((markerSet) =>
+      markerSet.every((marker) => original.includes(marker))
+    );
 
     if (!isCandidate) {
       continue;
@@ -682,7 +704,30 @@ export function injectLinuxNewThreadModelPatch(bundleSource, options = {}) {
   }
 
   const errorMessage = buildNewThreadModelPatchErrorMessage(bundleSource, options.sourceName);
+  const uses26_406Shape = bundleSource.includes(NEW_THREAD_MODEL_STATE_SNIPPET_26_406);
   let updated = bundleSource;
+  if (uses26_406Shape) {
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_406,
+      NEW_THREAD_MODEL_STATE_REPLACEMENT_26_406,
+      errorMessage
+    );
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_406,
+      NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_406,
+      errorMessage
+    );
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_406,
+      NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_406,
+      errorMessage
+    );
+    return updated;
+  }
+
   updated = replaceSnippetOrThrow(
     updated,
     NEW_THREAD_MODEL_STATE_SNIPPET_CURRENT,
@@ -725,8 +770,8 @@ async function patchRendererLinuxVisualCompat(extractedAppDir, logger) {
   for (const assetName of cssAssets) {
     const assetPath = path.join(assetsDir, assetName);
     const original = await fs.promises.readFile(assetPath, 'utf8');
-    const isCandidate = LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKERS.every((marker) =>
-      original.includes(marker)
+    const isCandidate = LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKER_SETS.some((markerSet) =>
+      markerSet.every((marker) => original.includes(marker))
     );
 
     if (!isCandidate) {
@@ -842,10 +887,18 @@ export function injectLinuxVisualCompatJsPatch(bundleSource, options = {}) {
     return bundleSource;
   }
 
-  return replaceSnippetOrThrow(
+  return replaceFirstMatchingSnippetOrThrow(
     bundleSource,
-    LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT,
-    LINUX_VISUAL_COMPAT_JS_REPLACEMENT_CURRENT,
+    [
+      {
+        target: LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT,
+        replacement: LINUX_VISUAL_COMPAT_JS_REPLACEMENT_CURRENT
+      },
+      {
+        target: LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_26_406,
+        replacement: LINUX_VISUAL_COMPAT_JS_REPLACEMENT_26_406
+      }
+    ],
     buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
@@ -888,8 +941,12 @@ function buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, sourceName) {
 function analyzeLinuxVisualCompatCssBundle(bundleSource) {
   const detected = {
     electronWindowTypeSelector: bundleSource.includes('[data-codex-window-type=electron]'),
-    sidebarSurfaceClass: bundleSource.includes('.window-fx-sidebar-surface'),
-    sidebarResizeHandleClass: bundleSource.includes('.sidebar-resize-handle-line')
+    sidebarSurfaceClass: ['.window-fx-sidebar-surface', '.app-header-tint'].some((marker) =>
+      bundleSource.includes(marker)
+    ),
+    sidebarResizeHandleClass: ['.sidebar-resize-handle-line', 'electron-opaque'].some((marker) =>
+      bundleSource.includes(marker)
+    )
   };
 
   return {
@@ -907,7 +964,10 @@ function analyzeLinuxVisualCompatJsBundle(bundleSource) {
     electronWindowSelector: bundleSource.includes('[data-codex-window-type="electron"]'),
     electronOpaqueClass: bundleSource.includes('electron-opaque'),
     codexOsDataset: bundleSource.includes('dataset.codexOs'),
-    opaqueEffectBlock: bundleSource.includes(LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT)
+    opaqueEffectBlock: [
+      LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT,
+      LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_26_406
+    ].some((snippet) => bundleSource.includes(snippet))
   };
 
   return {
@@ -926,6 +986,16 @@ function replaceSnippetOrThrow(source, target, replacement, errorMessage) {
     throw new Error(errorMessage);
   }
   return source.replace(target, replacement);
+}
+
+function replaceFirstMatchingSnippetOrThrow(source, variants, errorMessage) {
+  for (const { target, replacement } of variants) {
+    if (!source.includes(target)) {
+      continue;
+    }
+    return source.replace(target, replacement);
+  }
+  throw new Error(errorMessage);
 }
 
 function replaceRegexOrThrow(source, pattern, replacement, errorMessage) {
@@ -1017,7 +1087,7 @@ function analyzeTerminalBundle(bundleSource) {
     terminalComponent: bundleSource.includes(TERMINAL_COMPONENT_FILE_MARKER),
     initLogHandler: bundleSource.includes('onInitLog'),
     sessionCreate: TERMINAL_SESSION_CREATE_PATTERN.test(bundleSource),
-    postInit: bundleSource.includes(TERMINAL_POST_INIT_SNIPPET),
+    postInit: TERMINAL_POST_INIT_SNIPPETS.some((snippet) => bundleSource.includes(snippet)),
     attach: TERMINAL_ATTACH_PATTERN.test(bundleSource),
     onAttach: TERMINAL_ON_ATTACH_PREFIX_PATTERN.test(bundleSource),
     cleanup: TERMINAL_CLEANUP_PATTERN.test(bundleSource)
@@ -1039,14 +1109,29 @@ function analyzeTerminalBundle(bundleSource) {
 
 function analyzeNewThreadModelBundle(bundleSource) {
   const detected = {
-    selectorHook: bundleSource.includes('function xf(e){'),
-    selectorStateBlock: bundleSource.includes(NEW_THREAD_MODEL_STATE_SNIPPET_CURRENT),
-    selectorValueBranch: bundleSource.includes(NEW_THREAD_MODEL_SETTINGS_SNIPPET_CURRENT),
-    selectorSetter: bundleSource.includes(NEW_THREAD_MODEL_SETTER_SNIPPET_CURRENT),
-    freshThreadSubmit: bundleSource.includes(
-      'async function N({appServerManager:e=x,context:t,prompt:n,workspaceRoots:r,cwd:i}){'
+    selectorHook: ['function xf(e){', 'function vm(e=null){'].some((marker) =>
+      bundleSource.includes(marker)
     ),
-    collaborationModeSubmit: bundleSource.includes(NEW_THREAD_MODEL_SUBMIT_SNIPPET_CURRENT)
+    selectorStateBlock: [
+      NEW_THREAD_MODEL_STATE_SNIPPET_CURRENT,
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_406
+    ].some((snippet) => bundleSource.includes(snippet)),
+    selectorValueBranch: [
+      NEW_THREAD_MODEL_SETTINGS_SNIPPET_CURRENT,
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_406
+    ].some((snippet) => bundleSource.includes(snippet)),
+    selectorSetter: [
+      NEW_THREAD_MODEL_SETTER_SNIPPET_CURRENT,
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_406
+    ].some((snippet) => bundleSource.includes(snippet)),
+    freshThreadSubmit: [
+      'async function N({appServerManager:e=x,context:t,prompt:n,workspaceRoots:r,cwd:i}){',
+      'async function F({requestClient:e,context:t,prompt:n,workspaceRoots:r,cwd:i,hostId:a}){'
+    ].some((snippet) => bundleSource.includes(snippet)),
+    collaborationModeSubmit: [
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_CURRENT,
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_406
+    ].some((snippet) => bundleSource.includes(snippet))
   };
 
   return {
