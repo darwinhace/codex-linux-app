@@ -28,8 +28,14 @@ import { fetchAppcastReleases, resolveRelease } from './appcast.js';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INSTALL_DIAGNOSTIC_MANIFEST_FILE_NAME = 'install-diagnostic-manifest.json';
+const NEW_THREAD_MODEL_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer new-thread model bundle for Linux.';
 const TODO_PROGRESS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer todo progress bundle for Linux.';
+const LINUX_VISUAL_COMPAT_CSS_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer Linux visual-compat stylesheet.';
+const LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer Linux visual-compat script.';
 
 export function parseArgs(argv) {
   const options = {
@@ -195,6 +201,7 @@ export async function installDesktop(options, logger) {
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchMainProcessBundle(extractedAppDir, logger);
   const linuxMenuBarPatch = await patchMainProcessLinuxMenuBar(extractedAppDir, logger);
+  const linuxCloseCancelPatch = await patchMainProcessLinuxCloseCancel(extractedAppDir, logger);
   const terminalPatch = options.skipTerminalPatch
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTerminalBundle(extractedAppDir, logger);
@@ -240,6 +247,7 @@ export async function installDesktop(options, logger) {
     bootstrap: bootstrapPatch,
     openTargets: openTargetsPatch,
     linuxMenuBar: linuxMenuBarPatch,
+    linuxCloseCancel: linuxCloseCancelPatch,
     terminalLifecycle: terminalPatch,
     newThreadModel: newThreadModelPatch,
     todoProgress: todoProgressPatch,
@@ -284,6 +292,7 @@ export async function installDesktop(options, logger) {
       bootstrap: bootstrapPatch,
       openTargets: openTargetsPatch,
       linuxMenuBar: linuxMenuBarPatch,
+      linuxCloseCancel: linuxCloseCancelPatch,
       terminalLifecycle: terminalPatch,
       newThreadModel: newThreadModelPatch,
       todoProgress: todoProgressPatch,
@@ -359,11 +368,16 @@ async function patchBootstrap(extractedAppDir) {
 
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
 const LINUX_MENU_BAR_PATCH_MARKER = 'codexLinuxMenuBarAutoHide';
+const LINUX_CLOSE_CANCEL_PATCH_MARKER = 'codexLinuxCloseCancel';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=e\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
 const LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT =
   'process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{}';
+const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT =
+  't.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
+const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT =
+  't.app.on(`before-quit`,s=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let c=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${c}?`,message:`Quit ${c}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){s.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=i.showLastActivePrimaryWindow();e?a.refresh():Promise.resolve(o(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus()),a.refresh()})}return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
@@ -377,9 +391,20 @@ const TERMINAL_CLEANUP_PATTERN =
   /return v\.observe\(e\),\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)=!0,c!=null&&\(cancelAnimationFrame\(c\),c=null\),v\.disconnect\(\),g\.dispose\(\),_\.dispose\(\),h\(\),(?<fitRef>[A-Za-z_$][\w$]*)\.current=null,(?<sessionRef>[A-Za-z_$][\w$]*)\.current=null,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1,(?<sessionVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.close\(t\),s\.dispose\(\),(?<terminalRef>[A-Za-z_$][\w$]*)\.current=null\}/;
 const INVALID_TERMINAL_HELPER_ESCAPE_PATTERN = '${"${"}';
 const LINUX_NEW_THREAD_MODEL_PATCH_MARKER = 'codexLinuxPendingModelSettings';
-const NEW_THREAD_MODEL_CANDIDATE_MARKER_SETS = [
-  ['function xf(e){', 'setDefaultModelConfig', 'collaborationMode:w,config:o'],
-  ['function vm(e=null){', 'set-default-model-config-for-host', 'collaborationMode:T,config:s']
+const NEW_THREAD_MODEL_STATE_MARKERS = [
+  'latestCollaborationMode?.settings?.model',
+  'latestCollaborationMode?.settings?.reasoning_effort'
+];
+const NEW_THREAD_MODEL_CONFIG_MARKERS = [
+  'copilot-default-model',
+  'setDefaultModelConfig',
+  'set-default-model-config-for-host'
+];
+const NEW_THREAD_MODEL_SUBMIT_MARKERS = [
+  'fileAttachments:',
+  'addedFiles:',
+  'collaborationMode:',
+  'config:'
 ];
 const NEW_THREAD_MODEL_STATE_SNIPPET_CURRENT = 'let m=p,h=Dn(n,Sf),g=r===`copilot`,_;';
 const NEW_THREAD_MODEL_STATE_REPLACEMENT_CURRENT =
@@ -410,14 +435,8 @@ const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_406 =
   'let c=T==null?null:{...T,settings:{...T.settings,model:T.settings?.model??s.model??null,reasoning_effort:T.settings?.reasoning_effort??s.model_reasoning_effort??null}};return{input:o,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:M,model:null,serviceTier:j.serviceTier,reasoningEffort:null,collaborationMode:c,config:s}';
 const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
-const LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT =
-  'if(e){if(T.opaqueWindows&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
-const LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_26_406 =
-  'if(e){if(T.opaqueWindows&&!xY()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
-const LINUX_VISUAL_COMPAT_JS_REPLACEMENT_CURRENT =
-  'if(e){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===`linux`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===`1`}catch{}let r=t&&!n;e.classList.toggle(`codex-linux-visual-compat`,r);if((T.opaqueWindows||r)&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
-const LINUX_VISUAL_COMPAT_JS_REPLACEMENT_26_406 =
-  'if(e){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===`linux`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===`1`}catch{}let r=t&&!n;e.classList.toggle(`codex-linux-visual-compat`,r);if((T.opaqueWindows||r)&&!xY()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
+const LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN =
+  /if\((?<elementVar>[A-Za-z_$][\w$]*)\)\{if\((?<windowStateVar>[A-Za-z_$][\w$]*)\.opaqueWindows&&!(?<opaqueGuardFn>[A-Za-z_$][\w$]*)\(\)\)\{\k<elementVar>\.classList\.add\(`electron-opaque`\);return\}\k<elementVar>\.classList\.remove\(`electron-opaque`\)\}/;
 const LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKER_SETS = [
   ['[data-codex-window-type=electron]', '.window-fx-sidebar-surface', '.sidebar-resize-handle-line'],
   ['[data-codex-window-type=electron]', '.app-header-tint', 'electron-opaque']
@@ -465,6 +484,28 @@ async function patchMainProcessLinuxMenuBar(extractedAppDir, logger) {
   if (result.updated !== original) {
     await fs.promises.writeFile(mainPath, result.updated, 'utf8');
     logger.info('Patched Linux native menu-bar auto-hide behavior into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+async function patchMainProcessLinuxCloseCancel(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for Linux close-cancel patch`);
+  const result = applyLinuxCloseCancelPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux close-cancel window restoration into the Electron main bundle');
   }
   return {
     status: result.status,
@@ -523,6 +564,32 @@ export function injectLinuxMenuBarPatch(bundleSource, options = {}) {
     LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT,
     LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT,
     buildLinuxMenuBarPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+export function applyLinuxCloseCancelPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxCloseCancelPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxCloseCancelPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_CLOSE_CANCEL_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  return replaceSnippetOrThrow(
+    bundleSource,
+    LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT,
+    `/* ${LINUX_CLOSE_CANCEL_PATCH_MARKER} */${LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT}`,
+    buildLinuxCloseCancelPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
 
@@ -658,19 +725,18 @@ function assertValidLinuxTerminalLifecyclePatchOutput(bundleSource, sourceName) 
   );
 }
 
-async function patchRendererNewThreadModelBundle(extractedAppDir, logger) {
+export async function patchRendererNewThreadModelBundle(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
   const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
   let sawCandidate = false;
-  let lastError = null;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
 
   for (const assetName of jsAssets) {
     const assetPath = path.join(assetsDir, assetName);
     const original = await fs.promises.readFile(assetPath, 'utf8');
-    const isCandidate = NEW_THREAD_MODEL_CANDIDATE_MARKER_SETS.some((markerSet) =>
-      markerSet.every((marker) => original.includes(marker))
-    );
+    const isCandidate = isNewThreadModelCandidateBundle(original);
 
     if (!isCandidate) {
       continue;
@@ -690,15 +756,42 @@ async function patchRendererNewThreadModelBundle(extractedAppDir, logger) {
         sourceName: assetName
       };
     } catch (error) {
-      lastError = error;
+      if (
+        error instanceof Error &&
+        error.message.startsWith(NEW_THREAD_MODEL_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux new-thread model patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
     }
   }
 
   if (!sawCandidate) {
-    throw new Error('Could not locate the renderer new-thread model bundle inside the extracted app.');
+    logger.warn(
+      'Skipping Linux new-thread model patch because no new-thread renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
   }
 
-  throw lastError ?? new Error('Could not patch the renderer new-thread model bundle for Linux.');
+  logger.warn(
+    `Skipping Linux new-thread model patch because renderer candidates were incompatible with the expected fresh-thread anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
 }
 
 export function applyLinuxNewThreadModelPatch(bundleSource, options = {}) {
@@ -917,7 +1010,7 @@ export function injectLinuxTodoProgressPatch(bundleSource, options = {}) {
   return updated;
 }
 
-async function patchRendererLinuxVisualCompat(extractedAppDir, logger) {
+export async function patchRendererLinuxVisualCompat(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
   const cssAssets = assetNames.filter((name) => name.endsWith('.css'));
@@ -926,8 +1019,10 @@ async function patchRendererLinuxVisualCompat(extractedAppDir, logger) {
   let jsResult = null;
   let cssSourceName = null;
   let jsSourceName = null;
-  let cssError = null;
-  let jsError = null;
+  let firstCssError = null;
+  let firstCssErrorSourceName = null;
+  let firstJsError = null;
+  let firstJsErrorSourceName = null;
 
   for (const assetName of cssAssets) {
     const assetPath = path.join(assetsDir, assetName);
@@ -951,7 +1046,20 @@ async function patchRendererLinuxVisualCompat(extractedAppDir, logger) {
       }
       break;
     } catch (error) {
-      cssError = error;
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_VISUAL_COMPAT_CSS_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstCssError) {
+          firstCssError = error;
+          firstCssErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux visual-compat CSS patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
     }
   }
 
@@ -977,23 +1085,67 @@ async function patchRendererLinuxVisualCompat(extractedAppDir, logger) {
       }
       break;
     } catch (error) {
-      jsError = error;
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstJsError) {
+          firstJsError = error;
+          firstJsErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux visual-compat JS patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
     }
   }
 
   if (!cssResult) {
-    throw cssError ?? new Error('Could not locate the renderer Linux visual-compat stylesheet.');
+    if (firstCssError) {
+      logger.warn(
+        `Skipping Linux visual-compat CSS patch because renderer candidates were incompatible with the expected anchors.${firstCssErrorSourceName ? ` Source: ${firstCssErrorSourceName}.` : ''}`
+      );
+    } else {
+      logger.warn(
+        'Skipping Linux visual-compat CSS patch because no renderer stylesheet candidate bundle was detected.'
+      );
+    }
+    cssResult = {
+      status: 'skipped',
+      reason: firstCssError ? 'anchor-mismatch' : 'bundle-not-found',
+      sourceName: firstCssErrorSourceName,
+      details: firstCssError?.message ?? null
+    };
   }
   if (!jsResult) {
-    throw jsError ?? new Error('Could not locate the renderer Linux visual-compat script.');
+    if (firstJsError) {
+      logger.warn(
+        `Skipping Linux visual-compat JS patch because renderer candidates were incompatible with the expected anchors.${firstJsErrorSourceName ? ` Source: ${firstJsErrorSourceName}.` : ''}`
+      );
+    } else {
+      logger.warn(
+        'Skipping Linux visual-compat JS patch because no renderer script candidate bundle was detected.'
+      );
+    }
+    jsResult = {
+      status: 'skipped',
+      reason: firstJsError ? 'anchor-mismatch' : 'bundle-not-found',
+      sourceName: firstJsErrorSourceName,
+      details: firstJsError?.message ?? null
+    };
   }
 
+  const hasSkippedSubpatch = cssResult.status === 'skipped' || jsResult.status === 'skipped';
   return {
-    status:
-      cssResult.status === 'already-applied' && jsResult.status === 'already-applied'
+    status: hasSkippedSubpatch
+      ? 'skipped'
+      : cssResult.status === 'already-applied' && jsResult.status === 'already-applied'
         ? 'already-applied'
         : 'applied',
-    sourceName: `${cssSourceName},${jsSourceName}`
+    sourceName: `${cssSourceName ?? 'none'},${jsSourceName ?? 'none'}`,
+    reason: hasSkippedSubpatch ? 'partial-or-unavailable' : undefined
   };
 }
 
@@ -1020,7 +1172,7 @@ export function injectLinuxVisualCompatCssPatch(bundleSource, options = {}) {
   if (analysis.missingAnchors.length > 0) {
     throw new Error(
       buildPatchErrorMessage(
-        'Could not patch the renderer Linux visual-compat stylesheet.',
+        LINUX_VISUAL_COMPAT_CSS_PATCH_BASE_ERROR_MESSAGE,
         options.sourceName,
         analysis
       )
@@ -1049,18 +1201,11 @@ export function injectLinuxVisualCompatJsPatch(bundleSource, options = {}) {
     return bundleSource;
   }
 
-  return replaceFirstMatchingSnippetOrThrow(
+  return replaceRegexOrThrow(
     bundleSource,
-    [
-      {
-        target: LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT,
-        replacement: LINUX_VISUAL_COMPAT_JS_REPLACEMENT_CURRENT
-      },
-      {
-        target: LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_26_406,
-        replacement: LINUX_VISUAL_COMPAT_JS_REPLACEMENT_26_406
-      }
-    ],
+    LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN,
+    ({ elementVar, windowStateVar, opaqueGuardFn }) =>
+      `if(${elementVar}){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===\`linux\`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===\`1\`}catch{}let r=t&&!n;${elementVar}.classList.toggle(\`codex-linux-visual-compat\`,r);if((${windowStateVar}.opaqueWindows||r)&&!${opaqueGuardFn}()){${elementVar}.classList.add(\`electron-opaque\`);return}${elementVar}.classList.remove(\`electron-opaque\`)}`,
     buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
@@ -1094,7 +1239,7 @@ function buildLinuxVisualCompatCssOverride() {
 
 function buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
-    'Could not patch the renderer Linux visual-compat script.',
+    LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE,
     sourceName,
     analyzeLinuxVisualCompatJsBundle(bundleSource)
   );
@@ -1126,10 +1271,7 @@ function analyzeLinuxVisualCompatJsBundle(bundleSource) {
     electronWindowSelector: bundleSource.includes('[data-codex-window-type="electron"]'),
     electronOpaqueClass: bundleSource.includes('electron-opaque'),
     codexOsDataset: bundleSource.includes('dataset.codexOs'),
-    opaqueEffectBlock: [
-      LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_CURRENT,
-      LINUX_VISUAL_COMPAT_JS_TARGET_SNIPPET_26_406
-    ].some((snippet) => bundleSource.includes(snippet))
+    opaqueEffectBlock: LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN.test(bundleSource)
   };
 
   return {
@@ -1211,6 +1353,14 @@ function buildLinuxMenuBarPatchErrorMessage(bundleSource, sourceName) {
   );
 }
 
+function buildLinuxCloseCancelPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    'Could not patch Linux close-cancel behavior in the Electron main bundle.',
+    sourceName,
+    analyzeLinuxCloseCancelBundle(bundleSource)
+  );
+}
+
 function analyzeLinuxMenuBarBundle(bundleSource) {
   const detected = {
     browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
@@ -1228,6 +1378,27 @@ function analyzeLinuxMenuBarBundle(bundleSource) {
   };
 }
 
+function analyzeLinuxCloseCancelBundle(bundleSource) {
+  const detected = {
+    beforeQuitHandler: bundleSource.includes('t.app.on(`before-quit`'),
+    quitCancelPrompt: bundleSource.includes('buttons:[`Quit`,`Cancel`]'),
+    cancelPreventDefault: /[A-Za-z_$][\w$]*\.preventDefault\(\);return/.test(bundleSource),
+    showLastActivePrimaryWindow: bundleSource.includes('showLastActivePrimaryWindow()'),
+    ensureHostWindowDependency: bundleSource.includes('ensureHostWindow:')
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.beforeQuitHandler && 'before-quit handler',
+      !detected.quitCancelPrompt && 'Quit/Cancel confirmation dialog',
+      !detected.cancelPreventDefault && 'cancel preventDefault branch',
+      !detected.showLastActivePrimaryWindow && 'showLastActivePrimaryWindow hook',
+      !detected.ensureHostWindowDependency && 'ensureHostWindow dependency'
+    ].filter(Boolean)
+  };
+}
+
 function buildTerminalPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     'Could not patch the renderer terminal lifecycle bundle for Linux.',
@@ -1238,7 +1409,7 @@ function buildTerminalPatchErrorMessage(bundleSource, sourceName) {
 
 function buildNewThreadModelPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
-    'Could not patch the renderer new-thread model bundle for Linux.',
+    NEW_THREAD_MODEL_PATCH_BASE_ERROR_MESSAGE,
     sourceName,
     analyzeNewThreadModelBundle(bundleSource)
   );
@@ -1309,6 +1480,14 @@ function analyzeNewThreadModelBundle(bundleSource) {
   };
 }
 
+function isNewThreadModelCandidateBundle(bundleSource) {
+  return (
+    NEW_THREAD_MODEL_STATE_MARKERS.every((marker) => bundleSource.includes(marker)) &&
+    NEW_THREAD_MODEL_CONFIG_MARKERS.some((marker) => bundleSource.includes(marker)) &&
+    NEW_THREAD_MODEL_SUBMIT_MARKERS.every((marker) => bundleSource.includes(marker))
+  );
+}
+
 function patchTodoPlanComponentCacheSignatures({
   source,
   anchorMarker,
@@ -1357,28 +1536,43 @@ function patchTodoCompactItemRenderCache({
   compactComponentName
 }) {
   const compactComponentPattern = escapeRegExp(compactComponentName);
-  return replaceFunctionBlockContainingAnchorOrThrow(
-    source,
-    `(0,$.jsx)(${compactComponentName},{item:`,
-    (block) => {
-      const pattern = new RegExp(
-        `t\\[(?<depIdx>\\d+)\\]===(?<itemVar>[A-Za-z_$][\\w$]*)\\?(?<outVar>[A-Za-z_$][\\w$]*)=t\\[(?<cacheIdx>\\d+)\\]:\\(\\k<outVar>=\\(0,\\$\\.jsx\\)\\(${compactComponentPattern},\\{item:\\k<itemVar>\\}\\),t\\[\\k<depIdx>\\]=\\k<itemVar>,t\\[\\k<cacheIdx>\\]=\\k<outVar>\\),(?<resultVar>[A-Za-z_$][\\w$]*)=\\k<outVar>`
-      );
-      const match = block.match(pattern);
-      if (!match?.groups) {
-        throw new Error(errorMessage);
-      }
-      const { depIdx, itemVar, outVar, cacheIdx, resultVar } = match.groups;
-      const todoItemKey = buildTodoItemCacheKeyExpression(itemVar, {
-        includeMarker: includeMarker()
-      });
-      return block.replace(
-        pattern,
-        `t[${depIdx}]===${todoItemKey}?${outVar}=t[${cacheIdx}]:(${outVar}=(0,$.jsx)(${compactComponentName},{item:${itemVar}}),t[${depIdx}]=${todoItemKey},t[${cacheIdx}]=${outVar}),${resultVar}=${outVar}`
-      );
-    },
-    errorMessage
+  const compactDirectRenderPattern = new RegExp(
+    `\\.type===\\\`todo-list\\\`\\?(?:\\(?(?:[A-Za-z_$][\\w$]*=)?)?\\(0,\\$\\.jsx\\)\\(${compactComponentPattern},\\{item:[A-Za-z_$][\\w$]*\\}\\)`
   );
+  const anchorMarker = `(0,$.jsx)(${compactComponentName},{item:`;
+  const anchorIndex = source.indexOf(anchorMarker);
+  if (anchorIndex === -1) {
+    throw new Error(errorMessage);
+  }
+
+  const start = source.lastIndexOf('function ', anchorIndex);
+  const end = source.indexOf('function ', anchorIndex + anchorMarker.length);
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error(errorMessage);
+  }
+
+  const before = source.slice(0, start);
+  const block = source.slice(start, end);
+  const after = source.slice(end);
+  const pattern = new RegExp(
+    `t\\[(?<depIdx>\\d+)\\]===(?<itemVar>[A-Za-z_$][\\w$]*)\\?(?<outVar>[A-Za-z_$][\\w$]*)=t\\[(?<cacheIdx>\\d+)\\]:\\(\\k<outVar>=\\(0,\\$\\.jsx\\)\\(${compactComponentPattern},\\{item:\\k<itemVar>\\}\\),t\\[\\k<depIdx>\\]=\\k<itemVar>,t\\[\\k<cacheIdx>\\]=\\k<outVar>\\),(?<resultVar>[A-Za-z_$][\\w$]*)=\\k<outVar>`
+  );
+  const match = block.match(pattern);
+  if (!match?.groups) {
+    if (compactDirectRenderPattern.test(block)) {
+      return source;
+    }
+    throw new Error(errorMessage);
+  }
+  const { depIdx, itemVar, outVar, cacheIdx, resultVar } = match.groups;
+  const todoItemKey = buildTodoItemCacheKeyExpression(itemVar, {
+    includeMarker: includeMarker()
+  });
+  const updated = block.replace(
+    pattern,
+    `t[${depIdx}]===${todoItemKey}?${outVar}=t[${cacheIdx}]:(${outVar}=(0,$.jsx)(${compactComponentName},{item:${itemVar}}),t[${depIdx}]=${todoItemKey},t[${cacheIdx}]=${outVar}),${resultVar}=${outVar}`
+  );
+  return `${before}${updated}${after}`;
 }
 
 function patchTodoPortalRenderCache({

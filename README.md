@@ -192,6 +192,7 @@ Use this section as the single source of truth for env vars used by this project
 | `CODEX_DESKTOP_DISABLE_GPU` | Launcher | unset / `0` | Adds `--disable-gpu` (`1`). |
 | `CODEX_DESKTOP_OZONE_PLATFORM_HINT` | Launcher | unset | Passes `--ozone-platform=x11`, `wayland`, or `auto`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR` | Patched app main bundle (Linux) | unset | Keeps native menu bar always visible when set to `1` (default behavior auto-hides it). |
+| `CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH` | Patched app main bundle (Linux) | unset | Disables the Linux close-cancel window restoration patch when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT` | Patched app renderer bundle (Linux) | unset | Disables Linux visual-compat patch when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH` | Patched app renderer bundle (Linux) | unset | Disables Linux todo progress patch when set to `1`. |
 | `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING` | Launcher | unset / `0` | Enables Chromium logging when set to `1`. |
@@ -207,8 +208,11 @@ Use this section as the single source of truth for env vars used by this project
 - For all runtime and installer env vars, see the **Environment Variables** section above.
 - The build/install stages retry forever on failure and keep logs under `~/.local/state/codex-linux-app/logs`.
 - The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state.
+- If a new upstream renderer build changes the fresh-thread model bundle shape, the installer now skips that patch with a warning instead of aborting the install; the log and diagnostic manifest record the skipped `newThreadModel` state.
+- If a new upstream renderer build changes the Linux visual-compat renderer bundle shape, the installer also skips that patch with a warning instead of aborting the install.
 - The generated launcher auto-falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is the normal case for a per-user install.
 - If a reinstall opens to a black spinner window, reinstall once with `./install-desktop --skip-terminal-patch` to bypass the renderer terminal patch while debugging.
+- On Linux, canceling the quit confirmation restores or recreates the main window so the app stays visible instead of remaining only as a background task.
 - The installer preserves the upstream resource layout and replaces mac-only helper binaries with Linux equivalents where needed.
 - Linux editor discovery is patched into the desktop runtime for supported IDEs. It checks CLI commands on PATH, common `.desktop` launchers, and JetBrains Toolbox scripts under `~/.local/share/JetBrains/Toolbox/scripts`.
 - The current Linux editor targets include VS Code, VS Code Insiders, Cursor, Windsurf, Zed, Android Studio, IntelliJ IDEA, Rider, GoLand, RustRover, PyCharm, WebStorm, and PhpStorm.
