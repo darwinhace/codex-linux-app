@@ -434,7 +434,7 @@ const NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_406 =
   'return{setModelAndReasoningEffort:(0,Z.useCallback)(async(e,n)=>{try{codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings({model:e,reasoningEffort:n,cwd:s});if(await h(e,n),m){_(e);return}if(k.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:n,profile:c.profile}}),r==null)return;await Qc(`set-default-model-config-for-host`,{hostId:i,model:e,reasoningEffort:n,profile:c.profile}),await v()}catch(e){codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings(null);k.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:e}});let n=t.get(xl),r=Eee(o,e);um(e)?n.danger(r,{id:`composer.modelSettings.updateError`,description:(0,Z.createElement)(`div`,{className:`mt-4`},(0,Z.createElement)(Ro))}):n.danger(r,{id:`composer.modelSettings.updateError`})}},[o,m,_,h,c.profile,v,r,t]),modelSettings:g}';
 const NEW_THREAD_MODEL_STATE_SNIPPET_26_415 = 'let y=v,b=s?.authMethod===`copilot`,x;';
 const NEW_THREAD_MODEL_STATE_REPLACEMENT_26_415 =
-  'let y=v,b=s?.authMethod===`copilot`,codexLinuxIsFreshComposer=n==null,[codexLinuxPendingModelSettings,codexLinuxSetPendingModelSettings]=(0,K.useState)(null),x;';
+  'let y=v,b=s?.authMethod===`copilot`,codexLinuxIsFreshComposer=n==null||!p,[codexLinuxPendingModelSettings,codexLinuxSetPendingModelSettings]=(0,K.useState)(null),x;';
 const NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_415 =
   '?(C=p?{model:y??d.model,reasoningEffort:m?.settings.reasoning_effort??null,profile:d.profile,isLoading:!1}:b?f:d,';
 const NEW_THREAD_MODEL_SETTINGS_REPLACEMENT_26_415 =
@@ -443,6 +443,11 @@ const NEW_THREAD_MODEL_SETTER_SNIPPET_26_415 =
   '?(D=async(e,t)=>{try{if(await S(e,t),b){zn(r,`copilot-default-model`,e);return}if(h.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:t,profile:d.profile}}),!o)return;await on(`set-default-model-config-for-host`,{hostId:a,model:e,reasoningEffort:t,profile:d.profile}),await E()}catch(e){let t=e;h.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:t}});let n=r.get(bo),i=$Ce(c,t);Q9(t)?n.danger(i,{id:`composer.modelSettings.updateError`,description:(0,K.createElement)(`div`,{className:`mt-4`},(0,K.createElement)(RCe))}):n.danger(i,{id:`composer.modelSettings.updateError`})}},';
 const NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_415 =
   '?(D=async(e,t)=>{try{codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings({model:e,reasoningEffort:t,cwd:l});if(await S(e,t),b){zn(r,`copilot-default-model`,e);return}if(h.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:t,profile:d.profile}}),!o)return;await on(`set-default-model-config-for-host`,{hostId:a,model:e,reasoningEffort:t,profile:d.profile}),await E()}catch(e){codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings(null);let t=e;h.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:t}});let n=r.get(bo),i=$Ce(c,t);Q9(t)?n.danger(i,{id:`composer.modelSettings.updateError`,description:(0,K.createElement)(`div`,{className:`mt-4`},(0,K.createElement)(RCe))}):n.danger(i,{id:`composer.modelSettings.updateError`})}},';
+const NEW_THREAD_MODEL_SETTER_PATTERN_26_415 =
+  /\?\(D=async\(e,t\)=>\{try\{(?<tryBody>[\s\S]*?`copilot-default-model`[\s\S]*?`set-default-model-config-for-host`[\s\S]*?)\}catch\(e\)\{(?<catchBody>[\s\S]*?`composer\.modelSettings\.updateError`[\s\S]*?)\}\},/;
+const NEW_THREAD_MODEL_SELECTOR_MARKER_26_415 = 'set-model-and-reasoning-for-next-turn';
+const NEW_THREAD_MODEL_SELECTOR_FUNCTION_MARKER_26_415 = 'function ';
+const NEW_THREAD_MODEL_FRESH_EFFECT_ANCHOR_26_415 = 'let w=C,T;';
 const NEW_THREAD_MODEL_FRESH_EFFECT_INSERTION_26_415 =
   'let codexLinuxFreshComposerBaseSettings=b?f:d;(0,K.useEffect)(()=>{if(!codexLinuxIsFreshComposer){codexLinuxPendingModelSettings!=null&&codexLinuxSetPendingModelSettings(null);return}if(codexLinuxPendingModelSettings==null)return;if(codexLinuxPendingModelSettings.cwd!==l){codexLinuxSetPendingModelSettings(null);return}!codexLinuxFreshComposerBaseSettings.isLoading&&codexLinuxFreshComposerBaseSettings.model===codexLinuxPendingModelSettings.model&&codexLinuxFreshComposerBaseSettings.reasoningEffort===codexLinuxPendingModelSettings.reasoningEffort&&codexLinuxSetPendingModelSettings(null)},[codexLinuxIsFreshComposer,codexLinuxPendingModelSettings,l,codexLinuxFreshComposerBaseSettings.model,codexLinuxFreshComposerBaseSettings.reasoningEffort,codexLinuxFreshComposerBaseSettings.isLoading]);';
 const LINUX_NEW_THREAD_MODEL_SUBMIT_PATCH_MARKER = 'codexLinuxFreshThreadCollaborationModeSettings';
@@ -1053,18 +1058,8 @@ function injectLinuxNewThreadModelStatePatch(bundleSource, options = {}) {
       NEW_THREAD_MODEL_SETTINGS_REPLACEMENT_26_415,
       errorMessage
     );
-    updated = replaceSnippetOrThrow(
-      updated,
-      NEW_THREAD_MODEL_SETTER_SNIPPET_26_415,
-      NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_415,
-      errorMessage
-    );
-    updated = replaceSnippetOrThrow(
-      updated,
-      'let w=C,T;',
-      `${NEW_THREAD_MODEL_FRESH_EFFECT_INSERTION_26_415}let w=C,T;`,
-      errorMessage
-    );
+    updated = patchNewThreadModelSetter26_415(updated, errorMessage);
+    updated = patchNewThreadModelFreshEffect26_415(updated, errorMessage);
     return updated;
   }
 
@@ -1088,6 +1083,58 @@ function injectLinuxNewThreadModelStatePatch(bundleSource, options = {}) {
     errorMessage
   );
   return updated;
+}
+
+function patchNewThreadModelSetter26_415(bundleSource, errorMessage) {
+  if (bundleSource.includes(NEW_THREAD_MODEL_SETTER_SNIPPET_26_415)) {
+    return replaceSnippetOrThrow(
+      bundleSource,
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_415,
+      NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_415,
+      errorMessage
+    );
+  }
+
+  return replaceRegexOrThrow(
+    bundleSource,
+    NEW_THREAD_MODEL_SETTER_PATTERN_26_415,
+    ({ tryBody, catchBody }) =>
+      `?(D=async(e,t)=>{try{codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings({model:e,reasoningEffort:t,cwd:l});${tryBody}}catch(e){codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings(null);${catchBody}}},`,
+    errorMessage
+  );
+}
+
+function patchNewThreadModelFreshEffect26_415(bundleSource, errorMessage) {
+  if (bundleSource.includes(NEW_THREAD_MODEL_FRESH_EFFECT_INSERTION_26_415)) {
+    return bundleSource;
+  }
+
+  const selectorMarkerIndex = bundleSource.indexOf(NEW_THREAD_MODEL_SELECTOR_MARKER_26_415);
+  if (selectorMarkerIndex === -1) {
+    throw new NewThreadModelPatchAnchorError(errorMessage);
+  }
+
+  const selectorFunctionStart = bundleSource.lastIndexOf(
+    NEW_THREAD_MODEL_SELECTOR_FUNCTION_MARKER_26_415,
+    selectorMarkerIndex
+  );
+  if (selectorFunctionStart === -1) {
+    throw new NewThreadModelPatchAnchorError(errorMessage);
+  }
+
+  const nextFunctionStart = bundleSource.indexOf(
+    NEW_THREAD_MODEL_SELECTOR_FUNCTION_MARKER_26_415,
+    selectorMarkerIndex + NEW_THREAD_MODEL_SELECTOR_MARKER_26_415.length
+  );
+  const selectorFunctionEnd = nextFunctionStart === -1 ? bundleSource.length : nextFunctionStart;
+  const selectorFunctionSource = bundleSource.slice(selectorFunctionStart, selectorFunctionEnd);
+  const anchorIndex = selectorFunctionSource.indexOf(NEW_THREAD_MODEL_FRESH_EFFECT_ANCHOR_26_415);
+  if (anchorIndex === -1) {
+    throw new NewThreadModelPatchAnchorError(errorMessage);
+  }
+
+  const patchedSelectorFunctionSource = `${selectorFunctionSource.slice(0, anchorIndex)}${NEW_THREAD_MODEL_FRESH_EFFECT_INSERTION_26_415}${selectorFunctionSource.slice(anchorIndex)}`;
+  return `${bundleSource.slice(0, selectorFunctionStart)}${patchedSelectorFunctionSource}${bundleSource.slice(selectorFunctionEnd)}`;
 }
 
 function applyLinuxNewThreadModelSubmitPatch(bundleSource, options = {}) {
@@ -1505,6 +1552,13 @@ function buildLinuxVisualCompatCssOverride() {
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface{
   transition:none!important
 }
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .no-underline\\!{
+  text-decoration:underline!important;
+  text-underline-offset:2px
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]{
+  max-height:clamp(44px,18vh,88px)!important
+}
 `;
 }
 
@@ -1786,7 +1840,8 @@ function analyzeNewThreadModelStateBundle(bundleSource) {
       NEW_THREAD_MODEL_SETTER_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_SETTER_SNIPPET_26_406,
       NEW_THREAD_MODEL_SETTER_SNIPPET_26_415
-    ].some((snippet) => bundleSource.includes(snippet))
+    ].some((snippet) => bundleSource.includes(snippet)) ||
+      NEW_THREAD_MODEL_SETTER_PATTERN_26_415.test(bundleSource)
   };
 
   return {

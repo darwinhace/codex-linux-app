@@ -67,6 +67,12 @@ const NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415 =
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415 =
   'async function OB({context:e,prompt:t,workspaceRoots:n,cwd:r,hostId:i,agentMode:a,serviceTier:o,collaborationMode:s,memoryPreferences:c,workspaceKind:l=`project`,projectlessOutputDirectory:u}){let d=[{type:`text`,text:t,text_elements:[]},...DB(e,i!==he)],{config:f}=await ci(`read-config-for-host`,{hostId:i,includeLayers:!1,cwd:r});return{input:d,commentAttachments:e.commentAttachments,workspaceRoots:n,cwd:r,fileAttachments:e.fileAttachments,addedFiles:e.addedFiles,agentMode:a,model:null,serviceTier:o,reasoningEffort:null,collaborationMode:s,config:Ir(f),memoryPreferences:c,workspaceKind:l,...l===`projectless`?{projectlessOutputDirectory:u}:{}}}';
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415 = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415}function _t(e){return e?.latestCollaborationMode?.settings?.reasoning_effort??null}function Ft(e){return e?.latestCollaborationMode?.settings?.model??null}`;
+const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED = NEW_THREAD_MODEL_STATE_BUNDLE_26_415
+  .replace('r.get(bo)', 'r.get(So)')
+  .replace('$Ce(c,t)', 'lwe(c,t)')
+  .replace('(0,K.createElement)(RCe)', '(0,K.createElement)(JCe)');
+const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DECOY_PREFIX =
+  'function codexLinuxDecoy(){let C=null,w=C,T;return T}';
 const LINUX_VISUAL_COMPAT_CSS_CURRENT =
   '.window-fx-sidebar-surface{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}.app-header-tint{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}.sidebar-resize-handle-line{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}[data-codex-window-type=electron]:not([data-codex-os=win32]) body{background:0 0;background:var(--color-token-editor-background)}[data-codex-window-type=electron].electron-opaque body{background-color:var(--color-background-surface-under);--color-background-elevated-primary:var(--color-background-elevated-primary-opaque);background-image:none}';
 const LINUX_VISUAL_COMPAT_CSS_26_406 =
@@ -402,6 +408,28 @@ test('injectLinuxNewThreadModelPatch is idempotent', () => {
   assert.equal(twice, once);
 });
 
+test('injectLinuxNewThreadModelPatch supports 26.415 setter helper drift', () => {
+  const bundle = `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415}`;
+  const updated = injectLinuxNewThreadModelPatch(bundle);
+
+  assert.match(updated, /codexLinuxPendingModelSettings/);
+  assert.match(updated, /codexLinuxIsFreshComposer=n==null\|\|!p/);
+  assert.match(updated, /codexLinuxSetPendingModelSettings\(\{model:e,reasoningEffort:t,cwd:l\}\)/);
+  assert.match(updated, /codexLinuxFreshThreadCollaborationModeSettings/);
+});
+
+test('injectLinuxNewThreadModelPatch scopes 26.415 fresh-effect insertion to the selector function', () => {
+  const bundle = `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DECOY_PREFIX}${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415}`;
+  const updated = injectLinuxNewThreadModelPatch(bundle);
+
+  assert.match(updated, /function codexLinuxDecoy\(\)\{let C=null,w=C,T;return T\}/);
+  assert.equal((updated.match(/let codexLinuxFreshComposerBaseSettings=b\?f:d;\(0,K\.useEffect\)/g) ?? []).length, 1);
+  assert.match(
+    updated,
+    /set-model-and-reasoning-for-next-turn[\s\S]*?let codexLinuxFreshComposerBaseSettings=b\?f:d;\(0,K\.useEffect\)/
+  );
+});
+
 test('applyLinuxNewThreadModelPatch skips patching when disabled', () => {
   const result = applyLinuxNewThreadModelPatch(NEW_THREAD_MODEL_BUNDLE_CURRENT, { skip: true });
 
@@ -488,7 +516,7 @@ test('patchRendererNewThreadModelBundle skips when no new-thread candidate bundl
   }
 });
 
-test('patchRendererNewThreadModelBundle patches split 26.415 state and submit bundles', async () => {
+test('patchRendererNewThreadModelBundle patches split 26.415 bundles with setter helper drift', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-split-26415-'));
   try {
     const extractedAppDir = path.join(rootDir, 'extracted');
@@ -497,7 +525,7 @@ test('patchRendererNewThreadModelBundle patches split 26.415 state and submit bu
 
     const stateBundlePath = path.join(assetsDir, 'use-model-settings.js');
     const submitBundlePath = path.join(assetsDir, 'index.js');
-    await fs.promises.writeFile(stateBundlePath, NEW_THREAD_MODEL_STATE_BUNDLE_26_415, 'utf8');
+    await fs.promises.writeFile(stateBundlePath, NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED, 'utf8');
     await fs.promises.writeFile(submitBundlePath, NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415, 'utf8');
 
     const logger = {
@@ -514,10 +542,54 @@ test('patchRendererNewThreadModelBundle patches split 26.415 state and submit bu
     const patchedState = await fs.promises.readFile(stateBundlePath, 'utf8');
     const patchedSubmit = await fs.promises.readFile(submitBundlePath, 'utf8');
     assert.match(patchedState, /codexLinuxPendingModelSettings/);
+    assert.match(patchedState, /codexLinuxIsFreshComposer=n==null\|\|!p/);
     assert.match(patchedSubmit, /codexLinuxFreshThreadCollaborationModeSettings/);
     assert.match(
       patchedSubmit,
       /reasoning_effort:.*\.settings\?\.reasoning_effort\?\?.*\.model_reasoning_effort\?\?null/
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererNewThreadModelBundle skips when 26.415 setter anchors are incompatible', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-26415-anchor-mismatch-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const stateBundlePath = path.join(assetsDir, 'use-model-settings.js');
+    const submitBundlePath = path.join(assetsDir, 'index.js');
+    const incompatibleState = NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED.replace(
+      'set-default-model-config-for-host',
+      'set-default-model-config-for-host-v2'
+    );
+    await fs.promises.writeFile(stateBundlePath, incompatibleState, 'utf8');
+    await fs.promises.writeFile(submitBundlePath, NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415, 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result.status, 'skipped');
+    assert.deepEqual(result.reason, 'anchor-mismatch');
+    assert.equal(result.sourceName, 'use-model-settings.js');
+    assert.match(result.details ?? '', /Could not patch the renderer new-thread model bundle for Linux/);
+    assert.equal(await fs.promises.readFile(stateBundlePath, 'utf8'), incompatibleState);
+    assert.equal(await fs.promises.readFile(submitBundlePath, 'utf8'), NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415);
+    assert.equal(
+      warnings.some((message) =>
+        message.includes('Skipping Linux new-thread model patch for use-model-settings.js')
+      ),
+      true
     );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
@@ -653,6 +725,9 @@ for (const [label, fixture] of [
     assert.match(updated, /codex-linux-visual-compat/);
     assert.match(updated, /background:var\(--color-token-side-bar-background\)!important/);
     assert.match(updated, /transition:none!important/);
+    assert.match(updated, /\.no-underline\\!/);
+    assert.match(updated, /\[data-browser-comment-editor-surface\]/);
+    assert.match(updated, /max-height:clamp\(44px,18vh,88px\)!important/);
     assert.doesNotMatch(updated, /\.window-fx-sidebar-surface \*/);
     assert.doesNotMatch(updated, /animation:none!important/);
   });
