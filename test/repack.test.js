@@ -46,6 +46,8 @@ const TERMINAL_PANEL_BLOCK_CURRENT =
   'let ee,te;t[29]!==n||t[30]!==i||t[31]!==r||t[32]!==o||t[33]!==m?(ee=()=>{let e=T.current;if(!e)return;let t=o??ln.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;let a=!1,s=new jke.Terminal({allowTransparency:!0});let c=null,l=()=>{c??=requestAnimationFrame(()=>{c=null,s.scrollToBottom()})};E.current=s;let p=n=>{a||e.isConnected&&requestAnimationFrame(()=>{a||e.isConnected&&(k.current?V0(s,D.current,t):H0(D.current),n?.())})};p(),M.current=!1;let h=ln.register(t,{onInitLog:e=>{s.write(e),l()},onData:e=>{M.current||(M.current=!0,P(`Running`),I(null)),s.write(e),l()},onExit:()=>{a||P(`Exited`)},onError:e=>{a||(P(`Error`),I(e))},onAttach:(e,t)=>{a||(k.current=!0,P(`Running`),I(null),R(t??null),p())}}),g=s.onData(e=>{ln.write(t,e)}),_=s.onKey(Jke);o&&requestAnimationFrame(()=>{a||ln.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});let v=new ResizeObserver(()=>{p()});return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||ln.close(t),s.dispose(),E.current=null}},te=[n,i,r,o,m],t[29]=n,t[30]=i,t[31]=r,t[32]=o,t[33]=m,t[34]=ee,t[35]=te):(ee=t[34],te=t[35]),(0,Z.useEffect)(ee,te);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_26_406 =
   'let G,K;t[26]!==n||t[27]!==i||t[28]!==r||t[29]!==a||t[30]!==f?(G=()=>{let e=C.current;if(!e)return;let t=a??Ir.create({conversationId:n,hostId:r??null,cwd:i??null});E.current=t,D.current=!1;let o=!1,s=new aye.Terminal({allowTransparency:!0,cursorStyle:`bar`,fontSize:k.current,allowProposedApi:!0,cursorBlink:!0,fontFamily:O.current,letterSpacing:0,lineHeight:1.2,theme:b0()}),c=null,l=()=>{c??=requestAnimationFrame(()=>{c=null,s.scrollToBottom()})};w.current=s;let u=new cye.ClipboardAddon,d=new sye.FitAddon;T.current=d;let p=new oye.WebLinksAddon(Cye);s.loadAddon(u),s.loadAddon(d),s.loadAddon(p),s.attachCustomKeyEventHandler(e=>fye({clipboard:typeof navigator<`u`&&navigator.clipboard!=null&&f?navigator.clipboard:void 0,event:e,sendText:e=>{Ir.write(t,e)},term:s})),s.open(e);let m=n=>{o||e.isConnected&&requestAnimationFrame(()=>{o||e.isConnected&&(D.current?v0(s,d,t):y0(d),n?.())})};m(),A.current=!1;let h=Ir.register(t,{onInitLog:e=>{s.write(e),l()},onData:e=>{A.current||(A.current=!0,M(`Running`),P(null)),s.write(e),l()},onExit:()=>{o||M(`Exited`)},onError:e=>{o||(M(`Error`),P(e))},onAttach:(e,t)=>{o||(D.current=!0,M(`Running`),P(null),I(t??null),m())}}),g=s.onData(e=>{Ir.write(t,e)}),_=s.onKey(Sye);a&&requestAnimationFrame(()=>{o||Ir.attach({sessionId:a,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});let v=new ResizeObserver(()=>{m()});return v.observe(e),()=>{o=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),T.current=null,E.current=null,D.current=!1,a||Ir.close(t),s.dispose(),w.current=null}},K=[n,i,r,a,f],t[26]=n,t[27]=i,t[28]=r,t[29]=a,t[30]=f,t[31]=G,t[32]=K):(G=t[31],K=t[32]),(0,Z.useEffect)(G,K);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
+const TERMINAL_PANEL_BLOCK_26_415 =
+  'let ee,te;t[33]!==n||t[34]!==i||t[35]!==r||t[36]!==o||t[37]!==a||t[38]!==d?(ee=()=>{let e=w.current,t=C.current;if(!e||!t)return;let s=a??Ye.create({conversationId:n,hostId:r??null,cwd:i??null});D.current=s,O.current=!1;let c=!1,l=new Jve.Terminal({allowTransparency:!0}),u=null,f=()=>{u??=requestAnimationFrame(()=>{u=null,l.scrollToBottom()})};T.current=l;let m=new Kve.FitAddon;E.current=m;l.open(e);let g=t=>{c||e.isConnected&&requestAnimationFrame(()=>{c||e.isConnected&&(O.current?k8(l,m,s):m.fit(),t?.())})};g();let _=Ye.register(s,{onInitLog:e=>{l.write(e),f()},onData:e=>{l.write(e),f()},onAttach:()=>{c||(O.current=!0,g())}}),v=l.onData(e=>{Ye.write(s,e)}),y=l.onTitleChange(e=>{Ye.setTitle(s,e)}),b=l.onKey(eye);a&&requestAnimationFrame(()=>{c||Ye.create({sessionId:a,conversationId:n,hostId:r??null,cwd:i??null,cols:l.cols,rows:l.rows})});let x=new ResizeObserver(()=>{g()});return x.observe(e),()=>{c=!0,u!=null&&(cancelAnimationFrame(u),u=null),x.disconnect(),v.dispose(),y.dispose(),b.dispose(),_(),E.current=null,D.current=null,O.current=!1,a||Ye.close(s),l.dispose(),T.current=null}},te=[n,i,r,o,a,d],t[33]=n,t[34]=i,t[35]=r,t[36]=o,t[37]=a,t[38]=d,t[39]=ee,t[40]=te):(ee=t[39],te=t[40]),(0,K.useEffect)(ee,te);return(0,q.jsx)(`div`,{"data-codex-terminal":!0})}';
 const NEW_THREAD_MODEL_SELECTOR_BLOCK_CURRENT =
   'function xf(e){let t=(0,Q.c)(30),n=e===void 0?null:e,{authMethod:r}=Ds(),i=Un(),a;t[0]===Symbol.for(`react.memo_cache_sentinel`)?(a={select:Tf},t[0]=a):a=t[0];let{data:o}=Le(`active-workspace-roots`,a),s=o??null,c;t[1]===s?c=t[2]:(c={hostId:De,cwd:s},t[1]=s,t[2]=c);let l=yf(c),u=_f(),d=Dn(n,wf),f=Dn(n,Cf),p;t[3]===f?p=t[4]:(p=f!=null&&f.trim().length>0?f:null,t[3]=f,t[4]=p);let m=p,h=Dn(n,Sf),g=r===`copilot`,_;t[5]!==i||t[6]!==n?(_=async(e,t)=>{n!=null&&await mf(i,n,e,t)},t[5]=i,t[6]=n,t[7]=_):_=t[7];let v=_,y;t[8]!==h||t[9]!==l||t[10]!==u||t[11]!==d||t[12]!==g||t[13]!==m?(y=d?{model:m??l.model,reasoningEffort:h,isLoading:!1}:g?u:l,t[8]=h,t[9]=l,t[10]=u,t[11]=d,t[12]=g,t[13]=m,t[14]=y):y=t[14];let{model:b,reasoningEffort:x,isLoading:S}=y,{setData:C}=Os(`copilot-default-model`),w=o??null,T;t[15]===w?T=t[16]:(T={hostId:De,cwd:w},t[15]=w,t[16]=T);let E=bf(T),D;t[17]!==i||t[18]!==v||t[19]!==g||t[20]!==E||t[21]!==C?(D=async(e,t)=>{if(await v(e,t),g){C(e);return}try{await i.setDefaultModelConfig(e,t)}catch(e){let t=e;O.error(`Failed to set default model and reasoning effort`,{safe:{},sensitive:{error:t}});return}await E()},t[17]=i,t[18]=v,t[19]=g,t[20]=E,t[21]=C,t[22]=D):D=t[22];let k=D,A;t[23]!==S||t[24]!==b||t[25]!==x?(A={model:b,reasoningEffort:x,isLoading:S},t[23]=S,t[24]=b,t[25]=x,t[26]=A):A=t[26];let j=A,M;return t[27]!==j||t[28]!==k?(M={setModelAndReasoningEffort:k,modelSettings:j},t[27]=j,t[28]=k,t[29]=M):M=t[29],M}';
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_CURRENT =
@@ -60,6 +62,11 @@ const NEW_THREAD_MODEL_BUNDLE_26_406_DRIFTED = NEW_THREAD_MODEL_BUNDLE_26_406.re
   'modelSettings:g}}',
   'modelSettings:g,version:1}}'
 );
+const NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415 =
+  'function $9(e){let t=(0,J.c)(30),n=e===void 0?null:e,r=fe(g),i=Gl(n),a=i.hostId,o=me(XCe,a),s=Xn(a),c=xn(),l=i.cwd,u;t[0]!==a||t[1]!==l?(u={hostId:a,cwd:l},t[0]=a,t[1]=l,t[2]=u):u=t[2];let d=ZCe(u),f=JCe(),p=me(Ft,n),m=me(_t,n),_=m?.settings.model??null,v;t[3]===_?v=t[4]:(v=_!=null&&_.trim().length>0?_:null,t[3]=_,t[4]=v);let y=v,b=s?.authMethod===`copilot`,x;t[5]!==n||t[6]!==p?(x=async(e,t)=>{n==null||!p||await on(`set-model-and-reasoning-for-next-turn`,{conversationId:n,model:e,reasoningEffort:t})},t[5]=n,t[6]=p,t[7]=x):x=t[7];let S=x,C;t[8]!==d||t[9]!==f||t[10]!==p||t[11]!==b||t[12]!==m?.settings||t[13]!==y?(C=p?{model:y??d.model,reasoningEffort:m?.settings.reasoning_effort??null,profile:d.profile,isLoading:!1}:b?f:d,t[8]=d,t[9]=f,t[10]=p,t[11]=b,t[12]=m?.settings,t[13]=y,t[14]=C):C=t[14];let w=C,T;t[15]!==a||t[16]!==l?(T={hostId:a,cwd:l},t[15]=a,t[16]=l,t[17]=T):T=t[17];let E=QCe(T),D;t[18]!==S||t[19]!==d.profile||t[20]!==a||t[21]!==c||t[22]!==o||t[23]!==b||t[24]!==E||t[25]!==r?(D=async(e,t)=>{try{if(await S(e,t),b){zn(r,`copilot-default-model`,e);return}if(h.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:t,profile:d.profile}}),!o)return;await on(`set-default-model-config-for-host`,{hostId:a,model:e,reasoningEffort:t,profile:d.profile}),await E()}catch(e){let t=e;h.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:t}});let n=r.get(bo),i=$Ce(c,t);Q9(t)?n.danger(i,{id:`composer.modelSettings.updateError`,description:(0,K.createElement)(`div`,{className:`mt-4`},(0,K.createElement)(RCe))}):n.danger(i,{id:`composer.modelSettings.updateError`})}},t[18]=S,t[19]=d.profile,t[20]=a,t[21]=c,t[22]=o,t[23]=b,t[24]=E,t[25]=r,t[26]=D):D=t[26];let O=D,k;return t[27]!==w||t[28]!==O?(k={setModelAndReasoningEffort:O,modelSettings:w},t[27]=w,t[28]=O,t[29]=k):k=t[29],k}';
+const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415 =
+  'async function OB({context:e,prompt:t,workspaceRoots:n,cwd:r,hostId:i,agentMode:a,serviceTier:o,collaborationMode:s,memoryPreferences:c,workspaceKind:l=`project`,projectlessOutputDirectory:u}){let d=[{type:`text`,text:t,text_elements:[]},...DB(e,i!==he)],{config:f}=await ci(`read-config-for-host`,{hostId:i,includeLayers:!1,cwd:r});return{input:d,commentAttachments:e.commentAttachments,workspaceRoots:n,cwd:r,fileAttachments:e.fileAttachments,addedFiles:e.addedFiles,agentMode:a,model:null,serviceTier:o,reasoningEffort:null,collaborationMode:s,config:Ir(f),memoryPreferences:c,workspaceKind:l,...l===`projectless`?{projectlessOutputDirectory:u}:{}}}';
+const NEW_THREAD_MODEL_STATE_BUNDLE_26_415 = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415}function _t(e){return e?.latestCollaborationMode?.settings?.reasoning_effort??null}function Ft(e){return e?.latestCollaborationMode?.settings?.model??null}`;
 const LINUX_VISUAL_COMPAT_CSS_CURRENT =
   '.window-fx-sidebar-surface{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}.app-header-tint{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}.sidebar-resize-handle-line{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}[data-codex-window-type=electron]:not([data-codex-os=win32]) body{background:0 0;background:var(--color-token-editor-background)}[data-codex-window-type=electron].electron-opaque body{background-color:var(--color-background-surface-under);--color-background-elevated-primary:var(--color-background-elevated-primary-opaque);background-image:none}';
 const LINUX_VISUAL_COMPAT_CSS_26_406 =
@@ -297,7 +304,8 @@ test('injectLinuxCloseCancelPatch reports diagnostics when close-cancel anchors 
 for (const [label, fixture] of [
   ['legacy', TERMINAL_PANEL_BLOCK_LEGACY],
   ['current', TERMINAL_PANEL_BLOCK_CURRENT],
-  ['26.406', TERMINAL_PANEL_BLOCK_26_406]
+  ['26.406', TERMINAL_PANEL_BLOCK_26_406],
+  ['26.415', TERMINAL_PANEL_BLOCK_26_415]
 ]) {
   test(
     `injectLinuxTerminalLifecyclePatch adds a Linux terminal handoff guard to the ${label} renderer bundle`,
@@ -321,7 +329,7 @@ for (const [label, fixture] of [
       );
       assert.match(
         updated,
-        /codexLinuxPreserveSession\|\|[A-Za-z_$][\w$]*\|\|[A-Za-z_$][\w$]*\.close\(t\)/
+        /codexLinuxPreserveSession\|\|[A-Za-z_$][\w$]*\|\|[A-Za-z_$][\w$]*\.close\([A-Za-z_$][\w$]*\)/
       );
     }
   );
@@ -474,6 +482,42 @@ test('patchRendererNewThreadModelBundle skips when no new-thread candidate bundl
         'Skipping Linux new-thread model patch because no new-thread renderer candidate bundle was detected.'
       ),
       true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererNewThreadModelBundle patches split 26.415 state and submit bundles', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-split-26415-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const stateBundlePath = path.join(assetsDir, 'use-model-settings.js');
+    const submitBundlePath = path.join(assetsDir, 'index.js');
+    await fs.promises.writeFile(stateBundlePath, NEW_THREAD_MODEL_STATE_BUNDLE_26_415, 'utf8');
+    await fs.promises.writeFile(submitBundlePath, NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+
+    assert.equal(result.status, 'applied');
+    assert.equal(result.stateSourceName, 'use-model-settings.js');
+    assert.equal(result.submitSourceName, 'index.js');
+
+    const patchedState = await fs.promises.readFile(stateBundlePath, 'utf8');
+    const patchedSubmit = await fs.promises.readFile(submitBundlePath, 'utf8');
+    assert.match(patchedState, /codexLinuxPendingModelSettings/);
+    assert.match(patchedSubmit, /codexLinuxFreshThreadCollaborationModeSettings/);
+    assert.match(
+      patchedSubmit,
+      /reasoning_effort:.*\.settings\?\.reasoning_effort\?\?.*\.model_reasoning_effort\?\?null/
     );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
