@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  applyLinuxBrowserCommentPositionPatch,
   applyLinuxCloseCancelPatch,
   applyLinuxOpenTargetsPatch,
   applyLinuxMenuBarPatch,
@@ -15,6 +16,7 @@ import {
   buildWrapperScript,
   createInstallDiagnosticManifest,
   findExecutableInPath,
+  injectLinuxBrowserCommentPositionPatch,
   injectLinuxCloseCancelPatch,
   injectLinuxOpenTargetsPatch,
   injectLinuxMenuBarPatch,
@@ -23,6 +25,7 @@ import {
   injectLinuxTodoProgressPatch,
   injectLinuxVisualCompatCssPatch,
   injectLinuxVisualCompatJsPatch,
+  patchRendererLinuxBrowserCommentPositionBundle,
   patchRendererNewThreadModelBundle,
   patchRendererLinuxVisualCompat,
   patchRendererTodoProgressBundle,
@@ -83,6 +86,8 @@ const LINUX_VISUAL_COMPAT_JS_26_406 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!xY()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 const LINUX_VISUAL_COMPAT_JS_26_409 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!wX()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
+const LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT =
+  'function wP(e){let x;let{message:N,root:P,popupWindow:F}=x,I=N.session.sessionId;let U;t[31]!==N.editorFrame.height||t[32]!==N.editorFrame.width||t[33]!==N.editorFrame.x||t[34]!==N.editorFrame.y?(U={left:N.editorFrame.x,top:N.editorFrame.y,width:N.editorFrame.width,height:N.editorFrame.height},t[31]=N.editorFrame.height,t[32]=N.editorFrame.width,t[33]=N.editorFrame.x,t[34]=N.editorFrame.y,t[35]=U):U=t[35];return U}function TP({conversationId:e,openerWindow:t,existingPopup:n,message:r}){let i=ze({windowId:ve.BROWSER_COMMENT_POPUP,conversationId:e});if(n!=null&&!n.window.closed&&n.frameName===i)return n;let{x:a,y:o,width:s,height:c}=r.overlayWindowBounds,l=t.open(`about:blank`,i,[`popup=yes`,`left=${Math.round(a)}`,`top=${Math.round(o)}`,`width=${Math.round(s)}`,`height=${Math.round(c)}`].join(`,`));return l==null?null:{frameName:i,window:l}}d(`browser-sidebar-comment-overlay-session`,k,A);';
 const TODO_PROGRESS_BUNDLE_CURRENT =
   'case`todo-list`:return(0,$.jsx)(H8,{item:e});function H8(e){let t=(0,Q.c)(46),{item:n,isComplete:r}=e,i=r===void 0?!1:r,a=Br(),[o,s]=(0,Z.useState)(!0),{elementHeightPx:c,elementRef:l}=c$(),u=(0,Z.useRef)(null),d;t[0]===n.plan?d=t[1]:(d=(0,km.default)(n.plan,Aze),t[0]=n.plan,t[1]=d);let f=d,p=n.plan.length,m;t[2]===n.plan?m=t[3]:(m=n.plan.findIndex(kze),t[2]=n.plan,t[3]=m);let h=m,O;t[17]!==h||t[18]!==a||t[19]!==i||t[20]!==n.plan?(O=n.plan.map((e,t)=>(0,$.jsx)(`span`,{className:X(`x`,e.status===`completed`&&`line-through`),children:e.step},t)),t[17]=h,t[18]=a,t[19]=i,t[20]=n.plan,t[21]=O):O=t[21];let P;t[36]!==f||t[37]!==p?(P=(0,$.jsx)(Y,{id:`localConversationPage.planItemsCompleted`,defaultMessage:`{completedItems} out of {totalItems, plural, one {# task completed} other {# tasks completed}}`,values:{completedItems:f,totalItems:p}}),t[36]=f,t[37]=p,t[38]=P):P=t[38];return P}function Oze(e){return!e}function Qze(e){let t=(0,Q.c)(37),{item:n}=e,r=n.plan.length,i=n.plan.reduce(eBe,0),[a,o]=(0,Z.useState)(!1),{elementHeightPx:s,elementRef:c}=c$(),l=Br(),u=i===0?l.formatMessage({id:`codex.plan.todoListCreated`,defaultMessage:`To do list created with {total} tasks`},{total:r}):l.formatMessage({id:`codex.plan.tasksCompletedSummary`,defaultMessage:`{completed} out of {total} tasks completed`},{completed:i,total:r}),w;if(t[19]!==l||t[20]!==n.plan){let e;t[22]===l?e=t[23]:(e=(e,t)=>(0,$.jsx)(`span`,{className:X(`x`,e.status===`completed`&&`line-through`),children:e.step},t),t[22]=l,t[23]=e),w=n.plan.map(e),t[19]=l,t[20]=n.plan,t[21]=w}else w=t[21];return u}function $ze(e){return!e}function iBe(e){let t=(0,Q.c)(24),u;if(e.kind===`entry`){let e=e.entry.item;if(e.type===`todo-list`){let n;t[7]===e?n=t[8]:(n=(0,$.jsx)(Qze,{item:e}),t[7]=e,t[8]=n),u=n}}return u}function aBe(e){return e}function lBe(e){let t=(0,Q.c)(16),{conversationId:n,hasBlockingRequest:r,todoListItem:i,unifiedDiffItem:a,conversationDetailLevel:o,cwd:s}=e,[c,l]=(0,Z.useState)(null),f=i!=null,p=a!=null&&o!==`STEPS_PROSE`;if(!(c&&!r&&(f||p)))return null;let m;t[2]!==f||t[3]!==i?(m=f&&i!=null&&(0,$.jsx)(H8,{item:i}),t[2]=f,t[3]=i,t[4]=m):m=t[4];return m}var uBe=320;';
 const TODO_PROGRESS_BUNDLE_26_406 = TODO_PROGRESS_BUNDLE_CURRENT
@@ -843,6 +848,130 @@ test('patchRendererLinuxVisualCompat skips incompatible JS anchors without abort
   }
 });
 
+test('injectLinuxBrowserCommentPositionPatch adds Linux popup drift correction', () => {
+  const updated = injectLinuxBrowserCommentPositionPatch(LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT);
+
+  assert.match(updated, /codexLinuxBrowserCommentPosition/);
+  assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_BROWSER_COMMENT_POSITION_PATCH/);
+  assert.match(updated, /\.moveTo\(Math\.round\(a\),Math\.round\(o\)\)/);
+  assert.match(updated, /\.resizeTo\(Math\.round\(s\),Math\.round\(c\)\)/);
+  assert.match(updated, /overlayWindowBounds\.x/);
+  assert.match(updated, /overlayWindowBounds\.y/);
+  assert.match(updated, /Math\.min\(Math\.max\(N\.editorFrame\.x-a,0\),s\)/);
+  assert.match(updated, /Math\.min\(Math\.max\(N\.editorFrame\.y-o,0\),c\)/);
+});
+
+test('injectLinuxBrowserCommentPositionPatch is idempotent', () => {
+  const once = injectLinuxBrowserCommentPositionPatch(LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT);
+  const twice = injectLinuxBrowserCommentPositionPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBrowserCommentPositionPatch skips patching when disabled', () => {
+  const result = applyLinuxBrowserCommentPositionPatch(LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT, {
+    skip: true
+  });
+
+  assert.equal(result.updated, LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxBrowserCommentPositionPatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () =>
+      injectLinuxBrowserCommentPositionPatch('const noop = true;', {
+        sourceName: 'use-model-settings.js'
+      }),
+    {
+      message:
+        /Could not patch the renderer browser comment positioning bundle for Linux\. Source: use-model-settings\.js\. Missing anchors: overlay session event marker, overlay window bounds payload, popup window binding, popup window open block, editor frame style assignment\. Detected anchors: overlaySessionMessage=no, overlayBoundsPayload=no, popupWindowBinding=no, popupOpenCall=no, editorFrameAssignment=no\./
+    }
+  );
+});
+
+test('patchRendererLinuxBrowserCommentPositionBundle skips when anchors are incompatible', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-browser-comment-anchor-mismatch-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const bundlePath = path.join(assetsDir, 'use-model-settings.js');
+    const incompatibleBundle = LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT.replace(
+      'popupWindow:F',
+      'popup:F'
+    );
+    await fs.promises.writeFile(bundlePath, incompatibleBundle, 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererLinuxBrowserCommentPositionBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result.status, 'skipped');
+    assert.deepEqual(result.reason, 'anchor-mismatch');
+    assert.equal(result.sourceName, 'use-model-settings.js');
+    assert.match(
+      result.details ?? '',
+      /Could not patch the renderer browser comment positioning bundle for Linux/
+    );
+    assert.equal(await fs.promises.readFile(bundlePath, 'utf8'), incompatibleBundle);
+    assert.equal(
+      warnings.some((message) =>
+        message.includes(
+          'Skipping Linux browser-comment positioning patch for use-model-settings.js'
+        )
+      ),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererLinuxBrowserCommentPositionBundle skips when no candidate bundle exists', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-browser-comment-no-candidate-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(path.join(assetsDir, 'index.js'), 'const noop = true;', 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererLinuxBrowserCommentPositionBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    });
+    assert.equal(
+      warnings.includes(
+        'Skipping Linux browser-comment positioning patch because no renderer candidate bundle was detected.'
+      ),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('buildWrapperScript includes perf toggles and runtime logging', () => {
   const script = buildWrapperScript({
     channel: CHANNELS.stable,
@@ -912,6 +1041,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       linuxVisualCompat: {
         status: 'applied',
         sourceName: 'index.js'
+      },
+      linuxBrowserCommentPosition: {
+        status: 'applied',
+        sourceName: 'index.js'
       }
     }
   });
@@ -969,6 +1102,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'index.js'
       },
       linuxVisualCompat: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
+      linuxBrowserCommentPosition: {
         status: 'applied',
         sourceName: 'index.js'
       }

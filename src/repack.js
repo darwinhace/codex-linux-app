@@ -36,6 +36,8 @@ const LINUX_VISUAL_COMPAT_CSS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Linux visual-compat stylesheet.';
 const LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Linux visual-compat script.';
+const LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer browser comment positioning bundle for Linux.';
 
 export function parseArgs(argv) {
   const options = {
@@ -211,6 +213,10 @@ export async function installDesktop(options, logger) {
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTodoProgressBundle(extractedAppDir, logger);
   const linuxVisualCompatPatch = await patchRendererLinuxVisualCompat(extractedAppDir, logger);
+  const linuxBrowserCommentPositionPatch = await patchRendererLinuxBrowserCommentPositionBundle(
+    extractedAppDir,
+    logger
+  );
   if (options.skipOpenTargetsPatch) {
     logger.warn('Skipping Linux open-in-targets patch because --skip-open-targets-patch was set');
   }
@@ -252,7 +258,8 @@ export async function installDesktop(options, logger) {
     terminalLifecycle: terminalPatch,
     newThreadModel: newThreadModelPatch,
     todoProgress: todoProgressPatch,
-    linuxVisualCompat: linuxVisualCompatPatch
+    linuxVisualCompat: linuxVisualCompatPatch,
+    linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch
   });
   const iconPath = await installChannelRuntime({
     channel,
@@ -297,7 +304,8 @@ export async function installDesktop(options, logger) {
       terminalLifecycle: terminalPatch,
       newThreadModel: newThreadModelPatch,
       todoProgress: todoProgressPatch,
-      linuxVisualCompat: linuxVisualCompatPatch
+      linuxVisualCompat: linuxVisualCompatPatch,
+      linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch
     }
   });
   await writeInstallDiagnosticManifest({
@@ -465,6 +473,7 @@ const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_415 =
   'let p=Ir(f),codexLinuxFreshThreadCollaborationModeSettings=s==null?null:{...s,settings:{...s.settings,model:s.settings?.model??p.model??null,reasoning_effort:s.settings?.reasoning_effort??p.model_reasoning_effort??null}};return{input:d,commentAttachments:e.commentAttachments,workspaceRoots:n,cwd:r,fileAttachments:e.fileAttachments,addedFiles:e.addedFiles,agentMode:a,model:null,serviceTier:o,reasoningEffort:null,collaborationMode:codexLinuxFreshThreadCollaborationModeSettings,config:p,memoryPreferences:c,workspaceKind:l,...l===`projectless`?{projectlessOutputDirectory:u}:{}}';
 const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
+const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
 const LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN =
   /if\((?<elementVar>[A-Za-z_$][\w$]*)\)\{if\((?<windowStateVar>[A-Za-z_$][\w$]*)\.opaqueWindows&&!(?<opaqueGuardFn>[A-Za-z_$][\w$]*)\(\)\)\{\k<elementVar>\.classList\.add\(`electron-opaque`\);return\}\k<elementVar>\.classList\.remove\(`electron-opaque`\)\}/;
 const LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKER_SETS = [
@@ -476,6 +485,15 @@ const LINUX_VISUAL_COMPAT_JS_CANDIDATE_MARKERS = [
   'electron-opaque',
   'dataset.codexOs'
 ];
+const LINUX_BROWSER_COMMENT_POSITION_CANDIDATE_MARKERS = [
+  'browser-sidebar-comment-overlay-session',
+  'overlayWindowBounds',
+  'editorFrame.x'
+];
+const LINUX_BROWSER_COMMENT_POSITION_OVERLAY_STATE_PATTERN =
+  /let\{message:(?<messageVar>[A-Za-z_$][\w$]*),root:(?<rootVar>[A-Za-z_$][\w$]*),popupWindow:(?<popupVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*,/;
+const LINUX_BROWSER_COMMENT_POSITION_POPUP_OPEN_PATTERN =
+  /let\{x:(?<xVar>[A-Za-z_$][\w$]*),y:(?<yVar>[A-Za-z_$][\w$]*),width:(?<widthVar>[A-Za-z_$][\w$]*),height:(?<heightVar>[A-Za-z_$][\w$]*)\}=(?<boundsVar>[A-Za-z_$][\w$]*)\.overlayWindowBounds,(?<popupVar>[A-Za-z_$][\w$]*)=(?<openerVar>[A-Za-z_$][\w$]*)\.open\(`about:blank`,(?<frameNameVar>[A-Za-z_$][\w$]*),\[`popup=yes`,`left=\$\{Math\.round\(\k<xVar>\)\}`,`top=\$\{Math\.round\(\k<yVar>\)\}`,`width=\$\{Math\.round\(\k<widthVar>\)\}`,`height=\$\{Math\.round\(\k<heightVar>\)\}`\]\.join\(`,`\)\);return \k<popupVar>==null\?null:\{frameName:\k<frameNameVar>,window:\k<popupVar>\}/;
 
 async function patchMainProcessBundle(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
@@ -1612,6 +1630,174 @@ function analyzeLinuxVisualCompatJsBundle(bundleSource) {
       !detected.electronOpaqueClass && 'electron-opaque class',
       !detected.codexOsDataset && 'codexOs dataset access',
       !detected.opaqueEffectBlock && 'opaque window effect block'
+    ].filter(Boolean)
+  };
+}
+
+export async function patchRendererLinuxBrowserCommentPositionBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_BROWSER_COMMENT_POSITION_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer Linux browser-comment positioning bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxBrowserCommentPositionPatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux browser-comment positioning patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(
+        `Patched Linux browser-comment positioning behavior into renderer bundle ${assetName}`
+      );
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux browser-comment positioning patch because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux browser-comment positioning patch because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxBrowserCommentPositionPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxBrowserCommentPositionPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxBrowserCommentPositionPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  const errorMessage = buildLinuxBrowserCommentPositionPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  const overlayStateMatch = bundleSource.match(LINUX_BROWSER_COMMENT_POSITION_OVERLAY_STATE_PATTERN);
+  if (!overlayStateMatch?.groups?.messageVar || !overlayStateMatch?.groups?.popupVar) {
+    throw new Error(errorMessage);
+  }
+
+  const { messageVar, popupVar } = overlayStateMatch.groups;
+  let updated = replaceRegexOrThrow(
+    bundleSource,
+    LINUX_BROWSER_COMMENT_POSITION_POPUP_OPEN_PATTERN,
+    ({
+      xVar,
+      yVar,
+      widthVar,
+      heightVar,
+      boundsVar,
+      popupVar: popupWindowVar,
+      openerVar,
+      frameNameVar
+    }) =>
+      `let{x:${xVar},y:${yVar},width:${widthVar},height:${heightVar}}=${boundsVar}.overlayWindowBounds,${popupWindowVar}=${openerVar}.open(\`about:blank\`,${frameNameVar},[\`popup=yes\`,\`left=\${Math.round(${xVar})}\`,\`top=\${Math.round(${yVar})}\`,\`width=\${Math.round(${widthVar})}\`,\`height=\${Math.round(${heightVar})}\`].join(\`,\`));if(${popupWindowVar}!=null){/* ${LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER} */let e=document.documentElement.dataset.codexOs===\`linux\`,t=!1;try{t=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BROWSER_COMMENT_POSITION_PATCH===\`1\`}catch{}if(e&&!t)try{${popupWindowVar}.moveTo(Math.round(${xVar}),Math.round(${yVar})),${popupWindowVar}.resizeTo(Math.round(${widthVar}),Math.round(${heightVar}))}catch{}}return ${popupWindowVar}==null?null:{frameName:${frameNameVar},window:${popupWindowVar}}`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    buildLinuxBrowserCommentPositionFramePattern(messageVar),
+    ({ frameVar }) =>
+      `${frameVar}=(()=>{let e={left:${messageVar}.editorFrame.x,top:${messageVar}.editorFrame.y,width:${messageVar}.editorFrame.width,height:${messageVar}.editorFrame.height},t=document.documentElement.dataset.codexOs===\`linux\`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BROWSER_COMMENT_POSITION_PATCH===\`1\`}catch{}if(t&&!n){let r=typeof ${popupVar}.screenX===\`number\`?${popupVar}.screenX:typeof ${popupVar}.screenLeft===\`number\`?${popupVar}.screenLeft:null,i=typeof ${popupVar}.screenY===\`number\`?${popupVar}.screenY:typeof ${popupVar}.screenTop===\`number\`?${popupVar}.screenTop:null;if(r!=null&&i!=null&&${messageVar}.overlayWindowBounds!=null){let a=r-${messageVar}.overlayWindowBounds.x,o=i-${messageVar}.overlayWindowBounds.y,s=Math.max(${messageVar}.overlayWindowBounds.width-${messageVar}.editorFrame.width,0),c=Math.max(${messageVar}.overlayWindowBounds.height-${messageVar}.editorFrame.height,0),l=Math.min(Math.max(${messageVar}.editorFrame.x-a,0),s),u=Math.min(Math.max(${messageVar}.editorFrame.y-o,0),c);e={left:l,top:u,width:${messageVar}.editorFrame.width,height:${messageVar}.editorFrame.height}}}return e})()`,
+    errorMessage
+  );
+  return updated;
+}
+
+function buildLinuxBrowserCommentPositionFramePattern(messageVar) {
+  const escapedMessageVar = escapeRegExp(messageVar);
+  return new RegExp(
+    `(?<frameVar>[A-Za-z_$][\\w$]*)=\\{left:${escapedMessageVar}\\.editorFrame\\.x,top:${escapedMessageVar}\\.editorFrame\\.y,width:${escapedMessageVar}\\.editorFrame\\.width,height:${escapedMessageVar}\\.editorFrame\\.height\\}`
+  );
+}
+
+function buildLinuxBrowserCommentPositionPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxBrowserCommentPositionBundle(bundleSource)
+  );
+}
+
+function analyzeLinuxBrowserCommentPositionBundle(bundleSource) {
+  const detected = {
+    overlaySessionMessage: bundleSource.includes('browser-sidebar-comment-overlay-session'),
+    overlayBoundsPayload: bundleSource.includes('overlayWindowBounds'),
+    popupWindowBinding: LINUX_BROWSER_COMMENT_POSITION_OVERLAY_STATE_PATTERN.test(bundleSource),
+    popupOpenCall: LINUX_BROWSER_COMMENT_POSITION_POPUP_OPEN_PATTERN.test(bundleSource),
+    editorFrameAssignment:
+      /editorFrame\.x,top:[A-Za-z_$][\w$]*\.editorFrame\.y,width:[A-Za-z_$][\w$]*\.editorFrame\.width,height:[A-Za-z_$][\w$]*\.editorFrame\.height/.test(
+        bundleSource
+      )
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.overlaySessionMessage && 'overlay session event marker',
+      !detected.overlayBoundsPayload && 'overlay window bounds payload',
+      !detected.popupWindowBinding && 'popup window binding',
+      !detected.popupOpenCall && 'popup window open block',
+      !detected.editorFrameAssignment && 'editor frame style assignment'
     ].filter(Boolean)
   };
 }
