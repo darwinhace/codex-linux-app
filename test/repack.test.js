@@ -728,6 +728,14 @@ for (const [label, fixture] of [
     assert.match(updated, /\.no-underline\\!/);
     assert.match(updated, /\[data-browser-comment-editor-surface\]/);
     assert.match(updated, /max-height:clamp\(44px,18vh,88px\)!important/);
+    assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\)\{/);
+    assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\) body\{/);
+    assert.match(updated, /\.codex-linux-visual-compat\.compact-window,\n\[data-codex-window-type=electron\]\[data-codex-os=linux\]\.codex-linux-visual-compat\.compact-window body\{/);
+    assert.match(updated, /background:transparent!important/);
+    assert.doesNotMatch(
+      updated,
+      /\.codex-linux-visual-compat\.compact-window body\{\s*background:var\(--color-background-surface-under\)!important/
+    );
     assert.doesNotMatch(updated, /\.window-fx-sidebar-surface \*/);
     assert.doesNotMatch(updated, /animation:none!important/);
   });

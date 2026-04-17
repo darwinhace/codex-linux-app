@@ -1530,14 +1530,20 @@ export function injectLinuxVisualCompatJsPatch(bundleSource, options = {}) {
 
 function buildLinuxVisualCompatCssOverride() {
   return `/* ${LINUX_VISUAL_COMPAT_PATCH_MARKER} */
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat{
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat:not(.compact-window){
   background-color:var(--color-background-surface-under)!important;
   background-image:none!important
 }
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat body{
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat:not(.compact-window) body{
   background:var(--color-background-surface-under)!important;
   background-image:none!important;
   --color-background-elevated-primary:var(--color-background-elevated-primary-opaque)
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat.compact-window,
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat.compact-window body{
+  background:transparent!important;
+  background-image:none!important;
+  background-color:transparent!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface,
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .app-header-tint{
