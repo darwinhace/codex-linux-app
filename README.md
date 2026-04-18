@@ -2,10 +2,10 @@
 
 This repo repackages the published Codex desktop app for Linux `amd64`/`x64` (including Ubuntu and Arch-based distros such as CachyOS). It reads the live OpenAI appcast feed, downloads the selected upstream build, swaps in a Linux Electron runtime, rebuilds the native modules for Linux, installs stable and beta side by side, and creates user-local desktop entries.
 
-Current upstream feed heads checked on April 7, 2026:
+Current upstream feed heads checked on April 19, 2026:
 
-- Stable: `26.325.31654` build `1272`
-- Beta: `26.401.11717` build `1329`
+- Stable: `26.415.32059` build `1789`
+- Beta: `26.415.40636` build `1798`
 
 ## First Run Requirements
 
@@ -195,6 +195,7 @@ Use this section as the single source of truth for env vars used by this project
 | `CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH` | Patched app main bundle (Linux) | unset | Disables the Linux close-cancel window restoration patch when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT` | Patched app renderer bundle (Linux) | unset | Disables Linux visual-compat patch when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH` | Patched app renderer bundle (Linux) | unset | Disables Linux todo progress patch when set to `1`. |
+| `CODEX_DESKTOP_DISABLE_LINUX_BROWSER_COMMENT_POSITION_PATCH` | Patched app renderer bundle (Linux) | unset | Disables Linux browser comment popup positioning correction when set to `1`. |
 | `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING` | Launcher | unset / `0` | Enables Chromium logging when set to `1`. |
 | `CODEX_DESKTOP_TRACE_TERMINAL_PATCH` | Patched app renderer bundle (Linux) | unset | Enables terminal patch trace warnings when set to `1`. |
 | `CODEX_DESKTOP_INSTALL_MANIFEST` | Launcher (internal) | Auto-set by launcher | Path to install diagnostic manifest. Do not set manually. |
@@ -207,9 +208,10 @@ Use this section as the single source of truth for env vars used by this project
 - Binary discovery is done with direct PATH scanning in Node (not external `which`), so Fish/Arch setups work as long as PATH or the `CODEX_CLI_PATH`/`RG_PATH` overrides are correct.
 - For all runtime and installer env vars, see the **Environment Variables** section above.
 - The build/install stages retry forever on failure and keep logs under `~/.local/state/codex-linux-app/logs`.
-- The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state.
-- If a new upstream renderer build changes the fresh-thread model bundle shape, the installer now skips that patch with a warning instead of aborting the install; the log and diagnostic manifest record the skipped `newThreadModel` state.
-- If a new upstream renderer build changes the Linux visual-compat renderer bundle shape, the installer also skips that patch with a warning instead of aborting the install.
+- The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state (including `compactSlashCommand`).
+- The fresh-thread model patch is required. If upstream bundle anchors drift and the patch cannot be applied, install aborts with an explicit `newThreadModel` patch error.
+- Compact slash command support (`/compact`) is required. If compatibility anchors are missing, install aborts with an explicit compact slash command verification error.
+- If a new upstream renderer build changes the Linux visual-compat renderer bundle shape, the installer skips that patch with a warning instead of aborting the install.
 - The generated launcher auto-falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is the normal case for a per-user install.
 - If a reinstall opens to a black spinner window, reinstall once with `./install-desktop --skip-terminal-patch` to bypass the renderer terminal patch while debugging.
 - On Linux, canceling the quit confirmation restores or recreates the main window so the app stays visible instead of remaining only as a background task.
