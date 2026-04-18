@@ -38,6 +38,8 @@ const LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Linux visual-compat script.';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer browser comment positioning bundle for Linux.';
+const COMPACT_SLASH_COMMAND_VERIFICATION_BASE_ERROR_MESSAGE =
+  'Could not verify compact slash command support in renderer bundle for Linux.';
 
 export function parseArgs(argv) {
   const options = {
@@ -217,6 +219,11 @@ export async function installDesktop(options, logger) {
     extractedAppDir,
     logger
   );
+  const compactSlashCommandPatch = await patchRendererCompactSlashCommandBundle(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('compact slash command', compactSlashCommandPatch);
   if (options.skipOpenTargetsPatch) {
     logger.warn('Skipping Linux open-in-targets patch because --skip-open-targets-patch was set');
   }
@@ -259,7 +266,8 @@ export async function installDesktop(options, logger) {
     newThreadModel: newThreadModelPatch,
     todoProgress: todoProgressPatch,
     linuxVisualCompat: linuxVisualCompatPatch,
-    linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch
+    linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
+    compactSlashCommand: compactSlashCommandPatch
   });
   const iconPath = await installChannelRuntime({
     channel,
@@ -305,7 +313,8 @@ export async function installDesktop(options, logger) {
       newThreadModel: newThreadModelPatch,
       todoProgress: todoProgressPatch,
       linuxVisualCompat: linuxVisualCompatPatch,
-      linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch
+      linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
+      compactSlashCommand: compactSlashCommandPatch
     }
   });
   await writeInstallDiagnosticManifest({
@@ -441,6 +450,8 @@ const NEW_THREAD_MODEL_SETTER_SNIPPET_26_406 =
 const NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_406 =
   'return{setModelAndReasoningEffort:(0,Z.useCallback)(async(e,n)=>{try{codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings({model:e,reasoningEffort:n,cwd:s});if(await h(e,n),m){_(e);return}if(k.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:n,profile:c.profile}}),r==null)return;await Qc(`set-default-model-config-for-host`,{hostId:i,model:e,reasoningEffort:n,profile:c.profile}),await v()}catch(e){codexLinuxIsFreshComposer&&codexLinuxSetPendingModelSettings(null);k.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:e}});let n=t.get(xl),r=Eee(o,e);um(e)?n.danger(r,{id:`composer.modelSettings.updateError`,description:(0,Z.createElement)(`div`,{className:`mt-4`},(0,Z.createElement)(Ro))}):n.danger(r,{id:`composer.modelSettings.updateError`})}},[o,m,_,h,c.profile,v,r,t]),modelSettings:g}';
 const NEW_THREAD_MODEL_STATE_SNIPPET_26_415 = 'let y=v,b=s?.authMethod===`copilot`,x;';
+const NEW_THREAD_MODEL_STATE_PATTERN_26_415 =
+  /let y=(?<modelVar>[A-Za-z_$][\w$]*),b=s\?\.authMethod===`copilot`,(?<stateVar>[A-Za-z_$][\w$]*);/;
 const NEW_THREAD_MODEL_STATE_REPLACEMENT_26_415 =
   'let y=v,b=s?.authMethod===`copilot`,codexLinuxIsFreshComposer=n==null||!p,[codexLinuxPendingModelSettings,codexLinuxSetPendingModelSettings]=(0,K.useState)(null),x;';
 const NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_415 =
@@ -494,6 +505,7 @@ const LINUX_BROWSER_COMMENT_POSITION_OVERLAY_STATE_PATTERN =
   /let\{message:(?<messageVar>[A-Za-z_$][\w$]*),root:(?<rootVar>[A-Za-z_$][\w$]*),popupWindow:(?<popupVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*,/;
 const LINUX_BROWSER_COMMENT_POSITION_POPUP_OPEN_PATTERN =
   /let\{x:(?<xVar>[A-Za-z_$][\w$]*),y:(?<yVar>[A-Za-z_$][\w$]*),width:(?<widthVar>[A-Za-z_$][\w$]*),height:(?<heightVar>[A-Za-z_$][\w$]*)\}=(?<boundsVar>[A-Za-z_$][\w$]*)\.overlayWindowBounds,(?<popupVar>[A-Za-z_$][\w$]*)=(?<openerVar>[A-Za-z_$][\w$]*)\.open\(`about:blank`,(?<frameNameVar>[A-Za-z_$][\w$]*),\[`popup=yes`,`left=\$\{Math\.round\(\k<xVar>\)\}`,`top=\$\{Math\.round\(\k<yVar>\)\}`,`width=\$\{Math\.round\(\k<widthVar>\)\}`,`height=\$\{Math\.round\(\k<heightVar>\)\}`\]\.join\(`,`\)\);return \k<popupVar>==null\?null:\{frameName:\k<frameNameVar>,window:\k<popupVar>\}/;
+const COMPACT_SLASH_COMMAND_ID_MARKERS = ['id:`compact`', 'id:"compact"', "id:'compact'"];
 
 async function patchMainProcessBundle(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
@@ -1062,14 +1074,11 @@ function injectLinuxNewThreadModelStatePatch(bundleSource, options = {}) {
     return updated;
   }
 
-  if (bundleSource.includes(NEW_THREAD_MODEL_STATE_SNIPPET_26_415)) {
-    let updated = bundleSource;
-    updated = replaceSnippetOrThrow(
-      updated,
-      NEW_THREAD_MODEL_STATE_SNIPPET_26_415,
-      NEW_THREAD_MODEL_STATE_REPLACEMENT_26_415,
-      errorMessage
-    );
+  if (
+    bundleSource.includes(NEW_THREAD_MODEL_STATE_SNIPPET_26_415) ||
+    NEW_THREAD_MODEL_STATE_PATTERN_26_415.test(bundleSource)
+  ) {
+    let updated = patchNewThreadModelState26_415(bundleSource, errorMessage);
     updated = replaceSnippetOrThrow(
       updated,
       NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_415,
@@ -1101,6 +1110,25 @@ function injectLinuxNewThreadModelStatePatch(bundleSource, options = {}) {
     errorMessage
   );
   return updated;
+}
+
+function patchNewThreadModelState26_415(bundleSource, errorMessage) {
+  if (bundleSource.includes(NEW_THREAD_MODEL_STATE_SNIPPET_26_415)) {
+    return replaceSnippetOrThrow(
+      bundleSource,
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_415,
+      NEW_THREAD_MODEL_STATE_REPLACEMENT_26_415,
+      errorMessage
+    );
+  }
+
+  return replaceRegexOrThrow(
+    bundleSource,
+    NEW_THREAD_MODEL_STATE_PATTERN_26_415,
+    ({ modelVar, stateVar }) =>
+      `let y=${modelVar},b=s?.authMethod===\`copilot\`,codexLinuxIsFreshComposer=n==null||!p,[codexLinuxPendingModelSettings,codexLinuxSetPendingModelSettings]=(0,K.useState)(null),${stateVar};`,
+    errorMessage
+  );
 }
 
 function patchNewThreadModelSetter26_415(bundleSource, errorMessage) {
@@ -1634,6 +1662,98 @@ function analyzeLinuxVisualCompatJsBundle(bundleSource) {
   };
 }
 
+export async function patchRendererCompactSlashCommandBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    if (!isCompactSlashCommandCandidateBundle(original)) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer compact slash command bundle ${assetName}`);
+    const analysis = analyzeCompactSlashCommandBundle(original);
+    if (analysis.missingAnchors.length > 0) {
+      const error = new Error(buildCompactSlashCommandVerificationErrorMessage(original, assetName));
+      if (!firstAnchorError) {
+        firstAnchorError = error;
+        firstAnchorErrorSourceName = assetName;
+      }
+      logger.warn(
+        `Skipping Linux compact slash command verification for ${assetName} because bundle anchors were not compatible: ${error.message}`
+      );
+      continue;
+    }
+
+    logger.info(`Verified compact slash command support in renderer bundle ${assetName}`);
+    return {
+      status: 'already-applied',
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux compact slash command verification because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux compact slash command verification because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+function isCompactSlashCommandCandidateBundle(bundleSource) {
+  const analysis = analyzeCompactSlashCommandBundle(bundleSource);
+  return analysis.detected.commandId || analysis.detected.commandAction;
+}
+
+function analyzeCompactSlashCommandBundle(bundleSource) {
+  const detected = {
+    commandTitle: bundleSource.includes('composer.compactSlashCommand.title'),
+    commandDescription: bundleSource.includes('composer.compactSlashCommand.description'),
+    commandId: COMPACT_SLASH_COMMAND_ID_MARKERS.some((marker) => bundleSource.includes(marker)),
+    commandAction: bundleSource.includes('compactThread('),
+    requiresEmptyComposer: bundleSource.includes('requiresEmptyComposer:!0')
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.commandTitle && 'compact slash command title',
+      !detected.commandDescription && 'compact slash command description',
+      !detected.commandId && 'compact slash command id',
+      !detected.commandAction && 'compact slash command action',
+      !detected.requiresEmptyComposer && 'compact slash command empty-composer gate'
+    ].filter(Boolean)
+  };
+}
+
+function buildCompactSlashCommandVerificationErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    COMPACT_SLASH_COMMAND_VERIFICATION_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeCompactSlashCommandBundle(bundleSource)
+  );
+}
+
 export async function patchRendererLinuxBrowserCommentPositionBundle(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
@@ -2022,7 +2142,8 @@ function analyzeNewThreadModelStateBundle(bundleSource) {
       NEW_THREAD_MODEL_STATE_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_STATE_SNIPPET_26_406,
       NEW_THREAD_MODEL_STATE_SNIPPET_26_415
-    ].some((snippet) => bundleSource.includes(snippet)),
+    ].some((snippet) => bundleSource.includes(snippet)) ||
+      NEW_THREAD_MODEL_STATE_PATTERN_26_415.test(bundleSource),
     selectorValueBranch: [
       NEW_THREAD_MODEL_SETTINGS_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_415,

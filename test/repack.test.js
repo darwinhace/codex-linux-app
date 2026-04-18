@@ -25,6 +25,7 @@ import {
   injectLinuxTodoProgressPatch,
   injectLinuxVisualCompatCssPatch,
   injectLinuxVisualCompatJsPatch,
+  patchRendererCompactSlashCommandBundle,
   patchRendererLinuxBrowserCommentPositionBundle,
   patchRendererNewThreadModelBundle,
   patchRendererLinuxVisualCompat,
@@ -74,6 +75,10 @@ const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED = NEW_THREAD_MODEL_STATE_BUND
   .replace('r.get(bo)', 'r.get(So)')
   .replace('$Ce(c,t)', 'lwe(c,t)')
   .replace('(0,K.createElement)(RCe)', '(0,K.createElement)(JCe)');
+const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_32059 = NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED.replace(
+  'let y=v,b=s?.authMethod===`copilot`,x;',
+  'let y=_,b=s?.authMethod===`copilot`,x;'
+);
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DECOY_PREFIX =
   'function codexLinuxDecoy(){let C=null,w=C,T;return T}';
 const LINUX_VISUAL_COMPAT_CSS_CURRENT =
@@ -88,6 +93,12 @@ const LINUX_VISUAL_COMPAT_JS_26_409 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!wX()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 const LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT =
   'function wP(e){let x;let{message:N,root:P,popupWindow:F}=x,I=N.session.sessionId;let U;t[31]!==N.editorFrame.height||t[32]!==N.editorFrame.width||t[33]!==N.editorFrame.x||t[34]!==N.editorFrame.y?(U={left:N.editorFrame.x,top:N.editorFrame.y,width:N.editorFrame.width,height:N.editorFrame.height},t[31]=N.editorFrame.height,t[32]=N.editorFrame.width,t[33]=N.editorFrame.x,t[34]=N.editorFrame.y,t[35]=U):U=t[35];return U}function TP({conversationId:e,openerWindow:t,existingPopup:n,message:r}){let i=ze({windowId:ve.BROWSER_COMMENT_POPUP,conversationId:e});if(n!=null&&!n.window.closed&&n.frameName===i)return n;let{x:a,y:o,width:s,height:c}=r.overlayWindowBounds,l=t.open(`about:blank`,i,[`popup=yes`,`left=${Math.round(a)}`,`top=${Math.round(o)}`,`width=${Math.round(s)}`,`height=${Math.round(c)}`].join(`,`));return l==null?null:{frameName:i,window:l}}d(`browser-sidebar-comment-overlay-session`,k,A);';
+const COMPACT_SLASH_COMMAND_BUNDLE_CURRENT =
+  'function RW(e){let t=(0,Q.c)(17),{conversationId:n,isResponseInProgress:r}=e,i=ea(),a=xf(n),o;t[0]===i?o=t[1]:(o=i.formatMessage({id:`composer.compactSlashCommand.title`,defaultMessage:`Compact`,description:`Title for the compact slash command`}),t[0]=i,t[1]=o);let s;t[2]===i?s=t[3]:(s=i.formatMessage({id:`composer.compactSlashCommand.description`,defaultMessage:`Compact this thread\'s context`,description:`Description for the compact slash command`}),t[2]=i,t[3]=s);let c=n!=null&&!r,l;t[4]!==a||t[5]!==n?(l=async()=>{n!=null&&await a.compactThread(n)},t[4]=a,t[5]=n,t[6]=l):l=t[6];let u;return u={id:`compact`,title:o,description:s,requiresEmptyComposer:!0,Icon:LW,enabled:c,onSelect:l},u}';
+const COMPACT_SLASH_COMMAND_BUNDLE_INCOMPATIBLE = COMPACT_SLASH_COMMAND_BUNDLE_CURRENT.replace(
+  'requiresEmptyComposer:!0',
+  'requiresEmptyComposer:!1'
+);
 const TODO_PROGRESS_BUNDLE_CURRENT =
   'case`todo-list`:return(0,$.jsx)(H8,{item:e});function H8(e){let t=(0,Q.c)(46),{item:n,isComplete:r}=e,i=r===void 0?!1:r,a=Br(),[o,s]=(0,Z.useState)(!0),{elementHeightPx:c,elementRef:l}=c$(),u=(0,Z.useRef)(null),d;t[0]===n.plan?d=t[1]:(d=(0,km.default)(n.plan,Aze),t[0]=n.plan,t[1]=d);let f=d,p=n.plan.length,m;t[2]===n.plan?m=t[3]:(m=n.plan.findIndex(kze),t[2]=n.plan,t[3]=m);let h=m,O;t[17]!==h||t[18]!==a||t[19]!==i||t[20]!==n.plan?(O=n.plan.map((e,t)=>(0,$.jsx)(`span`,{className:X(`x`,e.status===`completed`&&`line-through`),children:e.step},t)),t[17]=h,t[18]=a,t[19]=i,t[20]=n.plan,t[21]=O):O=t[21];let P;t[36]!==f||t[37]!==p?(P=(0,$.jsx)(Y,{id:`localConversationPage.planItemsCompleted`,defaultMessage:`{completedItems} out of {totalItems, plural, one {# task completed} other {# tasks completed}}`,values:{completedItems:f,totalItems:p}}),t[36]=f,t[37]=p,t[38]=P):P=t[38];return P}function Oze(e){return!e}function Qze(e){let t=(0,Q.c)(37),{item:n}=e,r=n.plan.length,i=n.plan.reduce(eBe,0),[a,o]=(0,Z.useState)(!1),{elementHeightPx:s,elementRef:c}=c$(),l=Br(),u=i===0?l.formatMessage({id:`codex.plan.todoListCreated`,defaultMessage:`To do list created with {total} tasks`},{total:r}):l.formatMessage({id:`codex.plan.tasksCompletedSummary`,defaultMessage:`{completed} out of {total} tasks completed`},{completed:i,total:r}),w;if(t[19]!==l||t[20]!==n.plan){let e;t[22]===l?e=t[23]:(e=(e,t)=>(0,$.jsx)(`span`,{className:X(`x`,e.status===`completed`&&`line-through`),children:e.step},t),t[22]=l,t[23]=e),w=n.plan.map(e),t[19]=l,t[20]=n.plan,t[21]=w}else w=t[21];return u}function $ze(e){return!e}function iBe(e){let t=(0,Q.c)(24),u;if(e.kind===`entry`){let e=e.entry.item;if(e.type===`todo-list`){let n;t[7]===e?n=t[8]:(n=(0,$.jsx)(Qze,{item:e}),t[7]=e,t[8]=n),u=n}}return u}function aBe(e){return e}function lBe(e){let t=(0,Q.c)(16),{conversationId:n,hasBlockingRequest:r,todoListItem:i,unifiedDiffItem:a,conversationDetailLevel:o,cwd:s}=e,[c,l]=(0,Z.useState)(null),f=i!=null,p=a!=null&&o!==`STEPS_PROSE`;if(!(c&&!r&&(f||p)))return null;let m;t[2]!==f||t[3]!==i?(m=f&&i!=null&&(0,$.jsx)(H8,{item:i}),t[2]=f,t[3]=i,t[4]=m):m=t[4];return m}var uBe=320;';
 const TODO_PROGRESS_BUNDLE_26_406 = TODO_PROGRESS_BUNDLE_CURRENT
@@ -423,6 +434,15 @@ test('injectLinuxNewThreadModelPatch supports 26.415 setter helper drift', () =>
   assert.match(updated, /codexLinuxFreshThreadCollaborationModeSettings/);
 });
 
+test('injectLinuxNewThreadModelPatch supports 26.415 state block drift from 26.415.32059', () => {
+  const bundle = `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_32059}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415}`;
+  const updated = injectLinuxNewThreadModelPatch(bundle);
+
+  assert.match(updated, /let y=_,b=s\?\.authMethod===`copilot`,codexLinuxIsFreshComposer=n==null\|\|!p,/);
+  assert.match(updated, /codexLinuxSetPendingModelSettings\(\{model:e,reasoningEffort:t,cwd:l\}\)/);
+  assert.match(updated, /codexLinuxFreshThreadCollaborationModeSettings/);
+});
+
 test('injectLinuxNewThreadModelPatch scopes 26.415 fresh-effect insertion to the selector function', () => {
   const bundle = `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DECOY_PREFIX}${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415}`;
   const updated = injectLinuxNewThreadModelPatch(bundle);
@@ -553,6 +573,38 @@ test('patchRendererNewThreadModelBundle patches split 26.415 bundles with setter
       patchedSubmit,
       /reasoning_effort:.*\.settings\?\.reasoning_effort\?\?.*\.model_reasoning_effort\?\?null/
     );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererNewThreadModelBundle patches split 26.415 bundles with 26.415.32059 state drift', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-split-26415-32059-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const stateBundlePath = path.join(assetsDir, 'use-model-settings.js');
+    const submitBundlePath = path.join(assetsDir, 'index.js');
+    await fs.promises.writeFile(stateBundlePath, NEW_THREAD_MODEL_STATE_BUNDLE_26_415_32059, 'utf8');
+    await fs.promises.writeFile(submitBundlePath, NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+
+    assert.equal(result.status, 'applied');
+    assert.equal(result.stateSourceName, 'use-model-settings.js');
+    assert.equal(result.submitSourceName, 'index.js');
+
+    const patchedState = await fs.promises.readFile(stateBundlePath, 'utf8');
+    const patchedSubmit = await fs.promises.readFile(submitBundlePath, 'utf8');
+    assert.match(patchedState, /let y=_,b=s\?\.authMethod===`copilot`,codexLinuxIsFreshComposer=n==null\|\|!p,/);
+    assert.match(patchedSubmit, /codexLinuxFreshThreadCollaborationModeSettings/);
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
@@ -972,6 +1024,105 @@ test('patchRendererLinuxBrowserCommentPositionBundle skips when no candidate bun
   }
 });
 
+test('patchRendererCompactSlashCommandBundle verifies compact slash command support', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-compact-command-ok-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(path.join(assetsDir, 'index.js'), COMPACT_SLASH_COMMAND_BUNDLE_CURRENT, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererCompactSlashCommandBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'already-applied',
+      sourceName: 'index.js'
+    });
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererCompactSlashCommandBundle skips when compact command anchors are incompatible', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-compact-command-mismatch-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(
+      path.join(assetsDir, 'index.js'),
+      COMPACT_SLASH_COMMAND_BUNDLE_INCOMPATIBLE,
+      'utf8'
+    );
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererCompactSlashCommandBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result.status, 'skipped');
+    assert.deepEqual(result.reason, 'anchor-mismatch');
+    assert.equal(result.sourceName, 'index.js');
+    assert.match(
+      result.details ?? '',
+      /Could not verify compact slash command support in renderer bundle for Linux/
+    );
+    assert.equal(
+      warnings.some((message) =>
+        message.includes('Skipping Linux compact slash command verification for index.js')
+      ),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererCompactSlashCommandBundle skips when no candidate bundle exists', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-compact-command-no-candidate-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(path.join(assetsDir, 'index.js'), 'const noop = true;', 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererCompactSlashCommandBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    });
+    assert.equal(
+      warnings.some((message) =>
+        message.includes(
+          'Skipping Linux compact slash command verification because no renderer candidate bundle was detected.'
+        )
+      ),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('buildWrapperScript includes perf toggles and runtime logging', () => {
   const script = buildWrapperScript({
     channel: CHANNELS.stable,
@@ -1045,6 +1196,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       linuxBrowserCommentPosition: {
         status: 'applied',
         sourceName: 'index.js'
+      },
+      compactSlashCommand: {
+        status: 'already-applied',
+        sourceName: 'index.js'
       }
     }
   });
@@ -1107,6 +1262,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       },
       linuxBrowserCommentPosition: {
         status: 'applied',
+        sourceName: 'index.js'
+      },
+      compactSlashCommand: {
+        status: 'already-applied',
         sourceName: 'index.js'
       }
     }
