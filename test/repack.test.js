@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   applyLinuxBrowserCommentPositionPatch,
+  applyLinuxBackgroundSubagentsPanelPatch,
   applyLinuxCloseCancelPatch,
   applyLinuxOpenTargetsPatch,
   applyLinuxMenuBarPatch,
@@ -17,6 +18,7 @@ import {
   createInstallDiagnosticManifest,
   findExecutableInPath,
   injectLinuxBrowserCommentPositionPatch,
+  injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxCloseCancelPatch,
   injectLinuxOpenTargetsPatch,
   injectLinuxMenuBarPatch,
@@ -26,6 +28,7 @@ import {
   injectLinuxVisualCompatCssPatch,
   injectLinuxVisualCompatJsPatch,
   patchRendererCompactSlashCommandBundle,
+  patchRendererBackgroundSubagentsPanelBundle,
   patchRendererLinuxBrowserCommentPositionBundle,
   patchRendererNewThreadModelBundle,
   patchRendererLinuxVisualCompat,
@@ -93,6 +96,13 @@ const LINUX_VISUAL_COMPAT_JS_26_409 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!wX()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 const LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT =
   'function wP(e){let x;let{message:N,root:P,popupWindow:F}=x,I=N.session.sessionId;let U;t[31]!==N.editorFrame.height||t[32]!==N.editorFrame.width||t[33]!==N.editorFrame.x||t[34]!==N.editorFrame.y?(U={left:N.editorFrame.x,top:N.editorFrame.y,width:N.editorFrame.width,height:N.editorFrame.height},t[31]=N.editorFrame.height,t[32]=N.editorFrame.width,t[33]=N.editorFrame.x,t[34]=N.editorFrame.y,t[35]=U):U=t[35];return U}function TP({conversationId:e,openerWindow:t,existingPopup:n,message:r}){let i=ze({windowId:ve.BROWSER_COMMENT_POPUP,conversationId:e});if(n!=null&&!n.window.closed&&n.frameName===i)return n;let{x:a,y:o,width:s,height:c}=r.overlayWindowBounds,l=t.open(`about:blank`,i,[`popup=yes`,`left=${Math.round(a)}`,`top=${Math.round(o)}`,`width=${Math.round(s)}`,`height=${Math.round(c)}`].join(`,`));return l==null?null:{frameName:i,window:l}}d(`browser-sidebar-comment-overlay-session`,k,A);';
+const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
+  'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
+const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_INCOMPATIBLE =
+  BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT.replace(
+    'Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt',
+    'Bn=Ye.length===0&&!$e&&!zn&&!it&&!tt'
+  );
 const COMPACT_SLASH_COMMAND_BUNDLE_CURRENT =
   'function RW(e){let t=(0,Q.c)(17),{conversationId:n,isResponseInProgress:r}=e,i=ea(),a=xf(n),o;t[0]===i?o=t[1]:(o=i.formatMessage({id:`composer.compactSlashCommand.title`,defaultMessage:`Compact`,description:`Title for the compact slash command`}),t[0]=i,t[1]=o);let s;t[2]===i?s=t[3]:(s=i.formatMessage({id:`composer.compactSlashCommand.description`,defaultMessage:`Compact this thread\'s context`,description:`Description for the compact slash command`}),t[2]=i,t[3]=s);let c=n!=null&&!r,l;t[4]!==a||t[5]!==n?(l=async()=>{n!=null&&await a.compactThread(n)},t[4]=a,t[5]=n,t[6]=l):l=t[6];let u;return u={id:`compact`,title:o,description:s,requiresEmptyComposer:!0,Icon:LW,enabled:c,onSelect:l},u}';
 const COMPACT_SLASH_COMMAND_BUNDLE_INCOMPATIBLE = COMPACT_SLASH_COMMAND_BUNDLE_CURRENT.replace(
@@ -1024,6 +1034,139 @@ test('patchRendererLinuxBrowserCommentPositionBundle skips when no candidate bun
   }
 });
 
+test('injectLinuxBackgroundSubagentsPanelPatch relaxes the inline composer gate for subagent rows', () => {
+  const updated = injectLinuxBackgroundSubagentsPanelPatch(
+    BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT
+  );
+
+  assert.match(updated, /codexLinuxBackgroundSubagentsPanel/);
+  assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH/);
+  assert.match(updated, /Bn=Ye\.length>0&&!\$e&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?zn:!1\)&&!it&&!tt/);
+});
+
+test('injectLinuxBackgroundSubagentsPanelPatch is idempotent', () => {
+  const once = injectLinuxBackgroundSubagentsPanelPatch(BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT);
+  const twice = injectLinuxBackgroundSubagentsPanelPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBackgroundSubagentsPanelPatch skips patching when disabled', () => {
+  const result = applyLinuxBackgroundSubagentsPanelPatch(
+    BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT,
+    { skip: true }
+  );
+
+  assert.equal(result.updated, BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('patchRendererBackgroundSubagentsPanelBundle patches the composer gate bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-background-subagents-ok-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'index.js');
+    await fs.promises.writeFile(bundlePath, BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererBackgroundSubagentsPanelBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'index.js'
+    });
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH/
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererBackgroundSubagentsPanelBundle skips when anchors are incompatible', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-background-subagents-mismatch-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(
+      path.join(assetsDir, 'index.js'),
+      BACKGROUND_SUBAGENTS_PANEL_BUNDLE_INCOMPATIBLE,
+      'utf8'
+    );
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererBackgroundSubagentsPanelBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result.status, 'skipped');
+    assert.deepEqual(result.reason, 'anchor-mismatch');
+    assert.equal(result.sourceName, 'index.js');
+    assert.match(
+      result.details ?? '',
+      /Could not patch the renderer background subagents panel bundle for Linux/
+    );
+    assert.equal(
+      warnings.some((message) =>
+        message.includes('Skipping Linux background subagents panel patch for index.js')
+      ),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererBackgroundSubagentsPanelBundle skips when no candidate bundle exists', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-background-subagents-no-candidate-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(path.join(assetsDir, 'index.js'), 'const noop = true;', 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererBackgroundSubagentsPanelBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    });
+    assert.equal(
+      warnings.includes(
+        'Skipping Linux background subagents panel patch because no renderer candidate bundle was detected.'
+      ),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('patchRendererCompactSlashCommandBundle verifies compact slash command support', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-compact-command-ok-'));
   try {
@@ -1197,6 +1340,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         status: 'applied',
         sourceName: 'index.js'
       },
+      backgroundSubagentsPanel: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
       compactSlashCommand: {
         status: 'already-applied',
         sourceName: 'index.js'
@@ -1261,6 +1408,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'index.js'
       },
       linuxBrowserCommentPosition: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
+      backgroundSubagentsPanel: {
         status: 'applied',
         sourceName: 'index.js'
       },

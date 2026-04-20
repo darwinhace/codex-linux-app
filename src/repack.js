@@ -38,6 +38,8 @@ const LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Linux visual-compat script.';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer browser comment positioning bundle for Linux.';
+const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer background subagents panel bundle for Linux.';
 const COMPACT_SLASH_COMMAND_VERIFICATION_BASE_ERROR_MESSAGE =
   'Could not verify compact slash command support in renderer bundle for Linux.';
 
@@ -219,6 +221,10 @@ export async function installDesktop(options, logger) {
     extractedAppDir,
     logger
   );
+  const backgroundSubagentsPanelPatch = await patchRendererBackgroundSubagentsPanelBundle(
+    extractedAppDir,
+    logger
+  );
   const compactSlashCommandPatch = await patchRendererCompactSlashCommandBundle(
     extractedAppDir,
     logger
@@ -267,6 +273,7 @@ export async function installDesktop(options, logger) {
     todoProgress: todoProgressPatch,
     linuxVisualCompat: linuxVisualCompatPatch,
     linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
+    backgroundSubagentsPanel: backgroundSubagentsPanelPatch,
     compactSlashCommand: compactSlashCommandPatch
   });
   const iconPath = await installChannelRuntime({
@@ -314,6 +321,7 @@ export async function installDesktop(options, logger) {
       todoProgress: todoProgressPatch,
       linuxVisualCompat: linuxVisualCompatPatch,
       linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
+      backgroundSubagentsPanel: backgroundSubagentsPanelPatch,
       compactSlashCommand: compactSlashCommandPatch
     }
   });
@@ -485,6 +493,7 @@ const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_415 =
 const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
+const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
 const LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN =
   /if\((?<elementVar>[A-Za-z_$][\w$]*)\)\{if\((?<windowStateVar>[A-Za-z_$][\w$]*)\.opaqueWindows&&!(?<opaqueGuardFn>[A-Za-z_$][\w$]*)\(\)\)\{\k<elementVar>\.classList\.add\(`electron-opaque`\);return\}\k<elementVar>\.classList\.remove\(`electron-opaque`\)\}/;
 const LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKER_SETS = [
@@ -501,10 +510,18 @@ const LINUX_BROWSER_COMMENT_POSITION_CANDIDATE_MARKERS = [
   'overlayWindowBounds',
   'editorFrame.x'
 ];
+const LINUX_BACKGROUND_SUBAGENTS_PANEL_CANDIDATE_MARKERS = [
+  'composer.backgroundSubagents.summary',
+  'isBackgroundSubagentsPanelVisible:Bn'
+];
 const LINUX_BROWSER_COMMENT_POSITION_OVERLAY_STATE_PATTERN =
   /let\{message:(?<messageVar>[A-Za-z_$][\w$]*),root:(?<rootVar>[A-Za-z_$][\w$]*),popupWindow:(?<popupVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*,/;
 const LINUX_BROWSER_COMMENT_POSITION_POPUP_OPEN_PATTERN =
   /let\{x:(?<xVar>[A-Za-z_$][\w$]*),y:(?<yVar>[A-Za-z_$][\w$]*),width:(?<widthVar>[A-Za-z_$][\w$]*),height:(?<heightVar>[A-Za-z_$][\w$]*)\}=(?<boundsVar>[A-Za-z_$][\w$]*)\.overlayWindowBounds,(?<popupVar>[A-Za-z_$][\w$]*)=(?<openerVar>[A-Za-z_$][\w$]*)\.open\(`about:blank`,(?<frameNameVar>[A-Za-z_$][\w$]*),\[`popup=yes`,`left=\$\{Math\.round\(\k<xVar>\)\}`,`top=\$\{Math\.round\(\k<yVar>\)\}`,`width=\$\{Math\.round\(\k<widthVar>\)\}`,`height=\$\{Math\.round\(\k<heightVar>\)\}`\]\.join\(`,`\)\);return \k<popupVar>==null\?null:\{frameName:\k<frameNameVar>,window:\k<popupVar>\}/;
+const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_SNIPPET =
+  'Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt';
+const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_REPLACEMENT =
+  `/* ${LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER} */Bn=Ye.length>0&&!$e&&(typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===\`1\`?zn:!1)&&!it&&!tt`;
 const COMPACT_SLASH_COMMAND_ID_MARKERS = ['id:`compact`', 'id:"compact"', "id:'compact'"];
 
 async function patchMainProcessBundle(extractedAppDir, logger) {
@@ -1883,6 +1900,105 @@ export function injectLinuxBrowserCommentPositionPatch(bundleSource, options = {
   return updated;
 }
 
+export async function patchRendererBackgroundSubagentsPanelBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_BACKGROUND_SUBAGENTS_PANEL_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer background subagents panel bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxBackgroundSubagentsPanelPatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux background subagents panel patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(`Patched Linux background subagents panel behavior into renderer bundle ${assetName}`);
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux background subagents panel patch because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux background subagents panel patch because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxBackgroundSubagentsPanelPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxBackgroundSubagentsPanelPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxBackgroundSubagentsPanelPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  return replaceSnippetOrThrow(
+    bundleSource,
+    LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_SNIPPET,
+    LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_REPLACEMENT,
+    buildLinuxBackgroundSubagentsPanelPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
 function buildLinuxBrowserCommentPositionFramePattern(messageVar) {
   const escapedMessageVar = escapeRegExp(messageVar);
   return new RegExp(
@@ -1895,6 +2011,14 @@ function buildLinuxBrowserCommentPositionPatchErrorMessage(bundleSource, sourceN
     LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE,
     sourceName,
     analyzeLinuxBrowserCommentPositionBundle(bundleSource)
+  );
+}
+
+function buildLinuxBackgroundSubagentsPanelPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxBackgroundSubagentsPanelBundle(bundleSource)
   );
 }
 
@@ -1918,6 +2042,23 @@ function analyzeLinuxBrowserCommentPositionBundle(bundleSource) {
       !detected.popupWindowBinding && 'popup window binding',
       !detected.popupOpenCall && 'popup window open block',
       !detected.editorFrameAssignment && 'editor frame style assignment'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxBackgroundSubagentsPanelBundle(bundleSource) {
+  const detected = {
+    panelSummary: bundleSource.includes('composer.backgroundSubagents.summary'),
+    panelPlaceholderState: bundleSource.includes('isBackgroundSubagentsPanelVisible:Bn'),
+    panelVisibilityGate: bundleSource.includes(LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_SNIPPET)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.panelSummary && 'background subagents summary marker',
+      !detected.panelPlaceholderState && 'background subagents placeholder state',
+      !detected.panelVisibilityGate && 'background subagents visibility gate'
     ].filter(Boolean)
   };
 }
