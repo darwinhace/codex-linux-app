@@ -196,6 +196,7 @@ Use this section as the single source of truth for env vars used by this project
 | `CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT` | Patched app renderer bundle (Linux) | unset | Disables Linux visual-compat patch when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH` | Patched app renderer bundle (Linux) | unset | Disables Linux todo progress patch when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_BROWSER_COMMENT_POSITION_PATCH` | Patched app renderer bundle (Linux) | unset | Disables Linux browser comment popup positioning correction when set to `1`. |
+| `CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH` | Patched app renderer bundle (Linux) | unset | Restores upstream gating for the inline background-subagents composer panel when set to `1`. |
 | `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING` | Launcher | unset / `0` | Enables Chromium logging when set to `1`. |
 | `CODEX_DESKTOP_TRACE_TERMINAL_PATCH` | Patched app renderer bundle (Linux) | unset | Enables terminal patch trace warnings when set to `1`. |
 | `CODEX_DESKTOP_INSTALL_MANIFEST` | Launcher (internal) | Auto-set by launcher | Path to install diagnostic manifest. Do not set manually. |
@@ -208,13 +209,14 @@ Use this section as the single source of truth for env vars used by this project
 - Binary discovery is done with direct PATH scanning in Node (not external `which`), so Fish/Arch setups work as long as PATH or the `CODEX_CLI_PATH`/`RG_PATH` overrides are correct.
 - For all runtime and installer env vars, see the **Environment Variables** section above.
 - The build/install stages retry forever on failure and keep logs under `~/.local/state/codex-linux-app/logs`.
-- The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state (including `compactSlashCommand`).
+- The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state (including `backgroundSubagentsPanel` and `compactSlashCommand`).
 - The fresh-thread model patch is required. If upstream bundle anchors drift and the patch cannot be applied, install aborts with an explicit `newThreadModel` patch error.
 - Compact slash command support (`/compact`) is required. If compatibility anchors are missing, install aborts with an explicit compact slash command verification error.
 - If a new upstream renderer build changes the Linux visual-compat renderer bundle shape, the installer skips that patch with a warning instead of aborting the install.
 - The generated launcher auto-falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is the normal case for a per-user install.
 - If a reinstall opens to a black spinner window, reinstall once with `./install-desktop --skip-terminal-patch` to bypass the renderer terminal patch while debugging.
 - On Linux, canceling the quit confirmation restores or recreates the main window so the app stays visible instead of remaining only as a background task.
+- On Linux, the inline composer panel for background subagents is patched to appear as soon as spawned subagent rows exist for the current chat, even while the composer mention UI is active.
 - The installer preserves the upstream resource layout and replaces mac-only helper binaries with Linux equivalents where needed.
 - Linux editor discovery is patched into the desktop runtime for supported IDEs. It checks CLI commands on PATH, common `.desktop` launchers, and JetBrains Toolbox scripts under `~/.local/share/JetBrains/Toolbox/scripts`.
 - The current Linux editor targets include VS Code, VS Code Insiders, Cursor, Windsurf, Zed, Android Studio, IntelliJ IDEA, Rider, GoLand, RustRover, PyCharm, WebStorm, and PhpStorm.
