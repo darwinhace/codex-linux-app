@@ -44,6 +44,10 @@ const LINUX_LATEST_AGENT_TURN_EXPANSION_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer latest agent turn expansion bundle for Linux.';
 const COMPACT_SLASH_COMMAND_VERIFICATION_BASE_ERROR_MESSAGE =
   'Could not verify compact slash command support in renderer bundle for Linux.';
+const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the Electron main bundle worktree environment propagation for Linux.';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the Electron worker bundle worktree environment handling for Linux.';
 
 export function parseArgs(argv) {
   const options = {
@@ -210,6 +214,16 @@ export async function installDesktop(options, logger) {
     : await patchMainProcessBundle(extractedAppDir, logger);
   const linuxMenuBarPatch = await patchMainProcessLinuxMenuBar(extractedAppDir, logger);
   const linuxCloseCancelPatch = await patchMainProcessLinuxCloseCancel(extractedAppDir, logger);
+  const linuxWorktreeEnvironmentMainPatch = await patchMainProcessLinuxWorktreeEnvironment(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('worktree environment main', linuxWorktreeEnvironmentMainPatch);
+  const linuxWorktreeEnvironmentWorkerPatch = await patchWorkerLinuxWorktreeEnvironment(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('worktree environment worker', linuxWorktreeEnvironmentWorkerPatch);
   const terminalPatch = options.skipTerminalPatch
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTerminalBundle(extractedAppDir, logger);
@@ -274,6 +288,8 @@ export async function installDesktop(options, logger) {
     openTargets: openTargetsPatch,
     linuxMenuBar: linuxMenuBarPatch,
     linuxCloseCancel: linuxCloseCancelPatch,
+    linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
+    linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
     terminalLifecycle: terminalPatch,
     newThreadModel: newThreadModelPatch,
     todoProgress: todoProgressPatch,
@@ -323,6 +339,8 @@ export async function installDesktop(options, logger) {
       openTargets: openTargetsPatch,
       linuxMenuBar: linuxMenuBarPatch,
       linuxCloseCancel: linuxCloseCancelPatch,
+      linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
+      linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
       terminalLifecycle: terminalPatch,
       newThreadModel: newThreadModelPatch,
       todoProgress: todoProgressPatch,
@@ -403,6 +421,8 @@ async function patchBootstrap(extractedAppDir) {
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
 const LINUX_MENU_BAR_PATCH_MARKER = 'codexLinuxMenuBarAutoHide';
 const LINUX_CLOSE_CANCEL_PATCH_MARKER = 'codexLinuxCloseCancel';
+const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentWorker';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=e\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
@@ -412,6 +432,46 @@ const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT =
   't.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT =
   't.app.on(`before-quit`,s=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let c=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${c}?`,message:`Quit ${c}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){s.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=i.showLastActivePrimaryWindow();e?a.refresh():Promise.resolve(o(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus()),a.refresh()})}return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
+const LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_ANCHOR =
+  'var am=32e3,om=e.mr(`worktree-service`),sm=class{';
+const LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_REPLACEMENT =
+  `var codexLinuxWorktreeEnvironmentBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};function codexLinuxListEnvironmentConfigPaths(e){let t=codexLinuxWorktreeEnvironmentBuiltins.fs,n=codexLinuxWorktreeEnvironmentBuiltins.path;if(!e||!t||!n)return[];let r=n.join(e,\`.codex\`,\`environments\`),i;try{i=t.readdirSync(r,{withFileTypes:!0})}catch{return[]}return i.filter(e=>e.isFile()&&e.name.endsWith(\`.toml\`)).map(e=>n.join(r,e.name)).sort()}function codexLinuxResolveWorktreeLocalEnvironmentPath(e,t){if(t===\`__none__\`||t!=null)return t;let n=codexLinuxListEnvironmentConfigPaths(e);return n.length===1?n[0]:null}/* ${LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER} */var am=32e3,om=e.mr(\`worktree-service\`),sm=class{`;
+const LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_SNIPPET_CURRENT =
+  'let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});';
+const LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_REPLACEMENT_CURRENT =
+  'let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.Zr(r.sourceWorkspaceRoot),r.localEnvironmentConfigPath);codexLinuxResolvedLocalEnvironmentPath===`__none__`?om().info(`[worktree-create] explicit-no-environment`,{safe:{flow:`pending`,launchMode:r.launchMode},sensitive:{sourceWorkspaceRoot:r.sourceWorkspaceRoot}}):r.localEnvironmentConfigPath==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&om().info(`[worktree-create] auto-selected-single-environment`,{safe:{flow:`pending`,launchMode:r.launchMode},sensitive:{sourceWorkspaceRoot:r.sourceWorkspaceRoot,configPath:codexLinuxResolvedLocalEnvironmentPath}});let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});';
+const LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_SNIPPET_CURRENT =
+  'hasLocalEnvironment:r.localEnvironmentConfigPath!=null';
+const LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_REPLACEMENT_CURRENT =
+  'hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`';
+const LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_SNIPPET_CURRENT =
+  'let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);';
+const LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_REPLACEMENT_CURRENT =
+  'let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.Zr(n),i);codexLinuxResolvedLocalEnvironmentPath===`__none__`?om().info(`[worktree-create] explicit-no-environment`,{safe:{flow:`managed`},sensitive:{cwd:n}}):i==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&om().info(`[worktree-create] auto-selected-single-environment`,{safe:{flow:`managed`},sensitive:{cwd:n,configPath:codexLinuxResolvedLocalEnvironmentPath}});let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);';
+const LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_SNIPPET_CURRENT =
+  'hasLocalEnvironment:i!=null';
+const LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_REPLACEMENT_CURRENT =
+  'hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_ANCHOR =
+  'async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_REPLACEMENT =
+  `async function codexLinuxListEnvironmentConfigPaths(e,t){let n=await t.platformPath(),r=n.join(e,\`.codex\`,\`environments\`),i;try{i=await cz.readdir(r,t)}catch{return[]}return i.filter(e=>typeof e===\`string\`&&e.endsWith(\`.toml\`)).map(e=>n.join(r,e)).sort()}async function codexLinuxResolveWorktreeEnvironmentConfigPath(e,t,n){if(t===\`__none__\`)return{configPath:t,source:\`explicit-none\`};if(t!=null)return{configPath:t,source:\`explicit-selection\`};let r=await codexLinuxListEnvironmentConfigPaths(e,n);return r.length===1?{configPath:r[0],source:\`single-environment-fallback\`}:{configPath:null,source:\`missing\`}}/* ${LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER} */async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){`;
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_HELPER_SNIPPET_CURRENT =
+  'async function lX(e,t,n,r,i){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_HELPER_REPLACEMENT_CURRENT =
+  'async function lX(e,t,n,r,i,a){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r}))?.setupResult??null}';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_PATTERN =
+  /if\(s\?\.\(`info`,ce\.Buffer\.from\(`Worktree created at \$\{g\}(?:\\n|\n)`,`utf8`\)\),await vZ\(g,(?<selectedVar>[A-Za-z_$][\w$]*)\?\?`__none__`,a,`worktree`,o\)\|\|s\?\.\(`stderr`,ce\.Buffer\.from\(`Failed to store selected environment in git config(?:\\n|\n)`,`utf8`\)\),\k<selectedVar>==null\)return s\?\.\(`info`,ce\.Buffer\.from\(`No local environment selected(?:\\n|\n)`,`utf8`\)\),\{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null\};let v=await QJ\(\k<selectedVar>,a\);/;
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_REPLACEMENT_CURRENT =
+  'let codexLinuxEnvironmentSelection=await codexLinuxResolveWorktreeEnvironmentConfigPath(t,r,a),codexLinuxLocalEnvironmentConfigPath=codexLinuxEnvironmentSelection.configPath;codexLinuxEnvironmentSelection.source===`single-environment-fallback`?NX().info(`[worktree-create] auto-selected-single-environment`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}):codexLinuxEnvironmentSelection.source===`explicit-none`&&NX().info(`[worktree-create] explicit-no-environment`,{safe:{},sensitive:{workspaceRoot:t}});if(s?.(`info`,ce.Buffer.from(`Worktree created at ${g}\n`,`utf8`)),await vZ(g,codexLinuxLocalEnvironmentConfigPath??`__none__`,a,`worktree`,o)||(NX().warning(`[worktree-create] failed-to-store-environment-selection`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}),s?.(`stderr`,ce.Buffer.from(`Failed to store selected environment in git config\n`,`utf8`))),(codexLinuxLocalEnvironmentConfigPath==null||codexLinuxLocalEnvironmentConfigPath===`__none__`))return s?.(`info`,ce.Buffer.from(`No local environment selected\n`,`utf8`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await QJ(codexLinuxLocalEnvironmentConfigPath,a);';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_SNIPPET_CURRENT =
+  'let o=await lX(e,a,void 0,r,n);';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_REPLACEMENT_CURRENT =
+  'let o=await lX(e,a,void 0,r,{[WL]:e},n);';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_SKIP_SNIPPET_CURRENT =
+  'if(i==null||i===`__none__`)return;';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_SKIP_REPLACEMENT_CURRENT =
+  'if(i==null||i===`__none__`){NX().info(`[worktree-delete] cleanup-skipped-no-environment`,{safe:{worktreeId:t},sensitive:{configPath:i}});return;}';
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
@@ -606,6 +666,50 @@ async function patchMainProcessLinuxCloseCancel(extractedAppDir, logger) {
   };
 }
 
+async function patchMainProcessLinuxWorktreeEnvironment(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for worktree environment patch`);
+  const result = applyLinuxWorktreeEnvironmentMainPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched worktree environment propagation into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+async function patchWorkerLinuxWorktreeEnvironment(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const workerFile = files.find((name) => /^worker[-.].+\.js$/.test(name) || name === 'worker.js');
+  if (!workerFile) {
+    throw new Error('Could not locate the Electron worker bundle inside the extracted app.');
+  }
+
+  const workerPath = path.join(buildDir, workerFile);
+  const original = await fs.promises.readFile(workerPath, 'utf8');
+  logger.info(`Resolved upstream Electron worker bundle ${workerFile} for worktree environment patch`);
+  const result = applyLinuxWorktreeEnvironmentWorkerPatch(original, { sourceName: workerFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(workerPath, result.updated, 'utf8');
+    logger.info('Patched worktree environment handling into the Electron worker bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: workerFile
+  };
+}
+
 export function applyLinuxOpenTargetsPatch(bundleSource, options = {}) {
   if (options.skip) {
     return {
@@ -683,6 +787,116 @@ export function injectLinuxCloseCancelPatch(bundleSource, options = {}) {
     LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT,
     `/* ${LINUX_CLOSE_CANCEL_PATCH_MARKER} */${LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT}`,
     buildLinuxCloseCancelPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+export function applyLinuxWorktreeEnvironmentMainPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxWorktreeEnvironmentMainPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxWorktreeEnvironmentMainPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  const errorMessage = buildLinuxWorktreeEnvironmentMainPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  let updated = replaceSnippetOrThrow(
+    bundleSource,
+    LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_ANCHOR,
+    LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_REPLACEMENT,
+    errorMessage
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_SNIPPET_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_REPLACEMENT_CURRENT,
+    errorMessage
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_SNIPPET_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_REPLACEMENT_CURRENT,
+    errorMessage
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_SNIPPET_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_REPLACEMENT_CURRENT,
+    errorMessage
+  );
+  return replaceSnippetOrThrow(
+    updated,
+    LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_SNIPPET_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_REPLACEMENT_CURRENT,
+    errorMessage
+  );
+}
+
+export function applyLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  const errorMessage = buildLinuxWorktreeEnvironmentWorkerPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  let updated = replaceSnippetOrThrow(
+    bundleSource,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_ANCHOR,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_REPLACEMENT,
+    errorMessage
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_HELPER_SNIPPET_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_HELPER_REPLACEMENT_CURRENT,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_PATTERN,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_REPLACEMENT_CURRENT,
+    errorMessage
+  );
+  updated = replaceSnippetOrThrow(
+    updated,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_SNIPPET_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_REPLACEMENT_CURRENT,
+    errorMessage
+  );
+  return replaceSnippetOrThrow(
+    updated,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_SKIP_SNIPPET_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_SKIP_REPLACEMENT_CURRENT,
+    errorMessage
   );
 }
 
@@ -2202,6 +2416,78 @@ function analyzeLinuxLatestAgentTurnExpansionBundle(bundleSource) {
       !detected.latestTurnFlag && 'latest turn expansion flag',
       !detected.persistedCollapsedState && 'persisted collapsed state',
       !detected.collapseDefaultGate && 'latest agent turn collapse default gate'
+    ].filter(Boolean)
+  };
+}
+
+function buildLinuxWorktreeEnvironmentMainPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxWorktreeEnvironmentMainBundle(bundleSource)
+  );
+}
+
+function buildLinuxWorktreeEnvironmentWorkerPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxWorktreeEnvironmentWorkerBundle(bundleSource)
+  );
+}
+
+function analyzeLinuxWorktreeEnvironmentMainBundle(bundleSource) {
+  const detected = {
+    worktreeServiceClass: bundleSource.includes('worktree-service'),
+    pendingCreateRequest: bundleSource.includes(
+      LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_SNIPPET_CURRENT
+    ),
+    pendingReadyLog: bundleSource.includes(
+      LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_SNIPPET_CURRENT
+    ),
+    managedCreateRequest: bundleSource.includes(
+      LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_SNIPPET_CURRENT
+    ),
+    managedReadyLog: bundleSource.includes(
+      LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_SNIPPET_CURRENT
+    )
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.worktreeServiceClass && 'worktree service class marker',
+      !detected.pendingCreateRequest && 'pending worktree create request',
+      !detected.pendingReadyLog && 'pending worktree ready log',
+      !detected.managedCreateRequest && 'managed worktree create request',
+      !detected.managedReadyLog && 'managed worktree ready log'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxWorktreeEnvironmentWorkerBundle(bundleSource) {
+  const detected = {
+    createWorktreeFunction: bundleSource.includes(
+      'async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r'
+    ),
+    cleanupHelper: bundleSource.includes(
+      'async function lX(e,t,n,r,i){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}'
+    ),
+    storedEnvironmentSelection: bundleSource.includes('await vZ(g,r??`__none__`,a,`worktree`,o)'),
+    setupSkipBranch: bundleSource.includes('No local environment selected'),
+    cleanupCall: bundleSource.includes('let o=await lX(e,a,void 0,r,n);'),
+    cleanupSkipBranch: bundleSource.includes('if(i==null||i===`__none__`)return;')
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.createWorktreeFunction && 'create-worktree function marker',
+      !detected.cleanupHelper && 'cleanup helper function',
+      !detected.storedEnvironmentSelection && 'stored environment selection branch',
+      !detected.setupSkipBranch && 'missing-environment setup skip branch',
+      !detected.cleanupCall && 'cleanup invocation',
+      !detected.cleanupSkipBranch && 'cleanup skip branch'
     ].filter(Boolean)
   };
 }

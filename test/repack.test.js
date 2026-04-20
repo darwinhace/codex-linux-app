@@ -7,6 +7,8 @@ import {
   applyLinuxBrowserCommentPositionPatch,
   applyLinuxBackgroundSubagentsPanelPatch,
   applyLinuxCloseCancelPatch,
+  applyLinuxWorktreeEnvironmentMainPatch,
+  applyLinuxWorktreeEnvironmentWorkerPatch,
   applyLinuxLatestAgentTurnExpansionPatch,
   applyLinuxOpenTargetsPatch,
   applyLinuxMenuBarPatch,
@@ -21,6 +23,8 @@ import {
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxCloseCancelPatch,
+  injectLinuxWorktreeEnvironmentMainPatch,
+  injectLinuxWorktreeEnvironmentWorkerPatch,
   injectLinuxLatestAgentTurnExpansionPatch,
   injectLinuxOpenTargetsPatch,
   injectLinuxMenuBarPatch,
@@ -50,6 +54,11 @@ const LINUX_MENU_BAR_BUNDLE_CURRENT =
   'new n.BrowserWindow({width:_,height:v,title:i??n.app.getName(),backgroundColor:T,show:l,...process.platform===`win32`?{autoHideMenuBar:!0}:{},...m,minWidth:w.width,minHeight:w.height,webPreferences:{contextIsolation:!0}});';
 const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
+const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
+  'function im({globalState:t,worktreeDir:n}){let r=e.yt(n).replace(/\\/+$/,``);return B(t).some(t=>{let n=e.yt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var am=32e3,om=e.mr(`worktree-service`),sm=class{statesById=new Map;async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};try{let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})}catch(e){}}async createManagedWorktree({hostId:t,cwd:n,startingState:r,localEnvironmentConfigPath:i,streamId:a}){try{let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);return this.newbornWorktreeRoots.add(o.worktreeGitRoot),om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),o}catch(e){throw this.forgetNewbornWorktreeStream(a),e}}};';
+const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT = `async function MZ(e,t,n){let r=await AZ(e,t,n);r!=null&&await cz.rm(r,void 0,t)}async function cX(e,t,n,r,i,a){return uX({workspaceRoot:e,localEnvironment:t,scriptType:\`setup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r})}async function lX(e,t,n,r,i){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){if(o?.aborted)return{success:!1,error:Error(\`Request canceled\`)};let l=(await e.getWorktreeRepository(NL(t),a))?.root;if(!l)return{success:!1,error:Error(\`Not a git repository\`)};let m={worktreeGitRoot:\`/tmp/source/.git\`,worktreeWorkspaceRoot:\`/tmp/worktree\`},{worktreeGitRoot:h,worktreeWorkspaceRoot:g}=m;c?.(h);if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\n\`,\`utf8\`)),await vZ(g,r??\`__none__\`,a,\`worktree\`,o)||s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config
+\`,\`utf8\`)),r==null)return s?.(\`info\`,ce.Buffer.from(\`No local environment selected
+\`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await QJ(r,a);if(v.type===\`error\`)return s?.(\`stderr\`,ce.Buffer.from(\`\${v.error.message}\n\`,\`utf8\`)),{success:!1,error:v.error};s?.(\`info\`,ce.Buffer.from(\`Running setup script \${v.configPath}\n\`,\`utf8\`));let y=await cX(h,v,(e,t)=>{s?.(e,t)},o,{[UL]:t,[WL]:g},a);return{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:y?.setupResult??null}}async function RX(e,t,n,r){let i=await nX(e,n,\`worktree\`,r);if(i==null||i===\`__none__\`)return;let a=await QJ(i,n);if(a.type===\`error\`){NX().warning(\`[worktree-delete] cleanup-config-unavailable\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:a.error}});return}if(!a.environment.cleanup)return;NX().info(\`[worktree-delete] cleanup-script-start\`,{safe:{worktreeId:t},sensitive:{configPath:i}});let o=await lX(e,a,void 0,r,n);if(o!=null){if(o?.status===\`failed\`)throw Error(o.error??\`Cleanup script failed\`)}}`;
 const TERMINAL_PANEL_BLOCK_LEGACY =
   'function vDe(e){let ee,te;t[29]!==n||t[30]!==i||t[31]!==r||t[32]!==o||t[33]!==m?(ee=()=>{let e=T.current;if(!e)return;let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;let a=!1,s=new nDe.Terminal({allowTransparency:!0,cursorStyle:`bar`,fontSize:j.current,allowProposedApi:!0,cursorBlink:!0,fontFamily:A.current,letterSpacing:0,lineHeight:1.2,theme:RQ()}),c=null,l=()=>{c??=requestAnimationFrame(()=>{c=null,s.scrollToBottom()})};E.current=s;let u=new aDe.ClipboardAddon,d=new iDe.FitAddon;D.current=d;let f=new rDe.WebLinksAddon(bDe);s.loadAddon(u),s.loadAddon(d),s.loadAddon(f),s.attachCustomKeyEventHandler(e=>lDe({clipboard:typeof navigator<`u`&&navigator.clipboard!=null&&m?navigator.clipboard:void 0,event:e,sendText:e=>{St.write(t,e)},term:s})),s.open(e);let p=n=>{a||e.isConnected&&requestAnimationFrame(()=>{a||e.isConnected&&(k.current?IQ(s,d,t):LQ(d),n?.())})};p(),M.current=!1;let h=St.register(t,{onInitLog:e=>{s.write(e),l()},onData:e=>{M.current||(M.current=!0,P(`Running`),I(null)),s.write(e),l()},onExit:()=>{a||P(`Exited`)},onError:e=>{a||(P(`Error`),I(e))},onAttach:(e,t)=>{a||(k.current=!0,P(`Running`),I(null),R(t??null),p())}}),g=s.onData(e=>{St.write(t,e)}),_=s.onKey(yDe);o&&requestAnimationFrame(()=>{a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});let v=new ResizeObserver(()=>{p()});return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||St.close(t),s.dispose(),E.current=null}},te=[n,i,r,o,m],t[29]=n,t[30]=i,t[31]=r,t[32]=o,t[33]=m,t[34]=ee,t[35]=te):(ee=t[34],te=t[35]),(0,Z.useEffect)(ee,te);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_CURRENT =
@@ -341,6 +350,100 @@ test('injectLinuxCloseCancelPatch reports diagnostics when close-cancel anchors 
     message:
       /Could not patch Linux close-cancel behavior in the Electron main bundle\. Source: main\.js\. Missing anchors: before-quit handler, Quit\/Cancel confirmation dialog, cancel preventDefault branch, showLastActivePrimaryWindow hook, ensureHostWindow dependency\. Detected anchors: beforeQuitHandler=no, quitCancelPrompt=no, cancelPreventDefault=no, showLastActivePrimaryWindow=no, ensureHostWindowDependency=no\./
   });
+});
+
+test('injectLinuxWorktreeEnvironmentMainPatch adds environment propagation to the main bundle', () => {
+  const updated = injectLinuxWorktreeEnvironmentMainPatch(WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT);
+
+  assert.match(updated, /codexLinuxWorktreeEnvironmentMain/);
+  assert.match(updated, /function codexLinuxResolveWorktreeLocalEnvironmentPath\(e,t\)/);
+  assert.match(
+    updated,
+    /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:i\.streamId,setUpSyncedBranch:r\.launchMode===`create-stable-worktree`\?!1:void 0/
+  );
+  assert.match(
+    updated,
+    /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:a/
+  );
+  assert.match(updated, /auto-selected-single-environment/);
+  assert.match(updated, /explicit-no-environment/);
+  assert.match(
+    updated,
+    /hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`/
+  );
+});
+
+test('injectLinuxWorktreeEnvironmentMainPatch is idempotent', () => {
+  const once = injectLinuxWorktreeEnvironmentMainPatch(WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT);
+  const twice = injectLinuxWorktreeEnvironmentMainPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxWorktreeEnvironmentMainPatch skips patching when disabled', () => {
+  const result = applyLinuxWorktreeEnvironmentMainPatch(WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT, {
+    skip: true
+  });
+
+  assert.equal(result.updated, WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxWorktreeEnvironmentMainPatch reports diagnostics when worktree anchors are missing', () => {
+  assert.throws(
+    () =>
+      injectLinuxWorktreeEnvironmentMainPatch('const noop = true;', { sourceName: 'main.js' }),
+    {
+      message:
+        /Could not patch the Electron main bundle worktree environment propagation for Linux\. Source: main\.js\. Missing anchors: worktree service class marker, pending worktree create request, pending worktree ready log, managed worktree create request, managed worktree ready log\. Detected anchors: worktreeServiceClass=no, pendingCreateRequest=no, pendingReadyLog=no, managedCreateRequest=no, managedReadyLog=no\./
+    }
+  );
+});
+
+test('injectLinuxWorktreeEnvironmentWorkerPatch adds single-environment fallback to the worker bundle', () => {
+  const updated = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT);
+
+  assert.match(updated, /codexLinuxWorktreeEnvironmentWorker/);
+  assert.match(updated, /async function codexLinuxResolveWorktreeEnvironmentConfigPath\(e,t,n\)/);
+  assert.match(
+    updated,
+    /async function lX\(e,t,n,r,i,a\)\{return\(await uX\(\{workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r\}\)\)\?\.setupResult\?\?null\}/
+  );
+  assert.match(updated, /auto-selected-single-environment/);
+  assert.match(updated, /explicit-no-environment/);
+  assert.match(updated, /failed-to-store-environment-selection/);
+  assert.match(updated, /await vZ\(g,codexLinuxLocalEnvironmentConfigPath\?\?`__none__`,a,`worktree`,o\)/);
+  assert.match(updated, /let v=await QJ\(codexLinuxLocalEnvironmentConfigPath,a\);/);
+  assert.match(updated, /let o=await lX\(e,a,void 0,r,\{\[WL\]:e\},n\);/);
+  assert.match(updated, /cleanup-skipped-no-environment/);
+});
+
+test('injectLinuxWorktreeEnvironmentWorkerPatch is idempotent', () => {
+  const once = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT);
+  const twice = injectLinuxWorktreeEnvironmentWorkerPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxWorktreeEnvironmentWorkerPatch skips patching when disabled', () => {
+  const result = applyLinuxWorktreeEnvironmentWorkerPatch(
+    WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT,
+    { skip: true }
+  );
+
+  assert.equal(result.updated, WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxWorktreeEnvironmentWorkerPatch reports diagnostics when worktree anchors are missing', () => {
+  assert.throws(
+    () =>
+      injectLinuxWorktreeEnvironmentWorkerPatch('const noop = true;', { sourceName: 'worker.js' }),
+    {
+      message:
+        /Could not patch the Electron worker bundle worktree environment handling for Linux\. Source: worker\.js\. Missing anchors: create-worktree function marker, cleanup helper function, stored environment selection branch, missing-environment setup skip branch, cleanup invocation, cleanup skip branch\. Detected anchors: createWorktreeFunction=no, cleanupHelper=no, storedEnvironmentSelection=no, setupSkipBranch=no, cleanupCall=no, cleanupSkipBranch=no\./
+    }
+  );
 });
 
 for (const [label, fixture] of [
@@ -1469,6 +1572,14 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         status: 'applied',
         sourceName: 'main.js'
       },
+      linuxWorktreeEnvironmentMain: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxWorktreeEnvironmentWorker: {
+        status: 'applied',
+        sourceName: 'worker.js'
+      },
       terminalLifecycle: {
         status: 'applied',
         sourceName: 'index.js'
@@ -1543,6 +1654,14 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       linuxCloseCancel: {
         status: 'applied',
         sourceName: 'main.js'
+      },
+      linuxWorktreeEnvironmentMain: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxWorktreeEnvironmentWorker: {
+        status: 'applied',
+        sourceName: 'worker.js'
       },
       terminalLifecycle: {
         status: 'applied',
