@@ -7,6 +7,7 @@ import {
   applyLinuxBrowserCommentPositionPatch,
   applyLinuxBackgroundSubagentsPanelPatch,
   applyLinuxCloseCancelPatch,
+  applyLinuxLatestAgentTurnExpansionPatch,
   applyLinuxOpenTargetsPatch,
   applyLinuxMenuBarPatch,
   applyLinuxNewThreadModelPatch,
@@ -20,6 +21,7 @@ import {
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxCloseCancelPatch,
+  injectLinuxLatestAgentTurnExpansionPatch,
   injectLinuxOpenTargetsPatch,
   injectLinuxMenuBarPatch,
   injectLinuxNewThreadModelPatch,
@@ -29,6 +31,7 @@ import {
   injectLinuxVisualCompatJsPatch,
   patchRendererCompactSlashCommandBundle,
   patchRendererBackgroundSubagentsPanelBundle,
+  patchRendererLatestAgentTurnExpansionBundle,
   patchRendererLinuxBrowserCommentPositionBundle,
   patchRendererNewThreadModelBundle,
   patchRendererLinuxVisualCompat,
@@ -102,6 +105,13 @@ const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_INCOMPATIBLE =
   BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT.replace(
     'Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt',
     'Bn=Ye.length===0&&!$e&&!zn&&!it&&!tt'
+  );
+const LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT =
+  'function Ile({hasFinalAssistantStarted:e,isTurnCancelled:t,hasRenderableAgentItems:n,preventAutoCollapse:r,persistedCollapsed:i}){return e&&!t&&n?{shouldAllowCollapse:!0,isCollapsed:i??!r}:{shouldAllowCollapse:!1,isCollapsed:!1}}function Vle(e){let t=(0,Q.c)(16),{conversationId:n,hostId:r,turnSearchKey:i,turnId:a,turn:o,conversationDetailLevel:s,cwd:c,isCollapsed:l,onSetCollapsed:u,emptyUserMessageOverride:d,parentThreadAttachment:f,resolvedApps:p,shouldAutoExpandMcpApps:m,onEditUserMessage:h,onForkUserMessage:g,startAfterTurnIntro:_,showInProgressFixedContent:v,modelProvider:y}=e,b=i===void 0?`turn`:i,x=p===void 0?zle:p,S=m===void 0?!1:m,C=_===void 0?!1:_,w=v===void 0?!0:v,T=o.status===`in_progress`,O=o.status===`cancelled`,{authMethod:k}=Nf(),A;t[0]===Symbol.for(`react.memo_cache_sentinel`)?(A=`4170020461`,t[0]=A):A=t[0];let j=cf(A),M=Nd(),N=s??M,P=Wd(),F;t[1]===y?F=t[2]:(F=!1,t[1]=y,t[2]=F);let I=F,L;t[3]!==I||t[4]!==o.items?(L=o.items,t[3]=I,t[4]=o.items,t[5]=L):L=t[5];let R=L,z;t[6]!==C||t[7]!==R?(z=C?p5(R):R,t[6]=C,t[7]=R,t[8]=z):z=t[8];let B=z,V;t[9]!==B||t[10]!==o.status?(V=yn(B,o.status),t[9]=B,t[10]=o.status,t[11]=V):V=t[11];let{assistantItem:W,agentItems:q}=V,be=l5(W),{renderableAgentItems:Oe,isAnyNonExploringAgentItemInProgress:ke,isExploring:Ae}=d5({agentItems:q,isTurnInProgress:T,isAnyNonAgentItemInProgress:be}),{data:je}=$d(S&&F1(Oe),r),Me=S&&I1({entries:Oe,mcpServerStatuses:je}),Ne=Oe.at(-1),Pe=_le({isTurnInProgress:T,assistantItem:W,isExploring:Ae,hasActiveWebSearch:T&&Ne?.kind===`item`&&Ne.item.type===`web-search`,isAnyNonExploringAgentItemInProgress:ke,hasBlockingRequest:!1}),{shouldAllowCollapse:Fe,isCollapsed:Ie}=Ile({hasFinalAssistantStarted:zn(W),isTurnCancelled:O,hasRenderableAgentItems:Oe.length>0,preventAutoCollapse:Me,persistedCollapsed:l}),Le=Fe?Xle(Oe):Oe,Re=Fe?Zle(Oe):null,ze=Le.length>0,Ve=!C&&Fe&&ze,He=Ve?Ie:!1,Ue=Le.length,We=gle(Le),Ge=Ve&&Ue>0&&We==null;return ze?(0,$.jsx)(Yle,{collapsedMessageCount:Ue,workedForItem:Re,isCollapsed:Ge&&He,showToggle:Ge,onToggle:()=>{!u||!Ge||u(!He)},content:(0,$.jsx)(fle,{entries:Le,conversationId:n,hostId:r,conversationDetailLevel:N,isTurnInProgress:T,hasAssistantStartedStreaming:!1,hasTrailingAssistantMessage:!0,cwd:c,showPendingMcpThinking:Pe.type===`thinking`,pendingMcpThinkingMessage:void 0,resolvedApps:x,mcpServerStatuses:je,shouldAutoExpandMcpApps:S})}):null}';
+const LATEST_AGENT_TURN_EXPANSION_BUNDLE_INCOMPATIBLE =
+  LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT.replace(
+    '}),Le=Fe?Xle(Oe):Oe',
+    '}),Le=Fe?Xle(q):q'
   );
 const COMPACT_SLASH_COMMAND_BUNDLE_CURRENT =
   'function RW(e){let t=(0,Q.c)(17),{conversationId:n,isResponseInProgress:r}=e,i=ea(),a=xf(n),o;t[0]===i?o=t[1]:(o=i.formatMessage({id:`composer.compactSlashCommand.title`,defaultMessage:`Compact`,description:`Title for the compact slash command`}),t[0]=i,t[1]=o);let s;t[2]===i?s=t[3]:(s=i.formatMessage({id:`composer.compactSlashCommand.description`,defaultMessage:`Compact this thread\'s context`,description:`Description for the compact slash command`}),t[2]=i,t[3]=s);let c=n!=null&&!r,l;t[4]!==a||t[5]!==n?(l=async()=>{n!=null&&await a.compactThread(n)},t[4]=a,t[5]=n,t[6]=l):l=t[6];let u;return u={id:`compact`,title:o,description:s,requiresEmptyComposer:!0,Icon:LW,enabled:c,onSelect:l},u}';
@@ -1167,6 +1177,145 @@ test('patchRendererBackgroundSubagentsPanelBundle skips when no candidate bundle
   }
 });
 
+test('injectLinuxLatestAgentTurnExpansionPatch keeps the newest completed agent turn expanded by default', () => {
+  const updated = injectLinuxLatestAgentTurnExpansionPatch(
+    LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT
+  );
+
+  assert.match(updated, /codexLinuxLatestAgentTurnExpanded/);
+  assert.match(
+    updated,
+    /persistedCollapsed:\/\* codexLinuxLatestAgentTurnExpanded \*\/S\?\(l\?\?!1\):l/
+  );
+});
+
+test('injectLinuxLatestAgentTurnExpansionPatch is idempotent', () => {
+  const once = injectLinuxLatestAgentTurnExpansionPatch(
+    LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT
+  );
+  const twice = injectLinuxLatestAgentTurnExpansionPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxLatestAgentTurnExpansionPatch skips patching when disabled', () => {
+  const result = applyLinuxLatestAgentTurnExpansionPatch(
+    LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT,
+    { skip: true }
+  );
+
+  assert.equal(result.updated, LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('patchRendererLatestAgentTurnExpansionBundle patches the completed turn bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-latest-agent-turn-expansion-ok-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'index.js');
+    await fs.promises.writeFile(bundlePath, LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererLatestAgentTurnExpansionBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'index.js'
+    });
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /persistedCollapsed:\/\* codexLinuxLatestAgentTurnExpanded \*\/S\?\(l\?\?!1\):l/
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererLatestAgentTurnExpansionBundle skips when anchors are incompatible', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-latest-agent-turn-expansion-mismatch-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(
+      path.join(assetsDir, 'index.js'),
+      LATEST_AGENT_TURN_EXPANSION_BUNDLE_INCOMPATIBLE,
+      'utf8'
+    );
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererLatestAgentTurnExpansionBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result.status, 'skipped');
+    assert.deepEqual(result.reason, 'anchor-mismatch');
+    assert.equal(result.sourceName, 'index.js');
+    assert.match(
+      result.details ?? '',
+      /Could not patch the renderer latest agent turn expansion bundle for Linux/
+    );
+    assert.equal(
+      warnings.some((message) =>
+        message.includes('Skipping Linux latest agent turn expansion patch for index.js')
+      ),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererLatestAgentTurnExpansionBundle skips when no candidate bundle exists', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-latest-agent-turn-expansion-no-candidate-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(path.join(assetsDir, 'index.js'), 'const noop = true;', 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererLatestAgentTurnExpansionBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    });
+    assert.equal(
+      warnings.includes(
+        'Skipping Linux latest agent turn expansion patch because no renderer candidate bundle was detected.'
+      ),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('patchRendererCompactSlashCommandBundle verifies compact slash command support', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-compact-command-ok-'));
   try {
@@ -1344,6 +1493,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         status: 'applied',
         sourceName: 'index.js'
       },
+      latestAgentTurnExpansion: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
       compactSlashCommand: {
         status: 'already-applied',
         sourceName: 'index.js'
@@ -1412,6 +1565,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'index.js'
       },
       backgroundSubagentsPanel: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
+      latestAgentTurnExpansion: {
         status: 'applied',
         sourceName: 'index.js'
       },
