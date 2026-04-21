@@ -432,22 +432,16 @@ const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT =
   't.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT =
   't.app.on(`before-quit`,s=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let c=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${c}?`,message:`Quit ${c}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){s.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=i.showLastActivePrimaryWindow();e?a.refresh():Promise.resolve(o(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus()),a.refresh()})}return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
-const LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_ANCHOR =
-  'var am=32e3,om=e.mr(`worktree-service`),sm=class{';
-const LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_REPLACEMENT =
-  `var codexLinuxWorktreeEnvironmentBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};function codexLinuxListEnvironmentConfigPaths(e){let t=codexLinuxWorktreeEnvironmentBuiltins.fs,n=codexLinuxWorktreeEnvironmentBuiltins.path;if(!e||!t||!n)return[];let r=n.join(e,\`.codex\`,\`environments\`),i;try{i=t.readdirSync(r,{withFileTypes:!0})}catch{return[]}return i.filter(e=>e.isFile()&&e.name.endsWith(\`.toml\`)).map(e=>n.join(r,e.name)).sort()}function codexLinuxResolveWorktreeLocalEnvironmentPath(e,t){if(t===\`__none__\`||t!=null)return t;let n=codexLinuxListEnvironmentConfigPaths(e);return n.length===1?n[0]:null}/* ${LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER} */var am=32e3,om=e.mr(\`worktree-service\`),sm=class{`;
-const LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_SNIPPET_CURRENT =
-  'let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});';
-const LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_REPLACEMENT_CURRENT =
-  'let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.Zr(r.sourceWorkspaceRoot),r.localEnvironmentConfigPath);codexLinuxResolvedLocalEnvironmentPath===`__none__`?om().info(`[worktree-create] explicit-no-environment`,{safe:{flow:`pending`,launchMode:r.launchMode},sensitive:{sourceWorkspaceRoot:r.sourceWorkspaceRoot}}):r.localEnvironmentConfigPath==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&om().info(`[worktree-create] auto-selected-single-environment`,{safe:{flow:`pending`,launchMode:r.launchMode},sensitive:{sourceWorkspaceRoot:r.sourceWorkspaceRoot,configPath:codexLinuxResolvedLocalEnvironmentPath}});let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});';
+const LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_PATTERN =
+  /var (?<thresholdVar>[A-Za-z_$][\w$]*)=32e3,(?<loggerVar>[A-Za-z_$][\w$]*)=e\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`worktree-service`\),(?<classVar>[A-Za-z_$][\w$]*)=class\{/;
+const LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_PATTERN =
+  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.hostConfig,cwd:e\.(?<pathResolver>[A-Za-z_$][\w$]*)\(r\.sourceWorkspaceRoot\),startingState:r\.startingState,localEnvironmentConfigPath:r\.localEnvironmentConfigPath,streamId:i\.streamId,setUpSyncedBranch:r\.launchMode===`create-stable-worktree`\?!1:void 0\},signal:i\.abortController\.signal\}\);/;
 const LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_SNIPPET_CURRENT =
   'hasLocalEnvironment:r.localEnvironmentConfigPath!=null';
 const LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_REPLACEMENT_CURRENT =
   'hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`';
-const LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_SNIPPET_CURRENT =
-  'let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);';
-const LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_REPLACEMENT_CURRENT =
-  'let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.Zr(n),i);codexLinuxResolvedLocalEnvironmentPath===`__none__`?om().info(`[worktree-create] explicit-no-environment`,{safe:{flow:`managed`},sensitive:{cwd:n}}):i==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&om().info(`[worktree-create] auto-selected-single-environment`,{safe:{flow:`managed`},sensitive:{cwd:n,configPath:codexLinuxResolvedLocalEnvironmentPath}});let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);';
+const LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_PATTERN =
+  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.getHostConfigForHostId\(t\),cwd:e\.(?<pathResolver>[A-Za-z_$][\w$]*)\(n\),startingState:r,localEnvironmentConfigPath:i,streamId:a\}\}\),(?<newbornVar>[A-Za-z_$][\w$]*)=this\.newbornWorktreeRoots\.has\(\k<resultVar>\.worktreeGitRoot\);/;
 const LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_SNIPPET_CURRENT =
   'hasLocalEnvironment:i!=null';
 const LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_REPLACEMENT_CURRENT =
@@ -473,6 +467,29 @@ const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_SKIP_SNIPPET_CURRENT =
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_SKIP_REPLACEMENT_CURRENT =
   'if(i==null||i===`__none__`){NX().info(`[worktree-delete] cleanup-skipped-no-environment`,{safe:{worktreeId:t},sensitive:{configPath:i}});return;}';
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
+
+function buildLinuxWorktreeEnvironmentMainHelperReplacement({
+  thresholdVar,
+  loggerVar,
+  loggerFactory,
+  classVar
+}) {
+  return `var codexLinuxWorktreeEnvironmentBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};function codexLinuxListEnvironmentConfigPaths(e){let t=codexLinuxWorktreeEnvironmentBuiltins.fs,n=codexLinuxWorktreeEnvironmentBuiltins.path;if(!e||!t||!n)return[];let r=n.join(e,\`.codex\`,\`environments\`),i;try{i=t.readdirSync(r,{withFileTypes:!0})}catch{return[]}return i.filter(e=>e.isFile()&&e.name.endsWith(\`.toml\`)).map(e=>n.join(r,e.name)).sort()}function codexLinuxResolveWorktreeLocalEnvironmentPath(e,t){if(t===\`__none__\`||t!=null)return t;let n=codexLinuxListEnvironmentConfigPaths(e);return n.length===1?n[0]:null}/* ${LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER} */var ${thresholdVar}=32e3,${loggerVar}=e.${loggerFactory}(\`worktree-service\`),${classVar}=class{`;
+}
+
+function buildLinuxWorktreeEnvironmentPendingRequestReplacement(
+  { resultVar, pathResolver },
+  { loggerVar }
+) {
+  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.${pathResolver}(r.sourceWorkspaceRoot),r.localEnvironmentConfigPath);codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`pending\`,launchMode:r.launchMode},sensitive:{sourceWorkspaceRoot:r.sourceWorkspaceRoot}}):r.localEnvironmentConfigPath==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`pending\`,launchMode:r.launchMode},sensitive:{sourceWorkspaceRoot:r.sourceWorkspaceRoot,configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.hostConfig,cwd:e.${pathResolver}(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===\`create-stable-worktree\`?!1:void 0},signal:i.abortController.signal});`;
+}
+
+function buildLinuxWorktreeEnvironmentManagedRequestReplacement(
+  { resultVar, newbornVar, pathResolver },
+  { loggerVar }
+) {
+  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.${pathResolver}(n),i);codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:n}}):i==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:n,configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.${pathResolver}(n),startingState:r,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:a}}),${newbornVar}=this.newbornWorktreeRoots.has(${resultVar}.worktreeGitRoot);`;
+}
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
   /let (?<createdSessionVar>[A-Za-z_$][\w$]*)=(?<resumeSessionVar>[A-Za-z_$][\w$]*)\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:n,hostId:r\?\?null,cwd:i\?\?null\}\);(?<sessionRef>[A-Za-z_$][\w$]*)\.current=\k<createdSessionVar>,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1;/;
@@ -558,6 +575,10 @@ const NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_415 =
   'return{input:d,commentAttachments:e.commentAttachments,workspaceRoots:n,cwd:r,fileAttachments:e.fileAttachments,addedFiles:e.addedFiles,agentMode:a,model:null,serviceTier:o,reasoningEffort:null,collaborationMode:s,config:Ir(f),memoryPreferences:c,workspaceKind:l,...l===`projectless`?{projectlessOutputDirectory:u}:{}}';
 const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_415 =
   'let p=Ir(f),codexLinuxFreshThreadCollaborationModeSettings=s==null?null:{...s,settings:{...s.settings,model:s.settings?.model??p.model??null,reasoning_effort:s.settings?.reasoning_effort??p.model_reasoning_effort??null}};return{input:d,commentAttachments:e.commentAttachments,workspaceRoots:n,cwd:r,fileAttachments:e.fileAttachments,addedFiles:e.addedFiles,agentMode:a,model:null,serviceTier:o,reasoningEffort:null,collaborationMode:codexLinuxFreshThreadCollaborationModeSettings,config:p,memoryPreferences:c,workspaceKind:l,...l===`projectless`?{projectlessOutputDirectory:u}:{}}';
+const NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_417 =
+  'return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:zt(`agent-mode-by-host-id`,{})[F]??`auto`,model:null,reasoningEffort:null,collaborationMode:Pve(t,n,i),config:gt(a),workspaceKind:`project`}}';
+const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_417 =
+  'let o=Pve(t,n,i),s=gt(a),codexLinuxFreshThreadCollaborationModeSettings=o==null?null:{...o,settings:{...o.settings,model:o.settings?.model??s.model??null,reasoning_effort:o.settings?.reasoning_effort??s.model_reasoning_effort??null}};return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:zt(`agent-mode-by-host-id`,{})[F]??`auto`,model:null,reasoningEffort:null,collaborationMode:codexLinuxFreshThreadCollaborationModeSettings,config:s,workspaceKind:`project`}}';
 const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
@@ -581,7 +602,7 @@ const LINUX_BROWSER_COMMENT_POSITION_CANDIDATE_MARKERS = [
 ];
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_CANDIDATE_MARKERS = [
   'composer.backgroundSubagents.summary',
-  'isBackgroundSubagentsPanelVisible:Bn'
+  'isBackgroundSubagentsPanelVisible:'
 ];
 const LINUX_LATEST_AGENT_TURN_EXPANSION_CANDIDATE_MARKERS = [
   'collapsedMessageCount:',
@@ -592,12 +613,10 @@ const LINUX_BROWSER_COMMENT_POSITION_OVERLAY_STATE_PATTERN =
   /let\{message:(?<messageVar>[A-Za-z_$][\w$]*),root:(?<rootVar>[A-Za-z_$][\w$]*),popupWindow:(?<popupVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*,/;
 const LINUX_BROWSER_COMMENT_POSITION_POPUP_OPEN_PATTERN =
   /let\{x:(?<xVar>[A-Za-z_$][\w$]*),y:(?<yVar>[A-Za-z_$][\w$]*),width:(?<widthVar>[A-Za-z_$][\w$]*),height:(?<heightVar>[A-Za-z_$][\w$]*)\}=(?<boundsVar>[A-Za-z_$][\w$]*)\.overlayWindowBounds,(?<popupVar>[A-Za-z_$][\w$]*)=(?<openerVar>[A-Za-z_$][\w$]*)\.open\(`about:blank`,(?<frameNameVar>[A-Za-z_$][\w$]*),\[`popup=yes`,`left=\$\{Math\.round\(\k<xVar>\)\}`,`top=\$\{Math\.round\(\k<yVar>\)\}`,`width=\$\{Math\.round\(\k<widthVar>\)\}`,`height=\$\{Math\.round\(\k<heightVar>\)\}`\]\.join\(`,`\)\);return \k<popupVar>==null\?null:\{frameName:\k<frameNameVar>,window:\k<popupVar>\}/;
-const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_SNIPPET =
-  'Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt';
-const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_REPLACEMENT =
-  `/* ${LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER} */Bn=Ye.length>0&&!$e&&(typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===\`1\`?zn:!1)&&!it&&!tt`;
+const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN =
+  /(?<visibleVar>[A-Za-z_$][\w$]*)=(?<rowsVar>[A-Za-z_$][\w$]*)\.length>0&&!(?<firstGuard>[A-Za-z_$][\w$]*)&&!(?<toggleGuard>[A-Za-z_$][\w$]*)&&!(?<thirdGuard>[A-Za-z_$][\w$]*)&&!(?<fourthGuard>[A-Za-z_$][\w$]*)/;
 const LINUX_LATEST_AGENT_TURN_EXPANSION_PATTERN =
-  /persistedCollapsed:(?<persistedCollapsedVar>[A-Za-z_$][\w$]*)\}\),Le=Fe\?Xle\(Oe\):Oe/;
+  /persistedCollapsed:(?<persistedCollapsedVar>[A-Za-z_$][\w$]*)\}\),/;
 const COMPACT_SLASH_COMMAND_ID_MARKERS = ['id:`compact`', 'id:"compact"', "id:'compact'"];
 
 async function patchMainProcessBundle(extractedAppDir, logger) {
@@ -813,16 +832,23 @@ export function injectLinuxWorktreeEnvironmentMainPatch(bundleSource, options = 
     bundleSource,
     options.sourceName
   );
-  let updated = replaceSnippetOrThrow(
+  const helperMatch = bundleSource.match(LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_PATTERN);
+  if (!helperMatch?.groups) {
+    throw new Error(errorMessage);
+  }
+  const mainBundleContext = {
+    loggerVar: helperMatch.groups.loggerVar
+  };
+  let updated = replaceRegexOrThrow(
     bundleSource,
-    LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_ANCHOR,
-    LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_REPLACEMENT,
+    LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_PATTERN,
+    buildLinuxWorktreeEnvironmentMainHelperReplacement,
     errorMessage
   );
-  updated = replaceSnippetOrThrow(
+  updated = replaceRegexOrThrow(
     updated,
-    LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_SNIPPET_CURRENT,
-    LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_REPLACEMENT_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_PATTERN,
+    (groups) => buildLinuxWorktreeEnvironmentPendingRequestReplacement(groups, mainBundleContext),
     errorMessage
   );
   updated = replaceSnippetOrThrow(
@@ -831,10 +857,10 @@ export function injectLinuxWorktreeEnvironmentMainPatch(bundleSource, options = 
     LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_REPLACEMENT_CURRENT,
     errorMessage
   );
-  updated = replaceSnippetOrThrow(
+  updated = replaceRegexOrThrow(
     updated,
-    LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_SNIPPET_CURRENT,
-    LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_REPLACEMENT_CURRENT,
+    LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_PATTERN,
+    (groups) => buildLinuxWorktreeEnvironmentManagedRequestReplacement(groups, mainBundleContext),
     errorMessage
   );
   return replaceSnippetOrThrow(
@@ -1458,6 +1484,15 @@ function injectLinuxNewThreadModelSubmitPatch(bundleSource, options = {}) {
       bundleSource,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_415,
       NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_415,
+      errorMessage
+    );
+  }
+
+  if (bundleSource.includes(NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_417)) {
+    return replaceSnippetOrThrow(
+      bundleSource,
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_417,
+      NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_417,
       errorMessage
     );
   }
@@ -2221,10 +2256,11 @@ export function injectLinuxBackgroundSubagentsPanelPatch(bundleSource, options =
     return bundleSource;
   }
 
-  return replaceSnippetOrThrow(
+  return replaceRegexOrThrow(
     bundleSource,
-    LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_SNIPPET,
-    LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_REPLACEMENT,
+    LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN,
+    ({ visibleVar, rowsVar, firstGuard, toggleGuard, thirdGuard, fourthGuard }) =>
+      `/* ${LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER} */${visibleVar}=${rowsVar}.length>0&&!${firstGuard}&&(typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===\`1\`?${toggleGuard}:!1)&&!${thirdGuard}&&!${fourthGuard}`,
     buildLinuxBackgroundSubagentsPanelPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
@@ -2324,7 +2360,7 @@ export function injectLinuxLatestAgentTurnExpansionPatch(bundleSource, options =
     bundleSource,
     LINUX_LATEST_AGENT_TURN_EXPANSION_PATTERN,
     ({ persistedCollapsedVar }) =>
-      `persistedCollapsed:/* ${LINUX_LATEST_AGENT_TURN_EXPANSION_PATCH_MARKER} */S?(${persistedCollapsedVar}??!1):${persistedCollapsedVar}}),Le=Fe?Xle(Oe):Oe`,
+      `persistedCollapsed:/* ${LINUX_LATEST_AGENT_TURN_EXPANSION_PATCH_MARKER} */S?(${persistedCollapsedVar}??!1):${persistedCollapsedVar}}),`,
     buildLinuxLatestAgentTurnExpansionPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
@@ -2387,8 +2423,8 @@ function analyzeLinuxBrowserCommentPositionBundle(bundleSource) {
 function analyzeLinuxBackgroundSubagentsPanelBundle(bundleSource) {
   const detected = {
     panelSummary: bundleSource.includes('composer.backgroundSubagents.summary'),
-    panelPlaceholderState: bundleSource.includes('isBackgroundSubagentsPanelVisible:Bn'),
-    panelVisibilityGate: bundleSource.includes(LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_SNIPPET)
+    panelPlaceholderState: bundleSource.includes('isBackgroundSubagentsPanelVisible:'),
+    panelVisibilityGate: LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN.test(bundleSource)
   };
 
   return {
@@ -2438,16 +2474,12 @@ function buildLinuxWorktreeEnvironmentWorkerPatchErrorMessage(bundleSource, sour
 
 function analyzeLinuxWorktreeEnvironmentMainBundle(bundleSource) {
   const detected = {
-    worktreeServiceClass: bundleSource.includes('worktree-service'),
-    pendingCreateRequest: bundleSource.includes(
-      LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_SNIPPET_CURRENT
-    ),
+    worktreeServiceClass: LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_PATTERN.test(bundleSource),
+    pendingCreateRequest: LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_PATTERN.test(bundleSource),
     pendingReadyLog: bundleSource.includes(
       LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_SNIPPET_CURRENT
     ),
-    managedCreateRequest: bundleSource.includes(
-      LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_SNIPPET_CURRENT
-    ),
+    managedCreateRequest: LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_PATTERN.test(bundleSource),
     managedReadyLog: bundleSource.includes(
       LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_SNIPPET_CURRENT
     )
@@ -2743,12 +2775,14 @@ function analyzeNewThreadModelSubmitBundle(bundleSource) {
     freshThreadSubmit: [
       'async function N({appServerManager:e=x,context:t,prompt:n,workspaceRoots:r,cwd:i}){',
       'async function F({requestClient:e,context:t,prompt:n,workspaceRoots:r,cwd:i,hostId:a}){',
-      'async function OB({context:e,prompt:t,workspaceRoots:n,cwd:r,hostId:i,agentMode:a,serviceTier:o,collaborationMode:s,memoryPreferences:c,workspaceKind:l=`project`,projectlessOutputDirectory:u}){'
+      'async function OB({context:e,prompt:t,workspaceRoots:n,cwd:r,hostId:i,agentMode:a,serviceTier:o,collaborationMode:s,memoryPreferences:c,workspaceKind:l=`project`,projectlessOutputDirectory:u}){',
+      'async function Nve({input:e,mode:t,model:n,projectId:r,thinking:i}){'
     ].some((snippet) => bundleSource.includes(snippet)),
     collaborationModeSubmit: [
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_406,
-      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_415
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_415,
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_417
     ].some((snippet) => bundleSource.includes(snippet))
   };
 
