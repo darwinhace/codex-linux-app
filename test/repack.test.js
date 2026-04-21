@@ -56,6 +56,33 @@ const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
   'function im({globalState:t,worktreeDir:n}){let r=e.yt(n).replace(/\\/+$/,``);return B(t).some(t=>{let n=e.yt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var am=32e3,om=e.mr(`worktree-service`),sm=class{statesById=new Map;async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};try{let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})}catch(e){}}async createManagedWorktree({hostId:t,cwd:n,startingState:r,localEnvironmentConfigPath:i,streamId:a}){try{let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);return this.newbornWorktreeRoots.add(o.worktreeGitRoot),om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),o}catch(e){throw this.forgetNewbornWorktreeStream(a),e}}};';
+const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT
+  .replace(
+    'function im({globalState:t,worktreeDir:n}){let r=e.yt(n).replace(/\\/+$/,``);return B(t).some(t=>{let n=e.yt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}',
+    'function gm({globalState:t,worktreeDir:n}){let r=e.Nt(n).replace(/\\/+$/,``);return e.o(t).some(t=>{let n=e.Nt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}'
+  )
+  .replace(
+    'var am=32e3,om=e.mr(`worktree-service`),sm=class{statesById=new Map;',
+    'var _m=32e3,vm=e.kr(`worktree-service`),ym=class{statesById=new Map;newbornWorktreeRoots=new Set;newbornWorktreeRootsByStreamId=new Map;cleanupRunning=!1;cleanupPending=!1;'
+  )
+  .replace(
+    'async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};try{',
+    'async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};n.runtime=i,this.updateEntry(t,e=>({...e,phase:`creating`,outputText:bm(``,`[info] Starting worktree creation\n`)}));try{'
+  )
+  .replace('cwd:e.Zr(r.sourceWorkspaceRoot)', 'cwd:e.pi(r.sourceWorkspaceRoot)')
+  .replace(
+    'om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})',
+    'if(this.updateEntry(t,e=>({...e,phase:`worktree-ready`,worktreeGitRoot:n.worktreeGitRoot,worktreeWorkspaceRoot:n.worktreeWorkspaceRoot})),vm().info(`[worktree-create] ready`,{safe:{worktreeId:e.Vt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.forgetNewbornWorktreeStream(i.streamId),r.launchMode===`create-stable-worktree`){this.addWorkspaceRoot(n.worktreeWorkspaceRoot,r.label),this.statesById.delete(t),this.publish();return}let a=this.statesById.get(t);a&&(a.runtime=null),this.runCleanup()'
+  )
+  .replace(
+    '}catch(e){}}async createManagedWorktree',
+    '}catch(e){this.forgetNewbornWorktreeStream(i.streamId);let n=this.statesById.get(t);if(n&&(n.runtime=null),xm(e))return;let r=e instanceof Error?e.message:String(e);this.updateEntry(t,e=>({...e,phase:`failed`,errorMessage:r,needsAttention:!0,outputText:bm(e.outputText,`[stderr] ${r}\n`)})),this.notifyFailure(t,r)}}async createManagedWorktree'
+  )
+  .replace('cwd:e.Zr(n)', 'cwd:e.pi(n)')
+  .replace(
+    'om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})',
+    'vm().info(`[worktree-create] ready`,{safe:{worktreeId:e.Vt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})'
+  );
 const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT = `async function MZ(e,t,n){let r=await AZ(e,t,n);r!=null&&await cz.rm(r,void 0,t)}async function cX(e,t,n,r,i,a){return uX({workspaceRoot:e,localEnvironment:t,scriptType:\`setup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r})}async function lX(e,t,n,r,i){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){if(o?.aborted)return{success:!1,error:Error(\`Request canceled\`)};let l=(await e.getWorktreeRepository(NL(t),a))?.root;if(!l)return{success:!1,error:Error(\`Not a git repository\`)};let m={worktreeGitRoot:\`/tmp/source/.git\`,worktreeWorkspaceRoot:\`/tmp/worktree\`},{worktreeGitRoot:h,worktreeWorkspaceRoot:g}=m;c?.(h);if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\n\`,\`utf8\`)),await vZ(g,r??\`__none__\`,a,\`worktree\`,o)||s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config
 \`,\`utf8\`)),r==null)return s?.(\`info\`,ce.Buffer.from(\`No local environment selected
 \`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await QJ(r,a);if(v.type===\`error\`)return s?.(\`stderr\`,ce.Buffer.from(\`\${v.error.message}\n\`,\`utf8\`)),{success:!1,error:v.error};s?.(\`info\`,ce.Buffer.from(\`Running setup script \${v.configPath}\n\`,\`utf8\`));let y=await cX(h,v,(e,t)=>{s?.(e,t)},o,{[UL]:t,[WL]:g},a);return{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:y?.setupResult??null}}async function RX(e,t,n,r){let i=await nX(e,n,\`worktree\`,r);if(i==null||i===\`__none__\`)return;let a=await QJ(i,n);if(a.type===\`error\`){NX().warning(\`[worktree-delete] cleanup-config-unavailable\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:a.error}});return}if(!a.environment.cleanup)return;NX().info(\`[worktree-delete] cleanup-script-start\`,{safe:{worktreeId:t},sensitive:{configPath:i}});let o=await lX(e,a,void 0,r,n);if(o!=null){if(o?.status===\`failed\`)throw Error(o.error??\`Cleanup script failed\`)}}`;
@@ -85,6 +112,8 @@ const NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415 =
   'function $9(e){let t=(0,J.c)(30),n=e===void 0?null:e,r=fe(g),i=Gl(n),a=i.hostId,o=me(XCe,a),s=Xn(a),c=xn(),l=i.cwd,u;t[0]!==a||t[1]!==l?(u={hostId:a,cwd:l},t[0]=a,t[1]=l,t[2]=u):u=t[2];let d=ZCe(u),f=JCe(),p=me(Ft,n),m=me(_t,n),_=m?.settings.model??null,v;t[3]===_?v=t[4]:(v=_!=null&&_.trim().length>0?_:null,t[3]=_,t[4]=v);let y=v,b=s?.authMethod===`copilot`,x;t[5]!==n||t[6]!==p?(x=async(e,t)=>{n==null||!p||await on(`set-model-and-reasoning-for-next-turn`,{conversationId:n,model:e,reasoningEffort:t})},t[5]=n,t[6]=p,t[7]=x):x=t[7];let S=x,C;t[8]!==d||t[9]!==f||t[10]!==p||t[11]!==b||t[12]!==m?.settings||t[13]!==y?(C=p?{model:y??d.model,reasoningEffort:m?.settings.reasoning_effort??null,profile:d.profile,isLoading:!1}:b?f:d,t[8]=d,t[9]=f,t[10]=p,t[11]=b,t[12]=m?.settings,t[13]=y,t[14]=C):C=t[14];let w=C,T;t[15]!==a||t[16]!==l?(T={hostId:a,cwd:l},t[15]=a,t[16]=l,t[17]=T):T=t[17];let E=QCe(T),D;t[18]!==S||t[19]!==d.profile||t[20]!==a||t[21]!==c||t[22]!==o||t[23]!==b||t[24]!==E||t[25]!==r?(D=async(e,t)=>{try{if(await S(e,t),b){zn(r,`copilot-default-model`,e);return}if(h.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:t,profile:d.profile}}),!o)return;await on(`set-default-model-config-for-host`,{hostId:a,model:e,reasoningEffort:t,profile:d.profile}),await E()}catch(e){let t=e;h.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:t}});let n=r.get(bo),i=$Ce(c,t);Q9(t)?n.danger(i,{id:`composer.modelSettings.updateError`,description:(0,K.createElement)(`div`,{className:`mt-4`},(0,K.createElement)(RCe))}):n.danger(i,{id:`composer.modelSettings.updateError`})}},t[18]=S,t[19]=d.profile,t[20]=a,t[21]=c,t[22]=o,t[23]=b,t[24]=E,t[25]=r,t[26]=D):D=t[26];let O=D,k;return t[27]!==w||t[28]!==O?(k={setModelAndReasoningEffort:O,modelSettings:w},t[27]=w,t[28]=O,t[29]=k):k=t[29],k}';
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415 =
   'async function OB({context:e,prompt:t,workspaceRoots:n,cwd:r,hostId:i,agentMode:a,serviceTier:o,collaborationMode:s,memoryPreferences:c,workspaceKind:l=`project`,projectlessOutputDirectory:u}){let d=[{type:`text`,text:t,text_elements:[]},...DB(e,i!==he)],{config:f}=await ci(`read-config-for-host`,{hostId:i,includeLayers:!1,cwd:r});return{input:d,commentAttachments:e.commentAttachments,workspaceRoots:n,cwd:r,fileAttachments:e.fileAttachments,addedFiles:e.addedFiles,agentMode:a,model:null,serviceTier:o,reasoningEffort:null,collaborationMode:s,config:Ir(f),memoryPreferences:c,workspaceKind:l,...l===`projectless`?{projectlessOutputDirectory:u}:{}}}';
+const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_417 =
+  'async function Nve({input:e,mode:t,model:n,projectId:r,thinking:i}){let{config:a}=await en(`read-config-for-host`,{hostId:F,includeLayers:!1,cwd:r});return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:zt(`agent-mode-by-host-id`,{})[F]??`auto`,model:null,reasoningEffort:null,collaborationMode:Pve(t,n,i),config:gt(a),workspaceKind:`project`}}';
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415 = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415}function _t(e){return e?.latestCollaborationMode?.settings?.reasoning_effort??null}function Ft(e){return e?.latestCollaborationMode?.settings?.model??null}`;
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED = NEW_THREAD_MODEL_STATE_BUNDLE_26_415
   .replace('r.get(bo)', 'r.get(So)')
@@ -110,6 +139,14 @@ const LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT =
   'function wP(e){let x;let{message:N,root:P,popupWindow:F}=x,I=N.session.sessionId;let U;t[31]!==N.editorFrame.height||t[32]!==N.editorFrame.width||t[33]!==N.editorFrame.x||t[34]!==N.editorFrame.y?(U={left:N.editorFrame.x,top:N.editorFrame.y,width:N.editorFrame.width,height:N.editorFrame.height},t[31]=N.editorFrame.height,t[32]=N.editorFrame.width,t[33]=N.editorFrame.x,t[34]=N.editorFrame.y,t[35]=U):U=t[35];return U}function TP({conversationId:e,openerWindow:t,existingPopup:n,message:r}){let i=ze({windowId:ve.BROWSER_COMMENT_POPUP,conversationId:e});if(n!=null&&!n.window.closed&&n.frameName===i)return n;let{x:a,y:o,width:s,height:c}=r.overlayWindowBounds,l=t.open(`about:blank`,i,[`popup=yes`,`left=${Math.round(a)}`,`top=${Math.round(o)}`,`width=${Math.round(s)}`,`height=${Math.round(c)}`].join(`,`));return l==null?null:{frameName:i,window:l}}d(`browser-sidebar-comment-overlay-session`,k,A);';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
   'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
+const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_417 = BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT
+  .replace('function YR(e){', 'function eB(e){')
+  .replace('o=ea()', 'o=pa()')
+  .replace('s=a.reduce(XR,{linesAdded:0,linesRemoved:0})', 's=a.reduce(tB,{linesAdded:0,linesRemoved:0})')
+  .replace(
+    'let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});',
+    'let In=Xe.length>0&&!tt&&!Fn&&!st&&!it,Ln=rt||Se||Ce||Fn||it;function vV({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(yV(t,n,r,i))}let composer=(0,$.jsx)(Qc,{placeholder:p??vV({intl:bt,followUpType:R?.type,composerMode:Yn,cloudStartingState:ri,isBackgroundSubagentsPanelVisible:In})});'
+  );
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_INCOMPATIBLE =
   BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT.replace(
     'Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt',
@@ -117,10 +154,15 @@ const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_INCOMPATIBLE =
   );
 const LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT =
   'function Ile({hasFinalAssistantStarted:e,isTurnCancelled:t,hasRenderableAgentItems:n,preventAutoCollapse:r,persistedCollapsed:i}){return e&&!t&&n?{shouldAllowCollapse:!0,isCollapsed:i??!r}:{shouldAllowCollapse:!1,isCollapsed:!1}}function Vle(e){let t=(0,Q.c)(16),{conversationId:n,hostId:r,turnSearchKey:i,turnId:a,turn:o,conversationDetailLevel:s,cwd:c,isCollapsed:l,onSetCollapsed:u,emptyUserMessageOverride:d,parentThreadAttachment:f,resolvedApps:p,shouldAutoExpandMcpApps:m,onEditUserMessage:h,onForkUserMessage:g,startAfterTurnIntro:_,showInProgressFixedContent:v,modelProvider:y}=e,b=i===void 0?`turn`:i,x=p===void 0?zle:p,S=m===void 0?!1:m,C=_===void 0?!1:_,w=v===void 0?!0:v,T=o.status===`in_progress`,O=o.status===`cancelled`,{authMethod:k}=Nf(),A;t[0]===Symbol.for(`react.memo_cache_sentinel`)?(A=`4170020461`,t[0]=A):A=t[0];let j=cf(A),M=Nd(),N=s??M,P=Wd(),F;t[1]===y?F=t[2]:(F=!1,t[1]=y,t[2]=F);let I=F,L;t[3]!==I||t[4]!==o.items?(L=o.items,t[3]=I,t[4]=o.items,t[5]=L):L=t[5];let R=L,z;t[6]!==C||t[7]!==R?(z=C?p5(R):R,t[6]=C,t[7]=R,t[8]=z):z=t[8];let B=z,V;t[9]!==B||t[10]!==o.status?(V=yn(B,o.status),t[9]=B,t[10]=o.status,t[11]=V):V=t[11];let{assistantItem:W,agentItems:q}=V,be=l5(W),{renderableAgentItems:Oe,isAnyNonExploringAgentItemInProgress:ke,isExploring:Ae}=d5({agentItems:q,isTurnInProgress:T,isAnyNonAgentItemInProgress:be}),{data:je}=$d(S&&F1(Oe),r),Me=S&&I1({entries:Oe,mcpServerStatuses:je}),Ne=Oe.at(-1),Pe=_le({isTurnInProgress:T,assistantItem:W,isExploring:Ae,hasActiveWebSearch:T&&Ne?.kind===`item`&&Ne.item.type===`web-search`,isAnyNonExploringAgentItemInProgress:ke,hasBlockingRequest:!1}),{shouldAllowCollapse:Fe,isCollapsed:Ie}=Ile({hasFinalAssistantStarted:zn(W),isTurnCancelled:O,hasRenderableAgentItems:Oe.length>0,preventAutoCollapse:Me,persistedCollapsed:l}),Le=Fe?Xle(Oe):Oe,Re=Fe?Zle(Oe):null,ze=Le.length>0,Ve=!C&&Fe&&ze,He=Ve?Ie:!1,Ue=Le.length,We=gle(Le),Ge=Ve&&Ue>0&&We==null;return ze?(0,$.jsx)(Yle,{collapsedMessageCount:Ue,workedForItem:Re,isCollapsed:Ge&&He,showToggle:Ge,onToggle:()=>{!u||!Ge||u(!He)},content:(0,$.jsx)(fle,{entries:Le,conversationId:n,hostId:r,conversationDetailLevel:N,isTurnInProgress:T,hasAssistantStartedStreaming:!1,hasTrailingAssistantMessage:!0,cwd:c,showPendingMcpThinking:Pe.type===`thinking`,pendingMcpThinkingMessage:void 0,resolvedApps:x,mcpServerStatuses:je,shouldAutoExpandMcpApps:S})}):null}';
+const LATEST_AGENT_TURN_EXPANSION_BUNDLE_26_417 = LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT
+  .replace('function Ile(', 'function kde(')
+  .replace('function Vle(e){let t=(0,Q.c)(16),{conversationId:n,hostId:r,turnSearchKey:i,turnId:a,turn:o,conversationDetailLevel:s,cwd:c,isCollapsed:l,onSetCollapsed:u,emptyUserMessageOverride:d,parentThreadAttachment:f,resolvedApps:p,shouldAutoExpandMcpApps:m,onEditUserMessage:h,onForkUserMessage:g,startAfterTurnIntro:_,showInProgressFixedContent:v,modelProvider:y}=e,b=i===void 0?`turn`:i,x=p===void 0?zle:p,S=m===void 0?!1:m,C=_===void 0?!1:_,w=v===void 0?!0:v,T=o.status===`in_progress`,O=o.status===`cancelled`,{authMethod:k}=Nf(),A;t[0]===Symbol.for(`react.memo_cache_sentinel`)?(A=`4170020461`,t[0]=A):A=t[0];let j=cf(A),M=Nd(),N=s??M,P=Wd(),F;t[1]===y?F=t[2]:(F=!1,t[1]=y,t[2]=F);let I=F,L;t[3]!==I||t[4]!==o.items?(L=o.items,t[3]=I,t[4]=o.items,t[5]=L):L=t[5];let R=L,z;t[6]!==C||t[7]!==R?(z=C?p5(R):R,t[6]=C,t[7]=R,t[8]=z):z=t[8];let B=z,V;t[9]!==B||t[10]!==o.status?(V=yn(B,o.status),t[9]=B,t[10]=o.status,t[11]=V):V=t[11];let{assistantItem:W,agentItems:q}=V,be=l5(W),{renderableAgentItems:Oe,isAnyNonExploringAgentItemInProgress:ke,isExploring:Ae}=d5({agentItems:q,isTurnInProgress:T,isAnyNonAgentItemInProgress:be}),{data:je}=$d(S&&F1(Oe),r),Me=S&&I1({entries:Oe,mcpServerStatuses:je}),Ne=Oe.at(-1),Pe=_le({isTurnInProgress:T,assistantItem:W,isExploring:Ae,hasActiveWebSearch:T&&Ne?.kind===`item`&&Ne.item.type===`web-search`,isAnyNonExploringAgentItemInProgress:ke,hasBlockingRequest:!1}),{shouldAllowCollapse:Fe,isCollapsed:Ie}=Ile({hasFinalAssistantStarted:zn(W),isTurnCancelled:O,hasRenderableAgentItems:Oe.length>0,preventAutoCollapse:Me,persistedCollapsed:l}),Le=Fe?Xle(Oe):Oe,Re=Fe?Zle(Oe):null,ze=Le.length>0,Ve=!C&&Fe&&ze,He=Ve?Ie:!1,Ue=Le.length,We=gle(Le),Ge=Ve&&Ue>0&&We==null;return ze?(0,$.jsx)(Yle,{collapsedMessageCount:Ue,workedForItem:Re,isCollapsed:Ge&&He,showToggle:Ge,onToggle:()=>{!u||!Ge||u(!He)},content:(0,$.jsx)(fle,{entries:Le,conversationId:n,hostId:r,conversationDetailLevel:N,isTurnInProgress:T,hasAssistantStartedStreaming:!1,hasTrailingAssistantMessage:!0,cwd:c,showPendingMcpThinking:Pe.type===`thinking`,pendingMcpThinkingMessage:void 0,resolvedApps:x,mcpServerStatuses:je,shouldAutoExpandMcpApps:S})}):null}',
+    'function f5(e){let t=(0,Q.c)(26),{conversationId:n,hostId:r,turnSearchKey:i,turn:a,turnState:o,conversationDetailLevel:s,cwd:c,isMostRecentTurn:l,isCollapsed:u,onSetCollapsed:d,emptyUserMessageOverride:f,parentThreadAttachment:p,onEditLastTurnMessage:m,onForkTurnMessage:h,startAfterTurnIntro:g,showInProgressFixedContent:_,resolvedApps:v,modelProvider:y}=e,b=l===void 0?!1:l,x=g===void 0?!1:g,S=_===void 0?!0:_,C;t[0]!==b||t[1]!==a||t[2]!==m?(C=!b||a.turnId==null||a.status===`inProgress`?void 0:async e=>{await m?.(a,e)},t[0]=b,t[1]=a,t[2]=m,t[3]=C):C=t[3];let w;t[4]!==a||t[5]!==h?(w=a.turnId==null||a.status===`inProgress`?void 0:()=>{h?.(a)},t[4]=a,t[5]=h,t[6]=w):w=t[6];let T;return t[7]!==s||t[8]!==n||t[9]!==c||t[10]!==f||t[11]!==r||t[12]!==u||t[13]!==b||t[14]!==a.turnId||t[15]!==y||t[16]!==d||t[17]!==p||t[18]!==v||t[19]!==S||t[20]!==x||t[21]!==C||t[22]!==w||t[23]!==o||t[24]!==i?(T=(0,$.jsx)(Pde,{conversationId:n,hostId:r,turnSearchKey:i,turnId:a.turnId,turn:o,conversationDetailLevel:s,cwd:c,isCollapsed:u,onSetCollapsed:d,emptyUserMessageOverride:f,parentThreadAttachment:p,resolvedApps:v,shouldAutoExpandMcpApps:b,onEditUserMessage:C,onForkTurn:w,startAfterTurnIntro:x,showInProgressFixedContent:S,modelProvider:y}),t[7]=s,t[8]=n,t[9]=c,t[10]=f,t[11]=r,t[12]=u,t[13]=b,t[14]=a.turnId,t[15]=y,t[16]=d,t[17]=p,t[18]=v,t[19]=S,t[20]=x,t[21]=C,t[22]=w,t[23]=o,t[24]=i,t[25]=T):T=t[25],T}function Pde(e){let t=(0,Q.c)(37),{conversationId:n,hostId:r,turnSearchKey:i,turnId:a,turn:o,conversationDetailLevel:s,cwd:c,isCollapsed:l,onSetCollapsed:u,emptyUserMessageOverride:d,parentThreadAttachment:f,resolvedApps:p,shouldAutoExpandMcpApps:m,onEditUserMessage:h,onForkTurn:g,startAfterTurnIntro:_,showInProgressFixedContent:v,modelProvider:y}=e,b=i===void 0?`turn`:i,x=p===void 0?zle:p,S=m===void 0?!1:m,C=_===void 0?!1:_,w=v===void 0?!0:v,T=o.status===`inProgress`,O=o.status===`cancelled`,{authMethod:k}=Nf(),A;t[0]===Symbol.for(`react.memo_cache_sentinel`)?(A=`4170020461`,t[0]=A):A=t[0];let j=cf(A),M=s??Nd(),N=Wd(),P;t[1]===y?P=t[2]:(P=!1,t[1]=y,t[2]=P);let I=P,L;t[3]!==I||t[4]!==o.items?(L=o.items,t[3]=I,t[4]=o.items,t[5]=L):L=t[5];let R=L,z;t[6]!==C||t[7]!==R?(z=C?p5(R):R,t[6]=C,t[7]=R,t[8]=z):z=t[8];let B=z,V;t[9]!==B||t[10]!==o.status?(V=yn(B,o.status),t[9]=B,t[10]=o.status,t[11]=V):V=t[11];let{assistantItem:U,agentItems:q}=V,be=l5(U),{renderableAgentItems:je,isAnyNonExploringAgentItemInProgress:Me,isExploring:Te}=d5({agentItems:q,isTurnInProgress:T,isAnyNonAgentItemInProgress:be}),{data:Pe}=$d(S&&F1(je),r),Fe=S&&I1({entries:je,mcpServerStatuses:Pe}),Re=je.at(-1),Ae=_le({isTurnInProgress:T,assistantItem:U,isExploring:Te,hasActiveWebSearch:T&&Re?.kind===`item`&&Re.item.type===`web-search`,isAnyNonExploringAgentItemInProgress:Me,hasBlockingRequest:!1,forceThinking:!1}),{shouldAllowCollapse:ze,isCollapsed:Be}=kde({hasFinalAssistantStarted:zn(U),isTurnCancelled:O,hasRenderableAgentItems:je.length>0,preventAutoCollapse:Fe,persistedCollapsed:l}),Ve=ze?Ude(je):je,He=ze?Wde(je):null,Ue=Ve.length>0,We=!1,Ge=!C&&ze&&Ue,Ke=Ge?Be:!1,qe=Ve.length,Je=lde(Ve),Ye=Ge&&qe>0&&Je==null;return Ue?(0,$.jsx)(Hde,{collapsedMessageCount:qe,workedForItem:He,isCollapsed:Ye&&Ke,showToggle:Ye,onToggle:()=>{!u||!Ye||u(!Ke)},content:(0,$.jsx)(ade,{entries:Ve,conversationId:n,hostId:r,conversationDetailLevel:M,isTurnInProgress:T,hasAssistantStartedStreaming:!1,hasTrailingAssistantMessage:!0,cwd:c,showPendingMcpThinking:Ae.type===`thinking`,pendingMcpThinkingMessage:void 0,resolvedApps:x,mcpServerStatuses:Pe,shouldAutoExpandMcpApps:S,modelProvider:y})}):null}'
+  );
 const LATEST_AGENT_TURN_EXPANSION_BUNDLE_INCOMPATIBLE =
   LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT.replace(
-    '}),Le=Fe?Xle(Oe):Oe',
-    '}),Le=Fe?Xle(q):q'
+    'persistedCollapsed:l}),Le=Fe?Xle(Oe):Oe',
+    'persistedCollapsed:l??Fe}),Le=Fe?Xle(Oe):Oe'
   );
 const COMPACT_SLASH_COMMAND_BUNDLE_CURRENT =
   'function RW(e){let t=(0,Q.c)(17),{conversationId:n,isResponseInProgress:r}=e,i=ea(),a=xf(n),o;t[0]===i?o=t[1]:(o=i.formatMessage({id:`composer.compactSlashCommand.title`,defaultMessage:`Compact`,description:`Title for the compact slash command`}),t[0]=i,t[1]=o);let s;t[2]===i?s=t[3]:(s=i.formatMessage({id:`composer.compactSlashCommand.description`,defaultMessage:`Compact this thread\'s context`,description:`Description for the compact slash command`}),t[2]=i,t[3]=s);let c=n!=null&&!r,l;t[4]!==a||t[5]!==n?(l=async()=>{n!=null&&await a.compactThread(n)},t[4]=a,t[5]=n,t[6]=l):l=t[6];let u;return u={id:`compact`,title:o,description:s,requiresEmptyComposer:!0,Icon:LW,enabled:c,onSelect:l},u}';
@@ -352,26 +394,31 @@ test('injectLinuxCloseCancelPatch reports diagnostics when close-cancel anchors 
   });
 });
 
-test('injectLinuxWorktreeEnvironmentMainPatch adds environment propagation to the main bundle', () => {
-  const updated = injectLinuxWorktreeEnvironmentMainPatch(WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT);
+for (const [label, fixture] of [
+  ['current', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT],
+  ['26.417', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417]
+]) {
+  test(`injectLinuxWorktreeEnvironmentMainPatch adds environment propagation to the ${label} main bundle`, () => {
+    const updated = injectLinuxWorktreeEnvironmentMainPatch(fixture);
 
-  assert.match(updated, /codexLinuxWorktreeEnvironmentMain/);
-  assert.match(updated, /function codexLinuxResolveWorktreeLocalEnvironmentPath\(e,t\)/);
-  assert.match(
-    updated,
-    /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:i\.streamId,setUpSyncedBranch:r\.launchMode===`create-stable-worktree`\?!1:void 0/
-  );
-  assert.match(
-    updated,
-    /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:a/
-  );
-  assert.match(updated, /auto-selected-single-environment/);
-  assert.match(updated, /explicit-no-environment/);
-  assert.match(
-    updated,
-    /hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`/
-  );
-});
+    assert.match(updated, /codexLinuxWorktreeEnvironmentMain/);
+    assert.match(updated, /function codexLinuxResolveWorktreeLocalEnvironmentPath\(e,t\)/);
+    assert.match(
+      updated,
+      /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:i\.streamId,setUpSyncedBranch:r\.launchMode===`create-stable-worktree`\?!1:void 0/
+    );
+    assert.match(
+      updated,
+      /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:a/
+    );
+    assert.match(updated, /auto-selected-single-environment/);
+    assert.match(updated, /explicit-no-environment/);
+    assert.match(
+      updated,
+      /hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`/
+    );
+  });
+}
 
 test('injectLinuxWorktreeEnvironmentMainPatch is idempotent', () => {
   const once = injectLinuxWorktreeEnvironmentMainPatch(WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT);
@@ -566,6 +613,23 @@ test('injectLinuxNewThreadModelPatch supports 26.415 state block drift from 26.4
   assert.match(updated, /codexLinuxFreshThreadCollaborationModeSettings/);
 });
 
+test('injectLinuxNewThreadModelPatch supports 26.417 project submit drift', () => {
+  const bundle = `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_417}`;
+  const updated = injectLinuxNewThreadModelPatch(bundle);
+
+  assert.match(updated, /codexLinuxPendingModelSettings/);
+  assert.match(updated, /codexLinuxIsFreshComposer=n==null\|\|!p/);
+  assert.match(updated, /codexLinuxFreshThreadCollaborationModeSettings/);
+  assert.match(
+    updated,
+    /model:[A-Za-z_$][\w$]*\.settings\?\.model\?\?[A-Za-z_$][\w$]*\.model\?\?null/
+  );
+  assert.match(
+    updated,
+    /reasoning_effort:[A-Za-z_$][\w$]*\.settings\?\.reasoning_effort\?\?[A-Za-z_$][\w$]*\.model_reasoning_effort\?\?null/
+  );
+});
+
 test('injectLinuxNewThreadModelPatch scopes 26.415 fresh-effect insertion to the selector function', () => {
   const bundle = `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DECOY_PREFIX}${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415}`;
   const updated = injectLinuxNewThreadModelPatch(bundle);
@@ -728,6 +792,38 @@ test('patchRendererNewThreadModelBundle patches split 26.415 bundles with 26.415
     const patchedSubmit = await fs.promises.readFile(submitBundlePath, 'utf8');
     assert.match(patchedState, /let y=_,b=s\?\.authMethod===`copilot`,codexLinuxIsFreshComposer=n==null\|\|!p,/);
     assert.match(patchedSubmit, /codexLinuxFreshThreadCollaborationModeSettings/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererNewThreadModelBundle patches combined 26.417 use-model-settings bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-26417-combined-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const bundlePath = path.join(assetsDir, 'use-model-settings.js');
+    await fs.promises.writeFile(
+      bundlePath,
+      `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_417}`,
+      'utf8'
+    );
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+
+    assert.equal(result.status, 'applied');
+    assert.equal(result.sourceName, 'use-model-settings.js');
+
+    const patchedBundle = await fs.promises.readFile(bundlePath, 'utf8');
+    assert.match(patchedBundle, /codexLinuxPendingModelSettings/);
+    assert.match(patchedBundle, /codexLinuxFreshThreadCollaborationModeSettings/);
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
@@ -1147,15 +1243,26 @@ test('patchRendererLinuxBrowserCommentPositionBundle skips when no candidate bun
   }
 });
 
-test('injectLinuxBackgroundSubagentsPanelPatch relaxes the inline composer gate for subagent rows', () => {
-  const updated = injectLinuxBackgroundSubagentsPanelPatch(
-    BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT
-  );
+for (const [label, fixture, expectedGate] of [
+  [
+    'current',
+    BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT,
+    /Bn=Ye\.length>0&&!\$e&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?zn:!1\)&&!it&&!tt/
+  ],
+  [
+    '26.417',
+    BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_417,
+    /In=Xe\.length>0&&!tt&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?Fn:!1\)&&!st&&!it/
+  ]
+]) {
+  test(`injectLinuxBackgroundSubagentsPanelPatch relaxes the inline composer gate for the ${label} subagent rows`, () => {
+    const updated = injectLinuxBackgroundSubagentsPanelPatch(fixture);
 
-  assert.match(updated, /codexLinuxBackgroundSubagentsPanel/);
-  assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH/);
-  assert.match(updated, /Bn=Ye\.length>0&&!\$e&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?zn:!1\)&&!it&&!tt/);
-});
+    assert.match(updated, /codexLinuxBackgroundSubagentsPanel/);
+    assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH/);
+    assert.match(updated, expectedGate);
+  });
+}
 
 test('injectLinuxBackgroundSubagentsPanelPatch is idempotent', () => {
   const once = injectLinuxBackgroundSubagentsPanelPatch(BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT);
@@ -1197,6 +1304,35 @@ test('patchRendererBackgroundSubagentsPanelBundle patches the composer gate bund
     assert.match(
       await fs.promises.readFile(bundlePath, 'utf8'),
       /CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH/
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererBackgroundSubagentsPanelBundle patches the 26.417 composer gate bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-background-subagents-26417-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'index.js');
+    await fs.promises.writeFile(bundlePath, BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_417, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererBackgroundSubagentsPanelBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'index.js'
+    });
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /In=Xe\.length>0&&!tt&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?Fn:!1\)&&!st&&!it/
     );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
@@ -1292,6 +1428,18 @@ test('injectLinuxLatestAgentTurnExpansionPatch keeps the newest completed agent 
   );
 });
 
+test('injectLinuxLatestAgentTurnExpansionPatch supports 26.417 latest-turn drift', () => {
+  const updated = injectLinuxLatestAgentTurnExpansionPatch(
+    LATEST_AGENT_TURN_EXPANSION_BUNDLE_26_417
+  );
+
+  assert.match(updated, /codexLinuxLatestAgentTurnExpanded/);
+  assert.match(
+    updated,
+    /persistedCollapsed:\/\* codexLinuxLatestAgentTurnExpanded \*\/S\?\(l\?\?!1\):l\}\),Ve=ze\?Ude\(je\):je/
+  );
+});
+
 test('injectLinuxLatestAgentTurnExpansionPatch is idempotent', () => {
   const once = injectLinuxLatestAgentTurnExpansionPatch(
     LATEST_AGENT_TURN_EXPANSION_BUNDLE_CURRENT
@@ -1336,6 +1484,37 @@ test('patchRendererLatestAgentTurnExpansionBundle patches the completed turn bun
     assert.match(
       await fs.promises.readFile(bundlePath, 'utf8'),
       /persistedCollapsed:\/\* codexLinuxLatestAgentTurnExpanded \*\/S\?\(l\?\?!1\):l/
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererLatestAgentTurnExpansionBundle patches the 26.417 completed turn bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-latest-agent-turn-expansion-26417-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'index.js');
+    await fs.promises.writeFile(bundlePath, LATEST_AGENT_TURN_EXPANSION_BUNDLE_26_417, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererLatestAgentTurnExpansionBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'index.js'
+    });
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /persistedCollapsed:\/\* codexLinuxLatestAgentTurnExpanded \*\/S\?\(l\?\?!1\):l\}\),Ve=ze\?Ude\(je\):je/
     );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
