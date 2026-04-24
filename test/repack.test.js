@@ -50,10 +50,14 @@ const OPEN_TARGETS_BLOCK_LEGACY =
   'var ua=[Hi,Wi,Bi,Zr,kr,Ni,ia,qi,Dr,ci,ei,jr,ai,Yr,Yi,ui,ii,Ki,$i,gi,_i,vi,yi,bi,xi,Si,Ci,Ii],da=e.sn(`open-in-targets`);function fa(e){return ua.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var pa=fa(process.platform),ma=Ca(pa),ha=new Set(pa.filter(e=>e.kind===`editor`).map(e=>e.id)),ga=null,_a=null;';
 const OPEN_TARGETS_BLOCK_CURRENT =
   'var bo=[Za,$a,Ya,ia,Ii,Ba,mo,no,Pi,ha,Ua,sa,Ri,fa,na,io,_a,da,to,co,Ca,wa,Ta,Ea,Da,Oa,ka,Aa,Ga],xo=e.gn(`open-in-targets`);function So(e){return bo.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var Co=So(process.platform),wo=No(Co),To=new Set(Co.filter(e=>e.kind===`editor`).map(e=>e.id)),Eo=null,Do=null;';
+const OPEN_TARGETS_BLOCK_26_422 =
+  'var Cd=[td,rd,$u,au,Il,Uu,_d,od,Pl,_u,Ku,lu,Rl,mu,ru,cd,yu,pu,ad,fd,Tu,Eu,Du,Ou,ku,Au,ju,Mu,Yu],wd=t.Or(`open-in-targets`);function Td(e){return Cd.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var Ed=Td(process.platform),Dd=Id(Ed),Od=new Set(Ed.filter(e=>e.kind===`editor`).map(e=>e.id)),kd=null,Ad=null;';
 const LINUX_MENU_BAR_BUNDLE_CURRENT =
   'new n.BrowserWindow({width:_,height:v,title:i??n.app.getName(),backgroundColor:T,show:l,...process.platform===`win32`?{autoHideMenuBar:!0}:{},...m,minWidth:w.width,minHeight:w.height,webPreferences:{contextIsolation:!0}});';
 const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
+const LINUX_CLOSE_CANCEL_BUNDLE_26_422 =
+  'function Zl({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,automationManager:t,flushAndDisposeContexts:n,disposables:c,appEvent:l,errorReporter:u}){let d=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
   'function im({globalState:t,worktreeDir:n}){let r=e.yt(n).replace(/\\/+$/,``);return B(t).some(t=>{let n=e.yt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var am=32e3,om=e.mr(`worktree-service`),sm=class{statesById=new Map;async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};try{let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})}catch(e){}}async createManagedWorktree({hostId:t,cwd:n,startingState:r,localEnvironmentConfigPath:i,streamId:a}){try{let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);return this.newbornWorktreeRoots.add(o.worktreeGitRoot),om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),o}catch(e){throw this.forgetNewbornWorktreeStream(a),e}}};';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT
@@ -83,9 +87,14 @@ const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE
     'om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})',
     'vm().info(`[worktree-create] ready`,{safe:{worktreeId:e.Vt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})'
   );
+const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_422 =
+  'function ov({globalState:e,worktreeDir:n}){let r=t.Ft(n).replace(/\\/+$/,``);return t.o(e).some(e=>{let n=t.Ft(e).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var sv=32e3,cv=t.Or(`worktree-service`),lv=class{statesById=new Map;newbornWorktreeRoots=new Set;newbornWorktreeRootsByStreamId=new Map;cleanupRunning=!1;cleanupPending=!1;async start(n){let r=this.statesById.get(n);if(!r)return;let{entry:i}=r,a={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,s.randomUUID)()};r.runtime=a,this.updateEntry(n,e=>({...e,phase:`creating`,outputText:uv(``,`[info] Starting worktree creation\n`)}));try{let r=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Ot(i.sourceWorkspaceRoot),startingState:i.startingState,localEnvironmentConfigPath:i.localEnvironmentConfigPath,streamId:a.streamId,setUpSyncedBranch:i.launchMode===`create-stable-worktree`?!1:void 0},signal:a.abortController.signal});if(this.updateEntry(n,e=>({...e,phase:`worktree-ready`,worktreeGitRoot:r.worktreeGitRoot,worktreeWorkspaceRoot:r.worktreeWorkspaceRoot})),cv().info(`[worktree-create] ready`,{safe:{worktreeId:t.Ut(r.worktreeGitRoot),flow:`pending`,launchMode:i.launchMode,hasLocalEnvironment:i.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(r.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.forgetNewbornWorktreeStream(a.streamId),i.launchMode===`create-stable-worktree`){this.addWorkspaceRoot(r.worktreeWorkspaceRoot,i.label),this.statesById.delete(n),this.publish();return}let o=this.statesById.get(n);o&&(o.runtime=null),this.runCleanup()}catch(e){}}async createManagedWorktree({hostId:n,cwd:r,startingState:i,localEnvironmentConfigPath:a,streamId:o}){try{let s=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(n),cwd:e.Ot(r),startingState:i,localEnvironmentConfigPath:a,streamId:o}}),c=this.newbornWorktreeRoots.has(s.worktreeGitRoot);return this.newbornWorktreeRoots.add(s.worktreeGitRoot),cv().info(`[worktree-create] ready`,{safe:{worktreeId:t.Ut(s.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:a!=null,wasNewbornProtected:c,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),s}catch(e){throw this.forgetNewbornWorktreeStream(o),e}}};';
 const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT = `async function MZ(e,t,n){let r=await AZ(e,t,n);r!=null&&await cz.rm(r,void 0,t)}async function cX(e,t,n,r,i,a){return uX({workspaceRoot:e,localEnvironment:t,scriptType:\`setup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r})}async function lX(e,t,n,r,i){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){if(o?.aborted)return{success:!1,error:Error(\`Request canceled\`)};let l=(await e.getWorktreeRepository(NL(t),a))?.root;if(!l)return{success:!1,error:Error(\`Not a git repository\`)};let m={worktreeGitRoot:\`/tmp/source/.git\`,worktreeWorkspaceRoot:\`/tmp/worktree\`},{worktreeGitRoot:h,worktreeWorkspaceRoot:g}=m;c?.(h);if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\n\`,\`utf8\`)),await vZ(g,r??\`__none__\`,a,\`worktree\`,o)||s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config
 \`,\`utf8\`)),r==null)return s?.(\`info\`,ce.Buffer.from(\`No local environment selected
-\`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await QJ(r,a);if(v.type===\`error\`)return s?.(\`stderr\`,ce.Buffer.from(\`\${v.error.message}\n\`,\`utf8\`)),{success:!1,error:v.error};s?.(\`info\`,ce.Buffer.from(\`Running setup script \${v.configPath}\n\`,\`utf8\`));let y=await cX(h,v,(e,t)=>{s?.(e,t)},o,{[UL]:t,[WL]:g},a);return{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:y?.setupResult??null}}async function RX(e,t,n,r){let i=await nX(e,n,\`worktree\`,r);if(i==null||i===\`__none__\`)return;let a=await QJ(i,n);if(a.type===\`error\`){NX().warning(\`[worktree-delete] cleanup-config-unavailable\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:a.error}});return}if(!a.environment.cleanup)return;NX().info(\`[worktree-delete] cleanup-script-start\`,{safe:{worktreeId:t},sensitive:{configPath:i}});let o=await lX(e,a,void 0,r,n);if(o!=null){if(o?.status===\`failed\`)throw Error(o.error??\`Cleanup script failed\`)}}`;
+\`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await QJ(r,a);if(v.type===\`error\`)return s?.(\`stderr\`,ce.Buffer.from(\`\${v.error.message}\n\`,\`utf8\`)),{success:!1,error:v.error};s?.(\`info\`,ce.Buffer.from(\`Running setup script \${v.configPath}\n\`,\`utf8\`));let y=await cX(h,v,(e,t)=>{s?.(e,t)},o,{[UL]:t,[WL]:g},a);return{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:y?.setupResult??null}}async function RX(e,t,n,r){let i=await nX(e,n,\`worktree\`,r);if(i==null||i===\`__none__\`)return;let a=await QJ(i,n);if(a.type===\`error\`){NX().warning(\`[worktree-delete] cleanup-config-unavailable\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:a.error}});return}if(!a.environment.cleanup)return;NX().info(\`[worktree-delete] cleanup-script-start\`,{safe:{worktreeId:t},sensitive:{configPath:i}});let o=await lX(e,a,void 0,r,n);if(o!=null){if(o?.status===\`failed\`)throw Error(o.error??\`Cleanup script failed\`)}}async function W1(e,{appServerClient:t,signal:n,onProgress:r}){let i=[];if(e.sourceBranch.trim().length===0)return X({status:\`error\`,error:\`invalid-params\`,message:\`Missing source branch\`,rollbackErrors:[],warnings:i});let a=null,o=null,s=!1,c=!1;try{if(await YY(e.sourceWorktreeCwd,t,n)==null)return X({status:\`error\`,error:\`source-not-on-branch\`,message:\`Source worktree must be on a branch to move to local\`,rollbackErrors:[],warnings:i});o=await YY(e.localGitRoot,t,n);let l=await B1(e.sourceWorktreeCwd,t,n);if(l==null)return X({status:\`error\`,error:\`source-detach-failed\`,message:\`Unable to resolve worktree HEAD commit\`,rollbackErrors:[],warnings:i});let u=await XZ({cwd:e.sourceWorktreeCwd,branch:l,stashUncommitted:!0},t,{onStashStatusChange:e=>{r?.(\`stash-source-changes\`,e)},onCheckoutStatusChange:e=>{r?.(\`detach-worktree-branch\`,e)}});if(u.status===\`error\`)return X({status:\`error\`,error:\`source-detach-failed\`,message:u.error,rollbackErrors:[],warnings:i,execOutput:u.execOutput});a=u.stashRef,s=!0;if(o!==e.sourceBranch){let n=await XZ({cwd:e.localGitRoot,branch:e.sourceBranch,stashUncommitted:!1},t,{onCheckoutStatusChange:e=>{r?.(\`checkout-local-branch\`,e)}});if(n.status===\`error\`)return X({status:\`error\`,error:\`checkout-local-failed\`,message:n.error,rollbackErrors:[],warnings:i,execOutput:n.execOutput});c=!0}else r?.(\`checkout-local-branch\`,\`skipped\`);if(a!=null){r?.(\`apply-changes-to-local\`,\`started\`);let n=await V1({cwd:e.localGitRoot,stashRef:a,mode:\`apply\`},t);if(n.status===\`error\`)return X({status:\`error\`,error:\`apply-source-stash-failed\`,message:n.error,rollbackErrors:[],warnings:i,execOutput:n.execOutput});r?.(\`apply-changes-to-local\`,\`completed\`),(await V1({cwd:e.localGitRoot,stashRef:a,mode:\`drop\`},t)).status===\`error\`&&i.push(\`drop-source-stash-failed\`)}else r?.(\`apply-changes-to-local\`,\`skipped\`);return X({status:\`success\`,warnings:i})}catch{return c&&(await U1({cwd:e.localGitRoot,branch:o,stashRef:null,restoreBranchError:\`restore-local-branch-failed\`,restoreStashError:\`restore-local-stash-failed\`,appServerClient:t})),s&&(await U1({cwd:e.sourceWorktreeCwd,branch:e.sourceBranch,stashRef:a,restoreBranchError:\`restore-source-branch-failed\`,restoreStashError:\`restore-source-stash-failed\`,appServerClient:t})),X({status:\`error\`,error:\`unexpected-error\`,message:\`Failed to move thread to local\`,rollbackErrors:[],warnings:i})}}`;
+const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_422 = `async function aX(e,t,n,r,i,a){return sX({workspaceRoot:e,localEnvironment:t,scriptType:\`setup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r})}async function oX(e,t,n,r,i){return(await sX({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}async function jZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){if(o?.aborted)return{success:!1,error:Error(\`Request canceled\`)};let l=(await e.getWorktreeRepository(PL(t),a))?.root;if(!l)return{success:!1,error:Error(\`Not a git repository\`)};let m={worktreeGitRoot:\`/tmp/source/.git\`,worktreeWorkspaceRoot:\`/tmp/worktree\`},{worktreeGitRoot:h,worktreeWorkspaceRoot:g}=m;c?.(h);if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\n\`,\`utf8\`)),await gZ(g,r??\`__none__\`,a,\`worktree\`,o)||s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config
+\`,\`utf8\`)),r==null)return s?.(\`info\`,ce.Buffer.from(\`No local environment selected
+\`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await YJ(r,a);if(v.type===\`error\`)return s?.(\`stderr\`,ce.Buffer.from(\`\${v.error.message}\n\`,\`utf8\`)),{success:!1,error:v.error};s?.(\`info\`,ce.Buffer.from(\`Running setup script \${v.configPath}\n\`,\`utf8\`));let y=await aX(h,v,(e,t)=>{s?.(e,t)},o,{[JL]:t,[YL]:g},a);return{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:y?.setupResult??null}}async function FX(e,t,n,r){let i=await $Y(e,n,\`worktree\`,r);if(i==null||i===\`__none__\`)return;let a=await YJ(i,n);if(a.type===\`error\`){AX().warning(\`[worktree-delete] cleanup-config-unavailable\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:a.error}});return}if(!a.environment.cleanup)return;AX().info(\`[worktree-delete] cleanup-script-start\`,{safe:{worktreeId:t},sensitive:{configPath:i}});let o=await oX(e,a,void 0,r,n);if(o!=null){if(o?.status===\`failed\`)throw AX().warning(\`[worktree-delete] cleanup-script-failed\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:o.error}}),Error(o.error??\`Cleanup script failed\`);AX().info(\`[worktree-delete] cleanup-script-finished\`,{safe:{worktreeId:t},sensitive:{configPath:i}})}}async function P1(e,{appServerClient:t,signal:n,onProgress:r}){let i=[];if(e.sourceBranch.trim().length===0)return X({status:\`error\`,error:\`invalid-params\`,message:\`Missing source branch\`,rollbackErrors:[],warnings:i});let a=null,o=null,s=!1,c=!1;try{if(await KY(e.sourceWorktreeCwd,t,n)==null)return X({status:\`error\`,error:\`source-not-on-branch\`,message:\`Source worktree must be on a branch to move to local\`,rollbackErrors:[],warnings:i});o=await KY(e.localGitRoot,t,n);if(o!==e.sourceBranch){let n=await UZ({cwd:e.localGitRoot,branch:e.sourceBranch,stashUncommitted:!1},t,{onCheckoutStatusChange:e=>{r?.(\`checkout-local-branch\`,e)}});if(n.status===\`error\`)return X({status:\`error\`,error:\`checkout-local-failed\`,message:n.error,rollbackErrors:i,warnings:i,execOutput:n.execOutput});c=!0}else r?.(\`checkout-local-branch\`,\`skipped\`);if(a!=null){r?.(\`apply-changes-to-local\`,\`started\`);let n=await j1({cwd:e.localGitRoot,stashRef:a,mode:\`apply\`},t);if(n.status===\`error\`)return X({status:\`error\`,error:\`apply-source-stash-failed\`,message:n.error,rollbackErrors:[],warnings:i,execOutput:n.execOutput});r?.(\`apply-changes-to-local\`,\`completed\`),(await j1({cwd:e.localGitRoot,stashRef:a,mode:\`drop\`},t)).status===\`error\`&&i.push(\`drop-source-stash-failed\`)}else r?.(\`apply-changes-to-local\`,\`skipped\`);return X({status:\`success\`,warnings:i})}catch{let n=[];return c&&(n=[...n]),s&&(n=[...n]),X({status:\`error\`,error:\`unexpected-error\`,message:\`Failed to move thread to local\`,rollbackErrors:n,warnings:i})}}`;
 const TERMINAL_PANEL_BLOCK_LEGACY =
   'function vDe(e){let ee,te;t[29]!==n||t[30]!==i||t[31]!==r||t[32]!==o||t[33]!==m?(ee=()=>{let e=T.current;if(!e)return;let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;let a=!1,s=new nDe.Terminal({allowTransparency:!0,cursorStyle:`bar`,fontSize:j.current,allowProposedApi:!0,cursorBlink:!0,fontFamily:A.current,letterSpacing:0,lineHeight:1.2,theme:RQ()}),c=null,l=()=>{c??=requestAnimationFrame(()=>{c=null,s.scrollToBottom()})};E.current=s;let u=new aDe.ClipboardAddon,d=new iDe.FitAddon;D.current=d;let f=new rDe.WebLinksAddon(bDe);s.loadAddon(u),s.loadAddon(d),s.loadAddon(f),s.attachCustomKeyEventHandler(e=>lDe({clipboard:typeof navigator<`u`&&navigator.clipboard!=null&&m?navigator.clipboard:void 0,event:e,sendText:e=>{St.write(t,e)},term:s})),s.open(e);let p=n=>{a||e.isConnected&&requestAnimationFrame(()=>{a||e.isConnected&&(k.current?IQ(s,d,t):LQ(d),n?.())})};p(),M.current=!1;let h=St.register(t,{onInitLog:e=>{s.write(e),l()},onData:e=>{M.current||(M.current=!0,P(`Running`),I(null)),s.write(e),l()},onExit:()=>{a||P(`Exited`)},onError:e=>{a||(P(`Error`),I(e))},onAttach:(e,t)=>{a||(k.current=!0,P(`Running`),I(null),R(t??null),p())}}),g=s.onData(e=>{St.write(t,e)}),_=s.onKey(yDe);o&&requestAnimationFrame(()=>{a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});let v=new ResizeObserver(()=>{p()});return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||St.close(t),s.dispose(),E.current=null}},te=[n,i,r,o,m],t[29]=n,t[30]=i,t[31]=r,t[32]=o,t[33]=m,t[34]=ee,t[35]=te):(ee=t[34],te=t[35]),(0,Z.useEffect)(ee,te);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_CURRENT =
@@ -114,6 +123,10 @@ const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415 =
   'async function OB({context:e,prompt:t,workspaceRoots:n,cwd:r,hostId:i,agentMode:a,serviceTier:o,collaborationMode:s,memoryPreferences:c,workspaceKind:l=`project`,projectlessOutputDirectory:u}){let d=[{type:`text`,text:t,text_elements:[]},...DB(e,i!==he)],{config:f}=await ci(`read-config-for-host`,{hostId:i,includeLayers:!1,cwd:r});return{input:d,commentAttachments:e.commentAttachments,workspaceRoots:n,cwd:r,fileAttachments:e.fileAttachments,addedFiles:e.addedFiles,agentMode:a,model:null,serviceTier:o,reasoningEffort:null,collaborationMode:s,config:Ir(f),memoryPreferences:c,workspaceKind:l,...l===`projectless`?{projectlessOutputDirectory:u}:{}}}';
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_417 =
   'async function Nve({input:e,mode:t,model:n,projectId:r,thinking:i}){let{config:a}=await en(`read-config-for-host`,{hostId:F,includeLayers:!1,cwd:r});return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:zt(`agent-mode-by-host-id`,{})[F]??`auto`,model:null,reasoningEffort:null,collaborationMode:Pve(t,n,i),config:gt(a),workspaceKind:`project`}}';
+const NEW_THREAD_MODEL_SELECTOR_BLOCK_26_422 =
+  'function $9(e=null){let t=x(ue),n=au(e),r=n.hostId,i=C(xwe,r),a=rr(r),o=En(),s=n.cwd,c=Swe({hostId:r,cwd:s}),l=bwe(),u=C(At,e),d=C(Ze,e),f=d?.settings.model??null,p=f!=null&&f.trim().length>0?f:null,m=a?.authMethod===`copilot`,g=(0,q.useCallback)(async(t,n)=>e==null||!u?!1:(await Wt(`set-model-and-reasoning-for-next-turn`,{conversationId:e,model:t,reasoningEffort:n}),!0),[e,u]),_=u?{model:p??c.model,reasoningEffort:d?.settings.reasoning_effort??null,profile:c.profile,isLoading:c.isLoading&&p==null}:m?l:c,v=Cwe({hostId:r,cwd:s}),y=(0,q.useCallback)(e=>{},[o,t]);return{setModelAndReasoningEffortForNextTurn:(0,q.useCallback)(async(e,t)=>{try{if(!await g(e,t))throw Error(`No conversation available for next-turn model update`)}catch(e){throw y(e),e}},[g,y]),setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(await g(e,n))return;if(m){qn(t,`copilot-default-model`,e);return}if(h.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:n,profile:c.profile}}),!i)return;await Wt(`set-default-model-config-for-host`,{hostId:r,model:e,reasoningEffort:n,profile:c.profile}),await v(),await t.query.fetch(bs,{hostId:r,cwd:s})}catch(e){y(e)}},[m,g,c.profile,v,i,r,t,y,s]),modelSettings:_}}';
+const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_422 =
+  'async function bve({input:e,mode:t,model:n,projectId:r,thinking:i}){let{config:a}=await Wt(`read-config-for-host`,{hostId:P,includeLayers:!1,cwd:r});return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Yt(`agent-mode-by-host-id`,{})[P]??`auto`,model:null,reasoningEffort:null,collaborationMode:xve(t,n,i),config:zt(a),workspaceKind:`project`}}';
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415 = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415}function _t(e){return e?.latestCollaborationMode?.settings?.reasoning_effort??null}function Ft(e){return e?.latestCollaborationMode?.settings?.model??null}`;
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED = NEW_THREAD_MODEL_STATE_BUNDLE_26_415
   .replace('r.get(bo)', 'r.get(So)')
@@ -286,7 +299,8 @@ test('resolveFirstExecutablePath preserves candidate precedence', async () => {
 
 for (const [label, fixture] of [
   ['legacy', OPEN_TARGETS_BLOCK_LEGACY],
-  ['current', OPEN_TARGETS_BLOCK_CURRENT]
+  ['current', OPEN_TARGETS_BLOCK_CURRENT],
+  ['26.422', OPEN_TARGETS_BLOCK_26_422]
 ]) {
   test(`injectLinuxOpenTargetsPatch adds Linux editor targets to the ${label} main bundle`, () => {
     const updated = injectLinuxOpenTargetsPatch(fixture);
@@ -373,6 +387,18 @@ test('injectLinuxCloseCancelPatch restores the window when quit confirmation is 
   assert.match(updated, /r\.markQuitApproved\(\),m=!0,i\.markAppQuitting\(\)/);
 });
 
+test('injectLinuxCloseCancelPatch supports the 26.422 before-quit prompt details', () => {
+  const updated = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_26_422);
+
+  assert.match(updated, /codexLinuxCloseCancel/);
+  assert.match(updated, /detail:Mb\(\{hasInProgressLocalConversation:s,hasEnabledAutomations:c\}\)/);
+  assert.match(updated, /let e=a\.showLastActivePrimaryWindow\(\);e\?o\.refresh\(\):/);
+  assert.match(updated, /Promise\.resolve\(s\(`local`\)\)\.then/);
+  assert.match(updated, /e\.isMinimized\(\)&&e\.restore\(\),e\.show\(\),e\.focus\(\)/);
+  assert.match(updated, /o\.preventDefault\(\)/);
+  assert.match(updated, /i\.markQuitApproved\(\),g=!0,a\.markAppQuitting\(\)/);
+});
+
 test('injectLinuxCloseCancelPatch is idempotent', () => {
   const once = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_CURRENT);
   const twice = injectLinuxCloseCancelPatch(once);
@@ -396,7 +422,8 @@ test('injectLinuxCloseCancelPatch reports diagnostics when close-cancel anchors 
 
 for (const [label, fixture] of [
   ['current', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT],
-  ['26.417', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417]
+  ['26.417', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417],
+  ['26.422', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_422]
 ]) {
   test(`injectLinuxWorktreeEnvironmentMainPatch adds environment propagation to the ${label} main bundle`, () => {
     const updated = injectLinuxWorktreeEnvironmentMainPatch(fixture);
@@ -405,7 +432,7 @@ for (const [label, fixture] of [
     assert.match(updated, /function codexLinuxResolveWorktreeLocalEnvironmentPath\(e,t\)/);
     assert.match(
       updated,
-      /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:i\.streamId,setUpSyncedBranch:r\.launchMode===`create-stable-worktree`\?!1:void 0/
+      /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:[A-Za-z_$][\w$]*\.streamId,setUpSyncedBranch:[A-Za-z_$][\w$]*\.launchMode===`create-stable-worktree`\?!1:void 0/
     );
     assert.match(
       updated,
@@ -451,7 +478,9 @@ test('injectLinuxWorktreeEnvironmentWorkerPatch adds single-environment fallback
   const updated = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT);
 
   assert.match(updated, /codexLinuxWorktreeEnvironmentWorker/);
+  assert.match(updated, /codexLinuxWorktreeEnvironmentWorkerBuiltins/);
   assert.match(updated, /async function codexLinuxResolveWorktreeEnvironmentConfigPath\(e,t,n\)/);
+  assert.match(updated, /function codexLinuxResolveWorktreeSourceWorkspaceRoot\(e\)/);
   assert.match(
     updated,
     /async function lX\(e,t,n,r,i,a\)\{return\(await uX\(\{workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r\}\)\)\?\.setupResult\?\?null\}/
@@ -461,7 +490,37 @@ test('injectLinuxWorktreeEnvironmentWorkerPatch adds single-environment fallback
   assert.match(updated, /failed-to-store-environment-selection/);
   assert.match(updated, /await vZ\(g,codexLinuxLocalEnvironmentConfigPath\?\?`__none__`,a,`worktree`,o\)/);
   assert.match(updated, /let v=await QJ\(codexLinuxLocalEnvironmentConfigPath,a\);/);
-  assert.match(updated, /let o=await lX\(e,a,void 0,r,\{\[WL\]:e\},n\);/);
+  assert.match(updated, /cleanup-source-root-unavailable/);
+  assert.match(updated, /cleanup-source-worktree-failed/);
+  assert.match(updated, /await RX\(e.sourceWorktreeRoot,codexLinuxWorktreeCleanupId,t,n\)/);
+  assert.match(
+    updated,
+    /let codexLinuxWorktreeCleanupId=typeof MX===`function`\?MX\(e.sourceWorktreeRoot\):e.sourceWorktreeRoot;/
+  );
+  assert.match(
+    updated,
+    /let codexLinuxWorktreeSourceWorkspaceRoot=codexLinuxResolveWorktreeSourceWorkspaceRoot\(e\),codexLinuxInjectedCleanupEnvironment=codexLinuxWorktreeSourceWorkspaceRoot==null\?\(NX\(\)\.info\(`\[worktree-delete\] cleanup-source-root-unavailable`,\{safe:\{worktreeId:t\},sensitive:\{workspaceRoot:e\}\}\),\{\[WL\]:e\}\):\{\[UL\]:codexLinuxWorktreeSourceWorkspaceRoot,\[WL\]:e\};let o=await lX\(e,a,void 0,r,codexLinuxInjectedCleanupEnvironment,n\);/
+  );
+  assert.match(updated, /cleanup-skipped-no-environment/);
+});
+
+test('injectLinuxWorktreeEnvironmentWorkerPatch supports the 26.422 worker symbols', () => {
+  const updated = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_422);
+
+  assert.match(updated, /codexLinuxWorktreeEnvironmentWorker/);
+  assert.match(updated, /async function jZ\(\{gitManager:e,workspaceRoot:t/);
+  assert.match(updated, /async function oX\(e,t,n,r,i,a\)/);
+  assert.match(updated, /appServerClient:a,injectedEnvironment:i,onLog:n,signal:r/);
+  assert.match(updated, /await gZ\(g,codexLinuxLocalEnvironmentConfigPath\?\?`__none__`,a,`worktree`,o\)/);
+  assert.match(updated, /let v=await YJ\(codexLinuxLocalEnvironmentConfigPath,a\);/);
+  assert.match(updated, /\{\[JL\]:t,\[YL\]:g\}/);
+  assert.match(updated, /AX\(\)\.info\(`\[worktree-create\] auto-selected-single-environment`/);
+  assert.match(
+    updated,
+    /let codexLinuxWorktreeCleanupId=typeof MX===`function`\?MX\(e.sourceWorktreeRoot\):e.sourceWorktreeRoot;/
+  );
+  assert.match(updated, /await FX\(e.sourceWorktreeRoot,codexLinuxWorktreeCleanupId,t,n\)/);
+  assert.match(updated, /let o=await oX\(e,a,void 0,r,codexLinuxInjectedCleanupEnvironment,n\);/);
   assert.match(updated, /cleanup-skipped-no-environment/);
 });
 
@@ -488,7 +547,7 @@ test('injectLinuxWorktreeEnvironmentWorkerPatch reports diagnostics when worktre
       injectLinuxWorktreeEnvironmentWorkerPatch('const noop = true;', { sourceName: 'worker.js' }),
     {
       message:
-        /Could not patch the Electron worker bundle worktree environment handling for Linux\. Source: worker\.js\. Missing anchors: create-worktree function marker, cleanup helper function, stored environment selection branch, missing-environment setup skip branch, cleanup invocation, cleanup skip branch\. Detected anchors: createWorktreeFunction=no, cleanupHelper=no, storedEnvironmentSelection=no, setupSkipBranch=no, cleanupCall=no, cleanupSkipBranch=no\./
+        /Could not patch the Electron worker bundle worktree environment handling for Linux\. Source: worker\.js\. Missing anchors: create-worktree function marker, cleanup helper function, stored environment selection branch, missing-environment setup skip branch, cleanup invocation, move-thread-to-local success path, cleanup skip branch\. Detected anchors: createWorktreeFunction=no, cleanupHelper=no, storedEnvironmentSelection=no, setupSkipBranch=no, cleanupCall=no, moveToLocalSuccess=no, cleanupSkipBranch=no\./
     }
   );
 });
@@ -628,6 +687,21 @@ test('injectLinuxNewThreadModelPatch supports 26.417 project submit drift', () =
     updated,
     /reasoning_effort:[A-Za-z_$][\w$]*\.settings\?\.reasoning_effort\?\?[A-Za-z_$][\w$]*\.model_reasoning_effort\?\?null/
   );
+});
+
+test('injectLinuxNewThreadModelPatch supports 26.422 model hook and project submit drift', () => {
+  const bundle = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_422}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_422}`;
+  const updated = injectLinuxNewThreadModelPatch(bundle);
+
+  assert.match(updated, /codexLinuxPendingModelSettings/);
+  assert.match(updated, /codexLinuxIsFreshComposer=e==null/);
+  assert.match(
+    updated,
+    /codexLinuxSetPendingModelSettings\(\{model:e,reasoningEffort:n,profile:c\.profile,isLoading:!1\}\)/
+  );
+  assert.match(updated, /codexLinuxFreshThreadCollaborationModeSettings/);
+  assert.match(updated, /let o=xve\(t,n,i\),s=zt\(a\)/);
+  assert.match(updated, /collaborationMode:codexLinuxFreshThreadCollaborationModeSettings/);
 });
 
 test('injectLinuxNewThreadModelPatch scopes 26.415 fresh-effect insertion to the selector function', () => {
