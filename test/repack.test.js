@@ -10,6 +10,7 @@ import {
   applyLinuxWorktreeEnvironmentMainPatch,
   applyLinuxWorktreeEnvironmentWorkerPatch,
   applyLinuxLatestAgentTurnExpansionPatch,
+  applyLinuxNotificationSoundPatch,
   applyLinuxOpenTargetsPatch,
   applyLinuxMenuBarPatch,
   applyLinuxNewThreadModelPatch,
@@ -18,14 +19,17 @@ import {
   applyLinuxVisualCompatCssPatch,
   applyLinuxVisualCompatJsPatch,
   buildWrapperScript,
+  copyUpstreamResources,
   createInstallDiagnosticManifest,
   findExecutableInPath,
+  installBrowserUseRuntime,
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxCloseCancelPatch,
   injectLinuxWorktreeEnvironmentMainPatch,
   injectLinuxWorktreeEnvironmentWorkerPatch,
   injectLinuxLatestAgentTurnExpansionPatch,
+  injectLinuxNotificationSoundPatch,
   injectLinuxOpenTargetsPatch,
   injectLinuxMenuBarPatch,
   injectLinuxNewThreadModelPatch,
@@ -42,9 +46,38 @@ import {
   patchRendererTodoProgressBundle,
   parseArgs,
   renderHelp,
+  resolveBrowserUseRuntimeSources,
   resolveFirstExecutablePath
 } from '../src/repack.js';
 import { CHANNELS } from '../src/constants.js';
+
+async function pathExists(filePath) {
+  try {
+    await fs.promises.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function isExecutable(filePath) {
+  try {
+    await fs.promises.access(filePath, fs.constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function writeTestExecutable(filePath, contents = '#!/usr/bin/env bash\nexit 0\n') {
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.promises.writeFile(filePath, contents, 'utf8');
+  await fs.promises.chmod(filePath, 0o755);
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 const OPEN_TARGETS_BLOCK_LEGACY =
   'var ua=[Hi,Wi,Bi,Zr,kr,Ni,ia,qi,Dr,ci,ei,jr,ai,Yr,Yi,ui,ii,Ki,$i,gi,_i,vi,yi,bi,xi,Si,Ci,Ii],da=e.sn(`open-in-targets`);function fa(e){return ua.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var pa=fa(process.platform),ma=Ca(pa),ha=new Set(pa.filter(e=>e.kind===`editor`).map(e=>e.id)),ga=null,_a=null;';
@@ -58,6 +91,8 @@ const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_422 =
   'function Zl({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,automationManager:t,flushAndDisposeContexts:n,disposables:c,appEvent:l,errorReporter:u}){let d=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
+const LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT =
+  'const e=require(`./app-session.js`);let n=require(`electron`);n=e.lr(n);let r=require(`node:os`);r=e.lr(r);let i=require(`node:path`);i=e.lr(i);let a=require(`node:util`),o=require(`node:fs`);o=e.lr(o);let s=require(`node:crypto`),c=require(`node:child_process`),l=require(`node:process`);l=e.lr(l);var Fi=`codex-notification`,Ii=`${Fi}.wav`,Li=t.Or(`desktop-notifications`),Ri=class{isSupported;createNotification;logger=Li();notificationSoundStaged=!1;notifications=new Map;constructor(e){this.options=e,this.isSupported=e.isSupported??(()=>n.Notification.isSupported()),e.createNotification?this.createNotification=e.createNotification:this.createNotification=e=>{let t=new n.Notification(e);return{show:()=>t.show(),on:(e,n)=>{switch(e){case`action`:return t.on(`action`,(e,t)=>{n(e,t)});case`click`:return t.on(`click`,()=>{n(void 0)});case`close`:return t.on(`close`,()=>{n(void 0)})}},close:()=>t.close()}}}showNotification(e,t,n){if(this.stageNotificationSoundIfNeeded(),!this.isSupported())return;let r=(e.actions??[]).slice(0,4),i=e.kind===`permission`||e.kind===`question`?`never`:void 0,a=e.kind===`turn-complete`&&typeof e.replyPlaceholder==`string`;this.notifications.get(e.id)?.notification.close?.();let o=this.createNotification({title:e.title,body:e.body,silent:!1,sound:this.options.platform===`darwin`?Fi:void 0,timeoutType:i,hasReply:a,replyPlaceholder:a?e.replyPlaceholder??void 0:void 0,actions:r.map(e=>({type:`button`,text:e.title}))});o.on(`close`,()=>{this.notifications.delete(e.id)}),this.notifications.set(e.id,{notification:o,conversationId:e.conversationId??null}),o.show()}stageNotificationSoundIfNeeded(){if(this.notificationSoundStaged||(this.notificationSoundStaged=!0,this.options.platform!==`darwin`)||typeof process.resourcesPath!=`string`)return;let e=i.default.join(process.resourcesPath,Ii),t=i.default.join(__dirname,`..`,`assets`,`sounds`,Ii),n=(0,o.existsSync)(e)?e:t;if(!(0,o.existsSync)(n))return;let a=i.default.join(r.default.homedir(),`Library`,`Sounds`);try{(0,o.mkdirSync)(a,{recursive:!0}),(0,o.copyFileSync)(n,i.default.join(a,Ii))}catch(e){this.logger.warning(`failed to stage notification sound`,{safe:{},sensitive:{error:e}})}}};';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
   'function im({globalState:t,worktreeDir:n}){let r=e.yt(n).replace(/\\/+$/,``);return B(t).some(t=>{let n=e.yt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var am=32e3,om=e.mr(`worktree-service`),sm=class{statesById=new Map;async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};try{let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})}catch(e){}}async createManagedWorktree({hostId:t,cwd:n,startingState:r,localEnvironmentConfigPath:i,streamId:a}){try{let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);return this.newbornWorktreeRoots.add(o.worktreeGitRoot),om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),o}catch(e){throw this.forgetNewbornWorktreeStream(a),e}}};';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT
@@ -297,6 +332,143 @@ test('resolveFirstExecutablePath preserves candidate precedence', async () => {
   }
 });
 
+test('copyUpstreamResources excludes macOS Browser Use runtimes', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-resource-copy-'));
+  try {
+    const upstreamResourcesDir = path.join(rootDir, 'upstream');
+    const resourcesDir = path.join(rootDir, 'resources');
+    await fs.promises.mkdir(path.join(upstreamResourcesDir, 'native'), { recursive: true });
+    await fs.promises.writeFile(path.join(upstreamResourcesDir, 'node'), 'mach-o node', 'utf8');
+    await fs.promises.writeFile(
+      path.join(upstreamResourcesDir, 'node_repl'),
+      'mach-o node_repl',
+      'utf8'
+    );
+    await fs.promises.writeFile(path.join(upstreamResourcesDir, 'codex'), 'mac codex', 'utf8');
+    await fs.promises.writeFile(path.join(upstreamResourcesDir, 'rg'), 'mac rg', 'utf8');
+    await fs.promises.writeFile(path.join(upstreamResourcesDir, 'app.asar'), 'asar', 'utf8');
+    await fs.promises.writeFile(path.join(upstreamResourcesDir, 'codex-notification.wav'), 'wav', 'utf8');
+
+    await copyUpstreamResources({ upstreamResourcesDir, resourcesDir });
+
+    assert.equal(await pathExists(path.join(resourcesDir, 'node')), false);
+    assert.equal(await pathExists(path.join(resourcesDir, 'node_repl')), false);
+    assert.equal(await pathExists(path.join(resourcesDir, 'codex')), false);
+    assert.equal(await pathExists(path.join(resourcesDir, 'rg')), false);
+    assert.equal(await pathExists(path.join(resourcesDir, 'app.asar')), false);
+    assert.equal(await pathExists(path.join(resourcesDir, 'native')), false);
+    assert.equal(await pathExists(path.join(resourcesDir, 'codex-notification.wav')), true);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveBrowserUseRuntimeSources chooses env node_repl before primary runtime cache', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-'));
+  try {
+    const homeDir = path.join(rootDir, 'home');
+    const envNodeRepl = path.join(rootDir, 'env', 'node_repl');
+    const cacheNodeRepl = path.join(
+      homeDir,
+      '.cache',
+      'codex-runtimes',
+      'codex-primary-runtime',
+      'dependencies',
+      'bin',
+      'node_repl'
+    );
+    const envNode = path.join(rootDir, 'env', 'node');
+    await writeTestExecutable(envNodeRepl);
+    await writeTestExecutable(cacheNodeRepl);
+    await writeTestExecutable(envNode);
+
+    const sources = await resolveBrowserUseRuntimeSources({
+      homeDir,
+      env: {
+        CODEX_BROWSER_USE_NODE_REPL_PATH: envNodeRepl,
+        CODEX_BROWSER_USE_NODE_PATH: envNode,
+        PATH: ''
+      }
+    });
+
+    assert.equal(sources.nodeRepl.sourcePath, await fs.promises.realpath(envNodeRepl));
+    assert.equal(sources.nodeRepl.sourceKind, 'env');
+    assert.equal(sources.node.sourcePath, await fs.promises.realpath(envNode));
+    assert.equal(sources.node.sourceKind, 'env');
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveBrowserUseRuntimeSources falls back to primary runtime node_repl and PATH node', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-fallback-'));
+  try {
+    const homeDir = path.join(rootDir, 'home');
+    const cacheNodeRepl = path.join(
+      homeDir,
+      '.cache',
+      'codex-runtimes',
+      'codex-primary-runtime',
+      'dependencies',
+      'bin',
+      'node_repl'
+    );
+    const pathNode = path.join(rootDir, 'bin', 'node');
+    await writeTestExecutable(cacheNodeRepl);
+    await writeTestExecutable(pathNode);
+
+    const sources = await resolveBrowserUseRuntimeSources({
+      homeDir,
+      env: {
+        PATH: path.dirname(pathNode)
+      }
+    });
+
+    assert.equal(sources.nodeRepl.sourcePath, await fs.promises.realpath(cacheNodeRepl));
+    assert.equal(sources.nodeRepl.sourceKind, 'primary-runtime-cache');
+    assert.equal(sources.node.sourcePath, await fs.promises.realpath(pathNode));
+    assert.equal(sources.node.sourceKind, 'path');
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('installBrowserUseRuntime installs executable Linux runtime files', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-install-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    const nodeReplSource = path.join(rootDir, 'linux', 'node_repl');
+    const nodeSource = path.join(rootDir, 'linux', 'node');
+    await writeTestExecutable(nodeReplSource, '#!/usr/bin/env bash\necho node_repl\n');
+    await writeTestExecutable(nodeSource, '#!/usr/bin/env bash\necho node\n');
+    await fs.promises.mkdir(resourcesDir, { recursive: true });
+    await fs.promises.writeFile(path.join(resourcesDir, 'node_repl'), 'mach-o node_repl', 'utf8');
+    await fs.promises.writeFile(path.join(resourcesDir, 'node'), 'mach-o node', 'utf8');
+
+    const result = await installBrowserUseRuntime({
+      resourcesDir,
+      env: {
+        CODEX_BROWSER_USE_NODE_REPL_PATH: nodeReplSource,
+        CODEX_BROWSER_USE_NODE_PATH: nodeSource,
+        PATH: ''
+      }
+    });
+
+    const installedNodeRepl = path.join(resourcesDir, 'node_repl');
+    const installedNode = path.join(resourcesDir, 'node');
+    assert.equal(await isExecutable(installedNodeRepl), true);
+    assert.equal(await isExecutable(installedNode), true);
+    assert.equal(await fs.promises.readFile(installedNodeRepl, 'utf8'), '#!/usr/bin/env bash\necho node_repl\n');
+    assert.match(await fs.promises.readFile(installedNode, 'utf8'), new RegExp(`exec '${escapeRegExp(await fs.promises.realpath(nodeSource))}' "\\$@"`));
+    assert.equal(result.browserUseNodeRepl.status, 'installed');
+    assert.equal(result.browserUseNode.status, 'installed');
+    assert.equal(result.browserUseNodeRepl.targetPath, installedNodeRepl);
+    assert.equal(result.browserUseNode.targetPath, installedNode);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 for (const [label, fixture] of [
   ['legacy', OPEN_TARGETS_BLOCK_LEGACY],
   ['current', OPEN_TARGETS_BLOCK_CURRENT],
@@ -418,6 +590,51 @@ test('injectLinuxCloseCancelPatch reports diagnostics when close-cancel anchors 
     message:
       /Could not patch Linux close-cancel behavior in the Electron main bundle\. Source: main\.js\. Missing anchors: before-quit handler, Quit\/Cancel confirmation dialog, cancel preventDefault branch, showLastActivePrimaryWindow hook, ensureHostWindow dependency\. Detected anchors: beforeQuitHandler=no, quitCancelPrompt=no, cancelPreventDefault=no, showLastActivePrimaryWindow=no, ensureHostWindowDependency=no\./
   });
+});
+
+test('injectLinuxNotificationSoundPatch plays the shipped sound after a shown Linux notification', () => {
+  const updated = injectLinuxNotificationSoundPatch(LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT);
+
+  assert.match(updated, /sound:this\.options\.platform===`darwin`\?Fi:void 0/);
+  assert.match(updated, /o\.show\(\),this\.codexLinuxPlayNotificationSoundIfNeeded\(\)/);
+  assert.match(updated, /codexLinuxPlayNotificationSoundIfNeeded\(\)/);
+  assert.match(updated, /this\.options\.platform!==`linux`/);
+  assert.match(updated, /process\.resourcesPath/);
+  assert.match(updated, /i\.default\.join\(process\.resourcesPath,Ii\)/);
+  assert.match(updated, /paplay/);
+  assert.match(updated, /pw-play/);
+  assert.match(updated, /aplay/);
+  assert.match(updated, /ffplay/);
+  assert.match(updated, /c\.spawnSync\(`sh`,\[`-c`,`command -v \$\{e\}`\]/);
+  assert.match(updated, /c\.spawn\(n,t,\{detached:!0,stdio:`ignore`\}\)/);
+  assert.match(updated, /failed to play Linux notification sound/);
+  assert.match(updated, /codexLinuxNotificationSound/);
+});
+
+test('injectLinuxNotificationSoundPatch is idempotent', () => {
+  const once = injectLinuxNotificationSoundPatch(LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT);
+  const twice = injectLinuxNotificationSoundPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxNotificationSoundPatch skips patching when disabled', () => {
+  const result = applyLinuxNotificationSoundPatch(LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT, {
+    skip: true
+  });
+
+  assert.equal(result.updated, LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxNotificationSoundPatch reports diagnostics when notification anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxNotificationSoundPatch('const noop = true;', { sourceName: 'main.js' }),
+    {
+      message:
+        /Could not patch Linux notification sound playback in the Electron main bundle\. Source: main\.js\. Missing anchors: desktop-notifications logger, macOS sound option, notification show call, resource notification sound path, child_process import\. Detected anchors: notificationManager=no, macosSoundOption=no, notificationShowCall=no, resourceSoundPath=no, childProcessImport=no\./
+    }
+  );
 });
 
 for (const [label, fixture] of [
@@ -1808,6 +2025,18 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       'better-sqlite3': '12.4.6',
       'node-pty': '1.1.0'
     },
+    browserUseNodeRepl: {
+      status: 'installed',
+      sourceKind: 'primary-runtime-cache',
+      sourcePath: '/home/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/node_repl',
+      targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node_repl'
+    },
+    browserUseNode: {
+      status: 'installed',
+      sourceKind: 'path',
+      sourcePath: '/usr/bin/node',
+      targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node'
+    },
     patches: {
       bootstrap: {
         status: 'applied',
@@ -1822,6 +2051,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'main.js'
       },
       linuxCloseCancel: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxNotificationSound: {
         status: 'applied',
         sourceName: 'main.js'
       },
@@ -1891,6 +2124,18 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         version: '1.1.0'
       }
     ],
+    browserUseNodeRepl: {
+      status: 'installed',
+      sourceKind: 'primary-runtime-cache',
+      sourcePath: '/home/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/node_repl',
+      targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node_repl'
+    },
+    browserUseNode: {
+      status: 'installed',
+      sourceKind: 'path',
+      sourcePath: '/usr/bin/node',
+      targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node'
+    },
     patches: {
       bootstrap: {
         status: 'applied',
@@ -1905,6 +2150,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'main.js'
       },
       linuxCloseCancel: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxNotificationSound: {
         status: 'applied',
         sourceName: 'main.js'
       },

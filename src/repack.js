@@ -28,6 +28,13 @@ import { fetchAppcastReleases, resolveRelease } from './appcast.js';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INSTALL_DIAGNOSTIC_MANIFEST_FILE_NAME = 'install-diagnostic-manifest.json';
+const BROWSER_USE_NODE_REPL_ENV = 'CODEX_BROWSER_USE_NODE_REPL_PATH';
+const BROWSER_USE_NODE_ENV = 'CODEX_BROWSER_USE_NODE_PATH';
+const BROWSER_USE_PRIMARY_RUNTIME_RELATIVE_PATH = path.join(
+  'codex-runtimes',
+  'codex-primary-runtime',
+  'dependencies'
+);
 const NEW_THREAD_MODEL_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer new-thread model bundle for Linux.';
 const TODO_PROGRESS_PATCH_BASE_ERROR_MESSAGE =
@@ -48,6 +55,8 @@ const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the Electron main bundle worktree environment propagation for Linux.';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the Electron worker bundle worktree environment handling for Linux.';
+const LINUX_NOTIFICATION_SOUND_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux notification sound playback in the Electron main bundle.';
 
 export function parseArgs(argv) {
   const options = {
@@ -214,6 +223,11 @@ export async function installDesktop(options, logger) {
     : await patchMainProcessBundle(extractedAppDir, logger);
   const linuxMenuBarPatch = await patchMainProcessLinuxMenuBar(extractedAppDir, logger);
   const linuxCloseCancelPatch = await patchMainProcessLinuxCloseCancel(extractedAppDir, logger);
+  const linuxNotificationSoundPatch = await patchMainProcessLinuxNotificationSound(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux notification sound', linuxNotificationSoundPatch);
   const linuxWorktreeEnvironmentMainPatch = await patchMainProcessLinuxWorktreeEnvironment(
     extractedAppDir,
     logger
@@ -288,6 +302,7 @@ export async function installDesktop(options, logger) {
     openTargets: openTargetsPatch,
     linuxMenuBar: linuxMenuBarPatch,
     linuxCloseCancel: linuxCloseCancelPatch,
+    linuxNotificationSound: linuxNotificationSoundPatch,
     linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
     linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
     terminalLifecycle: terminalPatch,
@@ -299,12 +314,13 @@ export async function installDesktop(options, logger) {
     latestAgentTurnExpansion: latestAgentTurnExpansionPatch,
     compactSlashCommand: compactSlashCommandPatch
   });
-  const iconPath = await installChannelRuntime({
+  const installResult = await installChannelRuntime({
     channel,
     channelAppDir,
     channelBinDir,
     channelIconDir,
     channelStateDir,
+    homeDir: paths.home,
     runtimeSourceDir: runtime.runtimeSourceDir,
     packagedAsarPath,
     upstreamResourcesDir,
@@ -316,6 +332,7 @@ export async function installDesktop(options, logger) {
     patchSummary,
     logger
   });
+  const { iconPath, browserUseNodeRepl, browserUseNode } = installResult;
 
   await writeDesktopEntry({
     channel,
@@ -334,11 +351,14 @@ export async function installDesktop(options, logger) {
     runtimeSourceKind: runtime.sourceKind,
     nativeModules,
     nativeModuleVersions,
+    browserUseNodeRepl,
+    browserUseNode,
     patches: {
       bootstrap: bootstrapPatch,
       openTargets: openTargetsPatch,
       linuxMenuBar: linuxMenuBarPatch,
       linuxCloseCancel: linuxCloseCancelPatch,
+      linuxNotificationSound: linuxNotificationSoundPatch,
       linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
       linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
       terminalLifecycle: terminalPatch,
@@ -421,6 +441,7 @@ async function patchBootstrap(extractedAppDir) {
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
 const LINUX_MENU_BAR_PATCH_MARKER = 'codexLinuxMenuBarAutoHide';
 const LINUX_CLOSE_CANCEL_PATCH_MARKER = 'codexLinuxCloseCancel';
+const LINUX_NOTIFICATION_SOUND_PATCH_MARKER = 'codexLinuxNotificationSound';
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentWorker';
 const OPEN_TARGETS_BLOCK_PATTERN =
@@ -436,6 +457,10 @@ const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_422 =
   'n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_422 =
   'n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=a.showLastActivePrimaryWindow();e?o.refresh():Promise.resolve(s(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus()),o.refresh()})}return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
+const LINUX_NOTIFICATION_SOUND_SHOW_PATTERN =
+  /(?<showVar>[A-Za-z_$][\w$]*)\.show\(\)\}stageNotificationSoundIfNeeded\(\)\{/;
+const LINUX_NOTIFICATION_SOUND_CHILD_PROCESS_PATTERN =
+  /(?<childProcessVar>[A-Za-z_$][\w$]*)=require\(`node:child_process`\)/;
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_PATTERN =
   /var (?<thresholdVar>[A-Za-z_$][\w$]*)=32e3,(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`worktree-service`\),(?<classVar>[A-Za-z_$][\w$]*)=class\{/;
 const LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_PATTERN =
@@ -518,6 +543,11 @@ function buildLinuxWorktreeEnvironmentWorkerMoveToLocalReplacement({ deleteClean
 function buildLinuxWorktreeEnvironmentWorkerCleanupSkipReplacement({ loggerFn }) {
   return `if(i==null||i===\`__none__\`){${loggerFn}().info(\`[worktree-delete] cleanup-skipped-no-environment\`,{safe:{worktreeId:t},sensitive:{configPath:i}});return;}`;
 }
+
+function buildLinuxNotificationSoundMethod({ childProcessVar }) {
+  return `codexLinuxPlayNotificationSoundIfNeeded(){if(this.options.platform!==\`linux\`||typeof process.resourcesPath!=\`string\`)return;let e=i.default.join(process.resourcesPath,Ii);if(!(0,o.existsSync)(e))return;let t=[\`paplay\`,\`pw-play\`,\`aplay\`,\`ffplay\`],n=t.find(e=>{try{return ${childProcessVar}.spawnSync(\`sh\`,[\`-c\`,\`command -v \${e}\`],{stdio:\`ignore\`}).status===0}catch{return!1}});if(n==null){this.logger.warning(\`no Linux notification sound player found\`,{safe:{players:t},sensitive:{soundPath:e}});return}try{let t=n===\`ffplay\`?[\`-nodisp\`,\`-autoexit\`,\`-loglevel\`,\`quiet\`,e]:[e],r=${childProcessVar}.spawn(n,t,{detached:!0,stdio:\`ignore\`});r.on(\`error\`,e=>{this.logger.warning(\`failed to play Linux notification sound\`,{safe:{player:n},sensitive:{error:e}})}),r.unref()}catch(e){this.logger.warning(\`failed to play Linux notification sound\`,{safe:{player:n},sensitive:{error:e}})}}/* ${LINUX_NOTIFICATION_SOUND_PATCH_MARKER} */`;
+}
+
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
   /let (?<createdSessionVar>[A-Za-z_$][\w$]*)=(?<resumeSessionVar>[A-Za-z_$][\w$]*)\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:n,hostId:r\?\?null,cwd:i\?\?null\}\);(?<sessionRef>[A-Za-z_$][\w$]*)\.current=\k<createdSessionVar>,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1;/;
@@ -729,6 +759,28 @@ async function patchMainProcessLinuxCloseCancel(extractedAppDir, logger) {
   };
 }
 
+async function patchMainProcessLinuxNotificationSound(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for notification sound patch`);
+  const result = applyLinuxNotificationSoundPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux notification sound playback into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
 async function patchMainProcessLinuxWorktreeEnvironment(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
   const files = await fs.promises.readdir(buildDir);
@@ -858,6 +910,37 @@ export function injectLinuxCloseCancelPatch(bundleSource, options = {}) {
       }
     ],
     buildLinuxCloseCancelPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+export function applyLinuxNotificationSoundPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxNotificationSoundPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxNotificationSoundPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_NOTIFICATION_SOUND_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const childProcessMatch = bundleSource.match(LINUX_NOTIFICATION_SOUND_CHILD_PROCESS_PATTERN);
+  if (!childProcessMatch?.groups) {
+    throw new Error(buildLinuxNotificationSoundPatchErrorMessage(bundleSource, options.sourceName));
+  }
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_NOTIFICATION_SOUND_SHOW_PATTERN,
+    ({ showVar }) =>
+      `${showVar}.show(),this.codexLinuxPlayNotificationSoundIfNeeded()}${buildLinuxNotificationSoundMethod(childProcessMatch.groups)}stageNotificationSoundIfNeeded(){`,
+    buildLinuxNotificationSoundPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
 
@@ -2736,6 +2819,14 @@ function buildLinuxCloseCancelPatchErrorMessage(bundleSource, sourceName) {
   );
 }
 
+function buildLinuxNotificationSoundPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_NOTIFICATION_SOUND_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxNotificationSoundBundle(bundleSource)
+  );
+}
+
 function analyzeLinuxMenuBarBundle(bundleSource) {
   const detected = {
     browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
@@ -2770,6 +2861,27 @@ function analyzeLinuxCloseCancelBundle(bundleSource) {
       !detected.cancelPreventDefault && 'cancel preventDefault branch',
       !detected.showLastActivePrimaryWindow && 'showLastActivePrimaryWindow hook',
       !detected.ensureHostWindowDependency && 'ensureHostWindow dependency'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxNotificationSoundBundle(bundleSource) {
+  const detected = {
+    notificationManager: bundleSource.includes('desktop-notifications'),
+    macosSoundOption: bundleSource.includes('sound:this.options.platform===`darwin`'),
+    notificationShowCall: LINUX_NOTIFICATION_SOUND_SHOW_PATTERN.test(bundleSource),
+    resourceSoundPath: bundleSource.includes('process.resourcesPath') && bundleSource.includes('.wav'),
+    childProcessImport: LINUX_NOTIFICATION_SOUND_CHILD_PROCESS_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.notificationManager && 'desktop-notifications logger',
+      !detected.macosSoundOption && 'macOS sound option',
+      !detected.notificationShowCall && 'notification show call',
+      !detected.resourceSoundPath && 'resource notification sound path',
+      !detected.childProcessImport && 'child_process import'
     ].filter(Boolean)
   };
 }
@@ -3284,6 +3396,7 @@ async function installChannelRuntime({
   channelBinDir,
   channelIconDir,
   channelStateDir,
+  homeDir,
   runtimeSourceDir,
   packagedAsarPath,
   upstreamResourcesDir,
@@ -3310,6 +3423,11 @@ async function installChannelRuntime({
   await copyUpstreamResources({
     upstreamResourcesDir,
     resourcesDir
+  });
+  const browserUseRuntime = await installBrowserUseRuntime({
+    resourcesDir,
+    homeDir,
+    logger
   });
   await copyFile(packagedAsarPath, path.join(resourcesDir, 'app.asar'));
   await installUnpackedRuntime({
@@ -3339,7 +3457,10 @@ async function installChannelRuntime({
   });
   await writeExecutable(executablePath, wrapper);
   logger.info(`Installed wrapper ${executablePath}`);
-  return iconPath;
+  return {
+    iconPath,
+    ...browserUseRuntime
+  };
 }
 
 async function installUnpackedRuntime({
@@ -3561,6 +3682,134 @@ export async function findExecutableInPath(commandName, envPath = process.env.PA
   return null;
 }
 
+function getBrowserUsePrimaryRuntimeDependenciesDir({ homeDir, env }) {
+  const cacheRoot = env.XDG_CACHE_HOME ?? path.join(homeDir, '.cache');
+  return path.join(cacheRoot, BROWSER_USE_PRIMARY_RUNTIME_RELATIVE_PATH);
+}
+
+async function resolveExecutableCandidate(candidates) {
+  for (const candidate of candidates) {
+    const resolvedPath = await resolveExecutablePath(candidate.sourcePath);
+    if (resolvedPath) {
+      return {
+        ...candidate,
+        sourcePath: resolvedPath
+      };
+    }
+  }
+  return null;
+}
+
+export async function resolveBrowserUseRuntimeSources({
+  homeDir = getPaths().home,
+  env = process.env,
+  envPath = env.PATH ?? process.env.PATH ?? ''
+} = {}) {
+  const primaryRuntimeDependenciesDir = getBrowserUsePrimaryRuntimeDependenciesDir({
+    homeDir,
+    env
+  });
+  const nodeRepl = await resolveExecutableCandidate([
+    {
+      sourceKind: 'env',
+      sourcePath: env[BROWSER_USE_NODE_REPL_ENV] ?? '',
+      envName: BROWSER_USE_NODE_REPL_ENV
+    },
+    {
+      sourceKind: 'primary-runtime-cache',
+      sourcePath: path.join(primaryRuntimeDependenciesDir, 'bin', 'node_repl')
+    }
+  ]);
+
+  const nodeEnv = await resolveExecutableCandidate([
+    {
+      sourceKind: 'env',
+      sourcePath: env[BROWSER_USE_NODE_ENV] ?? '',
+      envName: BROWSER_USE_NODE_ENV
+    }
+  ]);
+  const pathNode = nodeEnv
+    ? null
+    : await findExecutableInPath('node', envPath);
+  const node =
+    nodeEnv ??
+    (pathNode
+      ? {
+          sourceKind: 'path',
+          sourcePath: pathNode,
+          commandName: 'node'
+        }
+      : null);
+
+  return {
+    nodeRepl,
+    node
+  };
+}
+
+function shellQuote(value) {
+  return `'${String(value).replaceAll("'", "'\\''")}'`;
+}
+
+export async function installBrowserUseRuntime({
+  resourcesDir,
+  homeDir = getPaths().home,
+  env = process.env,
+  envPath = env.PATH ?? process.env.PATH ?? '',
+  logger = null
+}) {
+  const sources = await resolveBrowserUseRuntimeSources({
+    homeDir,
+    env,
+    envPath
+  });
+
+  if (!sources.nodeRepl) {
+    throw new Error(
+      `Could not locate a Linux Browser Use node_repl binary. Set ${BROWSER_USE_NODE_REPL_ENV} to an executable Linux node_repl, or install the Codex primary runtime so ${path.join(
+        getBrowserUsePrimaryRuntimeDependenciesDir({ homeDir, env }),
+        'bin',
+        'node_repl'
+      )} exists.`
+    );
+  }
+  if (!sources.node) {
+    throw new Error(
+      `Could not locate a Linux Node.js runtime for Browser Use. Set ${BROWSER_USE_NODE_ENV} to an executable node binary, or make node available on PATH before running install-desktop.`
+    );
+  }
+
+  const nodeReplTargetPath = path.join(resourcesDir, 'node_repl');
+  const nodeTargetPath = path.join(resourcesDir, 'node');
+  await copyFile(sources.nodeRepl.sourcePath, nodeReplTargetPath);
+  await fs.promises.chmod(nodeReplTargetPath, 0o755);
+  await writeExecutable(
+    nodeTargetPath,
+    `#!/usr/bin/env bash
+set -euo pipefail
+exec ${shellQuote(sources.node.sourcePath)} "$@"
+`
+  );
+  logger?.info?.(
+    `Installed Browser Use node_repl from ${sources.nodeRepl.sourcePath} and node wrapper for ${sources.node.sourcePath}`
+  );
+
+  return {
+    browserUseNodeRepl: {
+      status: 'installed',
+      sourceKind: sources.nodeRepl.sourceKind,
+      sourcePath: sources.nodeRepl.sourcePath,
+      targetPath: nodeReplTargetPath
+    },
+    browserUseNode: {
+      status: 'installed',
+      sourceKind: sources.node.sourceKind,
+      sourcePath: sources.node.sourcePath,
+      targetPath: nodeTargetPath
+    }
+  };
+}
+
 async function resolveCodexCliPath() {
   const candidatePaths = [];
 
@@ -3727,13 +3976,16 @@ async function workspaceHasDependencies(workspaceRoot, dependencies) {
   return true;
 }
 
-async function copyUpstreamResources({ upstreamResourcesDir, resourcesDir }) {
+export async function copyUpstreamResources({ upstreamResourcesDir, resourcesDir }) {
   const entries = await fs.promises.readdir(upstreamResourcesDir, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.name === 'app.asar' || entry.name === 'app.asar.unpacked') {
       continue;
     }
     if (entry.name === 'codex' || entry.name === 'rg') {
+      continue;
+    }
+    if (entry.name === 'node' || entry.name === 'node_repl') {
       continue;
     }
     if (entry.name === 'native') {
@@ -3808,6 +4060,8 @@ export function createInstallDiagnosticManifest({
   runtimeSourceKind,
   nativeModules,
   nativeModuleVersions,
+  browserUseNodeRepl = null,
+  browserUseNode = null,
   patches
 }) {
   return {
@@ -3827,6 +4081,8 @@ export function createInstallDiagnosticManifest({
       name: moduleName,
       version: nativeModuleVersions[moduleName] ?? null
     })),
+    browserUseNodeRepl,
+    browserUseNode,
     patches
   };
 }
