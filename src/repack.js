@@ -457,6 +457,10 @@ const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_422 =
   'n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_422 =
   'n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=a.showLastActivePrimaryWindow();e?o.refresh():Promise.resolve(s(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus()),o.refresh()})}return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
+const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_422_STABLE =
+  'n.app.on(`before-quit`,o=>{let s=b_(),c=t.Gn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Nb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
+const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_422_STABLE =
+  'n.app.on(`before-quit`,o=>{let s=b_(),c=t.Gn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Nb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=a.showLastActivePrimaryWindow();e?o.refresh():Promise.resolve(s(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus()),o.refresh()})}return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
 const LINUX_NOTIFICATION_SOUND_SHOW_PATTERN =
   /(?<showVar>[A-Za-z_$][\w$]*)\.show\(\)\}stageNotificationSoundIfNeeded\(\)\{/;
 const LINUX_NOTIFICATION_SOUND_CHILD_PROCESS_PATTERN =
@@ -570,16 +574,26 @@ const NEW_THREAD_MODEL_STATE_MARKERS = [
   'latestCollaborationMode?.settings?.model',
   'latestCollaborationMode?.settings?.reasoning_effort'
 ];
-const NEW_THREAD_MODEL_CONFIG_MARKERS = [
+const NEW_THREAD_MODEL_STATE_EVIDENCE_MARKERS = [
+  'latestCollaborationMode',
+  'set-model-and-reasoning-for-next-turn',
   'copilot-default-model',
+  'set-default-model-config-for-host',
   'setDefaultModelConfig',
-  'set-default-model-config-for-host'
+  'modelSettings',
+  'setModelAndReasoningEffort',
+  'reasoning_effort'
 ];
-const NEW_THREAD_MODEL_SUBMIT_MARKERS = [
+const NEW_THREAD_MODEL_SUBMIT_EVIDENCE_MARKERS = [
+  'thread/start',
+  'start-conversation',
+  'read-config-for-host',
+  'workspaceRoots:',
   'fileAttachments:',
   'addedFiles:',
   'collaborationMode:',
-  'config:'
+  'config:',
+  'model_reasoning_effort'
 ];
 const NEW_THREAD_MODEL_STATE_SNIPPET_CURRENT = 'let m=p,h=Dn(n,Sf),g=r===`copilot`,_;';
 const NEW_THREAD_MODEL_STATE_REPLACEMENT_CURRENT =
@@ -632,6 +646,18 @@ const NEW_THREAD_MODEL_SETTER_SNIPPET_26_422 =
   'setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(await g(e,n))return;if(m){qn(t,`copilot-default-model`,e);return}';
 const NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_422 =
   'setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(codexLinuxIsFreshComposer){codexLinuxSetPendingModelSettings({model:e,reasoningEffort:n,profile:c.profile,isLoading:!1});return}if(await g(e,n))return;if(m){qn(t,`copilot-default-model`,e);return}';
+const NEW_THREAD_MODEL_STATE_SNIPPET_26_422_71525 =
+  'u=w(jt,e),d=w(Qe,e),f=d?.settings.model??null,p=f!=null&&f.trim().length>0?f:null,m=a?.authMethod===`copilot`,g=';
+const NEW_THREAD_MODEL_STATE_REPLACEMENT_26_422_71525 =
+  'u=w(jt,e),d=w(Qe,e),f=d?.settings.model??null,p=f!=null&&f.trim().length>0?f:null,m=a?.authMethod===`copilot`,codexLinuxIsFreshComposer=e==null,[codexLinuxPendingModelSettings,codexLinuxSetPendingModelSettings]=(0,q.useState)(null),g=';
+const NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_422_71525 =
+  ',_=u?{model:p??c.model,reasoningEffort:d?.settings.reasoning_effort??null,profile:c.profile,isLoading:c.isLoading&&p==null}:m?l:c,';
+const NEW_THREAD_MODEL_SETTINGS_REPLACEMENT_26_422_71525 =
+  ',_=codexLinuxPendingModelSettings??(u?{model:p??c.model,reasoningEffort:d?.settings.reasoning_effort??null,profile:c.profile,isLoading:c.isLoading&&p==null}:m?l:c),';
+const NEW_THREAD_MODEL_SETTER_SNIPPET_26_422_71525 =
+  'setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(await g(e,n))return;if(m){Jn(t,`copilot-default-model`,e);return}';
+const NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_422_71525 =
+  'setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(codexLinuxIsFreshComposer){codexLinuxSetPendingModelSettings({model:e,reasoningEffort:n,profile:c.profile,isLoading:!1});return}if(await g(e,n))return;if(m){Jn(t,`copilot-default-model`,e);return}';
 const LINUX_NEW_THREAD_MODEL_SUBMIT_PATCH_MARKER = 'codexLinuxFreshThreadCollaborationModeSettings';
 const NEW_THREAD_MODEL_SUBMIT_SNIPPET_CURRENT =
   'return{input:a,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:j,model:null,serviceTier:A.serviceTier,reasoningEffort:null,collaborationMode:w,config:o}';
@@ -653,6 +679,10 @@ const NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422 =
   'return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Yt(`agent-mode-by-host-id`,{})[P]??`auto`,model:null,reasoningEffort:null,collaborationMode:xve(t,n,i),config:zt(a),workspaceKind:`project`}}';
 const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_422 =
   'let o=xve(t,n,i),s=zt(a),codexLinuxFreshThreadCollaborationModeSettings=o==null?null:{...o,settings:{...o.settings,model:o.settings?.model??s.model??null,reasoning_effort:o.settings?.reasoning_effort??s.model_reasoning_effort??null}};return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Yt(`agent-mode-by-host-id`,{})[P]??`auto`,model:null,reasoningEffort:null,collaborationMode:codexLinuxFreshThreadCollaborationModeSettings,config:s,workspaceKind:`project`}}';
+const NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422_71525 =
+  'return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Xt(`agent-mode-by-host-id`,{})[I]??`auto`,model:null,reasoningEffort:null,collaborationMode:xve(t,n,i),config:Bt(a),workspaceKind:`project`}}';
+const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_422_71525 =
+  'let o=xve(t,n,i),s=Bt(a),codexLinuxFreshThreadCollaborationModeSettings=o==null?null:{...o,settings:{...o.settings,model:o.settings?.model??s.model??null,reasoning_effort:o.settings?.reasoning_effort??s.model_reasoning_effort??null}};return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Xt(`agent-mode-by-host-id`,{})[I]??`auto`,model:null,reasoningEffort:null,collaborationMode:codexLinuxFreshThreadCollaborationModeSettings,config:s,workspaceKind:`project`}}';
 const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
@@ -907,6 +937,10 @@ export function injectLinuxCloseCancelPatch(bundleSource, options = {}) {
       {
         target: LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_422,
         replacement: `/* ${LINUX_CLOSE_CANCEL_PATCH_MARKER} */${LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_422}`
+      },
+      {
+        target: LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_422_STABLE,
+        replacement: `/* ${LINUX_CLOSE_CANCEL_PATCH_MARKER} */${LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_422_STABLE}`
       }
     ],
     buildLinuxCloseCancelPatchErrorMessage(bundleSource, options.sourceName)
@@ -1301,8 +1335,8 @@ export async function patchRendererNewThreadModelBundle(extractedAppDir, logger)
   for (const assetName of jsAssets) {
     const assetPath = path.join(assetsDir, assetName);
     const original = await fs.promises.readFile(assetPath, 'utf8');
-    const stateCandidate = isNewThreadModelStateCandidateBundle(original);
-    const submitCandidate = isNewThreadModelSubmitCandidateBundle(original);
+    const evidence = collectNewThreadModelCandidateEvidence(original);
+    const { stateCandidate, submitCandidate } = evidence;
     if (!stateCandidate && !submitCandidate) {
       continue;
     }
@@ -1312,11 +1346,20 @@ export async function patchRendererNewThreadModelBundle(extractedAppDir, logger)
       assetName,
       assetPath,
       stateCandidate,
-      submitCandidate
+      submitCandidate,
+      evidence
     });
     originalBundleSourcesByAsset.set(assetName, original);
     workingBundleSourcesByAsset.set(assetName, original);
   }
+  bundleRecords.sort(
+    (left, right) =>
+      right.evidence.score - left.evidence.score ||
+      Number(right.stateCandidate && right.submitCandidate) -
+        Number(left.stateCandidate && left.submitCandidate) ||
+      left.assetName.localeCompare(right.assetName)
+  );
+  const candidateDetails = formatNewThreadModelCandidateDetails(bundleRecords);
 
   const recordAnchorError = (assetName, error) => {
     if (!firstAnchorError) {
@@ -1447,13 +1490,14 @@ export async function patchRendererNewThreadModelBundle(extractedAppDir, logger)
   }
 
   logger.warn(
-    `Skipping Linux new-thread model patch because renderer candidates were incompatible with the expected fresh-thread anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+    `Skipping Linux new-thread model patch because renderer candidates were incompatible with the expected fresh-thread anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}${candidateDetails ? ` Candidates: ${candidateDetails}.` : ''}`
   );
   return {
     status: 'skipped',
     reason: 'anchor-mismatch',
     sourceName: firstAnchorErrorSourceName,
-    details: firstAnchorError?.message ?? null
+    details: firstAnchorError?.message ?? null,
+    candidates: candidateDetails || null
   };
 }
 
@@ -1553,6 +1597,29 @@ function injectLinuxNewThreadModelStatePatch(bundleSource, options = {}) {
       updated,
       NEW_THREAD_MODEL_SETTER_SNIPPET_26_422,
       NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_422,
+      errorMessage
+    );
+    return updated;
+  }
+
+  if (bundleSource.includes(NEW_THREAD_MODEL_STATE_SNIPPET_26_422_71525)) {
+    let updated = bundleSource;
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_422_71525,
+      NEW_THREAD_MODEL_STATE_REPLACEMENT_26_422_71525,
+      errorMessage
+    );
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_422_71525,
+      NEW_THREAD_MODEL_SETTINGS_REPLACEMENT_26_422_71525,
+      errorMessage
+    );
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_422_71525,
+      NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_422_71525,
       errorMessage
     );
     return updated;
@@ -1697,6 +1764,15 @@ function injectLinuxNewThreadModelSubmitPatch(bundleSource, options = {}) {
       bundleSource,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422,
       NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_422,
+      errorMessage
+    );
+  }
+
+  if (bundleSource.includes(NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422_71525)) {
+    return replaceSnippetOrThrow(
+      bundleSource,
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422_71525,
+      NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_422_71525,
       errorMessage
     );
   }
@@ -2977,25 +3053,30 @@ function analyzeNewThreadModelStateBundle(bundleSource) {
       'function vm(e=null){',
       'function $9(e){',
       'function $9(e=null){'
-    ].some((marker) => bundleSource.includes(marker)),
+    ].some((marker) => bundleSource.includes(marker)) ||
+      (bundleSource.includes('modelSettings') &&
+        bundleSource.includes('setModelAndReasoningEffort')),
     selectorStateBlock: [
       NEW_THREAD_MODEL_STATE_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_STATE_SNIPPET_26_406,
       NEW_THREAD_MODEL_STATE_SNIPPET_26_415,
-      NEW_THREAD_MODEL_STATE_SNIPPET_26_422
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_422,
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_422_71525
     ].some((snippet) => bundleSource.includes(snippet)) ||
       NEW_THREAD_MODEL_STATE_PATTERN_26_415.test(bundleSource),
     selectorValueBranch: [
       NEW_THREAD_MODEL_SETTINGS_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_415,
       NEW_THREAD_MODEL_STATE_SNIPPET_26_406,
-      NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_422
+      NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_422,
+      NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_422_71525
     ].some((snippet) => bundleSource.includes(snippet)),
     selectorSetter: [
       NEW_THREAD_MODEL_SETTER_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_SETTER_SNIPPET_26_406,
       NEW_THREAD_MODEL_SETTER_SNIPPET_26_415,
-      NEW_THREAD_MODEL_SETTER_SNIPPET_26_422
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_422,
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_422_71525
     ].some((snippet) => bundleSource.includes(snippet)) ||
       NEW_THREAD_MODEL_SETTER_PATTERN_26_415.test(bundleSource)
   };
@@ -3019,13 +3100,17 @@ function analyzeNewThreadModelSubmitBundle(bundleSource) {
       'async function OB({context:e,prompt:t,workspaceRoots:n,cwd:r,hostId:i,agentMode:a,serviceTier:o,collaborationMode:s,memoryPreferences:c,workspaceKind:l=`project`,projectlessOutputDirectory:u}){',
       'async function Nve({input:e,mode:t,model:n,projectId:r,thinking:i}){',
       'async function bve({input:e,mode:t,model:n,projectId:r,thinking:i}){'
-    ].some((snippet) => bundleSource.includes(snippet)),
+    ].some((snippet) => bundleSource.includes(snippet)) ||
+      (bundleSource.includes('read-config-for-host') &&
+        bundleSource.includes('workspaceKind:`project`') &&
+        bundleSource.includes('collaborationMode:')),
     collaborationModeSubmit: [
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_406,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_415,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_417,
-      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422,
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422_71525
     ].some((snippet) => bundleSource.includes(snippet))
   };
 
@@ -3045,19 +3130,73 @@ function isNewThreadModelCandidateBundle(bundleSource) {
   );
 }
 
-function isNewThreadModelStateCandidateBundle(bundleSource) {
-  const analysis = analyzeNewThreadModelStateBundle(bundleSource);
-  return (
-    NEW_THREAD_MODEL_CONFIG_MARKERS.some((marker) => bundleSource.includes(marker)) &&
-    (analysis.detected.selectorStateBlock || analysis.detected.selectorSetter)
+function collectNewThreadModelCandidateEvidence(bundleSource) {
+  const stateAnalysis = analyzeNewThreadModelStateBundle(bundleSource);
+  const submitAnalysis = analyzeNewThreadModelSubmitBundle(bundleSource);
+  const stateMarkers = NEW_THREAD_MODEL_STATE_EVIDENCE_MARKERS.filter((marker) =>
+    bundleSource.includes(marker)
   );
+  const submitMarkers = NEW_THREAD_MODEL_SUBMIT_EVIDENCE_MARKERS.filter((marker) =>
+    bundleSource.includes(marker)
+  );
+  const stateAnchorCount = Object.values(stateAnalysis.detected).filter(Boolean).length;
+  const submitAnchorCount = Object.values(submitAnalysis.detected).filter(Boolean).length;
+  const stateScore = stateMarkers.length + stateAnchorCount * 2;
+  const submitScore = submitMarkers.length + submitAnchorCount * 2;
+  const stateCandidate =
+    stateMarkers.includes('set-model-and-reasoning-for-next-turn') ||
+    stateMarkers.includes('copilot-default-model') ||
+    stateMarkers.includes('set-default-model-config-for-host') ||
+    stateMarkers.includes('setDefaultModelConfig') ||
+    (stateMarkers.includes('modelSettings') &&
+      stateMarkers.includes('setModelAndReasoningEffort')) ||
+    stateAnchorCount >= 2;
+  const submitCandidate =
+    submitMarkers.includes('collaborationMode:') &&
+    submitMarkers.includes('config:') &&
+    (submitMarkers.includes('read-config-for-host') ||
+      submitMarkers.includes('thread/start') ||
+      submitMarkers.includes('start-conversation')) &&
+    (submitMarkers.includes('workspaceRoots:') ||
+      submitMarkers.includes('fileAttachments:') ||
+      submitMarkers.includes('addedFiles:') ||
+      submitAnchorCount > 0);
+
+  return {
+    stateAnalysis,
+    submitAnalysis,
+    stateCandidate,
+    submitCandidate,
+    stateScore,
+    submitScore,
+    score: stateScore + submitScore,
+    reasons: [...stateMarkers, ...submitMarkers]
+  };
+}
+
+function formatNewThreadModelCandidateDetails(candidateRecords, limit = 5) {
+  return candidateRecords
+    .slice(0, limit)
+    .map((record) => {
+      const parts = [];
+      if (record.stateCandidate) {
+        parts.push(`state score ${record.evidence.stateScore}`);
+      }
+      if (record.submitCandidate) {
+        parts.push(`submit score ${record.evidence.submitScore}`);
+      }
+      const reasons = record.evidence.reasons.slice(0, 8).join(', ');
+      return `${record.assetName} (${parts.join(', ') || `score ${record.evidence.score}`}; ${reasons})`;
+    })
+    .join('; ');
+}
+
+function isNewThreadModelStateCandidateBundle(bundleSource) {
+  return collectNewThreadModelCandidateEvidence(bundleSource).stateCandidate;
 }
 
 function isNewThreadModelSubmitCandidateBundle(bundleSource) {
-  return (
-    NEW_THREAD_MODEL_SUBMIT_MARKERS.every((marker) => bundleSource.includes(marker)) &&
-    analyzeNewThreadModelSubmitBundle(bundleSource).detected.collaborationModeSubmit
-  );
+  return collectNewThreadModelCandidateEvidence(bundleSource).submitCandidate;
 }
 
 function patchTodoPlanComponentCacheSignatures({

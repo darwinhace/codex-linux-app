@@ -91,6 +91,8 @@ const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_422 =
   'function Zl({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,automationManager:t,flushAndDisposeContexts:n,disposables:c,appEvent:l,errorReporter:u}){let d=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
+const LINUX_CLOSE_CANCEL_BUNDLE_26_422_STABLE =
+  'function Mb({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,hotkeyWindowLifecycleManager:c,globalDictationLifecycleManager:l,globalStatesByHostId:u,flushAndDisposeContexts:d,disposables:f,appEvent:p,errorReporter:m}){let h=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=b_(),c=t.Gn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Nb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
 const LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT =
   'const e=require(`./app-session.js`);let n=require(`electron`);n=e.lr(n);let r=require(`node:os`);r=e.lr(r);let i=require(`node:path`);i=e.lr(i);let a=require(`node:util`),o=require(`node:fs`);o=e.lr(o);let s=require(`node:crypto`),c=require(`node:child_process`),l=require(`node:process`);l=e.lr(l);var Fi=`codex-notification`,Ii=`${Fi}.wav`,Li=t.Or(`desktop-notifications`),Ri=class{isSupported;createNotification;logger=Li();notificationSoundStaged=!1;notifications=new Map;constructor(e){this.options=e,this.isSupported=e.isSupported??(()=>n.Notification.isSupported()),e.createNotification?this.createNotification=e.createNotification:this.createNotification=e=>{let t=new n.Notification(e);return{show:()=>t.show(),on:(e,n)=>{switch(e){case`action`:return t.on(`action`,(e,t)=>{n(e,t)});case`click`:return t.on(`click`,()=>{n(void 0)});case`close`:return t.on(`close`,()=>{n(void 0)})}},close:()=>t.close()}}}showNotification(e,t,n){if(this.stageNotificationSoundIfNeeded(),!this.isSupported())return;let r=(e.actions??[]).slice(0,4),i=e.kind===`permission`||e.kind===`question`?`never`:void 0,a=e.kind===`turn-complete`&&typeof e.replyPlaceholder==`string`;this.notifications.get(e.id)?.notification.close?.();let o=this.createNotification({title:e.title,body:e.body,silent:!1,sound:this.options.platform===`darwin`?Fi:void 0,timeoutType:i,hasReply:a,replyPlaceholder:a?e.replyPlaceholder??void 0:void 0,actions:r.map(e=>({type:`button`,text:e.title}))});o.on(`close`,()=>{this.notifications.delete(e.id)}),this.notifications.set(e.id,{notification:o,conversationId:e.conversationId??null}),o.show()}stageNotificationSoundIfNeeded(){if(this.notificationSoundStaged||(this.notificationSoundStaged=!0,this.options.platform!==`darwin`)||typeof process.resourcesPath!=`string`)return;let e=i.default.join(process.resourcesPath,Ii),t=i.default.join(__dirname,`..`,`assets`,`sounds`,Ii),n=(0,o.existsSync)(e)?e:t;if(!(0,o.existsSync)(n))return;let a=i.default.join(r.default.homedir(),`Library`,`Sounds`);try{(0,o.mkdirSync)(a,{recursive:!0}),(0,o.copyFileSync)(n,i.default.join(a,Ii))}catch(e){this.logger.warning(`failed to stage notification sound`,{safe:{},sensitive:{error:e}})}}};';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -162,6 +164,10 @@ const NEW_THREAD_MODEL_SELECTOR_BLOCK_26_422 =
   'function $9(e=null){let t=x(ue),n=au(e),r=n.hostId,i=C(xwe,r),a=rr(r),o=En(),s=n.cwd,c=Swe({hostId:r,cwd:s}),l=bwe(),u=C(At,e),d=C(Ze,e),f=d?.settings.model??null,p=f!=null&&f.trim().length>0?f:null,m=a?.authMethod===`copilot`,g=(0,q.useCallback)(async(t,n)=>e==null||!u?!1:(await Wt(`set-model-and-reasoning-for-next-turn`,{conversationId:e,model:t,reasoningEffort:n}),!0),[e,u]),_=u?{model:p??c.model,reasoningEffort:d?.settings.reasoning_effort??null,profile:c.profile,isLoading:c.isLoading&&p==null}:m?l:c,v=Cwe({hostId:r,cwd:s}),y=(0,q.useCallback)(e=>{},[o,t]);return{setModelAndReasoningEffortForNextTurn:(0,q.useCallback)(async(e,t)=>{try{if(!await g(e,t))throw Error(`No conversation available for next-turn model update`)}catch(e){throw y(e),e}},[g,y]),setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(await g(e,n))return;if(m){qn(t,`copilot-default-model`,e);return}if(h.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:n,profile:c.profile}}),!i)return;await Wt(`set-default-model-config-for-host`,{hostId:r,model:e,reasoningEffort:n,profile:c.profile}),await v(),await t.query.fetch(bs,{hostId:r,cwd:s})}catch(e){y(e)}},[m,g,c.profile,v,i,r,t,y,s]),modelSettings:_}}';
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_422 =
   'async function bve({input:e,mode:t,model:n,projectId:r,thinking:i}){let{config:a}=await Wt(`read-config-for-host`,{hostId:P,includeLayers:!1,cwd:r});return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Yt(`agent-mode-by-host-id`,{})[P]??`auto`,model:null,reasoningEffort:null,collaborationMode:xve(t,n,i),config:zt(a),workspaceKind:`project`}}';
+const NEW_THREAD_MODEL_SELECTOR_BLOCK_26_422_71525 =
+  'function $9(e=null){let t=j(fe),n=au(e),r=n.hostId,i=w(xwe,r),a=ir(r),o=Dn(),s=n.cwd,c=Swe({hostId:r,cwd:s}),l=bwe(),u=w(jt,e),d=w(Qe,e),f=d?.settings.model??null,p=f!=null&&f.trim().length>0?f:null,m=a?.authMethod===`copilot`,g=(0,q.useCallback)(async(t,n)=>e==null||!u?!1:(await Gt(`set-model-and-reasoning-for-next-turn`,{conversationId:e,model:t,reasoningEffort:n}),!0),[e,u]),_=u?{model:p??c.model,reasoningEffort:d?.settings.reasoning_effort??null,profile:c.profile,isLoading:c.isLoading&&p==null}:m?l:c,v=Cwe({hostId:r,cwd:s}),y=(0,q.useCallback)(e=>{h.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:e}});let n=t.get(jo),r=wwe(o,e);n.danger(r,{id:`composer.modelSettings.updateError`})},[o,t]);return{setModelAndReasoningEffortForNextTurn:(0,q.useCallback)(async(e,t)=>{try{if(!await g(e,t))throw Error(`No conversation available for next-turn model update`)}catch(e){throw y(e),e}},[g,y]),setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(await g(e,n))return;if(m){Jn(t,`copilot-default-model`,e);return}if(h.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:n,profile:c.profile}}),!i)return;await Gt(`set-default-model-config-for-host`,{hostId:r,model:e,reasoningEffort:n,profile:c.profile}),await v(),await t.query.fetch(Ss,{hostId:r,cwd:s})}catch(e){y(e)}},[m,g,c.profile,v,i,r,t,y,s]),modelSettings:_}}';
+const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_422_71525 =
+  'async function bve({input:e,mode:t,model:n,projectId:r,thinking:i}){let{config:a}=await Gt(`read-config-for-host`,{hostId:I,includeLayers:!1,cwd:r});return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Xt(`agent-mode-by-host-id`,{})[I]??`auto`,model:null,reasoningEffort:null,collaborationMode:xve(t,n,i),config:Bt(a),workspaceKind:`project`}}';
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415 = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415}function _t(e){return e?.latestCollaborationMode?.settings?.reasoning_effort??null}function Ft(e){return e?.latestCollaborationMode?.settings?.model??null}`;
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED = NEW_THREAD_MODEL_STATE_BUNDLE_26_415
   .replace('r.get(bo)', 'r.get(So)')
@@ -571,6 +577,19 @@ test('injectLinuxCloseCancelPatch supports the 26.422 before-quit prompt details
   assert.match(updated, /i\.markQuitApproved\(\),g=!0,a\.markAppQuitting\(\)/);
 });
 
+test('injectLinuxCloseCancelPatch supports the 26.422 stable before-quit prompt details', () => {
+  const updated = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_26_422_STABLE);
+
+  assert.match(updated, /codexLinuxCloseCancel/);
+  assert.match(updated, /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`/);
+  assert.match(updated, /detail:Nb\(\{hasInProgressLocalConversation:s,hasEnabledAutomations:c\}\)/);
+  assert.match(updated, /let e=a\.showLastActivePrimaryWindow\(\);e\?o\.refresh\(\):/);
+  assert.match(updated, /Promise\.resolve\(s\(`local`\)\)\.then/);
+  assert.match(updated, /e\.isMinimized\(\)&&e\.restore\(\),e\.show\(\),e\.focus\(\)/);
+  assert.match(updated, /o\.preventDefault\(\)/);
+  assert.match(updated, /i\.markQuitApproved\(\),g=!0,a\.markAppQuitting\(\)/);
+});
+
 test('injectLinuxCloseCancelPatch is idempotent', () => {
   const once = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_CURRENT);
   const twice = injectLinuxCloseCancelPatch(once);
@@ -921,6 +940,21 @@ test('injectLinuxNewThreadModelPatch supports 26.422 model hook and project subm
   assert.match(updated, /collaborationMode:codexLinuxFreshThreadCollaborationModeSettings/);
 });
 
+test('injectLinuxNewThreadModelPatch supports 26.422.71525 model hook and project submit drift', () => {
+  const bundle = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_422_71525}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_422_71525}`;
+  const updated = injectLinuxNewThreadModelPatch(bundle);
+
+  assert.match(updated, /codexLinuxPendingModelSettings/);
+  assert.match(updated, /codexLinuxIsFreshComposer=e==null/);
+  assert.match(
+    updated,
+    /codexLinuxSetPendingModelSettings\(\{model:e,reasoningEffort:n,profile:c\.profile,isLoading:!1\}\)/
+  );
+  assert.match(updated, /codexLinuxFreshThreadCollaborationModeSettings/);
+  assert.match(updated, /let o=xve\(t,n,i\),s=Bt\(a\)/);
+  assert.match(updated, /collaborationMode:codexLinuxFreshThreadCollaborationModeSettings/);
+});
+
 test('injectLinuxNewThreadModelPatch scopes 26.415 fresh-effect insertion to the selector function', () => {
   const bundle = `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DECOY_PREFIX}${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415}`;
   const updated = injectLinuxNewThreadModelPatch(bundle);
@@ -976,9 +1010,53 @@ test('patchRendererNewThreadModelBundle skips when fresh-thread anchors are inco
     assert.deepEqual(result.reason, 'anchor-mismatch');
     assert.equal(result.sourceName, 'index.js');
     assert.match(result.details ?? '', /Could not patch the renderer new-thread model bundle for Linux/);
+    assert.match(result.candidates ?? '', /index\.js/);
     assert.equal(await fs.promises.readFile(bundlePath, 'utf8'), NEW_THREAD_MODEL_BUNDLE_26_406_DRIFTED);
     assert.equal(
       warnings.some((message) => message.includes('Skipping Linux new-thread model patch for index.js')),
+      true
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererNewThreadModelBundle reports anchor mismatch when evidence exists without compatible anchors', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-new-thread-evidence-anchor-mismatch-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const bundlePath = path.join(assetsDir, 'use-model-settings.js');
+    const incompatibleBundle = [
+      'set-model-and-reasoning-for-next-turn',
+      'copilot-default-model',
+      'set-default-model-config-for-host',
+      'function $9(e=null){return{setModelAndReasoningEffort(){},modelSettings:{}}}',
+      'async function bve(){return{input:[],workspaceRoots:[],cwd:`/`,fileAttachments:[],addedFiles:[],agentMode:`auto`,model:null,reasoningEffort:null,collaborationMode:null,config:{},workspaceKind:`project`}}'
+    ].join(';');
+    await fs.promises.writeFile(bundlePath, incompatibleBundle, 'utf8');
+
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+
+    assert.equal(result.status, 'skipped');
+    assert.equal(result.reason, 'anchor-mismatch');
+    assert.equal(result.sourceName, 'use-model-settings.js');
+    assert.match(result.candidates ?? '', /use-model-settings\.js/);
+    assert.equal(await fs.promises.readFile(bundlePath, 'utf8'), incompatibleBundle);
+    assert.equal(
+      warnings.some((message) => message.includes('Candidates: use-model-settings.js')),
       true
     );
   } finally {
@@ -1014,6 +1092,39 @@ test('patchRendererNewThreadModelBundle skips when no new-thread candidate bundl
       ),
       true
     );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererNewThreadModelBundle patches 26.422.71525 bundle fixture', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-26422-71525-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const bundlePath = path.join(assetsDir, 'use-model-settings-D-IrMVLP.js');
+    await fs.promises.writeFile(
+      bundlePath,
+      `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_422_71525}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_422_71525}`,
+      'utf8'
+    );
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+
+    assert.equal(result.status, 'applied');
+    assert.equal(result.sourceName, 'use-model-settings-D-IrMVLP.js');
+
+    const patchedBundle = await fs.promises.readFile(bundlePath, 'utf8');
+    assert.match(patchedBundle, /codexLinuxPendingModelSettings/);
+    assert.match(patchedBundle, /codexLinuxFreshThreadCollaborationModeSettings/);
+    assert.match(patchedBundle, /let o=xve\(t,n,i\),s=Bt\(a\)/);
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }

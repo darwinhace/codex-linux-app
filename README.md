@@ -2,10 +2,10 @@
 
 This repo repackages the published Codex desktop app for Linux `amd64`/`x64` (including Ubuntu and Arch-based distros such as CachyOS). It reads the live OpenAI appcast feed, downloads the selected upstream build, swaps in a Linux Electron runtime, rebuilds the native modules for Linux, installs stable and beta side by side, and creates user-local desktop entries.
 
-Current upstream feed heads checked on April 19, 2026:
+Current upstream feed heads checked on April 29, 2026:
 
-- Stable: `26.415.32059` build `1789`
-- Beta: `26.415.40636` build `1798`
+- Stable: `26.422.71525` build `2210`
+- Beta: `26.422.21637` build `2057`
 
 ## First Run Requirements
 
@@ -210,7 +210,7 @@ Use this section as the single source of truth for env vars used by this project
 - For all runtime and installer env vars, see the **Environment Variables** section above.
 - The build/install stages retry forever on failure and keep logs under `~/.local/state/codex-linux-app/logs`.
 - The installer always writes a per-channel diagnostic manifest with upstream version/build info, Electron runtime info, native module versions, and patch state (including `backgroundSubagentsPanel` and `compactSlashCommand`).
-- The fresh-thread model patch is required. If upstream bundle anchors drift and the patch cannot be applied, install aborts with an explicit `newThreadModel` patch error.
+- The fresh-thread model patch is required. If upstream bundle anchors drift and the patch cannot be applied, install aborts with an explicit `newThreadModel` patch error. Renderer bundle discovery is evidence-based; when likely bundles are found but anchors drift, diagnostics report `anchor-mismatch` plus candidate bundle names instead of the misleading `bundle-not-found`.
 - Compact slash command support (`/compact`) is required. If compatibility anchors are missing, install aborts with an explicit compact slash command verification error.
 - If a new upstream renderer build changes the Linux visual-compat renderer bundle shape, the installer skips that patch with a warning instead of aborting the install.
 - The generated launcher auto-falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is the normal case for a per-user install.
