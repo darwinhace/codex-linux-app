@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-import('./src/uninstall-cli.js');
+await import('./src/bootstrap.js').then(({ bootstrap }) => bootstrap('./src/uninstall-cli.js'));

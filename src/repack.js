@@ -57,6 +57,8 @@ const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the Electron worker bundle worktree environment handling for Linux.';
 const LINUX_NOTIFICATION_SOUND_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux notification sound playback in the Electron main bundle.';
+const LINUX_BROWSER_USE_HOST_FETCH_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux Browser Use authenticated host fetch into the Electron main bundle.';
 
 export function parseArgs(argv) {
   const options = {
@@ -119,10 +121,9 @@ export function renderHelp() {
     '  install-desktop --beta --version <version>',
     '',
     'Options:',
-    '  --skip-open-targets-patch   leave the Linux editor target patch disabled',
-    '  --skip-terminal-patch       leave the Linux terminal lifecycle patch disabled',
-    '  --skip-todo-progress-patch  leave the Linux todo progress patch disabled',
-    '  --diagnostic-manifest       print the written diagnostic manifest to the install log'
+    '  --version <version>  install a specific version from the selected channel',
+    '  --beta               use the beta appcast feed',
+    '  -h, --help           show this help'
   ].join('\n');
 }
 
@@ -238,11 +239,20 @@ export async function installDesktop(options, logger) {
     logger
   );
   assertRequiredPatchApplied('worktree environment worker', linuxWorktreeEnvironmentWorkerPatch);
+  const linuxBrowserUseHostFetchPatch = await patchMainProcessLinuxBrowserUseHostFetch(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Browser Use authenticated host fetch', linuxBrowserUseHostFetchPatch);
   const terminalPatch = options.skipTerminalPatch
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTerminalBundle(extractedAppDir, logger);
   const newThreadModelPatch = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
-  assertRequiredPatchApplied('new-thread model', newThreadModelPatch);
+  if (newThreadModelPatch.status !== 'applied' && newThreadModelPatch.status !== 'already-applied') {
+    logger.warn(
+      `Continuing without Linux new-thread model patch because upstream renderer anchors changed: ${newThreadModelPatch.reason ?? newThreadModelPatch.status}`
+    );
+  }
   const todoProgressPatch = options.skipTodoProgressPatch
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTodoProgressBundle(extractedAppDir, logger);
@@ -305,6 +315,7 @@ export async function installDesktop(options, logger) {
     linuxNotificationSound: linuxNotificationSoundPatch,
     linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
     linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
+    linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
     terminalLifecycle: terminalPatch,
     newThreadModel: newThreadModelPatch,
     todoProgress: todoProgressPatch,
@@ -332,7 +343,7 @@ export async function installDesktop(options, logger) {
     patchSummary,
     logger
   });
-  const { iconPath, browserUseNodeRepl, browserUseNode } = installResult;
+  const { iconPath, browserUseRuntime, browserUseNodeRepl, browserUseNode } = installResult;
 
   await writeDesktopEntry({
     channel,
@@ -351,6 +362,7 @@ export async function installDesktop(options, logger) {
     runtimeSourceKind: runtime.sourceKind,
     nativeModules,
     nativeModuleVersions,
+    browserUseRuntime,
     browserUseNodeRepl,
     browserUseNode,
     patches: {
@@ -361,6 +373,7 @@ export async function installDesktop(options, logger) {
       linuxNotificationSound: linuxNotificationSoundPatch,
       linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
       linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
+      linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
       terminalLifecycle: terminalPatch,
       newThreadModel: newThreadModelPatch,
       todoProgress: todoProgressPatch,
@@ -444,6 +457,7 @@ const LINUX_CLOSE_CANCEL_PATCH_MARKER = 'codexLinuxCloseCancel';
 const LINUX_NOTIFICATION_SOUND_PATCH_MARKER = 'codexLinuxNotificationSound';
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentWorker';
+const LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER = 'codexLinuxBrowserUseHostFetch';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
@@ -461,6 +475,10 @@ const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_422_STABLE =
   'n.app.on(`before-quit`,o=>{let s=b_(),c=t.Gn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Nb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_422_STABLE =
   'n.app.on(`before-quit`,o=>{let s=b_(),c=t.Gn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Nb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=a.showLastActivePrimaryWindow();e?o.refresh():Promise.resolve(s(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus()),o.refresh()})}return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
+const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_429 =
+  'n.app.on(`before-quit`,o=>{let s=Pw(),c=t.Yn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:ED({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
+const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_429 =
+  'n.app.on(`before-quit`,o=>{let s=Pw(),c=t.Yn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:ED({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=a.showLastActivePrimaryWindow();e?(e.isMinimized()&&e.restore(),e.show(),e.focus()):Promise.resolve(s(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus())})}return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
 const LINUX_NOTIFICATION_SOUND_SHOW_PATTERN =
   /(?<showVar>[A-Za-z_$][\w$]*)\.show\(\)\}stageNotificationSoundIfNeeded\(\)\{/;
 const LINUX_NOTIFICATION_SOUND_CHILD_PROCESS_PATTERN =
@@ -489,6 +507,14 @@ const LINUX_WORKTREE_ENVIRONMENT_WORKER_MOVE_TO_LOCAL_SUCCESS_SNIPPET_CURRENT =
   'else r?.(`apply-changes-to-local`,`skipped`);return X({status:`success`,warnings:i})';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_SKIP_SNIPPET_CURRENT =
   'if(i==null||i===`__none__`)return;';
+const BROWSER_USE_HOST_FETCH_HELPER_ANCHOR_PATTERN =
+  /function (?<stateFactory>[A-Za-z_$][\w$]*)\(\)\{return\{apiImpl:null,server:null,starting:null\}\}var (?<registryClass>[A-Za-z_$][\w$]*)=class\{/;
+const BROWSER_USE_IAB_API_PING_ANCHOR_PATTERN =
+  /(?<className>[A-Za-z_$][\w$]*)=class\{(?<fields>[\s\S]*?constructor\(e,t,n=\{\}\)\{[\s\S]*?\})ping\(\)\{return`pong`\}/;
+const BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN =
+  /new (?<className>[A-Za-z_$][\w$]*)\((?<getHostArg>t=>this\.canServeTurnForBrowserRoute\(t,e\)\?this\.getBrowserUseHost\(t\):null),(?<blockedArg>e=>this\.getDelegate\(\)\.addBrowserUseNavigationBlockedListener\(e\)),\{(?<options>appSessionId:this\.options\.appSessionId,browserRoute:e,buildFlavor:this\.options\.buildFlavor,canServeRoute:t=>this\.canServeTurnForBrowserRoute\(t,e\))\}\)/;
+const BROWSER_SESSION_REGISTRY_INSTANTIATION_SNIPPET =
+  'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter})';
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
 
 function buildLinuxWorktreeEnvironmentMainHelperReplacement({
@@ -550,6 +576,10 @@ function buildLinuxWorktreeEnvironmentWorkerCleanupSkipReplacement({ loggerFn })
 
 function buildLinuxNotificationSoundMethod({ childProcessVar }) {
   return `codexLinuxPlayNotificationSoundIfNeeded(){if(this.options.platform!==\`linux\`||typeof process.resourcesPath!=\`string\`)return;let e=i.default.join(process.resourcesPath,Ii);if(!(0,o.existsSync)(e))return;let t=[\`paplay\`,\`pw-play\`,\`aplay\`,\`ffplay\`],n=t.find(e=>{try{return ${childProcessVar}.spawnSync(\`sh\`,[\`-c\`,\`command -v \${e}\`],{stdio:\`ignore\`}).status===0}catch{return!1}});if(n==null){this.logger.warning(\`no Linux notification sound player found\`,{safe:{players:t},sensitive:{soundPath:e}});return}try{let t=n===\`ffplay\`?[\`-nodisp\`,\`-autoexit\`,\`-loglevel\`,\`quiet\`,e]:[e],r=${childProcessVar}.spawn(n,t,{detached:!0,stdio:\`ignore\`});r.on(\`error\`,e=>{this.logger.warning(\`failed to play Linux notification sound\`,{safe:{player:n},sensitive:{error:e}})}),r.unref()}catch(e){this.logger.warning(\`failed to play Linux notification sound\`,{safe:{player:n},sensitive:{error:e}})}}/* ${LINUX_NOTIFICATION_SOUND_PATCH_MARKER} */`;
+}
+
+function buildLinuxBrowserUseHostFetchHelper() {
+  return `function codexLinuxBrowserUseHostFetchSession(e){let t=codexLinuxBrowserUseHostFetchUrl(e),n=t.searchParams.get(\`conversation_id\`),r=t.searchParams.get(\`turn_id\`);if(typeof n!==\`string\`||n.length===0||typeof r!==\`string\`||r.length===0)throw Error(\`Browser Use policy fetch is missing session metadata.\`);return{session_id:n,turn_id:r}}function codexLinuxBrowserUseHostFetchUrl(e){if(e==null||typeof e.url!==\`string\`)throw Error(\`Invalid Browser Use host fetch request.\`);let t=new URL(e.url);if(t.protocol!==\`https:\`||t.hostname!==\`chatgpt.com\`||t.pathname!==\`/backend-api/aura/site_status\`||t.searchParams.get(\`url_request_source\`)!==\`codex_browser_use\`)throw Error(\`Browser Use host fetch only supports authenticated policy checks.\`);return t}async function codexLinuxBrowserUseHostFetch(e,t){let r=codexLinuxBrowserUseHostFetchUrl(e),i=typeof e.method===\`string\`?e.method.toUpperCase():\`GET\`;if(i!==\`GET\`&&i!==\`HEAD\`)throw Error(\`Browser Use policy fetch only supports GET or HEAD.\`);if(e.bodyBase64!=null)throw Error(\`Browser Use policy fetch does not support request bodies.\`);let a=typeof t===\`function\`?t():null;if(a==null)throw Error(\`Browser Use policy fetch requires an authenticated desktop host fetch bridge, but this desktop build does not support nodeRepl/fetch.\`);let o={},s=await Qc({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:Gi,headers:o}),c=await n.net.fetch(r.toString(),{method:i,headers:s});if(c.status===401){s=await Qc({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:Gi,headers:o,refreshToken:!0}),c=await n.net.fetch(r.toString(),{method:i,headers:s})}let l=Buffer.from(await c.arrayBuffer()).toString(\`base64\`);return{status:c.status,statusText:c.statusText,headers:Object.fromEntries(c.headers.entries()),bodyBase64:l}}function codexLinuxBrowserUseElicitationSession(e){let t=e?.session_id,n=e?.turn_id;if(typeof t!==\`string\`||t.length===0||typeof n!==\`string\`||n.length===0)throw Error(\`Browser Use permission request is missing session metadata.\`);return{session_id:t,turn_id:n}}function codexLinuxBrowserUseElicitationOrigin(e){let t=e?.meta?.origin;if(typeof t!==\`string\`||t.trim().length===0)return null;try{let e=new URL(t);return e.protocol!==\`http:\`&&e.protocol!==\`https:\`?null:e.origin}catch{return null}}async function codexLinuxBrowserUseCreateElicitation(e){if(e?.meta?.connector_id!==\`browser-use\`)throw Error(\`Linux Browser Use permission prompts only support Browser Use elicitations.\`);let t=typeof e.message===\`string\`&&e.message.trim().length>0?e.message:\`Allow Browser Use to continue?\`,r=codexLinuxBrowserUseElicitationOrigin(e),i=e?.meta?.sensitive_data===\`browsing_history\`?\`This allows Browser Use to read browsing history for this task.\`:r!=null?\`This allows Browser Use to navigate to and inspect \${r} for this task.\`:\`This allows Browser Use to continue this task.\`,a=await n.dialog.showMessageBox({type:\`question\`,buttons:[\`Allow\`,\`Deny\`],defaultId:0,cancelId:1,noLink:!0,title:\`Allow Browser Use?\`,message:t,detail:i});return{action:a.response===0?\`accept\`:\`decline\`}}/* ${LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER} */`;
 }
 
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
@@ -855,6 +885,28 @@ async function patchWorkerLinuxWorktreeEnvironment(extractedAppDir, logger) {
   };
 }
 
+async function patchMainProcessLinuxBrowserUseHostFetch(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for Browser Use host fetch patch`);
+  const result = applyLinuxBrowserUseHostFetchPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Browser Use authenticated host fetch into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
 export function applyLinuxOpenTargetsPatch(bundleSource, options = {}) {
   if (options.skip) {
     return {
@@ -941,6 +993,10 @@ export function injectLinuxCloseCancelPatch(bundleSource, options = {}) {
       {
         target: LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_422_STABLE,
         replacement: `/* ${LINUX_CLOSE_CANCEL_PATCH_MARKER} */${LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_422_STABLE}`
+      },
+      {
+        target: LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_429,
+        replacement: `/* ${LINUX_CLOSE_CANCEL_PATCH_MARKER} */${LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_429}`
       }
     ],
     buildLinuxCloseCancelPatchErrorMessage(bundleSource, options.sourceName)
@@ -975,6 +1031,58 @@ export function injectLinuxNotificationSoundPatch(bundleSource, options = {}) {
     ({ showVar }) =>
       `${showVar}.show(),this.codexLinuxPlayNotificationSoundIfNeeded()}${buildLinuxNotificationSoundMethod(childProcessMatch.groups)}stageNotificationSoundIfNeeded(){`,
     buildLinuxNotificationSoundPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+export function applyLinuxBrowserUseHostFetchPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxBrowserUseHostFetchPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxBrowserUseHostFetchPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  const errorMessage = buildLinuxBrowserUseHostFetchPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  let updated = replaceRegexOrThrow(
+    bundleSource,
+    BROWSER_USE_HOST_FETCH_HELPER_ANCHOR_PATTERN,
+    ({ stateFactory, registryClass }) =>
+      `${buildLinuxBrowserUseHostFetchHelper()}function ${stateFactory}(){return{apiImpl:null,server:null,starting:null}}var ${registryClass}=class{`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    BROWSER_USE_IAB_API_PING_ANCHOR_PATTERN,
+    ({ className, fields }) =>
+      `${className}=class{${fields}async nodeReplFetch(e){let t=codexLinuxBrowserUseHostFetchSession(e);this.requireBrowserUseSession(t);let n=this.options.hostFetch;if(typeof n!==\`function\`)throw Error(\`Browser Use policy fetch requires an authenticated desktop host fetch bridge, but this desktop build does not support nodeRepl/fetch.\`);return await n(e)}async nodeReplCreateElicitation(e){let t=codexLinuxBrowserUseElicitationSession(e);this.requireBrowserUseSession(t);return await codexLinuxBrowserUseCreateElicitation(e?.elicitation)}ping(){return\`pong\`}`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN,
+    ({ className, getHostArg, blockedArg, options: iabOptions }) =>
+      `new ${className}(${getHostArg},${blockedArg},{${iabOptions},hostFetch:e=>codexLinuxBrowserUseHostFetch(e,this.options.appServerConnection)})`,
+    errorMessage
+  );
+  return replaceSnippetOrThrow(
+    updated,
+    BROWSER_SESSION_REGISTRY_INSTANTIATION_SNIPPET,
+    'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter,appServerConnection:()=>this.getAppServerConnection(this.hostId)})',
+    errorMessage
   );
 }
 
@@ -2292,7 +2400,8 @@ function analyzeCompactSlashCommandBundle(bundleSource) {
     commandTitle: bundleSource.includes('composer.compactSlashCommand.title'),
     commandDescription: bundleSource.includes('composer.compactSlashCommand.description'),
     commandId: COMPACT_SLASH_COMMAND_ID_MARKERS.some((marker) => bundleSource.includes(marker)),
-    commandAction: bundleSource.includes('compactThread('),
+    commandAction:
+      bundleSource.includes('compactThread(') || bundleSource.includes('`compact-thread`'),
     requiresEmptyComposer: bundleSource.includes('requiresEmptyComposer:!0')
   };
 
@@ -2903,6 +3012,14 @@ function buildLinuxNotificationSoundPatchErrorMessage(bundleSource, sourceName) 
   );
 }
 
+function buildLinuxBrowserUseHostFetchPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_BROWSER_USE_HOST_FETCH_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxBrowserUseHostFetchBundle(bundleSource)
+  );
+}
+
 function analyzeLinuxMenuBarBundle(bundleSource) {
   const detected = {
     browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
@@ -2958,6 +3075,27 @@ function analyzeLinuxNotificationSoundBundle(bundleSource) {
       !detected.notificationShowCall && 'notification show call',
       !detected.resourceSoundPath && 'resource notification sound path',
       !detected.childProcessImport && 'child_process import'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxBrowserUseHostFetchBundle(bundleSource) {
+  const detected = {
+    authHeaderHelper: bundleSource.includes('function Qc(') && bundleSource.includes('getAuthToken'),
+    nativePipeRegistry: BROWSER_USE_HOST_FETCH_HELPER_ANCHOR_PATTERN.test(bundleSource),
+    iabApiClass: BROWSER_USE_IAB_API_PING_ANCHOR_PATTERN.test(bundleSource),
+    iabRegistryOptions: BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN.test(bundleSource),
+    registryInstantiation: bundleSource.includes(BROWSER_SESSION_REGISTRY_INSTANTIATION_SNIPPET)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.authHeaderHelper && 'authenticated API header helper',
+      !detected.nativePipeRegistry && 'Browser Use native pipe registry',
+      !detected.iabApiClass && 'IAB API class',
+      !detected.iabRegistryOptions && 'IAB route backend options',
+      !detected.registryInstantiation && 'Browser session registry instantiation'
     ].filter(Boolean)
   };
 }
@@ -3821,9 +3959,122 @@ export async function findExecutableInPath(commandName, envPath = process.env.PA
   return null;
 }
 
+async function describeExecutableFormat(filePath) {
+  let handle;
+  try {
+    handle = await fs.promises.open(filePath, 'r');
+    const buffer = Buffer.alloc(4);
+    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+    if (bytesRead >= 4 && buffer[0] === 0x7f && buffer[1] === 0x45 && buffer[2] === 0x4c && buffer[3] === 0x46) {
+      return 'elf';
+    }
+    if (bytesRead >= 2 && buffer[0] === 0x23 && buffer[1] === 0x21) {
+      return 'script';
+    }
+    const magic = buffer.readUInt32BE(0);
+    if (
+      magic === 0xcafebabe ||
+      magic === 0xcafed00d ||
+      magic === 0xfeedface ||
+      magic === 0xcefaedfe ||
+      magic === 0xfeedfacf ||
+      magic === 0xcffaedfe
+    ) {
+      return 'mach-o';
+    }
+    return 'unknown';
+  } finally {
+    await handle?.close();
+  }
+}
+
+async function assertLinuxExecutableFile(filePath, label) {
+  try {
+    await fs.promises.access(filePath, fs.constants.X_OK);
+  } catch {
+    throw new Error(`${label} is not executable: ${filePath}`);
+  }
+
+  const format = await describeExecutableFormat(filePath);
+  if (format === 'elf' || format === 'script') {
+    return format;
+  }
+
+  throw new Error(
+    `${label} must be a Linux executable or script, but ${filePath} appears to be ${format}.`
+  );
+}
+
 function getBrowserUsePrimaryRuntimeDependenciesDir({ homeDir, env }) {
   const cacheRoot = env.XDG_CACHE_HOME ?? path.join(homeDir, '.cache');
   return path.join(cacheRoot, BROWSER_USE_PRIMARY_RUNTIME_RELATIVE_PATH);
+}
+
+function getBrowserUseRuntimeCandidatePaths({ homeDir, env }) {
+  const primaryRuntimeDependenciesDir = getBrowserUsePrimaryRuntimeDependenciesDir({
+    homeDir,
+    env
+  });
+  const primaryRuntimeRoot = path.dirname(primaryRuntimeDependenciesDir);
+  return {
+    primaryRuntimeDependenciesDir,
+    nodeRepl: [
+      {
+        sourceKind: 'env',
+        sourcePath: env[BROWSER_USE_NODE_REPL_ENV] ?? '',
+        envName: BROWSER_USE_NODE_REPL_ENV
+      },
+      {
+        sourceKind: 'primary-runtime-cache',
+        sourcePath: path.join(primaryRuntimeDependenciesDir, 'bin', 'node_repl')
+      },
+      {
+        sourceKind: 'primary-runtime-cache',
+        sourcePath: path.join(primaryRuntimeDependenciesDir, 'node_repl')
+      },
+      {
+        sourceKind: 'primary-runtime-node',
+        sourcePath: path.join(primaryRuntimeDependenciesDir, 'node', 'bin', 'node_repl')
+      },
+      {
+        sourceKind: 'primary-runtime-root',
+        sourcePath: path.join(primaryRuntimeRoot, 'node_repl')
+      },
+      {
+        sourceKind: 'repo-bundled',
+        sourcePath: path.join(PROJECT_ROOT, 'resources', 'node_repl')
+      },
+      {
+        sourceKind: 'repo-bundled',
+        sourcePath: path.join(PROJECT_ROOT, 'vendor', 'node_repl')
+      }
+    ],
+    node: [
+      {
+        sourceKind: 'env',
+        sourcePath: env[BROWSER_USE_NODE_ENV] ?? '',
+        envName: BROWSER_USE_NODE_ENV
+      },
+      {
+        sourceKind: 'primary-runtime-node',
+        sourcePath: path.join(primaryRuntimeDependenciesDir, 'node', 'bin', 'node')
+      },
+      {
+        sourceKind: 'primary-runtime-cache',
+        sourcePath: path.join(primaryRuntimeDependenciesDir, 'bin', 'node')
+      }
+    ]
+  };
+}
+
+function describeCandidatePaths(candidates) {
+  return candidates
+    .filter((candidate) => typeof candidate.sourcePath === 'string' && candidate.sourcePath.trim())
+    .map((candidate) =>
+      candidate.envName
+        ? `${candidate.envName}=${candidate.sourcePath}`
+        : `${candidate.sourceKind}:${candidate.sourcePath}`
+    );
 }
 
 async function resolveExecutableCandidate(candidates) {
@@ -3844,34 +4095,18 @@ export async function resolveBrowserUseRuntimeSources({
   env = process.env,
   envPath = env.PATH ?? process.env.PATH ?? ''
 } = {}) {
-  const primaryRuntimeDependenciesDir = getBrowserUsePrimaryRuntimeDependenciesDir({
+  const candidates = getBrowserUseRuntimeCandidatePaths({
     homeDir,
     env
   });
-  const nodeRepl = await resolveExecutableCandidate([
-    {
-      sourceKind: 'env',
-      sourcePath: env[BROWSER_USE_NODE_REPL_ENV] ?? '',
-      envName: BROWSER_USE_NODE_REPL_ENV
-    },
-    {
-      sourceKind: 'primary-runtime-cache',
-      sourcePath: path.join(primaryRuntimeDependenciesDir, 'bin', 'node_repl')
-    }
-  ]);
+  const nodeRepl = await resolveExecutableCandidate(candidates.nodeRepl);
 
-  const nodeEnv = await resolveExecutableCandidate([
-    {
-      sourceKind: 'env',
-      sourcePath: env[BROWSER_USE_NODE_ENV] ?? '',
-      envName: BROWSER_USE_NODE_ENV
-    }
-  ]);
-  const pathNode = nodeEnv
+  const nodeCandidate = await resolveExecutableCandidate(candidates.node);
+  const pathNode = nodeCandidate
     ? null
     : await findExecutableInPath('node', envPath);
   const node =
-    nodeEnv ??
+    nodeCandidate ??
     (pathNode
       ? {
           sourceKind: 'path',
@@ -3882,12 +4117,789 @@ export async function resolveBrowserUseRuntimeSources({
 
   return {
     nodeRepl,
-    node
+    node,
+    attempted: {
+      nodeRepl: describeCandidatePaths(candidates.nodeRepl),
+      node: [
+        ...describeCandidatePaths(candidates.node),
+        `PATH:${envPath || '<empty>'}`
+      ]
+    }
   };
 }
 
 function shellQuote(value) {
   return `'${String(value).replaceAll("'", "'\\''")}'`;
+}
+
+function buildGeneratedNodeReplModule() {
+  return `import fs from 'node:fs/promises';
+import net from 'node:net';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import vm from 'node:vm';
+import util from 'node:util';
+
+let kernel = createKernel();
+let snippetId = 0;
+let nextOutboundRequestId = 1;
+let clientCapabilities = {};
+const pendingOutboundRequests = new Map();
+const NATIVE_PIPE_HEADER_BYTES = 4;
+const NATIVE_PIPE_MAX_FRAME_BYTES = 8 * 1024 * 1024;
+
+function isObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function normalizeRequestMeta(meta) {
+  if (!isObject(meta)) {
+    return {};
+  }
+  const normalized = { ...meta };
+  const turnMetadata = normalized['x-codex-turn-metadata'];
+  if (typeof turnMetadata === 'string') {
+    try {
+      normalized['x-codex-turn-metadata'] = JSON.parse(turnMetadata);
+    } catch {
+      normalized['x-codex-turn-metadata'] = turnMetadata;
+    }
+  }
+  return normalized;
+}
+
+function collectRequestMeta(message) {
+  return [
+    message?._meta,
+    message?.meta,
+    message?.headers,
+    message?.params?._meta,
+    message?.params?.meta,
+    message?.params?.headers,
+    message?.params?.requestMeta
+  ].reduce((merged, meta) => ({ ...merged, ...normalizeRequestMeta(meta) }), {});
+}
+
+function hasClientElicitationSupport() {
+  return isObject(clientCapabilities?.elicitation);
+}
+
+function requestHost(method, params) {
+  const id = 'node-repl-' + nextOutboundRequestId++;
+  const request = { jsonrpc: '2.0', id, method, params };
+  return new Promise((resolve, reject) => {
+    pendingOutboundRequests.set(id, { resolve, reject, method });
+    send(request);
+  });
+}
+
+function handleHostResponse(message) {
+  if (!isObject(message) || message.method != null || message.id == null) {
+    return false;
+  }
+  const pending = pendingOutboundRequests.get(message.id);
+  if (!pending) {
+    return false;
+  }
+  pendingOutboundRequests.delete(message.id);
+  if (isObject(message.error)) {
+    const err = new Error(message.error.message ?? 'Host request failed');
+    err.code = message.error.code;
+    err.data = message.error.data;
+    pending.reject(err);
+    return true;
+  }
+  pending.resolve(message.result);
+  return true;
+}
+
+function rejectPendingOutboundRequests(reason) {
+  for (const pending of pendingOutboundRequests.values()) {
+    pending.reject(reason);
+  }
+  pendingOutboundRequests.clear();
+}
+
+function isBrowserUsePolicyUrl(value) {
+  try {
+    const url = new URL(value instanceof Request ? value.url : String(value));
+    return url.hostname === 'chatgpt.com' && url.pathname === '/backend-api/aura/site_status';
+  } catch {
+    return false;
+  }
+}
+
+function isUnsupportedHostBridgeError(err) {
+  return err?.code === -32601 || /method not found|not supported|unsupported/i.test(err?.message ?? '');
+}
+
+function isUnsupportedElicitationError(err) {
+  return (
+    err?.code === -32601 ||
+    /^(elicitation\\/create)$|method not found|not supported|unsupported/i.test(err?.message ?? '')
+  );
+}
+
+function isLocalhostName(hostname) {
+  const normalized = String(hostname).trim().toLowerCase();
+  return (
+    normalized === 'localhost' ||
+    normalized.endsWith('.localhost') ||
+    normalized === '127.0.0.1' ||
+    normalized === '[::1]' ||
+    normalized === '::1'
+  );
+}
+
+function getBrowserUseElicitationOrigin(params) {
+  const origin = params?.meta?.origin;
+  if (typeof origin !== 'string' || origin.trim().length === 0) {
+    return null;
+  }
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function shouldAcceptLocalBrowserUseElicitation(params) {
+  if (params?.meta?.connector_id !== 'browser-use') {
+    return false;
+  }
+  const origin = getBrowserUseElicitationOrigin(params);
+  return origin != null && isLocalhostName(origin.hostname);
+}
+
+function createUnsupportedElicitationError() {
+  return new Error(
+    'nodeRepl.createElicitation requires desktop host support for MCP elicitation/create.'
+  );
+}
+
+function createUnsupportedPolicyFetchError() {
+  return new Error(
+    'Browser Use policy fetch requires an authenticated desktop host fetch bridge, but this desktop build does not support nodeRepl/fetch.'
+  );
+}
+
+async function serializeFetchArgs(args) {
+  const [input, init] = args;
+  const request = new Request(input, init);
+  const bodyBuffer = request.body ? Buffer.from(await request.arrayBuffer()) : null;
+  return {
+    url: request.url,
+    method: request.method,
+    headers: Object.fromEntries(request.headers.entries()),
+    bodyBase64: bodyBuffer ? bodyBuffer.toString('base64') : null
+  };
+}
+
+function normalizeResponseHeaders(headers) {
+  if (headers instanceof Headers) {
+    return headers;
+  }
+  if (Array.isArray(headers)) {
+    return headers;
+  }
+  if (isObject(headers)) {
+    return Object.entries(headers).map(([name, value]) => [name, String(value)]);
+  }
+  return [];
+}
+
+function rebuildFetchResponse(result) {
+  if (!isObject(result) || typeof result.status !== 'number') {
+    throw new Error('Invalid nodeRepl/fetch response from desktop host.');
+  }
+  const body = typeof result.bodyBase64 === 'string' ? Buffer.from(result.bodyBase64, 'base64') : null;
+  return new Response(body, {
+    status: result.status,
+    statusText: typeof result.statusText === 'string' ? result.statusText : '',
+    headers: normalizeResponseHeaders(result.headers)
+  });
+}
+
+function encodeNativePipeMessage(message) {
+  const body = Buffer.from(JSON.stringify(message), 'utf8');
+  const frame = Buffer.alloc(NATIVE_PIPE_HEADER_BYTES + body.length);
+  if (osEndianness() === 'LE') {
+    frame.writeUInt32LE(body.length, 0);
+  } else {
+    frame.writeUInt32BE(body.length, 0);
+  }
+  body.copy(frame, NATIVE_PIPE_HEADER_BYTES);
+  return frame;
+}
+
+function osEndianness() {
+  return process.arch === 's390x' ? 'BE' : 'LE';
+}
+
+function decodeNativePipeMessages(buffer) {
+  const messages = [];
+  let offset = 0;
+  while (buffer.length - offset >= NATIVE_PIPE_HEADER_BYTES) {
+    const length =
+      osEndianness() === 'LE'
+        ? buffer.readUInt32LE(offset)
+        : buffer.readUInt32BE(offset);
+    if (length > NATIVE_PIPE_MAX_FRAME_BYTES) {
+      throw new Error('Invalid Browser Use native pipe frame.');
+    }
+    const frameEnd = offset + NATIVE_PIPE_HEADER_BYTES + length;
+    if (buffer.length < frameEnd) {
+      break;
+    }
+    messages.push(JSON.parse(buffer.subarray(offset + NATIVE_PIPE_HEADER_BYTES, frameEnd).toString('utf8')));
+    offset = frameEnd;
+  }
+  return { messages, remainingData: buffer.subarray(offset) };
+}
+
+async function listBrowserUseNativePipeCandidates() {
+  if (process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH) {
+    return [process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH];
+  }
+  const candidates = [];
+  try {
+    const entries = await fs.readdir('/tmp/codex-browser-use');
+    for (const entry of entries) {
+      candidates.push(path.resolve('/tmp/codex-browser-use', entry));
+    }
+  } catch {}
+  candidates.push('/tmp/codex-browser-use-iab.sock', '/tmp/codex-browser-use.sock');
+  return [...new Set(candidates)];
+}
+
+function shouldTryNextNativePipeFetchError(err) {
+  return /No handler registered for method: nodeReplFetch|Browser session does not belong|Browser turn does not belong|Missing required browser session_id|Missing required browser turn_id|ECONNREFUSED|ENOENT|timeout/i.test(
+    err?.message ?? String(err)
+  );
+}
+
+function shouldTryNextNativePipeElicitationError(err) {
+  return /No handler registered for method: nodeReplCreateElicitation|Browser session does not belong|Browser turn does not belong|Missing required browser session_id|Missing required browser turn_id|ECONNREFUSED|ENOENT|timeout/i.test(
+    err?.message ?? String(err)
+  );
+}
+
+async function requestBrowserUseNativePipeHostFetch(params) {
+  let lastError = null;
+  for (const socketPath of await listBrowserUseNativePipeCandidates()) {
+    try {
+      return await requestNativePipe(socketPath, 'nodeReplFetch', params);
+    } catch (err) {
+      lastError = err;
+      if (!shouldTryNextNativePipeFetchError(err)) {
+        throw err;
+      }
+    }
+  }
+  throw lastError ?? createUnsupportedPolicyFetchError();
+}
+
+function getCurrentTurnMetadata() {
+  return kernel.requestMeta?.['x-codex-turn-metadata'];
+}
+
+function buildNativePipeElicitationRequest(params) {
+  const turnMetadata = getCurrentTurnMetadata();
+  const sessionId = turnMetadata?.session_id;
+  const turnId = turnMetadata?.turn_id;
+  if (typeof sessionId !== 'string' || sessionId.length === 0) {
+    throw createUnsupportedElicitationError();
+  }
+  if (typeof turnId !== 'string' || turnId.length === 0) {
+    throw createUnsupportedElicitationError();
+  }
+  return {
+    session_id: sessionId,
+    turn_id: turnId,
+    elicitation: params
+  };
+}
+
+async function requestBrowserUseNativePipeElicitation(params) {
+  const request = buildNativePipeElicitationRequest(params);
+  let lastError = null;
+  for (const socketPath of await listBrowserUseNativePipeCandidates()) {
+    try {
+      return await requestNativePipe(socketPath, 'nodeReplCreateElicitation', request);
+    } catch (err) {
+      lastError = err;
+      if (!shouldTryNextNativePipeElicitationError(err)) {
+        throw err;
+      }
+    }
+  }
+  throw lastError ?? createUnsupportedElicitationError();
+}
+
+async function requestNativePipe(socketPath, method, params) {
+  const socket = await kernel.nativePipeBridge.createConnection(socketPath);
+  let pendingData = Buffer.alloc(0);
+  const requestId = 1;
+  try {
+    return await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('Browser Use native pipe request timeout.'));
+      }, 3000);
+      timer.unref?.();
+      const cleanup = () => {
+        clearTimeout(timer);
+        socket.off('data', onData);
+        socket.off('error', onError);
+        socket.off('close', onClose);
+      };
+      const onError = (err) => {
+        cleanup();
+        reject(err);
+      };
+      const onClose = () => {
+        cleanup();
+        reject(new Error('Browser Use native pipe closed before response.'));
+      };
+      const onData = (chunk) => {
+        try {
+          pendingData = Buffer.concat([pendingData, Buffer.from(chunk)]);
+          const decoded = decodeNativePipeMessages(pendingData);
+          pendingData = decoded.remainingData;
+          for (const message of decoded.messages) {
+            if (message?.id !== requestId) {
+              continue;
+            }
+            cleanup();
+            if ('error' in message) {
+              const err = new Error(message.error?.message ?? 'Browser Use native pipe request failed.');
+              err.code = message.error?.code;
+              reject(err);
+              return;
+            }
+            resolve(message.result);
+            return;
+          }
+        } catch (err) {
+          cleanup();
+          reject(err);
+        }
+      };
+      socket.on('data', onData);
+      socket.once('error', onError);
+      socket.once('close', onClose);
+      socket.write(encodeNativePipeMessage({ jsonrpc: '2.0', id: requestId, method, params }));
+    });
+  } finally {
+    socket.destroy();
+  }
+}
+
+async function hostFetch(...args) {
+  const policyUrl = isBrowserUsePolicyUrl(args[0]);
+  let serializedRequest;
+  try {
+    serializedRequest = await serializeFetchArgs(args);
+  } catch (err) {
+    if (policyUrl) {
+      throw err;
+    }
+    return fetch(...args);
+  }
+
+  try {
+    const response = await requestHost('nodeRepl/fetch', serializedRequest);
+    return rebuildFetchResponse(response);
+  } catch (err) {
+    if (policyUrl && isUnsupportedHostBridgeError(err)) {
+      try {
+        return rebuildFetchResponse(await requestBrowserUseNativePipeHostFetch(serializedRequest));
+      } catch (nativePipeErr) {
+        if (shouldTryNextNativePipeFetchError(nativePipeErr)) {
+          throw createUnsupportedPolicyFetchError();
+        }
+        throw nativePipeErr;
+      }
+    }
+    if (policyUrl) {
+      throw err;
+    }
+    return fetch(...args);
+  }
+}
+
+function createNativePipeBridge() {
+  return {
+    createConnection(socketPath) {
+      return new Promise((resolve, reject) => {
+        const socket = net.createConnection(socketPath);
+        const cleanup = () => {
+          socket.off('connect', onConnect);
+          socket.off('error', onError);
+        };
+        const onConnect = () => {
+          cleanup();
+          resolve(socket);
+        };
+        const onError = (err) => {
+          cleanup();
+          reject(err);
+        };
+        socket.once('connect', onConnect);
+        socket.once('error', onError);
+      });
+    }
+  };
+}
+
+function createKernel() {
+  const nextKernel = {
+    context: null,
+    moduleCache: new Map(),
+    nativePipeBridge: createNativePipeBridge(),
+    requestMeta: {},
+    responseMeta: {}
+  };
+  const nodeRepl = {
+    get requestMeta() {
+      return nextKernel.requestMeta;
+    },
+    fetch: (...args) => hostFetch(...args),
+    setResponseMeta(meta) {
+      if (!isObject(meta)) {
+        return;
+      }
+      nextKernel.responseMeta = { ...nextKernel.responseMeta, ...meta };
+    },
+    emitImage() {
+      throw new Error('nodeRepl.emitImage is not supported by the generated Linux node_repl runtime.');
+    },
+    async createElicitation(params) {
+      if (!hasClientElicitationSupport()) {
+        throw new Error('nodeRepl.createElicitation requires MCP client elicitation support');
+      }
+      if (shouldAcceptLocalBrowserUseElicitation(params)) {
+        return { action: 'accept' };
+      }
+      try {
+        return await requestHost('elicitation/create', params);
+      } catch (err) {
+        if (isUnsupportedElicitationError(err)) {
+          try {
+            return await requestBrowserUseNativePipeElicitation(params);
+          } catch (nativePipeErr) {
+            if (shouldTryNextNativePipeElicitationError(nativePipeErr)) {
+              throw createUnsupportedElicitationError();
+            }
+            throw nativePipeErr;
+          }
+        }
+        throw err;
+      }
+    }
+  };
+  const sandbox = {
+    console,
+    Buffer,
+    URL,
+    URLSearchParams,
+    AbortController,
+    AbortSignal,
+    Blob,
+    FormData,
+    Headers,
+    Request,
+    Response,
+    ReadableStream,
+    TransformStream,
+    WritableStream,
+    TextDecoder,
+    TextEncoder,
+    atob,
+    btoa,
+    clearImmediate,
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval,
+    setImmediate,
+    queueMicrotask,
+    structuredClone,
+    performance,
+    crypto,
+    fetch,
+    nodeRepl
+  };
+  sandbox.global = sandbox;
+  nextKernel.context = vm.createContext(sandbox);
+  return nextKernel;
+}
+
+function getReferrerBaseUrl(referrer) {
+  if (typeof referrer === 'string' && referrer.startsWith('file:')) {
+    return referrer;
+  }
+  return pathToFileURL(path.join(process.cwd(), '__codex_repl__.mjs')).href;
+}
+
+function resolveModuleSpecifier(specifier, referrer) {
+  if (specifier.startsWith('node:')) {
+    return { type: 'builtin', specifier };
+  }
+  if (specifier.startsWith('file:')) {
+    return { type: 'file', url: new URL(specifier) };
+  }
+  if (path.isAbsolute(specifier)) {
+    return { type: 'file', url: pathToFileURL(specifier) };
+  }
+  if (specifier.startsWith('./') || specifier.startsWith('../')) {
+    return { type: 'file', url: new URL(specifier, getReferrerBaseUrl(referrer)) };
+  }
+  return { type: 'host', specifier };
+}
+
+function initializeImportMeta(meta, module) {
+  meta.url = module.identifier;
+  meta.__codexNativePipe = kernel.nativePipeBridge;
+}
+
+async function loadSyntheticModule(specifier) {
+  const cacheKey = 'host:' + specifier;
+  const cached = kernel.moduleCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  const namespace = await import(specifier);
+  const exportNames = Object.keys(namespace);
+  const names = ['default', ...exportNames.filter((name) => name !== 'default')];
+  const module = new vm.SyntheticModule(
+    names,
+    function setSyntheticExports() {
+      this.setExport('default', namespace.default ?? namespace);
+      for (const name of names) {
+        if (name !== 'default') {
+          this.setExport(name, namespace[name]);
+        }
+      }
+    },
+    { context: kernel.context, identifier: specifier }
+  );
+  kernel.moduleCache.set(cacheKey, module);
+  await module.link(() => {});
+  await module.evaluate();
+  return module;
+}
+
+async function loadSourceModule(url) {
+  const cacheKey = url.href;
+  const cached = kernel.moduleCache.get(cacheKey);
+  if (cached) {
+    if (cached.status !== 'evaluated' && cached.status !== 'errored') {
+      await cached.evaluate();
+    }
+    return cached;
+  }
+  const source = await fs.readFile(fileURLToPath(url), 'utf8');
+  const module = new vm.SourceTextModule(source, {
+    context: kernel.context,
+    identifier: url.href,
+    initializeImportMeta,
+    importModuleDynamically
+  });
+  kernel.moduleCache.set(cacheKey, module);
+  await module.link(linkModule);
+  await module.evaluate();
+  return module;
+}
+
+async function loadModule(specifier, referrer) {
+  const resolved = resolveModuleSpecifier(specifier, referrer);
+  if (resolved.type === 'file') {
+    return loadSourceModule(resolved.url);
+  }
+  return loadSyntheticModule(resolved.specifier);
+}
+
+async function linkModule(specifier, referencingModule) {
+  return loadModule(specifier, referencingModule?.identifier);
+}
+
+async function importModuleDynamically(specifier, referencingModule) {
+  return loadModule(specifier, referencingModule?.identifier);
+}
+
+function send(message) {
+  process.stdout.write(JSON.stringify(message));
+  process.stdout.write('\\n');
+}
+
+function result(id, value, meta = null) {
+  const resultValue = { ...value };
+  if (isObject(meta) && Object.keys(meta).length > 0) {
+    resultValue._meta = { ...(isObject(resultValue._meta) ? resultValue._meta : {}), ...meta };
+  }
+  send({ jsonrpc: '2.0', id, result: resultValue });
+}
+
+function error(id, code, message) {
+  send({ jsonrpc: '2.0', id, error: { code, message } });
+}
+
+function formatLogArg(arg) {
+  return typeof arg === 'string' ? arg : util.inspect(arg, { depth: 4 });
+}
+
+async function executeJavaScript(code) {
+  const logs = [];
+  const originalConsole = kernel.context.console;
+  kernel.context.console = {
+    ...console,
+    log: (...args) => logs.push(args.map(formatLogArg).join(' ')),
+    error: (...args) => logs.push(args.map(formatLogArg).join(' ')),
+    warn: (...args) => logs.push(args.map(formatLogArg).join(' '))
+  };
+  try {
+    const module = new vm.SourceTextModule(String(code), {
+      context: kernel.context,
+      identifier: 'codex-repl://snippet/' + ++snippetId + '.mjs',
+      initializeImportMeta,
+      importModuleDynamically
+    });
+    await module.link(linkModule);
+    await module.evaluate({ timeout: 30_000 });
+    return logs.join('\\n');
+  } finally {
+    kernel.context.console = originalConsole;
+  }
+}
+
+const tools = [
+  {
+    name: 'js',
+    description: 'Execute JavaScript in a persistent Node.js context.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        code: { type: 'string' }
+      },
+      required: ['code']
+    }
+  },
+  {
+    name: 'js_reset',
+    description: 'Reset the persistent JavaScript context.',
+    inputSchema: { type: 'object', properties: {} }
+  }
+];
+
+async function handleRequest(message) {
+  const { id, method, params } = message;
+  kernel.requestMeta = collectRequestMeta(message);
+  kernel.responseMeta = {};
+  if (method === 'initialize') {
+    clientCapabilities = isObject(params?.capabilities) ? params.capabilities : {};
+    result(id, {
+      protocolVersion: params?.protocolVersion ?? '2024-11-05',
+      capabilities: { tools: {} },
+      serverInfo: { name: 'node_repl', version: '0.1.0-linux-generated' }
+    });
+    return;
+  }
+  if (method === 'tools/list') {
+    result(id, { tools });
+    return;
+  }
+  if (method === 'tools/call') {
+    const name = params?.name;
+    const args = params?.arguments ?? {};
+    if (name === 'js_reset') {
+      kernel = createKernel();
+      result(id, { content: [{ type: 'text', text: 'JavaScript context reset.' }], isError: false }, kernel.responseMeta);
+      return;
+    }
+    if (name === 'js') {
+      try {
+        const output = await executeJavaScript(String(args.code ?? ''));
+        result(id, { content: [{ type: 'text', text: output }], isError: false }, kernel.responseMeta);
+      } catch (err) {
+        result(id, {
+          content: [{ type: 'text', text: err?.stack ?? err?.message ?? String(err) }],
+          isError: true
+        }, kernel.responseMeta);
+      }
+      return;
+    }
+    error(id, -32602, \`Unknown tool: \${name}\`);
+    return;
+  }
+  if (id != null) {
+    error(id, -32601, \`Unknown method: \${method}\`);
+  }
+}
+
+let buffer = '';
+let inputEnded = false;
+let requestQueue = Promise.resolve();
+
+function enqueueRequest(message) {
+  requestQueue = requestQueue
+    .then(() => handleRequest(message))
+    .catch((err) => {
+      error(message.id ?? null, -32603, err?.stack ?? err?.message ?? String(err));
+    });
+}
+
+function exitWhenDrained() {
+  requestQueue.finally(() => {
+    if (inputEnded) {
+      process.exit(0);
+    }
+  });
+}
+
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', (chunk) => {
+  buffer += chunk;
+  for (;;) {
+    const newline = buffer.indexOf('\\n');
+    if (newline < 0) break;
+    const line = buffer.slice(0, newline).trim();
+    buffer = buffer.slice(newline + 1);
+    if (!line) continue;
+    let message;
+    try {
+      message = JSON.parse(line);
+    } catch (err) {
+      error(null, -32700, err?.message ?? String(err));
+      continue;
+    }
+    if (handleHostResponse(message)) {
+      continue;
+    }
+    enqueueRequest(message);
+  }
+});
+process.stdin.on('end', () => {
+  inputEnded = true;
+  rejectPendingOutboundRequests(new Error('node_repl input ended before host response was received.'));
+  exitWhenDrained();
+});
+`;
+}
+
+async function installGeneratedNodeRepl({ nodeSourcePath, nodeReplTargetPath }) {
+  const modulePath = `${nodeReplTargetPath}.mjs`;
+  await fs.promises.writeFile(modulePath, buildGeneratedNodeReplModule(), 'utf8');
+  await writeExecutable(
+    nodeReplTargetPath,
+`#!/usr/bin/env bash
+set -euo pipefail
+exec ${shellQuote(nodeSourcePath)} --experimental-vm-modules "$(dirname "$0")/$(basename "$0").mjs" "$@"
+`
+  );
 }
 
 export async function installBrowserUseRuntime({
@@ -3903,25 +4915,26 @@ export async function installBrowserUseRuntime({
     envPath
   });
 
-  if (!sources.nodeRepl) {
-    throw new Error(
-      `Could not locate a Linux Browser Use node_repl binary. Set ${BROWSER_USE_NODE_REPL_ENV} to an executable Linux node_repl, or install the Codex primary runtime so ${path.join(
-        getBrowserUsePrimaryRuntimeDependenciesDir({ homeDir, env }),
-        'bin',
-        'node_repl'
-      )} exists.`
-    );
-  }
   if (!sources.node) {
     throw new Error(
-      `Could not locate a Linux Node.js runtime for Browser Use. Set ${BROWSER_USE_NODE_ENV} to an executable node binary, or make node available on PATH before running install-desktop.`
+      `Could not locate a Linux Node.js runtime for Browser Use. Set ${BROWSER_USE_NODE_ENV} to an executable node binary, install the Codex primary runtime, or make node available on PATH. Looked in: ${sources.attempted.node.join(', ')}.`
     );
   }
 
+  await assertLinuxExecutableFile(sources.node.sourcePath, 'Browser Use node source');
+
   const nodeReplTargetPath = path.join(resourcesDir, 'node_repl');
   const nodeTargetPath = path.join(resourcesDir, 'node');
-  await copyFile(sources.nodeRepl.sourcePath, nodeReplTargetPath);
-  await fs.promises.chmod(nodeReplTargetPath, 0o755);
+  if (sources.nodeRepl) {
+    await assertLinuxExecutableFile(sources.nodeRepl.sourcePath, 'Browser Use node_repl source');
+    await copyFile(sources.nodeRepl.sourcePath, nodeReplTargetPath);
+    await fs.promises.chmod(nodeReplTargetPath, 0o755);
+  } else {
+    await installGeneratedNodeRepl({
+      nodeSourcePath: sources.node.sourcePath,
+      nodeReplTargetPath
+    });
+  }
   await writeExecutable(
     nodeTargetPath,
     `#!/usr/bin/env bash
@@ -3929,15 +4942,33 @@ set -euo pipefail
 exec ${shellQuote(sources.node.sourcePath)} "$@"
 `
   );
+  await assertLinuxExecutableFile(nodeReplTargetPath, 'Installed Browser Use node_repl');
+  await assertLinuxExecutableFile(nodeTargetPath, 'Installed Browser Use node');
+  if (sources.nodeRepl) {
+    logger?.info?.(
+      `Browser Use node_repl source: ${sources.nodeRepl.sourcePath} (${sources.nodeRepl.sourceKind})`
+    );
+  } else {
+    logger?.info?.(
+      `Browser Use node_repl source: generated Linux wrapper because no binary was found. Looked in: ${sources.attempted.nodeRepl.join(', ')}`
+    );
+  }
   logger?.info?.(
-    `Installed Browser Use node_repl from ${sources.nodeRepl.sourcePath} and node wrapper for ${sources.node.sourcePath}`
+    `Browser Use node source: ${sources.node.sourcePath} (${sources.node.sourceKind})`
   );
 
   return {
+    browserUseRuntime: {
+      status: 'installed',
+      nodeReplSourceKind: sources.nodeRepl?.sourceKind ?? 'generated',
+      nodeReplSourcePath: sources.nodeRepl?.sourcePath ?? null,
+      nodeSourceKind: sources.node.sourceKind,
+      nodeSourcePath: sources.node.sourcePath
+    },
     browserUseNodeRepl: {
       status: 'installed',
-      sourceKind: sources.nodeRepl.sourceKind,
-      sourcePath: sources.nodeRepl.sourcePath,
+      sourceKind: sources.nodeRepl?.sourceKind ?? 'generated',
+      sourcePath: sources.nodeRepl?.sourcePath ?? null,
       targetPath: nodeReplTargetPath
     },
     browserUseNode: {
@@ -4199,6 +5230,7 @@ export function createInstallDiagnosticManifest({
   runtimeSourceKind,
   nativeModules,
   nativeModuleVersions,
+  browserUseRuntime = null,
   browserUseNodeRepl = null,
   browserUseNode = null,
   patches
@@ -4220,6 +5252,7 @@ export function createInstallDiagnosticManifest({
       name: moduleName,
       version: nativeModuleVersions[moduleName] ?? null
     })),
+    browserUseRuntime,
     browserUseNodeRepl,
     browserUseNode,
     patches

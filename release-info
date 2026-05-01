@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-import('./src/release-info-cli.js');
+await import('./src/bootstrap.js').then(({ bootstrap }) => bootstrap('./src/release-info-cli.js'));

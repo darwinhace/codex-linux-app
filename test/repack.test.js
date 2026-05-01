@@ -1,11 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import {
   applyLinuxBrowserCommentPositionPatch,
   applyLinuxBackgroundSubagentsPanelPatch,
+  applyLinuxBrowserUseHostFetchPatch,
   applyLinuxCloseCancelPatch,
   applyLinuxWorktreeEnvironmentMainPatch,
   applyLinuxWorktreeEnvironmentWorkerPatch,
@@ -25,6 +29,7 @@ import {
   installBrowserUseRuntime,
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBackgroundSubagentsPanelPatch,
+  injectLinuxBrowserUseHostFetchPatch,
   injectLinuxCloseCancelPatch,
   injectLinuxWorktreeEnvironmentMainPatch,
   injectLinuxWorktreeEnvironmentWorkerPatch,
@@ -79,6 +84,73 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function encodeNativePipeTestMessage(message) {
+  const body = Buffer.from(JSON.stringify(message), 'utf8');
+  const frame = Buffer.alloc(4 + body.length);
+  if (os.endianness() === 'LE') {
+    frame.writeUInt32LE(body.length, 0);
+  } else {
+    frame.writeUInt32BE(body.length, 0);
+  }
+  body.copy(frame, 4);
+  return frame;
+}
+
+function decodeNativePipeTestMessages(buffer) {
+  const messages = [];
+  let offset = 0;
+  while (buffer.length - offset >= 4) {
+    const length = os.endianness() === 'LE' ? buffer.readUInt32LE(offset) : buffer.readUInt32BE(offset);
+    const frameEnd = offset + 4 + length;
+    if (buffer.length < frameEnd) {
+      break;
+    }
+    messages.push(JSON.parse(buffer.subarray(offset + 4, frameEnd).toString('utf8')));
+    offset = frameEnd;
+  }
+  return { messages, remainingData: buffer.subarray(offset) };
+}
+
+async function startNativePipeHostFetchServer(socketPath, handler) {
+  await fs.promises.mkdir(path.dirname(socketPath), { recursive: true });
+  await fs.promises.rm(socketPath, { force: true });
+  const server = net.createServer((socket) => {
+    let pendingData = Buffer.alloc(0);
+    socket.on('data', async (chunk) => {
+      pendingData = Buffer.concat([pendingData, chunk]);
+      const decoded = decodeNativePipeTestMessages(pendingData);
+      pendingData = decoded.remainingData;
+      for (const message of decoded.messages) {
+        try {
+          const result = await handler(message);
+          socket.write(encodeNativePipeTestMessage({ jsonrpc: '2.0', id: message.id, result }));
+        } catch (err) {
+          socket.write(
+            encodeNativePipeTestMessage({
+              jsonrpc: '2.0',
+              id: message.id,
+              error: { code: 1, message: err instanceof Error ? err.message : String(err) }
+            })
+          );
+        }
+      }
+    });
+  });
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(socketPath, () => {
+      server.off('error', reject);
+      resolve();
+    });
+  });
+  return {
+    async close() {
+      await new Promise((resolve) => server.close(resolve));
+      await fs.promises.rm(socketPath, { force: true });
+    }
+  };
+}
+
 const OPEN_TARGETS_BLOCK_LEGACY =
   'var ua=[Hi,Wi,Bi,Zr,kr,Ni,ia,qi,Dr,ci,ei,jr,ai,Yr,Yi,ui,ii,Ki,$i,gi,_i,vi,yi,bi,xi,Si,Ci,Ii],da=e.sn(`open-in-targets`);function fa(e){return ua.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var pa=fa(process.platform),ma=Ca(pa),ha=new Set(pa.filter(e=>e.kind===`editor`).map(e=>e.id)),ga=null,_a=null;';
 const OPEN_TARGETS_BLOCK_CURRENT =
@@ -93,8 +165,12 @@ const LINUX_CLOSE_CANCEL_BUNDLE_26_422 =
   'function Zl({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,automationManager:t,flushAndDisposeContexts:n,disposables:c,appEvent:l,errorReporter:u}){let d=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_422_STABLE =
   'function Mb({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,hotkeyWindowLifecycleManager:c,globalDictationLifecycleManager:l,globalStatesByHostId:u,flushAndDisposeContexts:d,disposables:f,appEvent:p,errorReporter:m}){let h=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=b_(),c=t.Gn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Nb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
+const LINUX_CLOSE_CANCEL_BUNDLE_26_429 =
+  'function TD({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,hotkeyWindowLifecycleManager:c,globalDictationLifecycleManager:l,globalStatesByHostId:u,flushAndDisposeContexts:d,disposables:f,appEvent:p,errorReporter:m}){let h=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=Pw(),c=t.Yn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:ED({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`child-process-gone`,(e,t)=>{if(t.reason!==`clean-exit`){m.reportFatal(Error(`Child process gone (${t.type})`),{tags:{errorType:`child-process-gone`}})}}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
 const LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT =
   'const e=require(`./app-session.js`);let n=require(`electron`);n=e.lr(n);let r=require(`node:os`);r=e.lr(r);let i=require(`node:path`);i=e.lr(i);let a=require(`node:util`),o=require(`node:fs`);o=e.lr(o);let s=require(`node:crypto`),c=require(`node:child_process`),l=require(`node:process`);l=e.lr(l);var Fi=`codex-notification`,Ii=`${Fi}.wav`,Li=t.Or(`desktop-notifications`),Ri=class{isSupported;createNotification;logger=Li();notificationSoundStaged=!1;notifications=new Map;constructor(e){this.options=e,this.isSupported=e.isSupported??(()=>n.Notification.isSupported()),e.createNotification?this.createNotification=e.createNotification:this.createNotification=e=>{let t=new n.Notification(e);return{show:()=>t.show(),on:(e,n)=>{switch(e){case`action`:return t.on(`action`,(e,t)=>{n(e,t)});case`click`:return t.on(`click`,()=>{n(void 0)});case`close`:return t.on(`close`,()=>{n(void 0)})}},close:()=>t.close()}}}showNotification(e,t,n){if(this.stageNotificationSoundIfNeeded(),!this.isSupported())return;let r=(e.actions??[]).slice(0,4),i=e.kind===`permission`||e.kind===`question`?`never`:void 0,a=e.kind===`turn-complete`&&typeof e.replyPlaceholder==`string`;this.notifications.get(e.id)?.notification.close?.();let o=this.createNotification({title:e.title,body:e.body,silent:!1,sound:this.options.platform===`darwin`?Fi:void 0,timeoutType:i,hasReply:a,replyPlaceholder:a?e.replyPlaceholder??void 0:void 0,actions:r.map(e=>({type:`button`,text:e.title}))});o.on(`close`,()=>{this.notifications.delete(e.id)}),this.notifications.set(e.id,{notification:o,conversationId:e.conversationId??null}),o.show()}stageNotificationSoundIfNeeded(){if(this.notificationSoundStaged||(this.notificationSoundStaged=!0,this.options.platform!==`darwin`)||typeof process.resourcesPath!=`string`)return;let e=i.default.join(process.resourcesPath,Ii),t=i.default.join(__dirname,`..`,`assets`,`sounds`,Ii),n=(0,o.existsSync)(e)?e:t;if(!(0,o.existsSync)(n))return;let a=i.default.join(r.default.homedir(),`Library`,`Sounds`);try{(0,o.mkdirSync)(a,{recursive:!0}),(0,o.copyFileSync)(n,i.default.join(a,Ii))}catch(e){this.logger.warning(`failed to stage notification sound`,{safe:{},sensitive:{error:e}})}}};';
+const BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT =
+  'function Qc({action:e,appServerClient:t,desktopOriginator:n,headers:r={},refreshToken:i=!1}){return t.getAuthToken({refreshToken:i})}var Gi=`desktop`,EC=`about:blank`,DC=15e3,OC=2e4,kC=1500,AC=t.Pr(`browser-use-iab-api`),jC=class{tabsById=new Map;constructor(e,t,n={}){this.getBrowserHost=e,this.options=n,this.disposeBrowserUseNavigationBlockedListener=t(e=>{this.emitBrowserUseNavigationBlockedEvent(e)})}ping(){return`pong`}requireBrowserUseSession(e){return e}emitBrowserUseNavigationBlockedEvent(e){}};function WC(){return{apiImpl:null,server:null,starting:null}}var GC=class{constructor(n={appSessionId:e.t,buildFlavor:t.C.Dev,errorReporter:{reportNonFatal:()=>void 0}}){this.options=n}ensureBackendForBrowserRoute(e){let n={};n.starting=(async()=>{let t=null;t=new jC(t=>this.canServeTurnForBrowserRoute(t,e)?this.getBrowserUseHost(t):null,e=>this.getDelegate().addBrowserUseNavigationBlockedListener(e),{appSessionId:this.options.appSessionId,browserRoute:e,buildFlavor:this.options.buildFlavor,canServeRoute:t=>this.canServeTurnForBrowserRoute(t,e)}),n.apiImpl=t})()}};class App{constructor(){this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter})}getAppServerConnection(e){return null}}';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
   'function im({globalState:t,worktreeDir:n}){let r=e.yt(n).replace(/\\/+$/,``);return B(t).some(t=>{let n=e.yt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var am=32e3,om=e.mr(`worktree-service`),sm=class{statesById=new Map;async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};try{let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})}catch(e){}}async createManagedWorktree({hostId:t,cwd:n,startingState:r,localEnvironmentConfigPath:i,streamId:a}){try{let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);return this.newbornWorktreeRoots.add(o.worktreeGitRoot),om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),o}catch(e){throw this.forgetNewbornWorktreeStream(a),e}}};';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT
@@ -220,6 +296,8 @@ const LATEST_AGENT_TURN_EXPANSION_BUNDLE_INCOMPATIBLE =
   );
 const COMPACT_SLASH_COMMAND_BUNDLE_CURRENT =
   'function RW(e){let t=(0,Q.c)(17),{conversationId:n,isResponseInProgress:r}=e,i=ea(),a=xf(n),o;t[0]===i?o=t[1]:(o=i.formatMessage({id:`composer.compactSlashCommand.title`,defaultMessage:`Compact`,description:`Title for the compact slash command`}),t[0]=i,t[1]=o);let s;t[2]===i?s=t[3]:(s=i.formatMessage({id:`composer.compactSlashCommand.description`,defaultMessage:`Compact this thread\'s context`,description:`Description for the compact slash command`}),t[2]=i,t[3]=s);let c=n!=null&&!r,l;t[4]!==a||t[5]!==n?(l=async()=>{n!=null&&await a.compactThread(n)},t[4]=a,t[5]=n,t[6]=l):l=t[6];let u;return u={id:`compact`,title:o,description:s,requiresEmptyComposer:!0,Icon:LW,enabled:c,onSelect:l},u}';
+const COMPACT_SLASH_COMMAND_BUNDLE_26_429 =
+  'function rB(e){let t=(0,$.c)(15),{conversationId:n,isResponseInProgress:r}=e,i=Xo(),a;t[0]===i?a=t[1]:(a=i.formatMessage({id:`composer.compactSlashCommand.title`,defaultMessage:`Compact`,description:`Title for the compact slash command`}),t[0]=i,t[1]=a);let o;t[2]===i?o=t[3]:(o=i.formatMessage({id:`composer.compactSlashCommand.description`,defaultMessage:`Compact this thread\\\'s context`,description:`Description for the compact slash command`}),t[2]=i,t[3]=o);let s=n!=null&&!r,c;t[4]===n?c=t[5]:(c=async()=>{n!=null&&await ya(`compact-thread`,{conversationId:n})},t[4]=n,t[5]=c);let l;t[6]!==n||t[7]!==r?(l=[n,r],t[6]=n,t[7]=r,t[8]=l):l=t[8];let u;return t[9]!==a||t[10]!==o||t[11]!==s||t[12]!==c||t[13]!==l?(u={id:`compact`,title:a,description:o,requiresEmptyComposer:!0,Icon:NA,enabled:s,onSelect:c,dependencies:l},t[9]=a,t[10]=o,t[11]=s,t[12]=c,t[13]=l,t[14]=u):u=t[14],rx(u),null}';
 const COMPACT_SLASH_COMMAND_BUNDLE_INCOMPATIBLE = COMPACT_SLASH_COMMAND_BUNDLE_CURRENT.replace(
   'requiresEmptyComposer:!0',
   'requiresEmptyComposer:!1'
@@ -260,13 +338,15 @@ test('parseArgs accepts diagnostic and patch skip flags', () => {
   });
 });
 
-test('renderHelp lists the diagnostic and patch skip flags', () => {
+test('renderHelp keeps recovery flags out of the normal command surface', () => {
   const helpText = renderHelp();
 
-  assert.match(helpText, /--skip-open-targets-patch/);
-  assert.match(helpText, /--skip-terminal-patch/);
-  assert.match(helpText, /--skip-todo-progress-patch/);
-  assert.match(helpText, /--diagnostic-manifest/);
+  assert.match(helpText, /--version <version>/);
+  assert.match(helpText, /--beta/);
+  assert.doesNotMatch(helpText, /--skip-open-targets-patch/);
+  assert.doesNotMatch(helpText, /--skip-terminal-patch/);
+  assert.doesNotMatch(helpText, /--skip-todo-progress-patch/);
+  assert.doesNotMatch(helpText, /--diagnostic-manifest/);
 });
 
 test('findExecutableInPath returns the first executable in PATH order', async () => {
@@ -439,6 +519,871 @@ test('resolveBrowserUseRuntimeSources falls back to primary runtime node_repl an
   }
 });
 
+test('resolveBrowserUseRuntimeSources uses primary runtime node before PATH node', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-primary-node-'));
+  try {
+    const homeDir = path.join(rootDir, 'home');
+    const primaryNode = path.join(
+      homeDir,
+      '.cache',
+      'codex-runtimes',
+      'codex-primary-runtime',
+      'dependencies',
+      'node',
+      'bin',
+      'node'
+    );
+    const cacheNodeRepl = path.join(
+      homeDir,
+      '.cache',
+      'codex-runtimes',
+      'codex-primary-runtime',
+      'dependencies',
+      'bin',
+      'node_repl'
+    );
+    const pathNode = path.join(rootDir, 'bin', 'node');
+    await writeTestExecutable(primaryNode);
+    await writeTestExecutable(cacheNodeRepl);
+    await writeTestExecutable(pathNode);
+
+    const sources = await resolveBrowserUseRuntimeSources({
+      homeDir,
+      env: {
+        PATH: path.dirname(pathNode)
+      }
+    });
+
+    assert.equal(sources.node.sourcePath, await fs.promises.realpath(primaryNode));
+    assert.equal(sources.node.sourceKind, 'primary-runtime-node');
+    assert.equal(sources.nodeRepl.sourcePath, await fs.promises.realpath(cacheNodeRepl));
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+function runJsonLineProcess(command, input) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, [], {
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`${command} exited with code ${code}\n${stderr || stdout}`));
+        return;
+      }
+      resolve(stdout);
+    });
+    child.stdin.end(input);
+  });
+}
+
+function parseJsonLines(output) {
+  return output
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+}
+
+async function installGeneratedNodeReplFixture(rootDir) {
+  const resourcesDir = path.join(rootDir, 'resources');
+  await fs.promises.mkdir(resourcesDir, { recursive: true });
+  await installBrowserUseRuntime({
+    resourcesDir,
+    env: {
+      CODEX_BROWSER_USE_NODE_PATH: process.execPath,
+      PATH: ''
+    }
+  });
+  return path.join(resourcesDir, 'node_repl');
+}
+
+function startJsonLineProcess(command) {
+  const child = spawn(command, [], {
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+  let stdoutBuffer = '';
+  let stderr = '';
+  const waiters = [];
+
+  function flushWaiters() {
+    while (waiters.length > 0) {
+      const newline = stdoutBuffer.indexOf('\n');
+      if (newline < 0) {
+        return;
+      }
+      const line = stdoutBuffer.slice(0, newline).trim();
+      stdoutBuffer = stdoutBuffer.slice(newline + 1);
+      const waiter = waiters.shift();
+      if (!line) {
+        waiter.resolve(null);
+        continue;
+      }
+      try {
+        waiter.resolve(JSON.parse(line));
+      } catch (err) {
+        waiter.reject(err);
+      }
+    }
+  }
+
+  child.stdout.on('data', (chunk) => {
+    stdoutBuffer += chunk.toString();
+    flushWaiters();
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk.toString();
+  });
+
+  const closed = new Promise((resolve, reject) => {
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`${command} exited with code ${code}\n${stderr}`));
+        return;
+      }
+      resolve();
+    });
+  });
+
+  return {
+    send(message) {
+      child.stdin.write(`${JSON.stringify(message)}\n`);
+    },
+    async read() {
+      for (;;) {
+        const newline = stdoutBuffer.indexOf('\n');
+        if (newline >= 0) {
+          const line = stdoutBuffer.slice(0, newline).trim();
+          stdoutBuffer = stdoutBuffer.slice(newline + 1);
+          if (!line) {
+            continue;
+          }
+          return JSON.parse(line);
+        }
+        const message = await new Promise((resolve, reject) => {
+          waiters.push({ resolve, reject });
+        });
+        if (message !== null) {
+          return message;
+        }
+      }
+    },
+    async close() {
+      child.stdin.end();
+      await closed;
+    }
+  };
+}
+
+test('installBrowserUseRuntime generates node_repl when only Linux node exists', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-generated-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    await fs.promises.mkdir(resourcesDir, { recursive: true });
+    const result = await installBrowserUseRuntime({
+      resourcesDir,
+      env: {
+        CODEX_BROWSER_USE_NODE_PATH: process.execPath,
+        PATH: ''
+      }
+    });
+
+    const installedNodeRepl = path.join(resourcesDir, 'node_repl');
+    assert.equal(await isExecutable(installedNodeRepl), true);
+    assert.equal(await pathExists(`${installedNodeRepl}.mjs`), true);
+    assert.equal(result.browserUseNodeRepl.status, 'installed');
+    assert.equal(result.browserUseNodeRepl.sourceKind, 'generated');
+    assert.equal(result.browserUseNodeRepl.sourcePath, null);
+
+    const output = await runJsonLineProcess(
+      installedNodeRepl,
+      `${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' })}\n`
+    );
+    const response = JSON.parse(output.trim());
+    assert.equal(response.id, 1);
+    assert.deepEqual(
+      response.result.tools.map((tool) => tool.name),
+      ['js', 'js_reset']
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl supports ESM imports, request metadata, and response metadata', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-esm-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const fixtureDir = path.join(rootDir, 'fixtures');
+    await fs.promises.mkdir(fixtureDir, { recursive: true });
+    const fileUrlModule = path.join(fixtureDir, 'file-url-module.mjs');
+    const absoluteModule = path.join(fixtureDir, 'absolute-module.mjs');
+    const nativePipeModule = path.join(fixtureDir, 'native-pipe-module.mjs');
+    await fs.promises.writeFile(fileUrlModule, 'export const value = "file-url-ok";\n', 'utf8');
+    await fs.promises.writeFile(absoluteModule, 'export const value = "absolute-ok";\n', 'utf8');
+    await fs.promises.writeFile(
+      nativePipeModule,
+      'export const hasNativePipe = typeof import.meta.__codexNativePipe?.createConnection === "function";\n',
+      'utf8'
+    );
+
+    const input = [
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              const fileUrlModule = await import(${JSON.stringify(pathToFileURL(fileUrlModule).href)});
+              const absoluteModule = await import(${JSON.stringify(absoluteModule)});
+              const nativePipeModule = await import(${JSON.stringify(pathToFileURL(nativePipeModule).href)});
+              await new Promise((resolve) => setTimeout(resolve, 1));
+              globalThis.persistedGeneratedValue = 41;
+              console.log(fileUrlModule.value);
+              console.log(absoluteModule.value);
+              console.log(nativePipeModule.hasNativePipe);
+            `
+          },
+          _meta: {
+            'x-codex-turn-metadata': { session_id: 'session-123', turn_id: 'turn-456' }
+          }
+        }
+      },
+      {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              console.log(globalThis.persistedGeneratedValue + 1);
+              console.log(globalThis.nodeRepl.requestMeta["x-codex-turn-metadata"].session_id);
+              globalThis.nodeRepl.setResponseMeta({ "codex/browserUse": true });
+            `
+          },
+          _meta: {
+            'x-codex-turn-metadata': { session_id: 'session-123', turn_id: 'turn-789' }
+          }
+        }
+      }
+    ]
+      .map((message) => JSON.stringify(message))
+      .join('\n') + '\n';
+
+    const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
+    assert.equal(responses[0].result.isError, false);
+    assert.equal(responses[0].result.content[0].text, 'file-url-ok\nabsolute-ok\ntrue');
+    assert.equal(responses[1].result.isError, false);
+    assert.equal(responses[1].result.content[0].text, '42\nsession-123');
+    assert.deepEqual(responses[1].result._meta, { 'codex/browserUse': true });
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl js_reset clears the persistent context', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-reset-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const input = [
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: { code: 'globalThis.resetProbe = "before"; console.log(globalThis.resetProbe);' }
+        }
+      },
+      {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: { name: 'js_reset', arguments: {} }
+      },
+      {
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: { code: 'console.log(typeof globalThis.resetProbe);' }
+        }
+      }
+    ]
+      .map((message) => JSON.stringify(message))
+      .join('\n') + '\n';
+
+    const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
+    assert.equal(responses[0].result.content[0].text, 'before');
+    assert.equal(responses[1].result.content[0].text, 'JavaScript context reset.');
+    assert.equal(responses[2].result.content[0].text, 'undefined');
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl forwards Browser Use-shaped elicitations to the MCP client', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-elicitation-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const client = startJsonLineProcess(installedNodeRepl);
+    try {
+      client.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: { elicitation: {} }
+        }
+      });
+      assert.equal((await client.read()).id, 1);
+
+      const permissionParams = {
+        message: 'Browser Use wants to open http://localhost:3000/.',
+        requestedSchema: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['accept', 'decline'] }
+          },
+          required: ['action']
+        }
+      };
+      client.send({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              const result = await globalThis.nodeRepl.createElicitation(${JSON.stringify(permissionParams)});
+              console.log(result.action);
+            `
+          }
+        }
+      });
+
+      const outbound = await client.read();
+      assert.equal(outbound.method, 'elicitation/create');
+      assert.deepEqual(outbound.params, permissionParams);
+      client.send({
+        jsonrpc: '2.0',
+        id: outbound.id,
+        result: { action: 'accept' }
+      });
+
+      const toolResponse = await client.read();
+      assert.equal(toolResponse.id, 2);
+      assert.equal(toolResponse.result.isError, false);
+      assert.equal(toolResponse.result.content[0].text, 'accept');
+    } finally {
+      await client.close();
+    }
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl createElicitation fails clearly without client support', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-elicitation-missing-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const input = [
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { capabilities: {} }
+      },
+      {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: 'await globalThis.nodeRepl.createElicitation({ message: "allow?" });'
+          }
+        }
+      }
+    ]
+      .map((message) => JSON.stringify(message))
+      .join('\n') + '\n';
+
+    const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
+    assert.equal(responses[1].result.isError, true);
+    assert.match(
+      responses[1].result.content[0].text,
+      /nodeRepl\.createElicitation requires MCP client elicitation support/
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl accepts localhost Browser Use permission without host prompt', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-localhost-elicit-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const input = [
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { capabilities: { elicitation: {} } }
+      },
+      {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              const result = await globalThis.nodeRepl.createElicitation({
+                message: "Allow Browser Use to access http://localhost:3000?",
+                meta: {
+                  codex_approval_kind: "mcp_tool_call",
+                  connector_id: "browser-use",
+                  connector_name: "Browser Use",
+                  persist: "always",
+                  tool_params: {},
+                  origin: "http://localhost:3000"
+                }
+              });
+              console.log(result.action);
+            `
+          }
+        }
+      }
+    ]
+      .map((message) => JSON.stringify(message))
+      .join('\n') + '\n';
+
+    const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
+    assert.equal(responses[1].id, 2);
+    assert.equal(responses[1].result.isError, false);
+    assert.equal(responses[1].result.content[0].text, 'accept');
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl does not auto-accept non-local Browser Use permission on unsupported host', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-remote-elicit-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const client = startJsonLineProcess(installedNodeRepl);
+    try {
+      client.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { capabilities: { elicitation: {} } }
+      });
+      assert.equal((await client.read()).id, 1);
+
+      client.send({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              await globalThis.nodeRepl.createElicitation({
+                message: "Allow Browser Use to access https://example.com?",
+                meta: {
+                  codex_approval_kind: "mcp_tool_call",
+                  connector_id: "browser-use",
+                  connector_name: "Browser Use",
+                  persist: "always",
+                  tool_params: {},
+                  origin: "https://example.com"
+                }
+              });
+            `
+          }
+        }
+      });
+
+      const outbound = await client.read();
+      assert.equal(outbound.method, 'elicitation/create');
+      client.send({
+        jsonrpc: '2.0',
+        id: outbound.id,
+        error: { code: -32601, message: 'elicitation/create' }
+      });
+
+      const toolResponse = await client.read();
+      assert.equal(toolResponse.id, 2);
+      assert.equal(toolResponse.result.isError, true);
+      assert.match(
+        toolResponse.result.content[0].text,
+        /desktop host support for MCP elicitation\/create/
+      );
+    } finally {
+      await client.close();
+    }
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl falls back to the IAB native pipe for non-local Browser Use permission', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-iab-elicit-'));
+  let server = null;
+  try {
+    const socketPath = path.join(rootDir, 'iab.sock');
+    let nativePipeRequest = null;
+    server = await startNativePipeHostFetchServer(socketPath, async (message) => {
+      nativePipeRequest = message;
+      assert.equal(message.method, 'nodeReplCreateElicitation');
+      assert.equal(message.params.session_id, 'session-1');
+      assert.equal(message.params.turn_id, 'turn-1');
+      assert.equal(message.params.elicitation.message, 'Allow Browser Use to access https://example.com?');
+      assert.equal(message.params.elicitation.meta.origin, 'https://example.com');
+      return { action: 'accept' };
+    });
+
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const previousPipePath = process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH;
+    process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH = socketPath;
+    const client = startJsonLineProcess(installedNodeRepl);
+    try {
+      client.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { capabilities: { elicitation: {} } }
+      });
+      assert.equal((await client.read()).id, 1);
+
+      client.send({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              const result = await globalThis.nodeRepl.createElicitation({
+                message: "Allow Browser Use to access https://example.com?",
+                meta: {
+                  codex_approval_kind: "mcp_tool_call",
+                  connector_id: "browser-use",
+                  connector_name: "Browser Use",
+                  persist: "always",
+                  tool_params: {},
+                  origin: "https://example.com"
+                }
+              });
+              console.log(result.action);
+            `
+          },
+          _meta: {
+            'x-codex-turn-metadata': { session_id: 'session-1', turn_id: 'turn-1' }
+          }
+        }
+      });
+
+      const outbound = await client.read();
+      assert.equal(outbound.method, 'elicitation/create');
+      client.send({
+        jsonrpc: '2.0',
+        id: outbound.id,
+        error: { code: -32601, message: 'elicitation/create' }
+      });
+
+      const toolResponse = await client.read();
+      assert.equal(toolResponse.id, 2);
+      assert.equal(toolResponse.result.isError, false);
+      assert.equal(toolResponse.result.content[0].text, 'accept');
+      assert.ok(nativePipeRequest);
+    } finally {
+      await client.close();
+      if (previousPipePath == null) {
+        delete process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH;
+      } else {
+        process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH = previousPipePath;
+      }
+    }
+  } finally {
+    await server?.close();
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl fetch uses the host bridge and rebuilds a standard Response', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-host-fetch-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const client = startJsonLineProcess(installedNodeRepl);
+    try {
+      client.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              const response = await globalThis.nodeRepl.fetch("https://example.com/api", {
+                method: "POST",
+                headers: { "content-type": "application/json", "x-request": "yes" },
+                body: JSON.stringify({ ok: true })
+              });
+              console.log(response.status);
+              console.log(response.statusText);
+              console.log(response.headers.get("x-test"));
+              console.log(await response.clone().text());
+              console.log((await response.json()).ok);
+            `
+          }
+        }
+      });
+
+      const outbound = await client.read();
+      assert.equal(outbound.method, 'nodeRepl/fetch');
+      assert.equal(outbound.params.url, 'https://example.com/api');
+      assert.equal(outbound.params.method, 'POST');
+      assert.equal(outbound.params.headers['content-type'], 'application/json');
+      assert.equal(
+        Buffer.from(outbound.params.bodyBase64, 'base64').toString('utf8'),
+        '{"ok":true}'
+      );
+      client.send({
+        jsonrpc: '2.0',
+        id: outbound.id,
+        result: {
+          status: 202,
+          statusText: 'Accepted',
+          headers: { 'content-type': 'application/json', 'x-test': 'host' },
+          bodyBase64: Buffer.from('{"ok":true}', 'utf8').toString('base64')
+        }
+      });
+
+      const toolResponse = await client.read();
+      assert.equal(toolResponse.result.isError, false);
+      assert.equal(toolResponse.result.content[0].text, '202\nAccepted\nhost\n{"ok":true}\ntrue');
+    } finally {
+      await client.close();
+    }
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl policy fetch reports missing authenticated host bridge clearly', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-policy-fetch-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const previousPipePath = process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH;
+    process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH = path.join(rootDir, 'missing.sock');
+    const client = startJsonLineProcess(installedNodeRepl);
+    try {
+      client.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              try {
+                await globalThis.nodeRepl.fetch("https://chatgpt.com/backend-api/aura/site_status?url=http%3A%2F%2Flocalhost%3A3000%2F");
+              } catch (err) {
+                console.log(err.message);
+              }
+            `
+          }
+        }
+      });
+
+      const outbound = await client.read();
+      assert.equal(outbound.method, 'nodeRepl/fetch');
+      assert.equal(
+        outbound.params.url,
+        'https://chatgpt.com/backend-api/aura/site_status?url=http%3A%2F%2Flocalhost%3A3000%2F'
+      );
+      client.send({
+        jsonrpc: '2.0',
+        id: outbound.id,
+        error: { code: -32601, message: 'Method not found' }
+      });
+
+      const toolResponse = await client.read();
+      assert.equal(toolResponse.result.isError, false);
+      assert.match(
+        toolResponse.result.content[0].text,
+        /authenticated desktop host fetch bridge.*nodeRepl\/fetch/
+      );
+    } finally {
+      await client.close();
+      if (previousPipePath == null) {
+        delete process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH;
+      } else {
+        process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH = previousPipePath;
+      }
+    }
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl policy fetch falls back to the IAB native pipe host bridge', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-iab-fetch-'));
+  let server = null;
+  try {
+    const socketPath = path.join(rootDir, 'iab.sock');
+    let nativePipeRequest = null;
+    server = await startNativePipeHostFetchServer(socketPath, async (message) => {
+      nativePipeRequest = message;
+      assert.equal(message.method, 'nodeReplFetch');
+      assert.equal(message.params.method, 'GET');
+      assert.match(message.params.url, /conversation_id=session-1/);
+      assert.match(message.params.url, /turn_id=turn-1/);
+      return {
+        status: 200,
+        statusText: 'OK',
+        headers: { 'content-type': 'application/json', 'x-policy': 'iab' },
+        bodyBase64: Buffer.from('{"feature_status":{"agent":false}}', 'utf8').toString('base64')
+      };
+    });
+
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const previousPipePath = process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH;
+    process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH = socketPath;
+    const client = startJsonLineProcess(installedNodeRepl);
+    try {
+      client.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              const response = await globalThis.nodeRepl.fetch("https://chatgpt.com/backend-api/aura/site_status?site_url=https%3A%2F%2Fexample.com%2F&url_request_source=codex_browser_use&conversation_id=session-1&turn_id=turn-1", { method: "GET" });
+              console.log(response.status);
+              console.log(response.headers.get("x-policy"));
+              console.log((await response.json()).feature_status.agent);
+            `
+          }
+        }
+      });
+
+      const outbound = await client.read();
+      assert.equal(outbound.method, 'nodeRepl/fetch');
+      client.send({
+        jsonrpc: '2.0',
+        id: outbound.id,
+        error: { code: -32601, message: 'Method not found' }
+      });
+
+      const toolResponse = await client.read();
+      assert.equal(toolResponse.result.isError, false);
+      assert.equal(toolResponse.result.content[0].text, '200\niab\nfalse');
+      assert.ok(nativePipeRequest);
+    } finally {
+      await client.close();
+      if (previousPipePath == null) {
+        delete process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH;
+      } else {
+        process.env.CODEX_BROWSER_USE_IAB_PIPE_PATH = previousPipePath;
+      }
+    }
+  } finally {
+    await server?.close();
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl imports the real Browser Use client without VM dynamic import failure', async () => {
+  const browserClientPath = '/home/darwin/.codex/plugins/cache/openai-bundled/browser-use/0.1.0-alpha1/scripts/browser-client.mjs';
+  if (!(await pathExists(browserClientPath))) {
+    return;
+  }
+
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-browser-client-'));
+  try {
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const client = startJsonLineProcess(installedNodeRepl);
+    try {
+      client.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'js',
+          arguments: {
+            code: `
+              const { setupAtlasRuntime } = await import(${JSON.stringify(pathToFileURL(browserClientPath).href)});
+              try {
+                await setupAtlasRuntime({ globals: globalThis, backend: "iab" });
+                console.log("browser-use setup ok");
+              } catch (err) {
+                console.log(err?.message ?? String(err));
+              }
+            `
+          }
+        }
+      });
+
+      let response = null;
+      for (let index = 0; index < 5; index += 1) {
+        const message = await client.read();
+        if (message.id === 1 && message.result) {
+          response = message;
+          break;
+        }
+        if (message.method === 'nodeRepl/fetch') {
+          client.send({
+            jsonrpc: '2.0',
+            id: message.id,
+            error: { code: -32601, message: 'Method not found' }
+          });
+          continue;
+        }
+        if (message.method === 'elicitation/create') {
+          client.send({
+            jsonrpc: '2.0',
+            id: message.id,
+            result: { action: 'accept' }
+          });
+        }
+      }
+
+      assert.ok(response);
+      const text = response.result.content[0].text;
+      assert.equal(response.result.isError, false);
+      assert.doesNotMatch(text, /ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING/);
+      assert.doesNotMatch(text, /privileged native pipe bridge is not available/);
+      assert.match(text, /Failed to connect to browser-use backend "iab"|browser-use setup ok|authenticated desktop host fetch bridge/);
+    } finally {
+      await client.close();
+    }
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('installBrowserUseRuntime installs executable Linux runtime files', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-install-'));
   try {
@@ -468,8 +1413,40 @@ test('installBrowserUseRuntime installs executable Linux runtime files', async (
     assert.match(await fs.promises.readFile(installedNode, 'utf8'), new RegExp(`exec '${escapeRegExp(await fs.promises.realpath(nodeSource))}' "\\$@"`));
     assert.equal(result.browserUseNodeRepl.status, 'installed');
     assert.equal(result.browserUseNode.status, 'installed');
+    assert.equal(result.browserUseRuntime.status, 'installed');
     assert.equal(result.browserUseNodeRepl.targetPath, installedNodeRepl);
     assert.equal(result.browserUseNode.targetPath, installedNode);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('installBrowserUseRuntime rejects macOS Browser Use binaries', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-macho-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    const nodeReplSource = path.join(rootDir, 'mac', 'node_repl');
+    const nodeSource = path.join(rootDir, 'linux', 'node');
+    await fs.promises.mkdir(path.dirname(nodeReplSource), { recursive: true });
+    await fs.promises.writeFile(nodeReplSource, Buffer.from([0xcf, 0xfa, 0xed, 0xfe]));
+    await fs.promises.chmod(nodeReplSource, 0o755);
+    await writeTestExecutable(nodeSource, '#!/usr/bin/env bash\necho node\n');
+    await fs.promises.mkdir(resourcesDir, { recursive: true });
+
+    await assert.rejects(
+      () =>
+        installBrowserUseRuntime({
+          resourcesDir,
+          env: {
+            CODEX_BROWSER_USE_NODE_REPL_PATH: nodeReplSource,
+            CODEX_BROWSER_USE_NODE_PATH: nodeSource,
+            PATH: ''
+          }
+        }),
+      {
+        message: /Browser Use node_repl source must be a Linux executable or script.*mach-o/
+      }
+    );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
@@ -590,6 +1567,19 @@ test('injectLinuxCloseCancelPatch supports the 26.422 stable before-quit prompt 
   assert.match(updated, /i\.markQuitApproved\(\),g=!0,a\.markAppQuitting\(\)/);
 });
 
+test('injectLinuxCloseCancelPatch supports the 26.429 before-quit prompt details', () => {
+  const updated = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_26_429);
+
+  assert.match(updated, /codexLinuxCloseCancel/);
+  assert.match(updated, /detail:ED\(\{hasInProgressLocalConversation:s,hasEnabledAutomations:c\}\)/);
+  assert.match(updated, /let e=a\.showLastActivePrimaryWindow\(\);e\?\(e\.isMinimized\(\)&&e\.restore\(\),e\.show\(\),e\.focus\(\)\):/);
+  assert.match(updated, /Promise\.resolve\(s\(`local`\)\)\.then/);
+  assert.match(updated, /e&&!e\.isDestroyed\(\)&&\(e\.isMinimized\(\)&&e\.restore\(\),e\.show\(\),e\.focus\(\)\)/);
+  assert.match(updated, /o\.preventDefault\(\)/);
+  assert.match(updated, /i\.markQuitApproved\(\),g=!0,a\.markAppQuitting\(\)/);
+  assert.match(updated, /child-process-gone/);
+});
+
 test('injectLinuxCloseCancelPatch is idempotent', () => {
   const once = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_CURRENT);
   const twice = injectLinuxCloseCancelPatch(once);
@@ -652,6 +1642,54 @@ test('injectLinuxNotificationSoundPatch reports diagnostics when notification an
     {
       message:
         /Could not patch Linux notification sound playback in the Electron main bundle\. Source: main\.js\. Missing anchors: desktop-notifications logger, macOS sound option, notification show call, resource notification sound path, child_process import\. Detected anchors: notificationManager=no, macosSoundOption=no, notificationShowCall=no, resourceSoundPath=no, childProcessImport=no\./
+    }
+  );
+});
+
+test('injectLinuxBrowserUseHostFetchPatch exposes authenticated policy fetch on the IAB pipe', () => {
+  const updated = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT);
+
+  assert.match(updated, /codexLinuxBrowserUseHostFetch/);
+  assert.match(updated, /async nodeReplFetch\(e\)/);
+  assert.match(updated, /async nodeReplCreateElicitation\(e\)/);
+  assert.match(updated, /this\.requireBrowserUseSession\(t\)/);
+  assert.match(updated, /codexLinuxBrowserUseCreateElicitation\(e\?\.elicitation\)/);
+  assert.match(updated, /hostFetch:e=>codexLinuxBrowserUseHostFetch\(e,this\.options\.appServerConnection\)/);
+  assert.match(
+    updated,
+    /appServerConnection:\(\)=>this\.getAppServerConnection\(this\.hostId\)/
+  );
+  assert.match(updated, /desktopOriginator:Gi/);
+  assert.match(updated, /n\.net\.fetch\(r\.toString\(\),\{method:i,headers:s\}\)/);
+  assert.match(updated, /c\.status===401/);
+  assert.match(updated, /url_request_source/);
+  assert.match(updated, /codex_browser_use/);
+  assert.match(updated, /n\.dialog\.showMessageBox\(\{type:`question`/);
+  assert.match(updated, /action:a\.response===0\?`accept`:`decline`/);
+});
+
+test('injectLinuxBrowserUseHostFetchPatch is idempotent', () => {
+  const once = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT);
+  const twice = injectLinuxBrowserUseHostFetchPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBrowserUseHostFetchPatch skips patching when disabled', () => {
+  const result = applyLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT, {
+    skip: true
+  });
+
+  assert.equal(result.updated, BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxBrowserUseHostFetchPatch reports diagnostics when host fetch anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxBrowserUseHostFetchPatch('const noop = true;', { sourceName: 'main.js' }),
+    {
+      message:
+        /Could not patch Linux Browser Use authenticated host fetch into the Electron main bundle\. Source: main\.js\. Missing anchors: authenticated API header helper, Browser Use native pipe registry, IAB API class, IAB route backend options, Browser session registry instantiation\. Detected anchors: authHeaderHelper=no, nativePipeRegistry=no, iabApiClass=no, iabRegistryOptions=no, registryInstantiation=no\./
     }
   );
 });
@@ -2024,6 +3062,30 @@ test('patchRendererCompactSlashCommandBundle verifies compact slash command supp
   }
 });
 
+test('patchRendererCompactSlashCommandBundle verifies 26.429 compact command IPC action', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-compact-command-26429-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    await fs.promises.writeFile(path.join(assetsDir, 'composer.js'), COMPACT_SLASH_COMMAND_BUNDLE_26_429, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererCompactSlashCommandBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'already-applied',
+      sourceName: 'composer.js'
+    });
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('patchRendererCompactSlashCommandBundle skips when compact command anchors are incompatible', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-compact-command-mismatch-'));
   try {
@@ -2136,6 +3198,13 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       'better-sqlite3': '12.4.6',
       'node-pty': '1.1.0'
     },
+    browserUseRuntime: {
+      status: 'installed',
+      nodeReplSourceKind: 'primary-runtime-cache',
+      nodeReplSourcePath: '/home/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/node_repl',
+      nodeSourceKind: 'path',
+      nodeSourcePath: '/usr/bin/node'
+    },
     browserUseNodeRepl: {
       status: 'installed',
       sourceKind: 'primary-runtime-cache',
@@ -2235,6 +3304,13 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         version: '1.1.0'
       }
     ],
+    browserUseRuntime: {
+      status: 'installed',
+      nodeReplSourceKind: 'primary-runtime-cache',
+      nodeReplSourcePath: '/home/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/node_repl',
+      nodeSourceKind: 'path',
+      nodeSourcePath: '/usr/bin/node'
+    },
     browserUseNodeRepl: {
       status: 'installed',
       sourceKind: 'primary-runtime-cache',
