@@ -985,6 +985,78 @@ test('generated node_repl accepts localhost Browser Use permission without host 
   }
 });
 
+test('generated node_repl auto-accepts non-local Browser Use origins when allow-all preference is enabled', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-allow-all-origins-'));
+  try {
+    const configRoot = path.join(rootDir, 'config');
+    const preferencesPath = path.join(
+      configRoot,
+      'codex-desktop',
+      'browser-use-preferences.json'
+    );
+    await fs.promises.mkdir(path.dirname(preferencesPath), { recursive: true });
+    await fs.promises.writeFile(
+      preferencesPath,
+      `${JSON.stringify({ allowAllOrigins: true }, null, 2)}\n`,
+      'utf8'
+    );
+
+    const previousConfigHome = process.env.XDG_CONFIG_HOME;
+    process.env.XDG_CONFIG_HOME = configRoot;
+    try {
+      const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+      const input = [
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: { capabilities: { elicitation: {} } }
+        },
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'js',
+            arguments: {
+              code: `
+                const result = await globalThis.nodeRepl.createElicitation({
+                  message: "Allow Browser Use to access https://example.com?",
+                  meta: {
+                    codex_approval_kind: "mcp_tool_call",
+                    connector_id: "browser-use",
+                    connector_name: "Browser Use",
+                    persist: "always",
+                    tool_params: {},
+                    origin: "https://example.com"
+                  }
+                });
+                console.log(result.action);
+              `
+            }
+          }
+        }
+      ]
+        .map((message) => JSON.stringify(message))
+        .join('\n') + '\n';
+
+      const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
+      assert.equal(responses.length, 2);
+      assert.equal(responses[1].id, 2);
+      assert.equal(responses[1].result.isError, false);
+      assert.equal(responses[1].result.content[0].text, 'accept');
+    } finally {
+      if (previousConfigHome == null) {
+        delete process.env.XDG_CONFIG_HOME;
+      } else {
+        process.env.XDG_CONFIG_HOME = previousConfigHome;
+      }
+    }
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('generated node_repl does not auto-accept non-local Browser Use permission on unsupported host', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-remote-elicit-'));
   try {
@@ -1666,6 +1738,9 @@ test('injectLinuxBrowserUseHostFetchPatch exposes authenticated policy fetch on 
   assert.match(updated, /codex_browser_use/);
   assert.match(updated, /n\.dialog\.showMessageBox\(\{type:`question`/);
   assert.match(updated, /action:a\.response===0\?`accept`:`decline`/);
+  assert.match(updated, /Allow Browser Use to access all websites without asking/);
+  assert.match(updated, /Reset Browser Use site permissions/);
+  assert.match(updated, /codexLinuxBrowserUseShouldAutoAcceptAllOrigins/);
 });
 
 test('injectLinuxBrowserUseHostFetchPatch is idempotent', () => {

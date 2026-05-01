@@ -515,6 +515,10 @@ const BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN =
   /new (?<className>[A-Za-z_$][\w$]*)\((?<getHostArg>t=>this\.canServeTurnForBrowserRoute\(t,e\)\?this\.getBrowserUseHost\(t\):null),(?<blockedArg>e=>this\.getDelegate\(\)\.addBrowserUseNavigationBlockedListener\(e\)),\{(?<options>appSessionId:this\.options\.appSessionId,browserRoute:e,buildFlavor:this\.options\.buildFlavor,canServeRoute:t=>this\.canServeTurnForBrowserRoute\(t,e\))\}\)/;
 const BROWSER_SESSION_REGISTRY_INSTANTIATION_SNIPPET =
   'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter})';
+const BROWSER_USE_VIEW_MENU_INSERTION_ANCHOR =
+  'Ce,Te,{type:`separator`},Ee,De,Pe,Fe,...o?[Se]:[]],He=[';
+const BROWSER_USE_VIEW_MENU_INSERTION_REPLACEMENT =
+  'Ce,Te,{type:`separator`},Ee,De,Pe,Fe,{type:`separator`},codexLinuxBrowserUseAllowAllOriginsMenuItem(),codexLinuxBrowserUseResetSitePermissionsMenuItem(),...o?[Se]:[]],He=[';
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
 
 function buildLinuxWorktreeEnvironmentMainHelperReplacement({
@@ -579,7 +583,7 @@ function buildLinuxNotificationSoundMethod({ childProcessVar }) {
 }
 
 function buildLinuxBrowserUseHostFetchHelper() {
-  return `function codexLinuxBrowserUseHostFetchSession(e){let t=codexLinuxBrowserUseHostFetchUrl(e),n=t.searchParams.get(\`conversation_id\`),r=t.searchParams.get(\`turn_id\`);if(typeof n!==\`string\`||n.length===0||typeof r!==\`string\`||r.length===0)throw Error(\`Browser Use policy fetch is missing session metadata.\`);return{session_id:n,turn_id:r}}function codexLinuxBrowserUseHostFetchUrl(e){if(e==null||typeof e.url!==\`string\`)throw Error(\`Invalid Browser Use host fetch request.\`);let t=new URL(e.url);if(t.protocol!==\`https:\`||t.hostname!==\`chatgpt.com\`||t.pathname!==\`/backend-api/aura/site_status\`||t.searchParams.get(\`url_request_source\`)!==\`codex_browser_use\`)throw Error(\`Browser Use host fetch only supports authenticated policy checks.\`);return t}async function codexLinuxBrowserUseHostFetch(e,t){let r=codexLinuxBrowserUseHostFetchUrl(e),i=typeof e.method===\`string\`?e.method.toUpperCase():\`GET\`;if(i!==\`GET\`&&i!==\`HEAD\`)throw Error(\`Browser Use policy fetch only supports GET or HEAD.\`);if(e.bodyBase64!=null)throw Error(\`Browser Use policy fetch does not support request bodies.\`);let a=typeof t===\`function\`?t():null;if(a==null)throw Error(\`Browser Use policy fetch requires an authenticated desktop host fetch bridge, but this desktop build does not support nodeRepl/fetch.\`);let o={},s=await Qc({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:Gi,headers:o}),c=await n.net.fetch(r.toString(),{method:i,headers:s});if(c.status===401){s=await Qc({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:Gi,headers:o,refreshToken:!0}),c=await n.net.fetch(r.toString(),{method:i,headers:s})}let l=Buffer.from(await c.arrayBuffer()).toString(\`base64\`);return{status:c.status,statusText:c.statusText,headers:Object.fromEntries(c.headers.entries()),bodyBase64:l}}function codexLinuxBrowserUseElicitationSession(e){let t=e?.session_id,n=e?.turn_id;if(typeof t!==\`string\`||t.length===0||typeof n!==\`string\`||n.length===0)throw Error(\`Browser Use permission request is missing session metadata.\`);return{session_id:t,turn_id:n}}function codexLinuxBrowserUseElicitationOrigin(e){let t=e?.meta?.origin;if(typeof t!==\`string\`||t.trim().length===0)return null;try{let e=new URL(t);return e.protocol!==\`http:\`&&e.protocol!==\`https:\`?null:e.origin}catch{return null}}async function codexLinuxBrowserUseCreateElicitation(e){if(e?.meta?.connector_id!==\`browser-use\`)throw Error(\`Linux Browser Use permission prompts only support Browser Use elicitations.\`);let t=typeof e.message===\`string\`&&e.message.trim().length>0?e.message:\`Allow Browser Use to continue?\`,r=codexLinuxBrowserUseElicitationOrigin(e),i=e?.meta?.sensitive_data===\`browsing_history\`?\`This allows Browser Use to read browsing history for this task.\`:r!=null?\`This allows Browser Use to navigate to and inspect \${r} for this task.\`:\`This allows Browser Use to continue this task.\`,a=await n.dialog.showMessageBox({type:\`question\`,buttons:[\`Allow\`,\`Deny\`],defaultId:0,cancelId:1,noLink:!0,title:\`Allow Browser Use?\`,message:t,detail:i});return{action:a.response===0?\`accept\`:\`decline\`}}/* ${LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER} */`;
+  return `function codexLinuxBrowserUseHostFetchSession(e){let t=codexLinuxBrowserUseHostFetchUrl(e),n=t.searchParams.get(\`conversation_id\`),r=t.searchParams.get(\`turn_id\`);if(typeof n!==\`string\`||n.length===0||typeof r!==\`string\`||r.length===0)throw Error(\`Browser Use policy fetch is missing session metadata.\`);return{session_id:n,turn_id:r}}function codexLinuxBrowserUseHostFetchUrl(e){if(e==null||typeof e.url!==\`string\`)throw Error(\`Invalid Browser Use host fetch request.\`);let t=new URL(e.url);if(t.protocol!==\`https:\`||t.hostname!==\`chatgpt.com\`||t.pathname!==\`/backend-api/aura/site_status\`||t.searchParams.get(\`url_request_source\`)!==\`codex_browser_use\`)throw Error(\`Browser Use host fetch only supports authenticated policy checks.\`);return t}async function codexLinuxBrowserUseHostFetch(e,t){let r=codexLinuxBrowserUseHostFetchUrl(e),i=typeof e.method===\`string\`?e.method.toUpperCase():\`GET\`;if(i!==\`GET\`&&i!==\`HEAD\`)throw Error(\`Browser Use policy fetch only supports GET or HEAD.\`);if(e.bodyBase64!=null)throw Error(\`Browser Use policy fetch does not support request bodies.\`);let a=typeof t===\`function\`?t():null;if(a==null)throw Error(\`Browser Use policy fetch requires an authenticated desktop host fetch bridge, but this desktop build does not support nodeRepl/fetch.\`);let o={},s=await Qc({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:Gi,headers:o}),c=await n.net.fetch(r.toString(),{method:i,headers:s});if(c.status===401){s=await Qc({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:Gi,headers:o,refreshToken:!0}),c=await n.net.fetch(r.toString(),{method:i,headers:s})}let l=Buffer.from(await c.arrayBuffer()).toString(\`base64\`);return{status:c.status,statusText:c.statusText,headers:Object.fromEntries(c.headers.entries()),bodyBase64:l}}function codexLinuxBrowserUseElicitationSession(e){let t=e?.session_id,n=e?.turn_id;if(typeof t!==\`string\`||t.length===0||typeof n!==\`string\`||n.length===0)throw Error(\`Browser Use permission request is missing session metadata.\`);return{session_id:t,turn_id:n}}function codexLinuxBrowserUseElicitationOrigin(e){let t=e?.meta?.origin;if(typeof t!==\`string\`||t.trim().length===0)return null;try{let e=new URL(t);return e.protocol!==\`http:\`&&e.protocol!==\`https:\`?null:e.origin}catch{return null}}function codexLinuxBrowserUseBuiltins(){if(typeof process.getBuiltinModule!==\`function\`)return{fs:null,path:null,os:null};return{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`),os:process.getBuiltinModule(\`node:os\`)}}function codexLinuxBrowserUsePreferencesPath(){let e=codexLinuxBrowserUseBuiltins(),t=e.path,n=e.os;if(!t||!n)return null;let r=typeof process.env.XDG_CONFIG_HOME===\`string\`&&process.env.XDG_CONFIG_HOME.trim().length>0?process.env.XDG_CONFIG_HOME.trim():t.join(n.homedir(),\`.config\`);return t.join(r,\`codex-desktop\`,\`browser-use-preferences.json\`)}function codexLinuxBrowserUseReadPreferences(){let e={allowAllOrigins:!1},t=codexLinuxBrowserUseBuiltins(),n=t.fs,r=codexLinuxBrowserUsePreferencesPath();if(!n||r==null)return e;try{let t=JSON.parse(n.readFileSync(r,\`utf8\`));return typeof t==\`object\`&&t!=null&&!Array.isArray(t)?{allowAllOrigins:t.allowAllOrigins===!0}:e}catch{return e}}function codexLinuxBrowserUseWritePreferences(e){let t=codexLinuxBrowserUseBuiltins(),n=t.fs,r=t.path,i=codexLinuxBrowserUsePreferencesPath();if(!n||!r||i==null)return;n.mkdirSync(r.dirname(i),{recursive:!0});n.writeFileSync(i,JSON.stringify({allowAllOrigins:e.allowAllOrigins===!0},null,2)+\`\\n\`,\`utf8\`)}function codexLinuxBrowserUseShouldAutoAcceptAllOrigins(e){let t=e?.meta;if(t?.connector_id!==\`browser-use\`||t?.connector_name!==\`Browser Use\`)return!1;if(t?.persist!==\`always\`||t?.sensitive_data!=null)return!1;let n=t?.origin;if(typeof n!==\`string\`||n.trim().length===0)return!1;let r;try{r=new URL(n)}catch{return!1}if((r.protocol!==\`http:\`&&r.protocol!==\`https:\`)||r.hostname===\`localhost\`||r.hostname.endsWith(\`.localhost\`)||r.hostname===\`127.0.0.1\`||r.hostname===\`::1\`||r.hostname===\`[::1]\`)return!1;return codexLinuxBrowserUseReadPreferences().allowAllOrigins===!0}function codexLinuxBrowserUseAllowAllOriginsMenuItem(){return{id:\`codex-linux-browser-use-allow-all-origins\`,label:\`Allow Browser Use to access all websites without asking\`,type:\`checkbox\`,checked:codexLinuxBrowserUseReadPreferences().allowAllOrigins===!0,click:e=>{codexLinuxBrowserUseWritePreferences({allowAllOrigins:e?.checked===!0})}}}function codexLinuxBrowserUseResetBrowserConfigCandidates(){let e=codexLinuxBrowserUseBuiltins(),t=e.path,n=e.os;if(!t||!n)return[];let r=(process.env.CODEX_HOME??\`\`).trim(),i=t.join(n.homedir(),\`.codex\`,\`browser\`,\`config.toml\`);return[...new Set([r.length>0?t.join(r,\`browser\`,\`config.toml\`):null,i].filter(Boolean))]}function codexLinuxBrowserUseResetSitePermissions(){let e=codexLinuxBrowserUseBuiltins(),t=e.fs;if(!t)return{removedCount:0};let n=0;for(let e of codexLinuxBrowserUseResetBrowserConfigCandidates())try{t.rmSync(e,{force:!0}),n+=1}catch{}return{removedCount:n}}function codexLinuxBrowserUseResetSitePermissionsMenuItem(){return{id:\`codex-linux-browser-use-reset-site-permissions\`,label:\`Reset Browser Use site permissions\`,click:()=>{let e=codexLinuxBrowserUseResetSitePermissions();n.dialog.showMessageBox({type:\`info\`,title:\`Browser Use permissions reset\`,message:\`Browser Use site permissions were reset.\`,detail:e.removedCount>0?\`Removed saved Browser Use site permissions.\`:\`No saved Browser Use site permissions were found.\`})}}}async function codexLinuxBrowserUseCreateElicitation(e){if(e?.meta?.connector_id!==\`browser-use\`)throw Error(\`Linux Browser Use permission prompts only support Browser Use elicitations.\`);if(codexLinuxBrowserUseShouldAutoAcceptAllOrigins(e))return{action:\`accept\`};let t=typeof e.message===\`string\`&&e.message.trim().length>0?e.message:\`Allow Browser Use to continue?\`,r=codexLinuxBrowserUseElicitationOrigin(e),i=e?.meta?.sensitive_data===\`browsing_history\`?\`This allows Browser Use to read browsing history for this task.\`:r!=null?\`This allows Browser Use to navigate to and inspect \${r} for this task.\`:\`This allows Browser Use to continue this task.\`,a=await n.dialog.showMessageBox({type:\`question\`,buttons:[\`Allow\`,\`Deny\`],defaultId:0,cancelId:1,noLink:!0,title:\`Allow Browser Use?\`,message:t,detail:i});return{action:a.response===0?\`accept\`:\`decline\`}}/* ${LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER} */`;
 }
 
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
@@ -1078,12 +1082,19 @@ export function injectLinuxBrowserUseHostFetchPatch(bundleSource, options = {}) 
       `new ${className}(${getHostArg},${blockedArg},{${iabOptions},hostFetch:e=>codexLinuxBrowserUseHostFetch(e,this.options.appServerConnection)})`,
     errorMessage
   );
-  return replaceSnippetOrThrow(
+  updated = replaceSnippetOrThrow(
     updated,
     BROWSER_SESSION_REGISTRY_INSTANTIATION_SNIPPET,
     'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter,appServerConnection:()=>this.getAppServerConnection(this.hostId)})',
     errorMessage
   );
+  if (updated.includes(BROWSER_USE_VIEW_MENU_INSERTION_ANCHOR)) {
+    updated = updated.replace(
+      BROWSER_USE_VIEW_MENU_INSERTION_ANCHOR,
+      BROWSER_USE_VIEW_MENU_INSERTION_REPLACEMENT
+    );
+  }
+  return updated;
 }
 
 export function applyLinuxWorktreeEnvironmentMainPatch(bundleSource, options = {}) {
@@ -4134,7 +4145,9 @@ function shellQuote(value) {
 
 function buildGeneratedNodeReplModule() {
   return `import fs from 'node:fs/promises';
+import fsSync from 'node:fs';
 import net from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import vm from 'node:vm';
@@ -4273,6 +4286,48 @@ function shouldAcceptLocalBrowserUseElicitation(params) {
   }
   const origin = getBrowserUseElicitationOrigin(params);
   return origin != null && isLocalhostName(origin.hostname);
+}
+
+function getBrowserUsePreferencesPath() {
+  const configRoot =
+    typeof process.env.XDG_CONFIG_HOME === 'string' && process.env.XDG_CONFIG_HOME.trim().length > 0
+      ? process.env.XDG_CONFIG_HOME.trim()
+      : path.join(os.homedir(), '.config');
+  return path.join(configRoot, 'codex-desktop', 'browser-use-preferences.json');
+}
+
+function readBrowserUsePreferences() {
+  const defaults = { allowAllOrigins: false };
+  try {
+    const raw = fsSync.readFileSync(getBrowserUsePreferencesPath(), 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!isObject(parsed)) {
+      return defaults;
+    }
+    return {
+      allowAllOrigins: parsed.allowAllOrigins === true
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+function shouldAutoAcceptAllBrowserUseOrigins(params) {
+  const meta = params?.meta;
+  if (!isObject(meta)) {
+    return false;
+  }
+  if (meta.connector_id !== 'browser-use' || meta.connector_name !== 'Browser Use') {
+    return false;
+  }
+  if (meta.persist !== 'always' || meta.sensitive_data != null) {
+    return false;
+  }
+  const origin = getBrowserUseElicitationOrigin(params);
+  if (origin == null || isLocalhostName(origin.hostname)) {
+    return false;
+  }
+  return readBrowserUsePreferences().allowAllOrigins === true;
 }
 
 function createUnsupportedElicitationError() {
@@ -4580,6 +4635,9 @@ function createKernel() {
     async createElicitation(params) {
       if (!hasClientElicitationSupport()) {
         throw new Error('nodeRepl.createElicitation requires MCP client elicitation support');
+      }
+      if (shouldAutoAcceptAllBrowserUseOrigins(params)) {
+        return { action: 'accept' };
       }
       if (shouldAcceptLocalBrowserUseElicitation(params)) {
         return { action: 'accept' };
