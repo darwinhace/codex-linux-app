@@ -172,6 +172,11 @@ export async function installDesktop(options, logger) {
   await ensureDir(downloadDir);
   await ensureDir(channelLogDir);
   await ensureDir(runtimeLogDir);
+  await stopRunningChannelProcesses({
+    channelAppDir,
+    executableName: channel.executableName,
+    logger
+  });
 
   const codexCliPath = await resolveCodexCliPath();
   const rgPath = await resolveRipgrepPath();
@@ -423,6 +428,133 @@ function patchPackageJson(appPackage, channel) {
   }
 }
 
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+export function parseProcCmdline(rawCmdline) {
+  const text = Buffer.isBuffer(rawCmdline) ? rawCmdline.toString('utf8') : String(rawCmdline ?? '');
+  return text.split('\0').filter(Boolean);
+}
+
+export function isChannelAppProcessCommandLine(cmdlineArgs, { channelAppDir, executableName }) {
+  if (!Array.isArray(cmdlineArgs) || cmdlineArgs.length === 0) {
+    return false;
+  }
+  const expectedExecutablePath = path.join(path.resolve(channelAppDir), executableName);
+  return cmdlineArgs.some((arg) => {
+    if (typeof arg !== 'string' || !arg) {
+      return false;
+    }
+    return path.resolve(arg) === expectedExecutablePath;
+  });
+}
+
+export async function collectRunningChannelProcesses({
+  channelAppDir,
+  executableName,
+  procRoot = '/proc'
+}) {
+  let entries;
+  try {
+    entries = await fs.promises.readdir(procRoot, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const ownPid = process.pid;
+  const matches = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) {
+      continue;
+    }
+    const pid = Number(entry.name);
+    if (!Number.isSafeInteger(pid) || pid === ownPid) {
+      continue;
+    }
+    let cmdline;
+    try {
+      cmdline = await fs.promises.readFile(path.join(procRoot, entry.name, 'cmdline'));
+    } catch {
+      continue;
+    }
+    const cmdlineArgs = parseProcCmdline(cmdline);
+    if (isChannelAppProcessCommandLine(cmdlineArgs, { channelAppDir, executableName })) {
+      matches.push({ pid, cmdlineArgs });
+    }
+  }
+  return matches.sort((left, right) => left.pid - right.pid);
+}
+
+async function waitForChannelProcessesToExit({ channelAppDir, executableName, timeoutMs = 5000 }) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const running = await collectRunningChannelProcesses({ channelAppDir, executableName });
+    if (running.length === 0) {
+      return [];
+    }
+    await delay(100);
+  }
+  return collectRunningChannelProcesses({ channelAppDir, executableName });
+}
+
+async function stopRunningChannelProcesses({ channelAppDir, executableName, logger }) {
+  const running = await collectRunningChannelProcesses({ channelAppDir, executableName });
+  if (running.length === 0) {
+    return;
+  }
+
+  logger.warn(
+    `Stopping running Codex Desktop processes before replacing app files: ${running
+      .map((processInfo) => processInfo.pid)
+      .join(', ')}`
+  );
+  for (const processInfo of running) {
+    try {
+      process.kill(processInfo.pid, 'SIGTERM');
+    } catch (error) {
+      if (error?.code !== 'ESRCH') {
+        logger.warn(`Failed to send SIGTERM to process ${processInfo.pid}: ${error.message}`);
+      }
+    }
+  }
+
+  const stillRunning = await waitForChannelProcessesToExit({ channelAppDir, executableName });
+  if (stillRunning.length === 0) {
+    return;
+  }
+
+  logger.warn(
+    `Forcing remaining Codex Desktop processes to stop before install: ${stillRunning
+      .map((processInfo) => processInfo.pid)
+      .join(', ')}`
+  );
+  for (const processInfo of stillRunning) {
+    try {
+      process.kill(processInfo.pid, 'SIGKILL');
+    } catch (error) {
+      if (error?.code !== 'ESRCH') {
+        logger.warn(`Failed to send SIGKILL to process ${processInfo.pid}: ${error.message}`);
+      }
+    }
+  }
+
+  const survivors = await waitForChannelProcessesToExit({
+    channelAppDir,
+    executableName,
+    timeoutMs: 2000
+  });
+  if (survivors.length > 0) {
+    throw new Error(
+      `Could not stop running Codex Desktop processes before install: ${survivors
+        .map((processInfo) => processInfo.pid)
+        .join(', ')}`
+    );
+  }
+}
+
 function extractElectronVersion(appPackage) {
   const rawVersion =
     appPackage?.devDependencies?.electron ??
@@ -547,12 +679,20 @@ const LINUX_AVATAR_OVERLAY_POINTER_POLICY_PATTERN =
   /applyPointerInteractivityPolicy\(\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\)\{this\.mousePassthroughEnabled=!1;return\}let (?<passthroughVar>[A-Za-z_$][\w$]*)=!this\.pointerInteractive;if\(this\.mousePassthroughEnabled!==\k<passthroughVar>\)\{if\(this\.mousePassthroughEnabled=\k<passthroughVar>,\k<passthroughVar>\)\{\k<windowVar>\.setIgnoreMouseEvents\(!0,\{forward:!0\}\);return\}\k<windowVar>\.setIgnoreMouseEvents\(!1\),this\.refreshCursorAtCurrentMousePosition\(\k<windowVar>\)\}\}/;
 const LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN =
   /case`avatarOverlay`:return\{\.\.\.(?<optionsFn>[A-Za-z_$][\w$]*)\(\{alwaysOnTop:!0,platform:(?<platformVar>[A-Za-z_$][\w$]*),resizable:!1,thickFrame:!1\}\),hasShadow:!1\}/;
+const LINUX_AVATAR_OVERLAY_DOCK_WINDOW_OPTIONS_PATTERN =
+  /case`avatarOverlay`:return\{\.\.\.(?<optionsFn>[A-Za-z_$][\w$]*)\(\{alwaysOnTop:!0,platform:(?<platformVar>[A-Za-z_$][\w$]*),resizable:!1,thickFrame:!1\}\),hasShadow:!1,\.\.\.\k<platformVar>===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?\{type:`dock`,focusable:!0\}:\{\}\}/;
 const LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_PATTERN =
   /case`avatar-overlay-drag-move`:this\.avatarOverlayManager\.moveDrag\((?<webContentsId>[A-Za-z_$][\w$]*\.id)\);break;/;
+const LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN =
+  /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),\{pointerWindowX:(?<pointerXVar>[A-Za-z_$][\w$]*),pointerWindowY:(?<pointerYVar>[A-Za-z_$][\w$]*)\}\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\);let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.dragState=\{pointerAnchorX:\k<pointerXVar>-\k<layoutVar>\.mascot\.left,pointerAnchorY:\k<pointerYVar>-\k<layoutVar>\.mascot\.top,hasMoved:!1,displayBounds:n\.screen\.getDisplayNearestPoint\(n\.screen\.getCursorScreenPoint\(\)\)\.bounds\}\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN =
   /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\|\|\(this\.cancelMomentum\(\),this\.dragState\.hasMoved=!0,this\.moveDragToCurrentCursor\(\k<windowVar>\)\)\}endDrag/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN =
   /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=n\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\);\k<dragStateVar>\.displayBounds=\k<displayBoundsVar>,this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayBoundsVar>\)\}/;
+const LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN =
+  /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|\(this\.dragState\?\.hasMoved&&this\.moveDragToCurrentCursor\(\k<windowVar>\),this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\)\)\}/;
+const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN =
+  /throwWithVelocity\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<velocityXVar>[A-Za-z_$][\w$]*),(?<velocityYVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|!Number\.isFinite\(\k<velocityXVar>\)\|\|!Number\.isFinite\(\k<velocityYVar>\)\|\|\k<velocityXVar>===0&&\k<velocityYVar>===0\)return;/;
 const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN =
   /let (?<sampleVar>[A-Za-z_$][\w$]*)=V\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{\}\)/;
 const BROWSER_USE_VIEW_MENU_INSERTION_ANCHOR =
@@ -1214,14 +1354,17 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
   const errorMessage = buildLinuxAvatarOverlayPatchErrorMessage(bundleSource, options.sourceName);
   let updated = bundleSource;
 
-  if (!updated.includes(LINUX_AVATAR_OVERLAY_PATCH_MARKER)) {
+  if (LINUX_AVATAR_OVERLAY_DOCK_WINDOW_OPTIONS_PATTERN.test(updated)) {
     updated = replaceRegexOrThrow(
       updated,
-      LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN,
+      LINUX_AVATAR_OVERLAY_DOCK_WINDOW_OPTIONS_PATTERN,
       ({ optionsFn, platformVar }) =>
-        `case\`avatarOverlay\`:return{...${optionsFn}({alwaysOnTop:!0,platform:${platformVar},resizable:!1,thickFrame:!1}),hasShadow:!1,...${platformVar}===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`?{type:\`dock\`,focusable:!0}:{}}`,
+        `case\`avatarOverlay\`:return{...${optionsFn}({alwaysOnTop:!0,platform:${platformVar},resizable:!1,thickFrame:!1}),hasShadow:!1}`,
       errorMessage
     );
+  }
+
+  if (!updated.includes(LINUX_AVATAR_OVERLAY_PATCH_MARKER)) {
     updated = replaceRegexOrThrow(
       updated,
       LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN,
@@ -1275,6 +1418,13 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
   );
   updated = replaceRegexOrThrow(
     updated,
+    LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN,
+    ({ webContentsIdVar, pointerXVar, pointerYVar, windowVar, layoutVar }) =>
+      `startDrag(${webContentsIdVar},{pointerWindowX:${pointerXVar},pointerWindowY:${pointerYVar}}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;this.cancelMomentum();let ${layoutVar}=this.getLayout(${windowVar});this.dragState={pointerAnchorX:${pointerXVar}-${layoutVar}.mascot.left,pointerAnchorY:${pointerYVar}-${layoutVar}.mascot.top,pointerWindowX:${pointerXVar},pointerWindowY:${pointerYVar},mascotLeft:${layoutVar}.mascot.left,mascotTop:${layoutVar}.mascot.top,hasMoved:!1,displayBounds:n.screen.getDisplayNearestPoint(n.screen.getCursorScreenPoint()).bounds}}`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
     LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN,
     ({ webContentsIdVar, windowVar }) =>
       `moveDrag(${webContentsIdVar},codexLinuxAvatarOverlayPoint){let ${windowVar}=this.window;${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||this.dragState==null||(this.cancelMomentum(),this.dragState.hasMoved=!0,this.moveDragToCurrentCursor(${windowVar},this.codexLinuxAvatarOverlayScreenPoint(codexLinuxAvatarOverlayPoint)))}codexLinuxAvatarOverlayScreenPoint(e){return e!=null&&Number.isFinite(e.cursorScreenX)&&Number.isFinite(e.cursorScreenY)?{x:e.cursorScreenX,y:e.cursorScreenY}:null}endDrag`,
@@ -1283,8 +1433,22 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
   updated = replaceRegexOrThrow(
     updated,
     LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN,
-    ({ windowVar, dragStateVar, cursorVar, displayBoundsVar, displayFn }) =>
-      `moveDragToCurrentCursor(${windowVar},codexLinuxAvatarOverlayPoint){let ${dragStateVar}=this.dragState;if(${dragStateVar}==null)return;let ${cursorVar}=codexLinuxAvatarOverlayPoint??n.screen.getCursorScreenPoint(),${displayBoundsVar}=${displayFn}(${cursorVar},${dragStateVar}.displayBounds);${dragStateVar}.displayBounds=${displayBoundsVar},this.anchor={...this.anchor,x:${cursorVar}.x-${dragStateVar}.pointerAnchorX,y:${cursorVar}.y-${dragStateVar}.pointerAnchorY},this.applyLayout(${windowVar},${displayBoundsVar})}`,
+    ({ windowVar, dragStateVar, cursorVar }) =>
+      `moveDragToCurrentCursor(${windowVar},codexLinuxAvatarOverlayPoint){let ${dragStateVar}=this.dragState;if(${dragStateVar}==null)return;let ${cursorVar}=codexLinuxAvatarOverlayPoint??n.screen.getCursorScreenPoint(),codexLinuxAvatarOverlayBounds=${windowVar}.getBounds(),codexLinuxAvatarOverlayNext={x:Math.round(${cursorVar}.x-${dragStateVar}.pointerWindowX),y:Math.round(${cursorVar}.y-${dragStateVar}.pointerWindowY),width:codexLinuxAvatarOverlayBounds.width,height:codexLinuxAvatarOverlayBounds.height};this.anchor={...this.anchor,x:codexLinuxAvatarOverlayNext.x+${dragStateVar}.mascotLeft,y:codexLinuxAvatarOverlayNext.y+${dragStateVar}.mascotTop,width:this.mascotSize.width,height:this.mascotSize.height},this.layout={...this.getLayout(${windowVar}),windowBounds:codexLinuxAvatarOverlayNext,mascot:{...this.getLayout(${windowVar}).mascot,left:${dragStateVar}.mascotLeft,top:${dragStateVar}.mascotTop},viewport:{width:codexLinuxAvatarOverlayNext.width,height:codexLinuxAvatarOverlayNext.height}},this.setWindowBounds(${windowVar},codexLinuxAvatarOverlayNext),this.sendLayoutToRenderer(${windowVar})}`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN,
+    ({ webContentsIdVar, windowVar }) =>
+      `endDrag(${webContentsIdVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){this.dragState?.hasMoved&&this.moveDragToCurrentCursor(${windowVar}),this.dragState=null,this.persistWindowBounds(${windowVar});return}this.dragState?.hasMoved&&this.moveDragToCurrentCursor(${windowVar}),this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0})}`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN,
+    ({ webContentsIdVar, velocityXVar, velocityYVar, windowVar }) =>
+      `throwWithVelocity(${webContentsIdVar},${velocityXVar},${velocityYVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||!Number.isFinite(${velocityXVar})||!Number.isFinite(${velocityYVar})||${velocityXVar}===0&&${velocityYVar}===0)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){this.persistWindowBounds(${windowVar});return}`,
     errorMessage
   );
   return updated;
@@ -3360,17 +3524,28 @@ function analyzeLinuxAvatarOverlayBundle(bundleSource) {
     showWindow: LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN.test(bundleSource),
     setWindowBounds: LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN.test(bundleSource),
     pointerPassthroughPolicy: LINUX_AVATAR_OVERLAY_POINTER_POLICY_PATTERN.test(bundleSource),
-    windowOptions: LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN.test(bundleSource),
+    windowOptions:
+      LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_DOCK_WINDOW_OPTIONS_PATTERN.test(bundleSource),
     dragMoveIpc:
       bundleSource.includes(LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER) ||
       LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_PATTERN.test(bundleSource),
     moveDragMethod:
       bundleSource.includes('codexLinuxAvatarOverlayScreenPoint') ||
       LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN.test(bundleSource),
+    startDrag:
+      bundleSource.includes('pointerWindowX:') ||
+      LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN.test(bundleSource),
     moveDragCursor:
       bundleSource.includes('moveDragToCurrentCursor') &&
       (bundleSource.includes('codexLinuxAvatarOverlayPoint??') ||
-        LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN.test(bundleSource))
+        LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN.test(bundleSource)),
+    endDrag:
+      bundleSource.includes('this.persistWindowBounds') ||
+      LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN.test(bundleSource),
+    throwWithVelocity:
+      bundleSource.includes('this.persistWindowBounds(i);return') ||
+      LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN.test(bundleSource)
   };
 
   const basePatchApplied = bundleSource.includes(LINUX_AVATAR_OVERLAY_PATCH_MARKER);
@@ -3388,10 +3563,12 @@ function analyzeLinuxAvatarOverlayBundle(bundleSource) {
       !basePatchApplied &&
         !detected.pointerPassthroughPolicy &&
         'avatar overlay pointer passthrough policy',
-      !basePatchApplied && !detected.windowOptions && 'avatar overlay window options',
       !detected.dragMoveIpc && 'avatar overlay drag move IPC handler',
       !detected.moveDragMethod && 'avatar overlay moveDrag method',
-      !detected.moveDragCursor && 'avatar overlay cursor-based drag movement'
+      !detected.startDrag && 'avatar overlay startDrag method',
+      !detected.moveDragCursor && 'avatar overlay cursor-based drag movement',
+      !detected.endDrag && 'avatar overlay endDrag method',
+      !detected.throwWithVelocity && 'avatar overlay drag-release momentum method'
     ].filter(Boolean)
   };
 }
@@ -4129,7 +4306,7 @@ sandbox_args=()
 chromium_args=()
 sandbox_mode="sandbox"
 gpu_mode="default"
-ozone_hint="\${CODEX_DESKTOP_OZONE_PLATFORM_HINT:-}"
+ozone_hint="\${CODEX_DESKTOP_OZONE_PLATFORM_HINT:-x11}"
 chromium_logging="disabled"
 chromium_log_file=""
 runtime_launch_log="${runtimeLogDir}/runtime-launch-${channel.id}.log"

@@ -11,7 +11,7 @@
 | `CODEX_DESKTOP_FORCE_SANDBOX` | Launcher | Forces Chromium sandbox mode when set to `1`. |
 | `CODEX_DESKTOP_FORCE_NO_SANDBOX` | Launcher | Forces `--no-sandbox --disable-setuid-sandbox` when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_GPU` | Launcher | Adds `--disable-gpu` when set to `1`. |
-| `CODEX_DESKTOP_OZONE_PLATFORM_HINT` | Launcher | Passes `--ozone-platform=x11`, `wayland`, or `auto`. |
+| `CODEX_DESKTOP_OZONE_PLATFORM_HINT` | Launcher | Passes `--ozone-platform=x11`, `wayland`, or `auto`. Defaults to `x11` so the `/pet` overlay can use XWayland stacking hints on Wayland desktops. |
 | `CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING` | Launcher | Enables Chromium logging when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR` | Patched app | Keeps the native Linux menu bar visible when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH` | Patched app | Disables close-cancel window restoration when set to `1`. |

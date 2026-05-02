@@ -46,6 +46,7 @@ import {
   injectLinuxTodoProgressPatch,
   injectLinuxVisualCompatCssPatch,
   injectLinuxVisualCompatJsPatch,
+  isChannelAppProcessCommandLine,
   patchRendererCompactSlashCommandBundle,
   patchRendererBackgroundSubagentsPanelBundle,
   patchRendererLatestAgentTurnExpansionBundle,
@@ -54,6 +55,7 @@ import {
   patchRendererLinuxVisualCompat,
   patchRendererTodoProgressBundle,
   parseArgs,
+  parseProcCmdline,
   renderHelp,
   resolveBrowserUseRuntimeSources,
   resolveFirstExecutablePath
@@ -348,6 +350,37 @@ test('parseArgs accepts diagnostic and patch skip flags', () => {
     skipTodoProgressPatch: true,
     diagnosticManifest: true
   });
+});
+
+test('parseProcCmdline parses Linux proc cmdline buffers', () => {
+  assert.deepEqual(parseProcCmdline(Buffer.from('/opt/Codex/codex\0--type=zygote\0')), [
+    '/opt/Codex/codex',
+    '--type=zygote'
+  ]);
+});
+
+test('isChannelAppProcessCommandLine matches only installed channel app processes', () => {
+  const channelAppDir = '/home/user/.local/share/codex-linux-app/channels/stable/app';
+  assert.equal(
+    isChannelAppProcessCommandLine(
+      [path.join(channelAppDir, 'codex'), '--no-sandbox', '--ozone-platform=x11'],
+      {
+        channelAppDir,
+        executableName: 'codex'
+      }
+    ),
+    true
+  );
+  assert.equal(
+    isChannelAppProcessCommandLine(
+      ['/home/user/.local/share/codex-linux-app/channels/stable/bin/codex'],
+      {
+        channelAppDir,
+        executableName: 'codex'
+      }
+    ),
+    false
+  );
 });
 
 test('renderHelp keeps recovery flags out of the normal command surface', () => {
@@ -1822,10 +1855,7 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
     updated,
     /e\.setAlwaysOnTop\(!0,process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?`screen-saver`:`floating`\),t&&e\.moveTop\(\)/
   );
-  assert.match(
-    updated,
-    /case`avatarOverlay`:return\{\.\.\.[A-Za-z_$][\w$]*\(\{alwaysOnTop:!0,platform:[A-Za-z_$][\w$]*,resizable:!1,thickFrame:!1\}\),hasShadow:!1,\.\.\.[A-Za-z_$][\w$]*===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?\{type:`dock`,focusable:!0\}:\{\}\}/
-  );
+  assert.doesNotMatch(updated, /type:`dock`|focusable:!0/);
   assert.match(
     updated,
     /showWindow\([A-Za-z_$][\w$]*\)\{[\s\S]*?showInactive\(\),this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*,!0\)/
@@ -1841,6 +1871,10 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
   assert.match(updated, /avatarOverlayManager\.moveDrag\([A-Za-z_$][\w$]*\.id,[A-Za-z_$][\w$]*\)/);
   assert.match(updated, /codexLinuxAvatarOverlayScreenPoint\(e\)\{return e!=null&&Number\.isFinite\(e\.cursorScreenX\)&&Number\.isFinite\(e\.cursorScreenY\)\?\{x:e\.cursorScreenX,y:e\.cursorScreenY\}:null\}/);
   assert.match(updated, /moveDragToCurrentCursor\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayPoint\)/);
+  assert.match(updated, /pointerWindowX:[A-Za-z_$][\w$]*,pointerWindowY:[A-Za-z_$][\w$]*,mascotLeft:[A-Za-z_$][\w$]*\.mascot\.left,mascotTop:[A-Za-z_$][\w$]*\.mascot\.top/);
+  assert.match(updated, /codexLinuxAvatarOverlayNext=\{x:Math\.round\([A-Za-z_$][\w$]*\.x-[A-Za-z_$][\w$]*\.pointerWindowX\),y:Math\.round\([A-Za-z_$][\w$]*\.y-[A-Za-z_$][\w$]*\.pointerWindowY\)/);
+  assert.match(updated, /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\)\{this\.dragState\?\.hasMoved&&this\.moveDragToCurrentCursor\([A-Za-z_$][\w$]*\),this\.dragState=null,this\.persistWindowBounds\([A-Za-z_$][\w$]*\);return\}/);
+  assert.match(updated, /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\)\{this\.persistWindowBounds\([A-Za-z_$][\w$]*\);return\}/);
 });
 
 test('injectLinuxAvatarOverlayRendererPatch sends pointer screen coordinates with drag moves', () => {
@@ -1890,7 +1924,7 @@ test('injectLinuxAvatarOverlayPatch reports diagnostics when avatar overlay anch
     () => injectLinuxAvatarOverlayPatch('const noop = true;', { sourceName: 'main.js' }),
     {
       message:
-        /Could not patch Linux avatar overlay window behavior into the Electron main bundle\. Source: main\.js\. Missing anchors: avatar overlay route, avatar overlay window appearance, avatar overlay creation frontmost policy, avatar overlay createWindow method boundary, avatar overlay showWindow method, avatar overlay setWindowBounds method, avatar overlay pointer passthrough policy, avatar overlay window options, avatar overlay drag move IPC handler, avatar overlay moveDrag method, avatar overlay cursor-based drag movement\. Detected anchors: avatarOverlayRoute=no, avatarOverlayWindow=no, createFrontmostPolicy=no, createWindowEnd=no, showWindow=no, setWindowBounds=no, pointerPassthroughPolicy=no, windowOptions=no, dragMoveIpc=no, moveDragMethod=no, moveDragCursor=no\./
+        /Could not patch Linux avatar overlay window behavior into the Electron main bundle\. Source: main\.js\. Missing anchors: avatar overlay route, avatar overlay window appearance, avatar overlay creation frontmost policy, avatar overlay createWindow method boundary, avatar overlay showWindow method, avatar overlay setWindowBounds method, avatar overlay pointer passthrough policy, avatar overlay drag move IPC handler, avatar overlay moveDrag method, avatar overlay startDrag method, avatar overlay cursor-based drag movement, avatar overlay endDrag method, avatar overlay drag-release momentum method\. Detected anchors: avatarOverlayRoute=no, avatarOverlayWindow=no, createFrontmostPolicy=no, createWindowEnd=no, showWindow=no, setWindowBounds=no, pointerPassthroughPolicy=no, windowOptions=no, dragMoveIpc=no, moveDragMethod=no, startDrag=no, moveDragCursor=no, endDrag=no, throwWithVelocity=no\./
     }
   );
 });
@@ -3386,6 +3420,7 @@ test('buildWrapperScript includes perf toggles and runtime logging', () => {
   assert.match(script, /CODEX_DESKTOP_DISABLE_GPU/);
   assert.match(script, /--disable-gpu/);
   assert.match(script, /CODEX_DESKTOP_OZONE_PLATFORM_HINT/);
+  assert.match(script, /ozone_hint="\$\{CODEX_DESKTOP_OZONE_PLATFORM_HINT:-x11\}"/);
   assert.match(script, /--ozone-platform=/);
   assert.doesNotMatch(script, /--ozone-platform-hint=/);
   assert.match(script, /CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING/);
