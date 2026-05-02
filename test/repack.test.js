@@ -10,6 +10,8 @@ import {
   applyLinuxBrowserCommentPositionPatch,
   applyLinuxBackgroundSubagentsPanelPatch,
   applyLinuxBrowserUseHostFetchPatch,
+  applyLinuxAvatarOverlayPatch,
+  applyLinuxAvatarOverlayRendererPatch,
   applyLinuxCloseCancelPatch,
   applyLinuxWorktreeEnvironmentMainPatch,
   applyLinuxWorktreeEnvironmentWorkerPatch,
@@ -30,6 +32,8 @@ import {
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxBrowserUseHostFetchPatch,
+  injectLinuxAvatarOverlayPatch,
+  injectLinuxAvatarOverlayRendererPatch,
   injectLinuxCloseCancelPatch,
   injectLinuxWorktreeEnvironmentMainPatch,
   injectLinuxWorktreeEnvironmentWorkerPatch,
@@ -167,10 +171,18 @@ const LINUX_CLOSE_CANCEL_BUNDLE_26_422_STABLE =
   'function Mb({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,hotkeyWindowLifecycleManager:c,globalDictationLifecycleManager:l,globalStatesByHostId:u,flushAndDisposeContexts:d,disposables:f,appEvent:p,errorReporter:m}){let h=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=b_(),c=t.Gn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Nb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_429 =
   'function TD({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,hotkeyWindowLifecycleManager:c,globalDictationLifecycleManager:l,globalStatesByHostId:u,flushAndDisposeContexts:d,disposables:f,appEvent:p,errorReporter:m}){let h=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=Pw(),c=t.Yn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:ED({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`child-process-gone`,(e,t)=>{if(t.reason!==`clean-exit`){m.reportFatal(Error(`Child process gone (${t.type})`),{tags:{errorType:`child-process-gone`}})}}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
+const LINUX_CLOSE_CANCEL_BUNDLE_26_429_30905 =
+  'function TD({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,hotkeyWindowLifecycleManager:c,globalDictationLifecycleManager:l,globalStatesByHostId:u,flushAndDisposeContexts:d,disposables:f,appEvent:p,errorReporter:m}){let h=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=Iw(),c=t.Yn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:OD({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`child-process-gone`,(e,t)=>{if(t.reason!==`clean-exit`){if(kD(t)){AD(t);return}m.reportFatal(Error(`Child process gone (${t.type})`),{tags:{errorType:`child-process-gone`,processType:t.type,reason:t.reason},extra:{exitCode:t.exitCode,name:t.name,serviceName:t.serviceName}})}}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
 const LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT =
   'const e=require(`./app-session.js`);let n=require(`electron`);n=e.lr(n);let r=require(`node:os`);r=e.lr(r);let i=require(`node:path`);i=e.lr(i);let a=require(`node:util`),o=require(`node:fs`);o=e.lr(o);let s=require(`node:crypto`),c=require(`node:child_process`),l=require(`node:process`);l=e.lr(l);var Fi=`codex-notification`,Ii=`${Fi}.wav`,Li=t.Or(`desktop-notifications`),Ri=class{isSupported;createNotification;logger=Li();notificationSoundStaged=!1;notifications=new Map;constructor(e){this.options=e,this.isSupported=e.isSupported??(()=>n.Notification.isSupported()),e.createNotification?this.createNotification=e.createNotification:this.createNotification=e=>{let t=new n.Notification(e);return{show:()=>t.show(),on:(e,n)=>{switch(e){case`action`:return t.on(`action`,(e,t)=>{n(e,t)});case`click`:return t.on(`click`,()=>{n(void 0)});case`close`:return t.on(`close`,()=>{n(void 0)})}},close:()=>t.close()}}}showNotification(e,t,n){if(this.stageNotificationSoundIfNeeded(),!this.isSupported())return;let r=(e.actions??[]).slice(0,4),i=e.kind===`permission`||e.kind===`question`?`never`:void 0,a=e.kind===`turn-complete`&&typeof e.replyPlaceholder==`string`;this.notifications.get(e.id)?.notification.close?.();let o=this.createNotification({title:e.title,body:e.body,silent:!1,sound:this.options.platform===`darwin`?Fi:void 0,timeoutType:i,hasReply:a,replyPlaceholder:a?e.replyPlaceholder??void 0:void 0,actions:r.map(e=>({type:`button`,text:e.title}))});o.on(`close`,()=>{this.notifications.delete(e.id)}),this.notifications.set(e.id,{notification:o,conversationId:e.conversationId??null}),o.show()}stageNotificationSoundIfNeeded(){if(this.notificationSoundStaged||(this.notificationSoundStaged=!0,this.options.platform!==`darwin`)||typeof process.resourcesPath!=`string`)return;let e=i.default.join(process.resourcesPath,Ii),t=i.default.join(__dirname,`..`,`assets`,`sounds`,Ii),n=(0,o.existsSync)(e)?e:t;if(!(0,o.existsSync)(n))return;let a=i.default.join(r.default.homedir(),`Library`,`Sounds`);try{(0,o.mkdirSync)(a,{recursive:!0}),(0,o.copyFileSync)(n,i.default.join(a,Ii))}catch(e){this.logger.warning(`failed to stage notification sound`,{safe:{},sensitive:{error:e}})}}};';
 const BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT =
   'function Qc({action:e,appServerClient:t,desktopOriginator:n,headers:r={},refreshToken:i=!1}){return t.getAuthToken({refreshToken:i})}var Gi=`desktop`,EC=`about:blank`,DC=15e3,OC=2e4,kC=1500,AC=t.Pr(`browser-use-iab-api`),jC=class{tabsById=new Map;constructor(e,t,n={}){this.getBrowserHost=e,this.options=n,this.disposeBrowserUseNavigationBlockedListener=t(e=>{this.emitBrowserUseNavigationBlockedEvent(e)})}ping(){return`pong`}requireBrowserUseSession(e){return e}emitBrowserUseNavigationBlockedEvent(e){}};function WC(){return{apiImpl:null,server:null,starting:null}}var GC=class{constructor(n={appSessionId:e.t,buildFlavor:t.C.Dev,errorReporter:{reportNonFatal:()=>void 0}}){this.options=n}ensureBackendForBrowserRoute(e){let n={};n.starting=(async()=>{let t=null;t=new jC(t=>this.canServeTurnForBrowserRoute(t,e)?this.getBrowserUseHost(t):null,e=>this.getDelegate().addBrowserUseNavigationBlockedListener(e),{appSessionId:this.options.appSessionId,browserRoute:e,buildFlavor:this.options.buildFlavor,canServeRoute:t=>this.canServeTurnForBrowserRoute(t,e)}),n.apiImpl=t})()}};class App{constructor(){this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter})}getAppServerConnection(e){return null}}';
+const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
+  new URL('../main-SLemWUtC.js', import.meta.url),
+  'utf8'
+);
+const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
+  'function $e(){let P={current:null};let Y=e=>{let t=P.current;if(t==null||t.pointerId!==e.pointerId)return;let n=V(e);t.samples=U([...t.samples,n]);let r=n.screenX-t.screenX,i=n.screenY-t.screenY;Math.abs(r)<Ge&&Math.abs(i)<Ge||(t.hasMoved=!0,t.screenX=n.screenX,t.screenY=n.screenY,s(e=>ut({currentDragState:e,deltaX:r})),f.dispatchMessage(`avatar-overlay-drag-move`,{}))}}';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
   'function im({globalState:t,worktreeDir:n}){let r=e.yt(n).replace(/\\/+$/,``);return B(t).some(t=>{let n=e.yt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var am=32e3,om=e.mr(`worktree-service`),sm=class{statesById=new Map;async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};try{let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})}catch(e){}}async createManagedWorktree({hostId:t,cwd:n,startingState:r,localEnvironmentConfigPath:i,streamId:a}){try{let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);return this.newbornWorktreeRoots.add(o.worktreeGitRoot),om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),o}catch(e){throw this.forgetNewbornWorktreeStream(a),e}}};';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT
@@ -1652,6 +1664,19 @@ test('injectLinuxCloseCancelPatch supports the 26.429 before-quit prompt details
   assert.match(updated, /child-process-gone/);
 });
 
+test('injectLinuxCloseCancelPatch supports the 26.429.30905 before-quit prompt details', () => {
+  const updated = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_26_429_30905);
+
+  assert.match(updated, /codexLinuxCloseCancel/);
+  assert.match(updated, /detail:OD\(\{hasInProgressLocalConversation:s,hasEnabledAutomations:c\}\)/);
+  assert.match(updated, /let e=a\.showLastActivePrimaryWindow\(\);e\?\(e\.isMinimized\(\)&&e\.restore\(\),e\.show\(\),e\.focus\(\)\):/);
+  assert.match(updated, /Promise\.resolve\(s\(`local`\)\)\.then/);
+  assert.match(updated, /e&&!e\.isDestroyed\(\)&&\(e\.isMinimized\(\)&&e\.restore\(\),e\.show\(\),e\.focus\(\)\)/);
+  assert.match(updated, /o\.preventDefault\(\)/);
+  assert.match(updated, /i\.markQuitApproved\(\),g=!0,a\.markAppQuitting\(\)/);
+  assert.match(updated, /kD\(t\)/);
+});
+
 test('injectLinuxCloseCancelPatch is idempotent', () => {
   const once = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_CURRENT);
   const twice = injectLinuxCloseCancelPatch(once);
@@ -1743,6 +1768,20 @@ test('injectLinuxBrowserUseHostFetchPatch exposes authenticated policy fetch on 
   assert.match(updated, /codexLinuxBrowserUseShouldAutoAcceptAllOrigins/);
 });
 
+test('injectLinuxBrowserUseHostFetchPatch supports renamed browser session registry symbols', () => {
+  const renamedRegistryBundle = BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT.replace(
+    'var GC=class',
+    'var qC=class'
+  ).replace('this.browserSessionRegistry=new GC', 'this.browserSessionRegistry=new qC');
+  const updated = injectLinuxBrowserUseHostFetchPatch(renamedRegistryBundle);
+
+  assert.match(updated, /codexLinuxBrowserUseHostFetch/);
+  assert.match(
+    updated,
+    /this\.browserSessionRegistry=new qC\(\{appSessionId:e\.t,buildFlavor:T,errorReporter:this\.errorReporter,appServerConnection:\(\)=>this\.getAppServerConnection\(this\.hostId\)\}\)/
+  );
+});
+
 test('injectLinuxBrowserUseHostFetchPatch is idempotent', () => {
   const once = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT);
   const twice = injectLinuxBrowserUseHostFetchPatch(once);
@@ -1765,6 +1804,103 @@ test('injectLinuxBrowserUseHostFetchPatch reports diagnostics when host fetch an
     {
       message:
         /Could not patch Linux Browser Use authenticated host fetch into the Electron main bundle\. Source: main\.js\. Missing anchors: authenticated API header helper, Browser Use native pipe registry, IAB API class, IAB route backend options, Browser session registry instantiation\. Detected anchors: authHeaderHelper=no, nativePipeRegistry=no, iabApiClass=no, iabRegistryOptions=no, registryInstantiation=no\./
+    }
+  );
+});
+
+test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main bundle', () => {
+  const updated = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_BUNDLE_26_429_30905);
+
+  assert.match(updated, /codexLinuxAvatarOverlay/);
+  assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
+  assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH/);
+  assert.match(
+    updated,
+    /codexLinuxKeepAvatarOverlayFrontmost\(e,t=!1\)\{\/\* codexLinuxAvatarOverlay \*\/if\(e\.isDestroyed\(\)\)return;if\(process\.platform===`darwin`\)/
+  );
+  assert.match(
+    updated,
+    /e\.setAlwaysOnTop\(!0,process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?`screen-saver`:`floating`\),t&&e\.moveTop\(\)/
+  );
+  assert.match(
+    updated,
+    /case`avatarOverlay`:return\{\.\.\.[A-Za-z_$][\w$]*\(\{alwaysOnTop:!0,platform:[A-Za-z_$][\w$]*,resizable:!1,thickFrame:!1\}\),hasShadow:!1,\.\.\.[A-Za-z_$][\w$]*===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?\{type:`dock`,focusable:!0\}:\{\}\}/
+  );
+  assert.match(
+    updated,
+    /showWindow\([A-Za-z_$][\w$]*\)\{[\s\S]*?showInactive\(\),this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*,!0\)/
+  );
+  assert.match(
+    updated,
+    /setWindowBounds\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\)\{[\s\S]*?setPosition\([A-Za-z_$][\w$]*\.x,[A-Za-z_$][\w$]*\.y,!1\)[\s\S]*?this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*\)/
+  );
+  assert.match(
+    updated,
+    /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\)\{this\.mousePassthroughEnabled=!1,[A-Za-z_$][\w$]*\.setIgnoreMouseEvents\(!1\),this\.refreshCursorAtCurrentMousePosition\([A-Za-z_$][\w$]*\);return\}let [A-Za-z_$][\w$]*=!this\.pointerInteractive/
+  );
+  assert.match(updated, /avatarOverlayManager\.moveDrag\([A-Za-z_$][\w$]*\.id,[A-Za-z_$][\w$]*\)/);
+  assert.match(updated, /codexLinuxAvatarOverlayScreenPoint\(e\)\{return e!=null&&Number\.isFinite\(e\.cursorScreenX\)&&Number\.isFinite\(e\.cursorScreenY\)\?\{x:e\.cursorScreenX,y:e\.cursorScreenY\}:null\}/);
+  assert.match(updated, /moveDragToCurrentCursor\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayPoint\)/);
+});
+
+test('injectLinuxAvatarOverlayRendererPatch sends pointer screen coordinates with drag moves', () => {
+  const updated = injectLinuxAvatarOverlayRendererPatch(AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT);
+
+  assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
+  assert.match(
+    updated,
+    /f\.dispatchMessage\(`avatar-overlay-drag-move`,\{cursorScreenX:n\.screenX,cursorScreenY:n\.screenY\}\)/
+  );
+});
+
+test('injectLinuxAvatarOverlayRendererPatch is idempotent', () => {
+  const once = injectLinuxAvatarOverlayRendererPatch(AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT);
+  const twice = injectLinuxAvatarOverlayRendererPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxAvatarOverlayRendererPatch skips patching when disabled', () => {
+  const result = applyLinuxAvatarOverlayRendererPatch(AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT, {
+    skip: true
+  });
+
+  assert.equal(result.updated, AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxAvatarOverlayPatch is idempotent', () => {
+  const once = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_BUNDLE_26_429_30905);
+  const twice = injectLinuxAvatarOverlayPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxAvatarOverlayPatch skips patching when disabled', () => {
+  const result = applyLinuxAvatarOverlayPatch(AVATAR_OVERLAY_BUNDLE_26_429_30905, {
+    skip: true
+  });
+
+  assert.equal(result.updated, AVATAR_OVERLAY_BUNDLE_26_429_30905);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxAvatarOverlayPatch reports diagnostics when avatar overlay anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxAvatarOverlayPatch('const noop = true;', { sourceName: 'main.js' }),
+    {
+      message:
+        /Could not patch Linux avatar overlay window behavior into the Electron main bundle\. Source: main\.js\. Missing anchors: avatar overlay route, avatar overlay window appearance, avatar overlay creation frontmost policy, avatar overlay createWindow method boundary, avatar overlay showWindow method, avatar overlay setWindowBounds method, avatar overlay pointer passthrough policy, avatar overlay window options, avatar overlay drag move IPC handler, avatar overlay moveDrag method, avatar overlay cursor-based drag movement\. Detected anchors: avatarOverlayRoute=no, avatarOverlayWindow=no, createFrontmostPolicy=no, createWindowEnd=no, showWindow=no, setWindowBounds=no, pointerPassthroughPolicy=no, windowOptions=no, dragMoveIpc=no, moveDragMethod=no, moveDragCursor=no\./
+    }
+  );
+});
+
+test('injectLinuxAvatarOverlayRendererPatch reports diagnostics when drag anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxAvatarOverlayRendererPatch('const noop = true;', { sourceName: 'avatar.js' }),
+    {
+      message:
+        /Could not patch Linux avatar overlay drag coordinates into the renderer bundle\. Source: avatar\.js\. Missing anchors: avatar overlay pointer sample, avatar overlay drag move message, avatar overlay drag move dispatch\. Detected anchors: dragMoveDispatch=no, pointerSample=no, avatarOverlayMoveMessage=no\./
     }
   );
 });
@@ -3321,6 +3457,14 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         status: 'applied',
         sourceName: 'worker.js'
       },
+      linuxAvatarOverlay: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxAvatarOverlayRenderer: {
+        status: 'applied',
+        sourceName: 'avatar-overlay-page.js'
+      },
       terminalLifecycle: {
         status: 'applied',
         sourceName: 'index.js'
@@ -3426,6 +3570,14 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       linuxWorktreeEnvironmentWorker: {
         status: 'applied',
         sourceName: 'worker.js'
+      },
+      linuxAvatarOverlay: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxAvatarOverlayRenderer: {
+        status: 'applied',
+        sourceName: 'avatar-overlay-page.js'
       },
       terminalLifecycle: {
         status: 'applied',
