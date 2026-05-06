@@ -63,6 +63,8 @@ const LINUX_AVATAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux avatar overlay window behavior into the Electron main bundle.';
 const LINUX_AVATAR_OVERLAY_RENDERER_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux avatar overlay drag coordinates into the renderer bundle.';
+const LINUX_PET_YAPPING_USAGE_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer pet yapping usage bubble into the avatar overlay bundle.';
 
 export function parseArgs(argv) {
   const options = {
@@ -260,6 +262,11 @@ export async function installDesktop(options, logger) {
     logger
   );
   assertRequiredPatchApplied('Linux avatar overlay renderer', linuxAvatarOverlayRendererPatch);
+  const linuxPetYappingUsagePatch = await patchRendererLinuxPetYappingUsage(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux pet yapping usage', linuxPetYappingUsagePatch);
   const terminalPatch = options.skipTerminalPatch
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTerminalBundle(extractedAppDir, logger);
@@ -334,6 +341,7 @@ export async function installDesktop(options, logger) {
     linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
     linuxAvatarOverlay: linuxAvatarOverlayPatch,
     linuxAvatarOverlayRenderer: linuxAvatarOverlayRendererPatch,
+    linuxPetYappingUsage: linuxPetYappingUsagePatch,
     terminalLifecycle: terminalPatch,
     newThreadModel: newThreadModelPatch,
     todoProgress: todoProgressPatch,
@@ -394,6 +402,7 @@ export async function installDesktop(options, logger) {
       linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
       linuxAvatarOverlay: linuxAvatarOverlayPatch,
       linuxAvatarOverlayRenderer: linuxAvatarOverlayRendererPatch,
+      linuxPetYappingUsage: linuxPetYappingUsagePatch,
       terminalLifecycle: terminalPatch,
       newThreadModel: newThreadModelPatch,
       todoProgress: todoProgressPatch,
@@ -608,6 +617,8 @@ const LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER = 'codexLinuxBrowserUseHostFetch
 const LINUX_AVATAR_OVERLAY_PATCH_MARKER = 'codexLinuxAvatarOverlay';
 const LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER =
   'codexLinuxAvatarOverlayScreenPointDrag';
+const LINUX_AVATAR_OVERLAY_AUTO_CLOSE_PATCH_MARKER = 'codexLinuxAvatarOverlayAutoClose';
+const LINUX_PET_YAPPING_USAGE_PATCH_MARKER = 'codexLinuxPetYappingUsage';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
@@ -695,6 +706,16 @@ const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN =
   /throwWithVelocity\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<velocityXVar>[A-Za-z_$][\w$]*),(?<velocityYVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|!Number\.isFinite\(\k<velocityXVar>\)\|\|!Number\.isFinite\(\k<velocityYVar>\)\|\|\k<velocityXVar>===0&&\k<velocityYVar>===0\)return;/;
 const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN =
   /let (?<sampleVar>[A-Za-z_$][\w$]*)=V\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{\}\)/;
+const LINUX_PET_YAPPING_USAGE_REACT_QUERY_IMPORT_PATTERN =
+  /import\{(?<imports>[^}]*)\}from"(?<module>\.\/vscode-api-[^"]+\.js)";/;
+const LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN =
+  /import\{(?<imports>[^}]*)\}from"(?<module>\.\/codex-api-[^"]+\.js)";/;
+const LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN =
+  /var G=d\(\);function (?<mascotFn>[A-Za-z_$][\w$]*)\(/;
+const LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN =
+  /children:\[(?<avatar>[A-Za-z_$][\w$]*),(?<badge>[A-Za-z_$][\w$]*)\]\}/;
+const LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN =
+  /(?<layoutQuery>ft\(e\.querySelector\(`\[data-avatar-overlay-hit-region="mascot"\]`\)\)\?\?ft\(e\.querySelector\(qe\)\)|ft\(e\.querySelector\(qe\)\))/;
 const BROWSER_USE_VIEW_MENU_INSERTION_ANCHOR =
   'Ce,Te,{type:`separator`},Ee,De,Pe,Fe,...o?[Se]:[]],He=[';
 const BROWSER_USE_VIEW_MENU_INSERTION_REPLACEMENT =
@@ -763,7 +784,43 @@ function buildLinuxNotificationSoundMethod({ childProcessVar }) {
 }
 
 function buildLinuxAvatarOverlayFrontmostMethod() {
-  return `codexLinuxKeepAvatarOverlayFrontmost(e,t=!1){/* ${LINUX_AVATAR_OVERLAY_PATCH_MARKER} */if(e.isDestroyed())return;if(process.platform===\`darwin\`){e.setVisibleOnAllWorkspaces(!0,{visibleOnFullScreen:!0,skipTransformProcessType:!0}),e.setAlwaysOnTop(!0,\`floating\`),t&&e.moveTop();return}e.setVisibleOnAllWorkspaces(!0),e.setAlwaysOnTop(!0,process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`?\`screen-saver\`:\`floating\`),t&&e.moveTop()}`;
+  return `codexLinuxKeepAvatarOverlayFrontmost(e,t=!1){/* ${LINUX_AVATAR_OVERLAY_PATCH_MARKER} */if(e.isDestroyed())return;if(process.platform===\`darwin\`){e.setVisibleOnAllWorkspaces(!0,{visibleOnFullScreen:!0,skipTransformProcessType:!0}),e.setAlwaysOnTop(!0,\`floating\`),t&&e.moveTop();return}e.setVisibleOnAllWorkspaces(!0),e.setAlwaysOnTop(!0,process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`?\`screen-saver\`:\`floating\`),t&&e.moveTop()}codexLinuxRegisterAvatarOverlayAutoClose(e){/* ${LINUX_AVATAR_OVERLAY_AUTO_CLOSE_PATCH_MARKER} */if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_AUTO_CLOSE===\`1\`)return;let t=new WeakSet,r=()=>this.codexLinuxCloseAvatarOverlayIfOnlyWindow(e),i=n=>{n!==e&&!n.isDestroyed?.()&&!t.has(n)&&(t.add(n),n.once(\`closed\`,()=>{setTimeout(r,0)}))};for(let e of n.BrowserWindow.getAllWindows())i(e);let a=(e,t)=>{i(t)};n.app.on(\`browser-window-created\`,a),n.app.once(\`before-quit\`,()=>{e.isDestroyed()||e.close()}),e.once(\`closed\`,()=>{n.app.off(\`browser-window-created\`,a)})}codexLinuxCloseAvatarOverlayIfOnlyWindow(e){if(e.isDestroyed())return;let t=n.BrowserWindow.getAllWindows().filter(t=>t!==e&&!t.isDestroyed()&&t.isVisible?.()!==!1);t.length===0&&e.close()}`;
+}
+
+function appendNamedImportAlias(imports, importedName, aliasName) {
+  const parts = imports
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (
+    parts.some(
+      (part) =>
+        part === aliasName ||
+        part.endsWith(` as ${aliasName}`) ||
+        part.endsWith(` ${aliasName}`)
+    )
+  ) {
+    return imports;
+  }
+  return [...parts, `${importedName} as ${aliasName}`].join(',');
+}
+
+function buildLinuxPetYappingUsageComponent() {
+  return `function codexLinuxPetYappingUsage(){let e=codexLinuxUseQuery({queryKey:[\`codex-pet-rate-limit-status\`],queryFn:async()=>{try{return await codexLinuxFetchUsage()}catch(e){return null}},retry:!1,staleTime:0,refetchInterval:1e4,refetchIntervalInBackground:!0,refetchOnMount:\`always\`,refetchOnWindowFocus:!0,refetchOnReconnect:!0,gcTime:0}),t=e.data?.rate_limit,n=[t?.primary_window,t?.secondary_window].filter(Boolean),r=e=>e==null?null:{used:e.used_percent??0,remaining:Math.min(Math.max(100-(e.used_percent??0),0),100),mins:e.limit_window_seconds==null?null:e.limit_window_seconds/60},i=(e,t)=>e.length===0?null:e.reduce((e,n)=>{let r=Math.abs((e.limit_window_seconds??0)/60-t),i=Math.abs((n.limit_window_seconds??0)/60-t);return i<r?n:i>r?e:(n.limit_window_seconds??0)>(e.limit_window_seconds??0)?n:e}),a=r(i(n.filter(e=>((e.limit_window_seconds??0)/60)<1440),300)),o=r(i(n.filter(e=>((e.limit_window_seconds??0)/60)>=1440),10080)),s=a?.remaining,c=o?.remaining,l=Math.max(0,Math.min(100,s??0)),u=Math.max(0,Math.min(100,c??0)),[d,f]=(0,R.useState)(0);(0,R.useEffect)(()=>{let e=window.setInterval(()=>f(e=>(e+1)%2),1e4);return()=>window.clearInterval(e)},[]);let p=s==null&&c==null,m=d%2===0,h=p?\`Checking usage...\`:m?\`5-hour usage left: \${Math.round(l)}%\`:\`Weekly usage left: \${Math.round(u)}%\`,ee=p?\`Usage loading...\`:\`5H left \${Math.round(l)}% | Weekly left \${Math.round(u)}%\`;return(0,G.jsxs)(\`div\`,{className:\`codex-usage-yap-wrap\`,\"aria-hidden\":\`true\`,children:[(0,G.jsxs)(\`div\`,{key:d,className:\`codex-usage-yap-pop \${m?\`codex-usage-yap-five-hour\`:\`codex-usage-yap-weekly\`}\`,children:[(0,G.jsxs)(\`svg\`,{className:\`codex-usage-yap-svg\`,viewBox:\`0 0 220 74\`,preserveAspectRatio:\`none\`,children:[(0,G.jsx)(\`path\`,{className:\`codex-usage-yap-shadow\`,d:\`M43 8H170V14H190V20H204V44H190V50H122V56H98V70H84V56H43V50H24V44H12V20H24V14H43Z\`}),(0,G.jsx)(\`path\`,{className:\`codex-usage-yap-fill\`,d:\`M42 6H168V12H188V18H202V42H188V48H120V54H96V68H86V54H42V48H24V42H14V18H24V12H42Z\`})]}),(0,G.jsx)(\`span\`,{className:\`codex-usage-yap-text\`,children:h})]}),(0,G.jsx)(\`div\`,{className:\`codex-usage-hover-info\`,children:ee})]})}`;
+}
+
+function buildLinuxPetYappingUsageCss() {
+  return `/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */
+.codex-usage-yap-wrap{position:absolute;inset:-3.25rem -2.4rem -.55rem -1.15rem;z-index:30;pointer-events:none}
+.codex-usage-yap-pop{position:absolute;top:.06rem;right:.2rem;width:11.2rem;height:3.75rem;color:#050505;font:600 10px/1 "Press Start 2P","Silkscreen","Pixelify Sans","Pixel Operator",ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0;text-transform:none;text-rendering:geometricPrecision;image-rendering:pixelated;opacity:0;transform:translateY(5px) scale(.94);animation:codex-usage-yap-pop 10s ease-in-out both}
+.codex-usage-yap-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(4px 4px 0 rgba(0,0,0,.25));shape-rendering:crispEdges}
+.codex-usage-yap-shadow{fill:#000}
+.codex-usage-yap-fill{fill:#fff;stroke:#000;stroke-width:5px;stroke-linejoin:miter}
+.codex-usage-yap-text{position:absolute;top:1.44rem;left:.65rem;right:.65rem;z-index:1;display:block;transform:translateY(-50%);white-space:nowrap;text-align:center;text-shadow:none}
+.codex-usage-yap-weekly,.codex-usage-yap-five-hour{color:#050505}
+.codex-usage-hover-info{position:absolute;left:.6rem;bottom:.08rem;z-index:2;min-width:10.4rem;border:3px solid #000;background:#fff;color:#050505;box-shadow:3px 3px 0 rgba(0,0,0,.28);padding:5px 7px;font:600 9px/1.2 "Press Start 2P","Silkscreen","Pixelify Sans","Pixel Operator",ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0;text-align:center;white-space:nowrap;image-rendering:pixelated;opacity:0;transform:translateY(-2px) scale(.96);transition:opacity .12s steps(2,end),transform .12s steps(2,end)}
+[data-avatar-mascot="true"]:hover .codex-usage-hover-info{opacity:1;transform:translateY(0) scale(1)}
+@keyframes codex-usage-yap-pop{0%{opacity:0;transform:translateY(8px) scale(.9)}3%{opacity:1;transform:translateY(0) scale(1)}5%{transform:translateY(-2px) scale(1.02,.98)}7%{transform:translateY(0) scale(.99,1.02)}9%{transform:translateY(-1px) scale(1.01,.99)}12%{transform:translateY(0) scale(1)}24%{opacity:1;transform:translateY(0) scale(1)}34%{opacity:0;transform:translateY(-4px) scale(.96)}100%{opacity:0;transform:translateY(-4px) scale(.96)}}`;
 }
 
 function buildLinuxBrowserUseHostFetchHelper() {
@@ -1141,6 +1198,46 @@ async function patchRendererLinuxAvatarOverlay(extractedAppDir, logger) {
   throw new Error('Could not locate the renderer avatar overlay bundle inside the extracted app.');
 }
 
+async function patchRendererLinuxPetYappingUsage(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssetName = assetNames.find((name) => /^avatar-overlay-page[-.].+\.js$/.test(name));
+  if (!jsAssetName) {
+    throw new Error('Could not locate the renderer avatar overlay bundle inside the extracted app.');
+  }
+  const cssAssetName = assetNames.find((name) => /^codex-avatar[-.].+\.css$/.test(name));
+  if (!cssAssetName) {
+    throw new Error('Could not locate the renderer avatar stylesheet inside the extracted app.');
+  }
+
+  const jsAssetPath = path.join(assetsDir, jsAssetName);
+  const cssAssetPath = path.join(assetsDir, cssAssetName);
+  const originalJs = await fs.promises.readFile(jsAssetPath, 'utf8');
+  const originalCss = await fs.promises.readFile(cssAssetPath, 'utf8');
+  logger.info(`Resolved renderer bundle ${jsAssetName} for pet yapping usage patch`);
+  logger.info(`Resolved renderer stylesheet ${cssAssetName} for pet yapping usage patch`);
+
+  const jsResult = applyLinuxPetYappingUsagePatch(originalJs, { sourceName: jsAssetName });
+  const cssResult = applyLinuxPetYappingUsageCssPatch(originalCss, { sourceName: cssAssetName });
+  if (jsResult.updated !== originalJs) {
+    await fs.promises.writeFile(jsAssetPath, jsResult.updated, 'utf8');
+  }
+  if (cssResult.updated !== originalCss) {
+    await fs.promises.writeFile(cssAssetPath, cssResult.updated, 'utf8');
+  }
+  if (jsResult.updated !== originalJs || cssResult.updated !== originalCss) {
+    logger.info('Patched pet yapping usage bubble into the avatar overlay renderer');
+  }
+
+  return {
+    status:
+      jsResult.status === 'already-applied' && cssResult.status === 'already-applied'
+        ? 'already-applied'
+        : 'applied',
+    sourceName: `${jsAssetName},${cssAssetName}`
+  };
+}
+
 export function applyLinuxOpenTargetsPatch(bundleSource, options = {}) {
   if (options.skip) {
     return {
@@ -1369,7 +1466,7 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
       updated,
       LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN,
       ({ windowVar }) =>
-        `this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),${windowVar}.setMenuBarVisibility(!1)`,
+        `this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),${windowVar}.setMenuBarVisibility(!1),this.codexLinuxRegisterAvatarOverlayAutoClose(${windowVar})`,
       errorMessage
     );
     updated = replaceRegexOrThrow(
@@ -1483,6 +1580,97 @@ export function injectLinuxAvatarOverlayRendererPatch(bundleSource, options = {}
       `let ${sampleVar}=V(${eventVar});${body}{cursorScreenX:${sampleVar}.screenX,cursorScreenY:${sampleVar}.screenY})/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */`,
     errorMessage
   );
+}
+
+export function applyLinuxPetYappingUsagePatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxPetYappingUsagePatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_PET_YAPPING_USAGE_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const errorMessage = buildLinuxPetYappingUsagePatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  let updated = replaceRegexOrThrow(
+    bundleSource,
+    LINUX_PET_YAPPING_USAGE_REACT_QUERY_IMPORT_PATTERN,
+    ({ imports, module }) => {
+      const nextImports = appendNamedImportAlias(imports, 'y', 'codexLinuxUseQuery');
+      return `import{${nextImports}}from"${module}";`;
+    },
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN,
+    ({ imports, module }) => {
+      const nextImports = appendNamedImportAlias(imports, 'n', 'codexLinuxFetchUsage');
+      return `import{${nextImports}}from"${module}";`;
+    },
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN,
+    ({ mascotFn }) => `var G=d();${buildLinuxPetYappingUsageComponent()}function ${mascotFn}(`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN,
+    ({ avatar, badge }) =>
+      `children:[${avatar},(0,G.jsx)(codexLinuxPetYappingUsage,{}),${badge}]}/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN,
+    ({ layoutQuery }) => `ft(e.querySelector(\`.codex-usage-yap-wrap\`))??${layoutQuery}`,
+    errorMessage
+  );
+  return updated;
+}
+
+export function applyLinuxPetYappingUsageCssPatch(cssSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: cssSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxPetYappingUsageCssPatch(cssSource, options);
+  return {
+    updated,
+    status: updated === cssSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxPetYappingUsageCssPatch(cssSource, options = {}) {
+  if (cssSource.includes(LINUX_PET_YAPPING_USAGE_PATCH_MARKER)) {
+    return cssSource;
+  }
+  if (!cssSource.includes('.codex-avatar-root')) {
+    throw new Error(
+      buildPatchErrorMessage(LINUX_PET_YAPPING_USAGE_PATCH_BASE_ERROR_MESSAGE, options.sourceName, {
+        detected: { avatarStylesheet: false },
+        missingAnchors: ['avatar stylesheet root']
+      })
+    );
+  }
+  return `${cssSource.trimEnd()}\n\n${buildLinuxPetYappingUsageCss()}\n`;
 }
 
 export function applyLinuxWorktreeEnvironmentMainPatch(bundleSource, options = {}) {
@@ -3435,6 +3623,14 @@ function buildLinuxAvatarOverlayRendererPatchErrorMessage(bundleSource, sourceNa
   );
 }
 
+function buildLinuxPetYappingUsagePatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_PET_YAPPING_USAGE_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxPetYappingUsageBundle(bundleSource)
+  );
+}
+
 function analyzeLinuxMenuBarBundle(bundleSource) {
   const detected = {
     browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
@@ -3588,6 +3784,27 @@ function analyzeLinuxAvatarOverlayRendererBundle(bundleSource) {
       !detected.pointerSample && 'avatar overlay pointer sample',
       !detected.avatarOverlayMoveMessage && 'avatar overlay drag move message',
       !detected.dragMoveDispatch && 'avatar overlay drag move dispatch'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxPetYappingUsageBundle(bundleSource) {
+  const detected = {
+    reactQueryImport: LINUX_PET_YAPPING_USAGE_REACT_QUERY_IMPORT_PATTERN.test(bundleSource),
+    usageApiImport: LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN.test(bundleSource),
+    insertionPoint: LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN.test(bundleSource),
+    mascotChildren: LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN.test(bundleSource),
+    layoutQuery: LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.reactQueryImport && 'React Query hook import',
+      !detected.usageApiImport && 'Codex usage API import',
+      !detected.insertionPoint && 'avatar overlay component insertion point',
+      !detected.mascotChildren && 'mascot children array',
+      !detected.layoutQuery && 'avatar overlay layout measurement query'
     ].filter(Boolean)
   };
 }

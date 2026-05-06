@@ -12,6 +12,7 @@ import {
   applyLinuxBrowserUseHostFetchPatch,
   applyLinuxAvatarOverlayPatch,
   applyLinuxAvatarOverlayRendererPatch,
+  applyLinuxPetYappingUsagePatch,
   applyLinuxCloseCancelPatch,
   applyLinuxWorktreeEnvironmentMainPatch,
   applyLinuxWorktreeEnvironmentWorkerPatch,
@@ -34,6 +35,8 @@ import {
   injectLinuxBrowserUseHostFetchPatch,
   injectLinuxAvatarOverlayPatch,
   injectLinuxAvatarOverlayRendererPatch,
+  injectLinuxPetYappingUsageCssPatch,
+  injectLinuxPetYappingUsagePatch,
   injectLinuxCloseCancelPatch,
   injectLinuxWorktreeEnvironmentMainPatch,
   injectLinuxWorktreeEnvironmentWorkerPatch,
@@ -185,6 +188,12 @@ const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
 );
 const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
   'function $e(){let P={current:null};let Y=e=>{let t=P.current;if(t==null||t.pointerId!==e.pointerId)return;let n=V(e);t.samples=U([...t.samples,n]);let r=n.screenX-t.screenX,i=n.screenY-t.screenY;Math.abs(r)<Ge&&Math.abs(i)<Ge||(t.hasMoved=!0,t.screenX=n.screenX,t.screenY=n.screenY,s(e=>ut({currentDragState:e,deltaX:r})),f.dispatchMessage(`avatar-overlay-drag-move`,{}))}}';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT =
+  'import{_r as r,d as i}from"./vscode-api-Cvzk5den.js";import{v as u}from"./codex-api-DPPuXJuP.js";import{t as d}from"./jsx-runtime-lEsnPbkx.js";var R=e(t(),1);var G=d();function K(e){let x=(0,G.jsx)(E,{assetRef:r,className:`relative z-10`,spritesheetUrl:s,state:m}),w=null;return(0,G.jsxs)(`div`,{children:[x,w]})}function dt(e){if(e==null)return null;let t=ft(e.querySelector(`[data-avatar-overlay-hit-region="mascot"]`))??ft(e.querySelector(qe)),n=ft(e.querySelector(Je));return t==null?null:{mascot:t,tray:n}}';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_429 =
+  'import{_r as r,d as i}from"./vscode-api-Cvzk5den.js";import{v as u}from"./codex-api-DPPuXJuP.js";import{t as d}from"./jsx-runtime-lEsnPbkx.js";var R=e(t(),1);var G=d();function K(e){let x=(0,G.jsx)(E,{assetRef:r,className:`relative z-10`,spritesheetUrl:s,state:m}),w=null;return(0,G.jsxs)(`div`,{children:[x,w]})}function dt(e){if(e==null)return null;let t=ft(e.querySelector(qe)),n=ft(e.querySelector(Je));return t==null?null:{mascot:t,tray:n}}';
+const PET_YAPPING_USAGE_CSS_CURRENT =
+  '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
   'function im({globalState:t,worktreeDir:n}){let r=e.yt(n).replace(/\\/+$/,``);return B(t).some(t=>{let n=e.yt(t).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var am=32e3,om=e.mr(`worktree-service`),sm=class{statesById=new Map;async start(t){let n=this.statesById.get(t);if(!n)return;let{entry:r}=n,i={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,o.randomUUID)()};try{let n=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Zr(r.sourceWorkspaceRoot),startingState:r.startingState,localEnvironmentConfigPath:r.localEnvironmentConfigPath,streamId:i.streamId,setUpSyncedBranch:r.launchMode===`create-stable-worktree`?!1:void 0},signal:i.abortController.signal});om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(n.worktreeGitRoot),flow:`pending`,launchMode:r.launchMode,hasLocalEnvironment:r.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(n.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}})}catch(e){}}async createManagedWorktree({hostId:t,cwd:n,startingState:r,localEnvironmentConfigPath:i,streamId:a}){try{let o=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(t),cwd:e.Zr(n),startingState:r,localEnvironmentConfigPath:i,streamId:a}}),s=this.newbornWorktreeRoots.has(o.worktreeGitRoot);return this.newbornWorktreeRoots.add(o.worktreeGitRoot),om().info(`[worktree-create] ready`,{safe:{worktreeId:e.Dt(o.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:i!=null,wasNewbornProtected:s,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),o}catch(e){throw this.forgetNewbornWorktreeStream(a),e}}};';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT
@@ -1846,6 +1855,11 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
 
   assert.match(updated, /codexLinuxAvatarOverlay/);
   assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
+  assert.match(updated, /codexLinuxAvatarOverlayAutoClose/);
+  assert.match(updated, /codexLinuxRegisterAvatarOverlayAutoClose\([A-Za-z_$][\w$]*\)/);
+  assert.match(updated, /browser-window-created/);
+  assert.match(updated, /before-quit/);
+  assert.doesNotMatch(updated, /browser-window-closed/);
   assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH/);
   assert.match(
     updated,
@@ -1937,6 +1951,62 @@ test('injectLinuxAvatarOverlayRendererPatch reports diagnostics when drag anchor
         /Could not patch Linux avatar overlay drag coordinates into the renderer bundle\. Source: avatar\.js\. Missing anchors: avatar overlay pointer sample, avatar overlay drag move message, avatar overlay drag move dispatch\. Detected anchors: dragMoveDispatch=no, pointerSample=no, avatarOverlayMoveMessage=no\./
     }
   );
+});
+
+test('injectLinuxPetYappingUsagePatch adds yapping usage bubble to avatar overlay renderer', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /codex-pet-rate-limit-status/);
+  assert.match(updated, /await codexLinuxFetchUsage\(\)/);
+  assert.match(updated, /y as codexLinuxUseQuery/);
+  assert.match(updated, /n as codexLinuxFetchUsage/);
+  assert.match(
+    updated,
+    /children:\[x,\(0,G\.jsx\)\(codexLinuxPetYappingUsage,\{\}\),w\]\}/
+  );
+  assert.match(updated, /ft\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?/);
+  assert.doesNotMatch(updated, /codex-usage-rings/);
+});
+
+test('injectLinuxPetYappingUsagePatch expands 26.429 layout measurement for visible bubble', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_429);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(
+    updated,
+    /let t=ft\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?ft\(e\.querySelector\(qe\)\),n=ft\(e\.querySelector\(Je\)\)/
+  );
+});
+
+test('injectLinuxPetYappingUsageCssPatch adds pixel yapping styles', () => {
+  const updated = injectLinuxPetYappingUsageCssPatch(PET_YAPPING_USAGE_CSS_CURRENT);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /\.codex-usage-yap-wrap/);
+  assert.match(updated, /inset:-3\.25rem -2\.4rem -\.55rem -1\.15rem/);
+  assert.match(updated, /width:11\.2rem/);
+  assert.match(updated, /font:600 10px\/1/);
+  assert.match(updated, /shape-rendering:crispEdges/);
+  assert.match(updated, /Press Start 2P/);
+  assert.match(updated, /codex-usage-hover-info/);
+  assert.doesNotMatch(updated, /-5\.85rem|-3\.9rem|-2\.95rem|-2\.35rem|-1\.8rem/);
+});
+
+test('injectLinuxPetYappingUsagePatch is idempotent', () => {
+  const once = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT);
+  const twice = injectLinuxPetYappingUsagePatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxPetYappingUsagePatch skips patching when disabled', () => {
+  const result = applyLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT, {
+    skip: true
+  });
+
+  assert.equal(result.updated, PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
 });
 
 for (const [label, fixture] of [

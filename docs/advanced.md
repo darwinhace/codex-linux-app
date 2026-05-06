@@ -19,6 +19,7 @@
 | `CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH` | Patched app | Disables Linux todo progress patch when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_BROWSER_COMMENT_POSITION_PATCH` | Patched app | Disables browser comment popup positioning correction when set to `1`. |
 | `CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH` | Patched app | Restores upstream background-subagents panel gating when set to `1`. |
+| `CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_AUTO_CLOSE` | Patched app | Disables the Linux `/pet` overlay auto-close guard when set to `1`. |
 | `CODEX_DESKTOP_TRACE_TERMINAL_PATCH` | Patched app | Enables terminal patch trace warnings when set to `1`. |
 | `CODEX_DESKTOP_INSTALL_MANIFEST` | Launcher | Internal path to the diagnostic manifest. Do not set manually. |
 
