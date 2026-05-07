@@ -685,7 +685,7 @@ const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
 const LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN =
   /showWindow\((?<windowVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<wasOpenVar>[A-Za-z_$][\w$]*)=this\.isOpen\(\);\k<windowVar>\.moveTop\(\),\k<windowVar>\.showInactive\(\),!\k<wasOpenVar>&&this\.isOpen\(\)&&this\.broadcastOpenState\(\)\}/;
 const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN =
-  /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*)\)\{\k<windowVar>\.isDestroyed\(\)\|\|(?<equalFn>[A-Za-z_$][\w$]*)\(\k<windowVar>\.getBounds\(\),\k<boundsVar>\)\|\|\k<windowVar>\.setBounds\(\k<boundsVar>,!1\)\}/;
+  /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*)\)\{\k<windowVar>\.isDestroyed\(\)\|\|(?<equalFn>[A-Za-z_$][\w$]*)\(\k<windowVar>\.(?<getBoundsMethod>get(?:Content)?Bounds)\(\),\k<boundsVar>\)\|\|\k<windowVar>\.(?<setBoundsMethod>set(?:Content)?Bounds)\(\k<boundsVar>,!1\)\}/;
 const LINUX_AVATAR_OVERLAY_POINTER_POLICY_PATTERN =
   /applyPointerInteractivityPolicy\(\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\)\{this\.mousePassthroughEnabled=!1;return\}let (?<passthroughVar>[A-Za-z_$][\w$]*)=!this\.pointerInteractive;if\(this\.mousePassthroughEnabled!==\k<passthroughVar>\)\{if\(this\.mousePassthroughEnabled=\k<passthroughVar>,\k<passthroughVar>\)\{\k<windowVar>\.setIgnoreMouseEvents\(!0,\{forward:!0\}\);return\}\k<windowVar>\.setIgnoreMouseEvents\(!1\),this\.refreshCursorAtCurrentMousePosition\(\k<windowVar>\)\}\}/;
 const LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN =
@@ -1486,8 +1486,13 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
     updated = replaceRegexOrThrow(
       updated,
       LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN,
-      ({ windowVar, boundsVar, equalFn }) =>
-        `setWindowBounds(${windowVar},${boundsVar}){if(${windowVar}.isDestroyed())return;let codexLinuxAvatarOverlayBounds=${windowVar}.getBounds();${equalFn}(codexLinuxAvatarOverlayBounds,${boundsVar})||(codexLinuxAvatarOverlayBounds.width===${boundsVar}.width&&codexLinuxAvatarOverlayBounds.height===${boundsVar}.height?${windowVar}.setPosition(${boundsVar}.x,${boundsVar}.y,!1):${windowVar}.setBounds(${boundsVar},!1)),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar})}`,
+      ({ windowVar, boundsVar, equalFn, getBoundsMethod, setBoundsMethod }) => {
+        const applyBounds =
+          setBoundsMethod === 'setBounds'
+            ? `codexLinuxAvatarOverlayBounds.width===${boundsVar}.width&&codexLinuxAvatarOverlayBounds.height===${boundsVar}.height?${windowVar}.setPosition(${boundsVar}.x,${boundsVar}.y,!1):${windowVar}.setBounds(${boundsVar},!1)`
+            : `${windowVar}.${setBoundsMethod}(${boundsVar},!1)`;
+        return `setWindowBounds(${windowVar},${boundsVar}){if(${windowVar}.isDestroyed())return;let codexLinuxAvatarOverlayBounds=${windowVar}.${getBoundsMethod}();${equalFn}(codexLinuxAvatarOverlayBounds,${boundsVar})||(${applyBounds}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar})}`;
+      },
       errorMessage
     );
     updated = replaceRegexOrThrow(

@@ -186,6 +186,15 @@ const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
   new URL('../main-SLemWUtC.js', import.meta.url),
   'utf8'
 );
+const AVATAR_OVERLAY_CONTENT_BOUNDS_BUNDLE_CURRENT = AVATAR_OVERLAY_BUNDLE_26_429_30905
+  .replace(
+    'setWindowBounds(e,t){e.isDestroyed()||EO(e.getBounds(),t)||e.setBounds(t,!1)}',
+    'setWindowBounds(e,t){e.isDestroyed()||EO(e.getContentBounds(),t)||e.setContentBounds(t,!1)}'
+  )
+  .replace(
+    'persistWindowBounds(e){e.isDestroyed()||this.globalState.set(xe,{...e.getBounds()',
+    'persistWindowBounds(e){e.isDestroyed()||this.globalState.set(xe,{...e.getContentBounds()'
+  );
 const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
   'function $e(){let P={current:null};let Y=e=>{let t=P.current;if(t==null||t.pointerId!==e.pointerId)return;let n=V(e);t.samples=U([...t.samples,n]);let r=n.screenX-t.screenX,i=n.screenY-t.screenY;Math.abs(r)<Ge&&Math.abs(i)<Ge||(t.hasMoved=!0,t.screenX=n.screenX,t.screenY=n.screenY,s(e=>ut({currentDragState:e,deltaX:r})),f.dispatchMessage(`avatar-overlay-drag-move`,{}))}}';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT =
@@ -1889,6 +1898,16 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
   assert.match(updated, /codexLinuxAvatarOverlayNext=\{x:Math\.round\([A-Za-z_$][\w$]*\.x-[A-Za-z_$][\w$]*\.pointerWindowX\),y:Math\.round\([A-Za-z_$][\w$]*\.y-[A-Za-z_$][\w$]*\.pointerWindowY\)/);
   assert.match(updated, /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\)\{this\.dragState\?\.hasMoved&&this\.moveDragToCurrentCursor\([A-Za-z_$][\w$]*\),this\.dragState=null,this\.persistWindowBounds\([A-Za-z_$][\w$]*\);return\}/);
   assert.match(updated, /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\)\{this\.persistWindowBounds\([A-Za-z_$][\w$]*\);return\}/);
+});
+
+test('injectLinuxAvatarOverlayPatch supports avatar overlay content-bounds drift', () => {
+  const updated = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_CONTENT_BOUNDS_BUNDLE_CURRENT);
+
+  assert.match(
+    updated,
+    /setWindowBounds\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\)\{[\s\S]*?getContentBounds\(\)[\s\S]*?setContentBounds\([A-Za-z_$][\w$]*,!1\)[\s\S]*?this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*\)/
+  );
+  assert.match(updated, /codexLinuxRegisterAvatarOverlayAutoClose\([A-Za-z_$][\w$]*\)/);
 });
 
 test('injectLinuxAvatarOverlayRendererPatch sends pointer screen coordinates with drag moves', () => {
