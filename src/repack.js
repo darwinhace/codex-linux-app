@@ -30,6 +30,10 @@ const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 const INSTALL_DIAGNOSTIC_MANIFEST_FILE_NAME = 'install-diagnostic-manifest.json';
 const BROWSER_USE_NODE_REPL_ENV = 'CODEX_BROWSER_USE_NODE_REPL_PATH';
 const BROWSER_USE_NODE_ENV = 'CODEX_BROWSER_USE_NODE_PATH';
+const CHROME_EXTENSION_ID = 'hehggadaopoacecdllhhajmbjkdcmajg';
+const CHROME_EXTENSION_HOST_NAME = 'com.openai.codexextension';
+const CHROME_EXTENSION_HOST_FILE_NAME = 'chrome-extension-host';
+const CHROME_EXTENSION_HOST_MODULE_FILE_NAME = 'chrome-extension-host.mjs';
 const BROWSER_USE_PRIMARY_RUNTIME_RELATIVE_PATH = path.join(
   'codex-runtimes',
   'codex-primary-runtime',
@@ -369,7 +373,14 @@ export async function installDesktop(options, logger) {
     patchSummary,
     logger
   });
-  const { iconPath, browserUseRuntime, browserUseNodeRepl, browserUseNode } = installResult;
+  const {
+    iconPath,
+    browserUseRuntime,
+    browserUseNodeRepl,
+    browserUseNode,
+    chromeExtensionHost,
+    chromeNativeMessagingHost
+  } = installResult;
 
   await writeDesktopEntry({
     channel,
@@ -391,6 +402,8 @@ export async function installDesktop(options, logger) {
     browserUseRuntime,
     browserUseNodeRepl,
     browserUseNode,
+    chromeExtensionHost,
+    chromeNativeMessagingHost,
     patches: {
       bootstrap: bootstrapPatch,
       openTargets: openTargetsPatch,
@@ -649,11 +662,11 @@ const LINUX_NOTIFICATION_SOUND_CHILD_PROCESS_PATTERN =
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_PATTERN =
   /var (?<thresholdVar>[A-Za-z_$][\w$]*)=32e3,(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`worktree-service`\),(?<classVar>[A-Za-z_$][\w$]*)=class\{/;
 const LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_PATTERN =
-  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.hostConfig,cwd:e\.(?<pathResolver>[A-Za-z_$][\w$]*)\((?<entryVar>[A-Za-z_$][\w$]*)\.sourceWorkspaceRoot\),startingState:\k<entryVar>\.startingState,localEnvironmentConfigPath:\k<entryVar>\.localEnvironmentConfigPath,streamId:(?<runtimeVar>[A-Za-z_$][\w$]*)\.streamId,setUpSyncedBranch:\k<entryVar>\.launchMode===`create-stable-worktree`\?!1:void 0\},signal:\k<runtimeVar>\.abortController\.signal\}\);/;
+  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.hostConfig,(?<operationSource>operationSource:`[^`]+`,)?cwd:e\.(?<pathResolver>[A-Za-z_$][\w$]*)\((?<entryVar>[A-Za-z_$][\w$]*)\.sourceWorkspaceRoot\),startingState:\k<entryVar>\.startingState,localEnvironmentConfigPath:\k<entryVar>\.localEnvironmentConfigPath,streamId:(?<runtimeVar>[A-Za-z_$][\w$]*)\.streamId,setUpSyncedBranch:\k<entryVar>\.launchMode===`create-stable-worktree`\?!1:void 0\},signal:\k<runtimeVar>\.abortController\.signal\}\);/;
 const LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_REPLACEMENT_CURRENT =
   'hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`';
 const LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_PATTERN =
-  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.getHostConfigForHostId\((?<hostVar>[A-Za-z_$][\w$]*)\),cwd:e\.(?<pathResolver>[A-Za-z_$][\w$]*)\((?<cwdVar>[A-Za-z_$][\w$]*)\),startingState:(?<startingStateVar>[A-Za-z_$][\w$]*),localEnvironmentConfigPath:(?<envVar>[A-Za-z_$][\w$]*),streamId:(?<streamVar>[A-Za-z_$][\w$]*)\}\}\),(?<newbornVar>[A-Za-z_$][\w$]*)=this\.newbornWorktreeRoots\.has\(\k<resultVar>\.worktreeGitRoot\);/;
+  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.getHostConfigForHostId\((?<hostVar>[A-Za-z_$][\w$]*)\),(?<operationSource>operationSource:`[^`]+`,)?cwd:e\.(?<pathResolver>[A-Za-z_$][\w$]*)\((?<cwdVar>[A-Za-z_$][\w$]*)\),startingState:(?<startingStateVar>[A-Za-z_$][\w$]*),localEnvironmentConfigPath:(?<envVar>[A-Za-z_$][\w$]*),streamId:(?<streamVar>[A-Za-z_$][\w$]*)\}\}\),(?<newbornVar>[A-Za-z_$][\w$]*)=this\.newbornWorktreeRoots\.has\(\k<resultVar>\.worktreeGitRoot\);/;
 const LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_REPLACEMENT_CURRENT =
   'hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_PATTERN =
@@ -666,18 +679,24 @@ const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_PATTERN =
   /let (?<cleanupResultVar>[A-Za-z_$][\w$]*)=await (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,a,void 0,r,n\);/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_DELETE_CLEANUP_FUNCTION_PATTERN =
   /async function (?<deleteCleanupFn>[A-Za-z_$][\w$]*)\(e,t,n,r\)\{let i=await [A-Za-z_$][\w$]*\(e,n,`worktree`,r\);[\s\S]*?let [A-Za-z_$][\w$]*=await (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,a,void 0,r,n\);/;
-const LINUX_WORKTREE_ENVIRONMENT_WORKER_MOVE_TO_LOCAL_SUCCESS_SNIPPET_CURRENT =
-  'else r?.(`apply-changes-to-local`,`skipped`);return X({status:`success`,warnings:i})';
+const LINUX_WORKTREE_ENVIRONMENT_WORKER_MOVE_TO_LOCAL_SUCCESS_PATTERN =
+  /else (?<progressVar>[A-Za-z_$][\w$]*)\?\.\(`apply-changes-to-local`,`skipped`\);return (?<resultFactory>[A-Za-z_$][\w$]*)\(\{status:`success`,warnings:(?<warningsVar>[A-Za-z_$][\w$]*)\}\)/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_SKIP_SNIPPET_CURRENT =
   'if(i==null||i===`__none__`)return;';
 const BROWSER_USE_HOST_FETCH_HELPER_ANCHOR_PATTERN =
   /function (?<stateFactory>[A-Za-z_$][\w$]*)\(\)\{return\{apiImpl:null,server:null,starting:null\}\}var (?<registryClass>[A-Za-z_$][\w$]*)=class\{/;
+const BROWSER_USE_AUTH_HEADER_HELPER_PATTERN =
+  /(?:async )?function (?<authHeaderFn>[A-Za-z_$][\w$]*)\(\{action:e,appServerClient:t,desktopOriginator:n,headers:r=\{\},refreshToken:i=!1\}\)\{(?=[\s\S]*?getAuthToken)[\s\S]*?\}(?=function|var)/;
+const BROWSER_USE_DESKTOP_ORIGINATOR_OPTIONS_PATTERN =
+  /desktopOriginator:(?<desktopOriginatorVar>[A-Za-z_$][\w$]*),devApiBaseUrl:/;
+const BROWSER_USE_DESKTOP_ORIGINATOR_LEGACY_PATTERN =
+  /var (?<desktopOriginatorVar>[A-Za-z_$][\w$]*)=`desktop`/;
 const BROWSER_USE_IAB_API_PING_ANCHOR_PATTERN =
   /(?<className>[A-Za-z_$][\w$]*)=class\{(?<fields>[\s\S]*?constructor\(e,t,n=\{\}\)\{[\s\S]*?\})ping\(\)\{return`pong`\}/;
 const BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN =
   /new (?<className>[A-Za-z_$][\w$]*)\((?<getHostArg>t=>this\.canServeTurnForBrowserRoute\(t,e\)\?this\.getBrowserUseHost\(t\):null),(?<blockedArg>e=>this\.getDelegate\(\)\.addBrowserUseNavigationBlockedListener\(e\)),\{(?<options>appSessionId:this\.options\.appSessionId,browserRoute:e,buildFlavor:this\.options\.buildFlavor,canServeRoute:t=>this\.canServeTurnForBrowserRoute\(t,e\))\}\)/;
 const BROWSER_SESSION_REGISTRY_INSTANTIATION_PATTERN =
-  /this\.browserSessionRegistry=new (?<registryClass>[A-Za-z_$][\w$]*)\(\{appSessionId:e\.t,buildFlavor:T,errorReporter:this\.errorReporter\}\)/;
+  /this\.browserSessionRegistry=new (?<registryClass>[A-Za-z_$][\w$]*)\(\{appSessionId:e\.t,buildFlavor:(?<buildFlavor>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?),errorReporter:this\.errorReporter\}\)/;
 const LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN =
   /process\.platform===`darwin`\?(?<windowVar>[A-Za-z_$][\w$]*)\.setVisibleOnAllWorkspaces\(!0,\{visibleOnFullScreen:!0,skipTransformProcessType:!0\}\):\k<windowVar>\.setVisibleOnAllWorkspaces\(!0\),\k<windowVar>\.setAlwaysOnTop\(!0,`floating`\),\k<windowVar>\.setMenuBarVisibility\(!1\)/;
 const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
@@ -705,17 +724,17 @@ const LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN =
 const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN =
   /throwWithVelocity\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<velocityXVar>[A-Za-z_$][\w$]*),(?<velocityYVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|!Number\.isFinite\(\k<velocityXVar>\)\|\|!Number\.isFinite\(\k<velocityYVar>\)\|\|\k<velocityXVar>===0&&\k<velocityYVar>===0\)return;/;
 const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN =
-  /let (?<sampleVar>[A-Za-z_$][\w$]*)=V\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{\}\)/;
-const LINUX_PET_YAPPING_USAGE_REACT_QUERY_IMPORT_PATTERN =
-  /import\{(?<imports>[^}]*)\}from"(?<module>\.\/vscode-api-[^"]+\.js)";/;
+  /let (?<sampleVar>[A-Za-z_$][\w$]*)=(?<sampleFn>[A-Za-z_$][\w$]*)\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{\}\)/;
+const LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN =
+  /(?:^|[;,]|\bvar\s+)(?<reactVar>[A-Za-z_$][\w$]*)=e\([A-Za-z_$][\w$]*\(\),1\)/;
 const LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"(?<module>\.\/codex-api-[^"]+\.js)";/;
 const LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN =
-  /var G=d\(\);function (?<mascotFn>[A-Za-z_$][\w$]*)\(/;
+  /var (?<jsxVar>[A-Za-z_$][\w$]*)=(?<jsxFactory>[A-Za-z_$][\w$]*)\(\);function (?<mascotFn>[A-Za-z_$][\w$]*)\(/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN =
   /children:\[(?<avatar>[A-Za-z_$][\w$]*),(?<badge>[A-Za-z_$][\w$]*)\]\}/;
 const LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN =
-  /(?<layoutQuery>ft\(e\.querySelector\(`\[data-avatar-overlay-hit-region="mascot"\]`\)\)\?\?ft\(e\.querySelector\(qe\)\)|ft\(e\.querySelector\(qe\)\))/;
+  /(?<layoutQuery>(?:[A-Za-z_$][\w$]*\(e\.querySelector\(`\[data-avatar-overlay-hit-region="mascot"\]`\)\)\?\?)?[A-Za-z_$][\w$]*\(e\.querySelector\((?:[A-Za-z_$][\w$]*|`[^`]+`)\)\))(?=,n=[A-Za-z_$][\w$]*\(e\.querySelector\([A-Za-z_$][\w$]*\)\);return [A-Za-z_$][\w$]*==null\?null:\{mascot:[A-Za-z_$][\w$]*,tray:[A-Za-z_$][\w$]*\})/;
 const BROWSER_USE_VIEW_MENU_INSERTION_ANCHOR =
   'Ce,Te,{type:`separator`},Ee,De,Pe,Fe,...o?[Se]:[]],He=[';
 const BROWSER_USE_VIEW_MENU_INSERTION_REPLACEMENT =
@@ -733,17 +752,27 @@ function buildLinuxWorktreeEnvironmentMainHelperReplacement({
 }
 
 function buildLinuxWorktreeEnvironmentPendingRequestReplacement(
-  { resultVar, pathResolver, entryVar, runtimeVar },
+  { resultVar, pathResolver, entryVar, runtimeVar, operationSource },
   { loggerVar }
 ) {
-  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.${pathResolver}(${entryVar}.sourceWorkspaceRoot),${entryVar}.localEnvironmentConfigPath);codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`pending\`,launchMode:${entryVar}.launchMode},sensitive:{sourceWorkspaceRoot:${entryVar}.sourceWorkspaceRoot}}):${entryVar}.localEnvironmentConfigPath==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`pending\`,launchMode:${entryVar}.launchMode},sensitive:{sourceWorkspaceRoot:${entryVar}.sourceWorkspaceRoot,configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.hostConfig,cwd:e.${pathResolver}(${entryVar}.sourceWorkspaceRoot),startingState:${entryVar}.startingState,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${runtimeVar}.streamId,setUpSyncedBranch:${entryVar}.launchMode===\`create-stable-worktree\`?!1:void 0},signal:${runtimeVar}.abortController.signal});`;
+  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.${pathResolver}(${entryVar}.sourceWorkspaceRoot),${entryVar}.localEnvironmentConfigPath);codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`pending\`,launchMode:${entryVar}.launchMode},sensitive:{sourceWorkspaceRoot:${entryVar}.sourceWorkspaceRoot}}):${entryVar}.localEnvironmentConfigPath==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`pending\`,launchMode:${entryVar}.launchMode},sensitive:{sourceWorkspaceRoot:${entryVar}.sourceWorkspaceRoot,configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.hostConfig,${operationSource ?? ''}cwd:e.${pathResolver}(${entryVar}.sourceWorkspaceRoot),startingState:${entryVar}.startingState,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${runtimeVar}.streamId,setUpSyncedBranch:${entryVar}.launchMode===\`create-stable-worktree\`?!1:void 0},signal:${runtimeVar}.abortController.signal});`;
 }
 
 function buildLinuxWorktreeEnvironmentManagedRequestReplacement(
-  { resultVar, newbornVar, pathResolver, hostVar, cwdVar, startingStateVar, envVar, streamVar },
+  {
+    resultVar,
+    newbornVar,
+    pathResolver,
+    hostVar,
+    cwdVar,
+    startingStateVar,
+    envVar,
+    streamVar,
+    operationSource
+  },
   { loggerVar }
 ) {
-  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.${pathResolver}(${cwdVar}),${envVar});codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar}}}):${envVar}==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar},configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.getHostConfigForHostId(${hostVar}),cwd:e.${pathResolver}(${cwdVar}),startingState:${startingStateVar},localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${streamVar}}}),${newbornVar}=this.newbornWorktreeRoots.has(${resultVar}.worktreeGitRoot);`;
+  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.${pathResolver}(${cwdVar}),${envVar});codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar}}}):${envVar}==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar},configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.getHostConfigForHostId(${hostVar}),${operationSource ?? ''}cwd:e.${pathResolver}(${cwdVar}),startingState:${startingStateVar},localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${streamVar}}}),${newbornVar}=this.newbornWorktreeRoots.has(${resultVar}.worktreeGitRoot);`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerHelperReplacement({ createWorktreeFn }) {
@@ -771,8 +800,11 @@ function buildLinuxWorktreeEnvironmentWorkerCleanupCallReplacement(
   return `let codexLinuxWorktreeSourceWorkspaceRoot=codexLinuxResolveWorktreeSourceWorkspaceRoot(e),codexLinuxInjectedCleanupEnvironment=codexLinuxWorktreeSourceWorkspaceRoot==null?(${loggerFn}().info(\`[worktree-delete] cleanup-source-root-unavailable\`,{safe:{worktreeId:t},sensitive:{workspaceRoot:e}}),{[${worktreeRootEnvVar}]:e}):{[${sourceRootEnvVar}]:codexLinuxWorktreeSourceWorkspaceRoot,[${worktreeRootEnvVar}]:e};let ${cleanupResultVar}=await ${cleanupFn}(e,a,void 0,r,codexLinuxInjectedCleanupEnvironment,n);`;
 }
 
-function buildLinuxWorktreeEnvironmentWorkerMoveToLocalReplacement({ deleteCleanupFn, loggerFn }) {
-  return `else r?.(\`apply-changes-to-local\`,\`skipped\`);let codexLinuxWorktreeCleanupId=typeof MX===\`function\`?MX(e.sourceWorktreeRoot):e.sourceWorktreeRoot;try{await ${deleteCleanupFn}(e.sourceWorktreeRoot,codexLinuxWorktreeCleanupId,t,n)}catch(codexLinuxCleanupError){i.push(\`cleanup-source-worktree-failed\`),${loggerFn}().warning(\`[thread-handoff] cleanup-to-local-failed\`,{safe:{worktreeId:codexLinuxWorktreeCleanupId},sensitive:{error:codexLinuxCleanupError,worktree:e.sourceWorktreeRoot}})}return X({status:\`success\`,warnings:i})`;
+function buildLinuxWorktreeEnvironmentWorkerMoveToLocalReplacement(
+  { deleteCleanupFn, loggerFn, worktreeIdExpression },
+  { progressVar, resultFactory, warningsVar }
+) {
+  return `else ${progressVar}?.(\`apply-changes-to-local\`,\`skipped\`);let codexLinuxWorktreeCleanupId=${worktreeIdExpression};try{await ${deleteCleanupFn}(e.sourceWorktreeRoot,codexLinuxWorktreeCleanupId,t,n)}catch(codexLinuxCleanupError){${warningsVar}.push(\`cleanup-source-worktree-failed\`),${loggerFn}().warning(\`[thread-handoff] cleanup-to-local-failed\`,{safe:{worktreeId:codexLinuxWorktreeCleanupId},sensitive:{error:codexLinuxCleanupError,worktree:e.sourceWorktreeRoot}})}return ${resultFactory}({status:\`success\`,warnings:${warningsVar}})`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerCleanupSkipReplacement({ loggerFn }) {
@@ -805,8 +837,8 @@ function appendNamedImportAlias(imports, importedName, aliasName) {
   return [...parts, `${importedName} as ${aliasName}`].join(',');
 }
 
-function buildLinuxPetYappingUsageComponent() {
-  return `function codexLinuxPetYappingUsage(){let e=codexLinuxUseQuery({queryKey:[\`codex-pet-rate-limit-status\`],queryFn:async()=>{try{return await codexLinuxFetchUsage()}catch(e){return null}},retry:!1,staleTime:0,refetchInterval:1e4,refetchIntervalInBackground:!0,refetchOnMount:\`always\`,refetchOnWindowFocus:!0,refetchOnReconnect:!0,gcTime:0}),t=e.data?.rate_limit,n=[t?.primary_window,t?.secondary_window].filter(Boolean),r=e=>e==null?null:{used:e.used_percent??0,remaining:Math.min(Math.max(100-(e.used_percent??0),0),100),mins:e.limit_window_seconds==null?null:e.limit_window_seconds/60},i=(e,t)=>e.length===0?null:e.reduce((e,n)=>{let r=Math.abs((e.limit_window_seconds??0)/60-t),i=Math.abs((n.limit_window_seconds??0)/60-t);return i<r?n:i>r?e:(n.limit_window_seconds??0)>(e.limit_window_seconds??0)?n:e}),a=r(i(n.filter(e=>((e.limit_window_seconds??0)/60)<1440),300)),o=r(i(n.filter(e=>((e.limit_window_seconds??0)/60)>=1440),10080)),s=a?.remaining,c=o?.remaining,l=Math.max(0,Math.min(100,s??0)),u=Math.max(0,Math.min(100,c??0)),[d,f]=(0,R.useState)(0);(0,R.useEffect)(()=>{let e=window.setInterval(()=>f(e=>(e+1)%2),1e4);return()=>window.clearInterval(e)},[]);let p=s==null&&c==null,m=d%2===0,h=p?\`Checking usage...\`:m?\`5-hour usage left: \${Math.round(l)}%\`:\`Weekly usage left: \${Math.round(u)}%\`,ee=p?\`Usage loading...\`:\`5H left \${Math.round(l)}% | Weekly left \${Math.round(u)}%\`;return(0,G.jsxs)(\`div\`,{className:\`codex-usage-yap-wrap\`,\"aria-hidden\":\`true\`,children:[(0,G.jsxs)(\`div\`,{key:d,className:\`codex-usage-yap-pop \${m?\`codex-usage-yap-five-hour\`:\`codex-usage-yap-weekly\`}\`,children:[(0,G.jsxs)(\`svg\`,{className:\`codex-usage-yap-svg\`,viewBox:\`0 0 220 74\`,preserveAspectRatio:\`none\`,children:[(0,G.jsx)(\`path\`,{className:\`codex-usage-yap-shadow\`,d:\`M43 8H170V14H190V20H204V44H190V50H122V56H98V70H84V56H43V50H24V44H12V20H24V14H43Z\`}),(0,G.jsx)(\`path\`,{className:\`codex-usage-yap-fill\`,d:\`M42 6H168V12H188V18H202V42H188V48H120V54H96V68H86V54H42V48H24V42H14V18H24V12H42Z\`})]}),(0,G.jsx)(\`span\`,{className:\`codex-usage-yap-text\`,children:h})]}),(0,G.jsx)(\`div\`,{className:\`codex-usage-hover-info\`,children:ee})]})}`;
+function buildLinuxPetYappingUsageComponent({ jsxVar, reactVar }) {
+  return `function codexLinuxPetYappingUsage(){let[codexLinuxUsageData,codexLinuxSetUsageData]=${reactVar}.useState(null),[codexLinuxUsageTick,codexLinuxSetUsageTick]=${reactVar}.useState(()=>Date.now());${reactVar}.useEffect(()=>{let e=!1,t=async()=>{try{let t=await codexLinuxFetchUsage();e||codexLinuxSetUsageData(t)}catch{e||codexLinuxSetUsageData(null)}};t();let n=setInterval(t,1e4);return()=>{e=!0,clearInterval(n)}},[]),${reactVar}.useEffect(()=>{let e=setInterval(()=>{codexLinuxSetUsageTick(Date.now())},1e4);return()=>{clearInterval(e)}},[]);let e=codexLinuxUsageData?.rate_limit,t=[e?.primary_window,e?.secondary_window].filter(Boolean),n=e=>e==null?null:{used:e.used_percent??0,remaining:Math.min(Math.max(100-(e.used_percent??0),0),100),mins:e.limit_window_seconds==null?null:e.limit_window_seconds/60},r=(e,t)=>e.length===0?null:e.reduce((e,n)=>{let r=Math.abs((e.limit_window_seconds??0)/60-t),i=Math.abs((n.limit_window_seconds??0)/60-t);return i<r?n:i>r?e:(n.limit_window_seconds??0)>(e.limit_window_seconds??0)?n:e}),i=n(r(t.filter(e=>((e.limit_window_seconds??0)/60)<1440),300)),a=n(r(t.filter(e=>((e.limit_window_seconds??0)/60)>=1440),10080)),o=i?.remaining,s=a?.remaining,c=Math.max(0,Math.min(100,o??0)),l=Math.max(0,Math.min(100,s??0)),u=Math.floor(codexLinuxUsageTick/1e4),d=o==null&&s==null,f=u%2===0,p=d?\`Checking usage...\`:f?\`5-hour usage left: \${Math.round(c)}%\`:\`Weekly usage left: \${Math.round(l)}%\`,m=d?\`Usage loading...\`:\`5H left \${Math.round(c)}% | Weekly left \${Math.round(l)}%\`;return(0,${jsxVar}.jsxs)(\`div\`,{className:\`codex-usage-yap-wrap\`,\"aria-hidden\":\`true\`,children:[(0,${jsxVar}.jsxs)(\`div\`,{key:u,className:\`codex-usage-yap-pop \${f?\`codex-usage-yap-five-hour\`:\`codex-usage-yap-weekly\`}\`,children:[(0,${jsxVar}.jsxs)(\`svg\`,{className:\`codex-usage-yap-svg\`,viewBox:\`0 0 220 74\`,preserveAspectRatio:\`none\`,children:[(0,${jsxVar}.jsx)(\`path\`,{className:\`codex-usage-yap-shadow\`,d:\`M43 8H170V14H190V20H204V44H190V50H122V56H98V70H84V56H43V50H24V44H12V20H24V14H43Z\`}),(0,${jsxVar}.jsx)(\`path\`,{className:\`codex-usage-yap-fill\`,d:\`M42 6H168V12H188V18H202V42H188V48H120V54H96V68H86V54H42V48H24V42H14V18H24V12H42Z\`})]}),(0,${jsxVar}.jsx)(\`span\`,{className:\`codex-usage-yap-text\`,children:p})]}),(0,${jsxVar}.jsx)(\`div\`,{className:\`codex-usage-hover-info\`,children:m})]})}`;
 }
 
 function buildLinuxPetYappingUsageCss() {
@@ -823,14 +855,14 @@ function buildLinuxPetYappingUsageCss() {
 @keyframes codex-usage-yap-pop{0%{opacity:0;transform:translateY(8px) scale(.9)}3%{opacity:1;transform:translateY(0) scale(1)}5%{transform:translateY(-2px) scale(1.02,.98)}7%{transform:translateY(0) scale(.99,1.02)}9%{transform:translateY(-1px) scale(1.01,.99)}12%{transform:translateY(0) scale(1)}24%{opacity:1;transform:translateY(0) scale(1)}34%{opacity:0;transform:translateY(-4px) scale(.96)}100%{opacity:0;transform:translateY(-4px) scale(.96)}}`;
 }
 
-function buildLinuxBrowserUseHostFetchHelper() {
-  return `function codexLinuxBrowserUseHostFetchSession(e){let t=codexLinuxBrowserUseHostFetchUrl(e),n=t.searchParams.get(\`conversation_id\`),r=t.searchParams.get(\`turn_id\`);if(typeof n!==\`string\`||n.length===0||typeof r!==\`string\`||r.length===0)throw Error(\`Browser Use policy fetch is missing session metadata.\`);return{session_id:n,turn_id:r}}function codexLinuxBrowserUseHostFetchUrl(e){if(e==null||typeof e.url!==\`string\`)throw Error(\`Invalid Browser Use host fetch request.\`);let t=new URL(e.url);if(t.protocol!==\`https:\`||t.hostname!==\`chatgpt.com\`||t.pathname!==\`/backend-api/aura/site_status\`||t.searchParams.get(\`url_request_source\`)!==\`codex_browser_use\`)throw Error(\`Browser Use host fetch only supports authenticated policy checks.\`);return t}async function codexLinuxBrowserUseHostFetch(e,t){let r=codexLinuxBrowserUseHostFetchUrl(e),i=typeof e.method===\`string\`?e.method.toUpperCase():\`GET\`;if(i!==\`GET\`&&i!==\`HEAD\`)throw Error(\`Browser Use policy fetch only supports GET or HEAD.\`);if(e.bodyBase64!=null)throw Error(\`Browser Use policy fetch does not support request bodies.\`);let a=typeof t===\`function\`?t():null;if(a==null)throw Error(\`Browser Use policy fetch requires an authenticated desktop host fetch bridge, but this desktop build does not support nodeRepl/fetch.\`);let o={},s=await Qc({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:Gi,headers:o}),c=await n.net.fetch(r.toString(),{method:i,headers:s});if(c.status===401){s=await Qc({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:Gi,headers:o,refreshToken:!0}),c=await n.net.fetch(r.toString(),{method:i,headers:s})}let l=Buffer.from(await c.arrayBuffer()).toString(\`base64\`);return{status:c.status,statusText:c.statusText,headers:Object.fromEntries(c.headers.entries()),bodyBase64:l}}function codexLinuxBrowserUseElicitationSession(e){let t=e?.session_id,n=e?.turn_id;if(typeof t!==\`string\`||t.length===0||typeof n!==\`string\`||n.length===0)throw Error(\`Browser Use permission request is missing session metadata.\`);return{session_id:t,turn_id:n}}function codexLinuxBrowserUseElicitationOrigin(e){let t=e?.meta?.origin;if(typeof t!==\`string\`||t.trim().length===0)return null;try{let e=new URL(t);return e.protocol!==\`http:\`&&e.protocol!==\`https:\`?null:e.origin}catch{return null}}function codexLinuxBrowserUseBuiltins(){if(typeof process.getBuiltinModule!==\`function\`)return{fs:null,path:null,os:null};return{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`),os:process.getBuiltinModule(\`node:os\`)}}function codexLinuxBrowserUsePreferencesPath(){let e=codexLinuxBrowserUseBuiltins(),t=e.path,n=e.os;if(!t||!n)return null;let r=typeof process.env.XDG_CONFIG_HOME===\`string\`&&process.env.XDG_CONFIG_HOME.trim().length>0?process.env.XDG_CONFIG_HOME.trim():t.join(n.homedir(),\`.config\`);return t.join(r,\`codex-desktop\`,\`browser-use-preferences.json\`)}function codexLinuxBrowserUseReadPreferences(){let e={allowAllOrigins:!1},t=codexLinuxBrowserUseBuiltins(),n=t.fs,r=codexLinuxBrowserUsePreferencesPath();if(!n||r==null)return e;try{let t=JSON.parse(n.readFileSync(r,\`utf8\`));return typeof t==\`object\`&&t!=null&&!Array.isArray(t)?{allowAllOrigins:t.allowAllOrigins===!0}:e}catch{return e}}function codexLinuxBrowserUseWritePreferences(e){let t=codexLinuxBrowserUseBuiltins(),n=t.fs,r=t.path,i=codexLinuxBrowserUsePreferencesPath();if(!n||!r||i==null)return;n.mkdirSync(r.dirname(i),{recursive:!0});n.writeFileSync(i,JSON.stringify({allowAllOrigins:e.allowAllOrigins===!0},null,2)+\`\\n\`,\`utf8\`)}function codexLinuxBrowserUseShouldAutoAcceptAllOrigins(e){let t=e?.meta;if(t?.connector_id!==\`browser-use\`||t?.connector_name!==\`Browser Use\`)return!1;if(t?.persist!==\`always\`||t?.sensitive_data!=null)return!1;let n=t?.origin;if(typeof n!==\`string\`||n.trim().length===0)return!1;let r;try{r=new URL(n)}catch{return!1}if((r.protocol!==\`http:\`&&r.protocol!==\`https:\`)||r.hostname===\`localhost\`||r.hostname.endsWith(\`.localhost\`)||r.hostname===\`127.0.0.1\`||r.hostname===\`::1\`||r.hostname===\`[::1]\`)return!1;return codexLinuxBrowserUseReadPreferences().allowAllOrigins===!0}function codexLinuxBrowserUseAllowAllOriginsMenuItem(){return{id:\`codex-linux-browser-use-allow-all-origins\`,label:\`Allow Browser Use to access all websites without asking\`,type:\`checkbox\`,checked:codexLinuxBrowserUseReadPreferences().allowAllOrigins===!0,click:e=>{codexLinuxBrowserUseWritePreferences({allowAllOrigins:e?.checked===!0})}}}function codexLinuxBrowserUseResetBrowserConfigCandidates(){let e=codexLinuxBrowserUseBuiltins(),t=e.path,n=e.os;if(!t||!n)return[];let r=(process.env.CODEX_HOME??\`\`).trim(),i=t.join(n.homedir(),\`.codex\`,\`browser\`,\`config.toml\`);return[...new Set([r.length>0?t.join(r,\`browser\`,\`config.toml\`):null,i].filter(Boolean))]}function codexLinuxBrowserUseResetSitePermissions(){let e=codexLinuxBrowserUseBuiltins(),t=e.fs;if(!t)return{removedCount:0};let n=0;for(let e of codexLinuxBrowserUseResetBrowserConfigCandidates())try{t.rmSync(e,{force:!0}),n+=1}catch{}return{removedCount:n}}function codexLinuxBrowserUseResetSitePermissionsMenuItem(){return{id:\`codex-linux-browser-use-reset-site-permissions\`,label:\`Reset Browser Use site permissions\`,click:()=>{let e=codexLinuxBrowserUseResetSitePermissions();n.dialog.showMessageBox({type:\`info\`,title:\`Browser Use permissions reset\`,message:\`Browser Use site permissions were reset.\`,detail:e.removedCount>0?\`Removed saved Browser Use site permissions.\`:\`No saved Browser Use site permissions were found.\`})}}}async function codexLinuxBrowserUseCreateElicitation(e){if(e?.meta?.connector_id!==\`browser-use\`)throw Error(\`Linux Browser Use permission prompts only support Browser Use elicitations.\`);if(codexLinuxBrowserUseShouldAutoAcceptAllOrigins(e))return{action:\`accept\`};let t=typeof e.message===\`string\`&&e.message.trim().length>0?e.message:\`Allow Browser Use to continue?\`,r=codexLinuxBrowserUseElicitationOrigin(e),i=e?.meta?.sensitive_data===\`browsing_history\`?\`This allows Browser Use to read browsing history for this task.\`:r!=null?\`This allows Browser Use to navigate to and inspect \${r} for this task.\`:\`This allows Browser Use to continue this task.\`,a=await n.dialog.showMessageBox({type:\`question\`,buttons:[\`Allow\`,\`Deny\`],defaultId:0,cancelId:1,noLink:!0,title:\`Allow Browser Use?\`,message:t,detail:i});return{action:a.response===0?\`accept\`:\`decline\`}}/* ${LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER} */`;
+function buildLinuxBrowserUseHostFetchHelper({ authHeaderFn, desktopOriginatorVar }) {
+  return `function codexLinuxBrowserUseHostFetchSession(e){let t=codexLinuxBrowserUseHostFetchUrl(e),n=t.searchParams.get(\`conversation_id\`),r=t.searchParams.get(\`turn_id\`);if(typeof n!==\`string\`||n.length===0||typeof r!==\`string\`||r.length===0)throw Error(\`Browser Use policy fetch is missing session metadata.\`);return{session_id:n,turn_id:r}}function codexLinuxBrowserUseHostFetchUrl(e){if(e==null||typeof e.url!==\`string\`)throw Error(\`Invalid Browser Use host fetch request.\`);let t=new URL(e.url);if(t.protocol!==\`https:\`||t.hostname!==\`chatgpt.com\`||t.pathname!==\`/backend-api/aura/site_status\`||t.searchParams.get(\`url_request_source\`)!==\`codex_browser_use\`)throw Error(\`Browser Use host fetch only supports authenticated policy checks.\`);return t}async function codexLinuxBrowserUseHostFetch(e,t){let r=codexLinuxBrowserUseHostFetchUrl(e),i=typeof e.method===\`string\`?e.method.toUpperCase():\`GET\`;if(i!==\`GET\`&&i!==\`HEAD\`)throw Error(\`Browser Use policy fetch only supports GET or HEAD.\`);if(e.bodyBase64!=null)throw Error(\`Browser Use policy fetch does not support request bodies.\`);let a=typeof t===\`function\`?t():null;if(a==null)throw Error(\`Browser Use policy fetch requires an authenticated desktop host fetch bridge, but this desktop build does not support nodeRepl/fetch.\`);let o={},s=await ${authHeaderFn}({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:${desktopOriginatorVar},headers:o}),c=await n.net.fetch(r.toString(),{method:i,headers:s});if(c.status===401){s=await ${authHeaderFn}({action:\`load Browser Use policy status\`,appServerClient:a,desktopOriginator:${desktopOriginatorVar},headers:o,refreshToken:!0}),c=await n.net.fetch(r.toString(),{method:i,headers:s})}let l=Buffer.from(await c.arrayBuffer()).toString(\`base64\`);return{status:c.status,statusText:c.statusText,headers:Object.fromEntries(c.headers.entries()),bodyBase64:l}}function codexLinuxBrowserUseElicitationSession(e){let t=e?.session_id,n=e?.turn_id;if(typeof t!==\`string\`||t.length===0||typeof n!==\`string\`||n.length===0)throw Error(\`Browser Use permission request is missing session metadata.\`);return{session_id:t,turn_id:n}}function codexLinuxBrowserUseElicitationOrigin(e){let t=e?.meta?.origin;if(typeof t!==\`string\`||t.trim().length===0)return null;try{let e=new URL(t);return e.protocol!==\`http:\`&&e.protocol!==\`https:\`?null:e.origin}catch{return null}}function codexLinuxBrowserUseBuiltins(){if(typeof process.getBuiltinModule!==\`function\`)return{fs:null,path:null,os:null};return{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`),os:process.getBuiltinModule(\`node:os\`)}}function codexLinuxBrowserUsePreferencesPath(){let e=codexLinuxBrowserUseBuiltins(),t=e.path,n=e.os;if(!t||!n)return null;let r=typeof process.env.XDG_CONFIG_HOME===\`string\`&&process.env.XDG_CONFIG_HOME.trim().length>0?process.env.XDG_CONFIG_HOME.trim():t.join(n.homedir(),\`.config\`);return t.join(r,\`codex-desktop\`,\`browser-use-preferences.json\`)}function codexLinuxBrowserUseReadPreferences(){let e={allowAllOrigins:!1},t=codexLinuxBrowserUseBuiltins(),n=t.fs,r=codexLinuxBrowserUsePreferencesPath();if(!n||r==null)return e;try{let t=JSON.parse(n.readFileSync(r,\`utf8\`));return typeof t==\`object\`&&t!=null&&!Array.isArray(t)?{allowAllOrigins:t.allowAllOrigins===!0}:e}catch{return e}}function codexLinuxBrowserUseWritePreferences(e){let t=codexLinuxBrowserUseBuiltins(),n=t.fs,r=t.path,i=codexLinuxBrowserUsePreferencesPath();if(!n||!r||i==null)return;n.mkdirSync(r.dirname(i),{recursive:!0});n.writeFileSync(i,JSON.stringify({allowAllOrigins:e.allowAllOrigins===!0},null,2)+\`\\n\`,\`utf8\`)}function codexLinuxBrowserUseShouldAutoAcceptAllOrigins(e){let t=e?.meta;if(t?.connector_id!==\`browser-use\`||t?.connector_name!==\`Browser Use\`)return!1;if(t?.persist!==\`always\`||t?.sensitive_data!=null)return!1;let n=t?.origin;if(typeof n!==\`string\`||n.trim().length===0)return!1;let r;try{r=new URL(n)}catch{return!1}if((r.protocol!==\`http:\`&&r.protocol!==\`https:\`)||r.hostname===\`localhost\`||r.hostname.endsWith(\`.localhost\`)||r.hostname===\`127.0.0.1\`||r.hostname===\`::1\`||r.hostname===\`[::1]\`)return!1;return codexLinuxBrowserUseReadPreferences().allowAllOrigins===!0}function codexLinuxBrowserUseAllowAllOriginsMenuItem(){return{id:\`codex-linux-browser-use-allow-all-origins\`,label:\`Allow Browser Use to access all websites without asking\`,type:\`checkbox\`,checked:codexLinuxBrowserUseReadPreferences().allowAllOrigins===!0,click:e=>{codexLinuxBrowserUseWritePreferences({allowAllOrigins:e?.checked===!0})}}}function codexLinuxBrowserUseResetBrowserConfigCandidates(){let e=codexLinuxBrowserUseBuiltins(),t=e.path,n=e.os;if(!t||!n)return[];let r=(process.env.CODEX_HOME??\`\`).trim(),i=t.join(n.homedir(),\`.codex\`,\`browser\`,\`config.toml\`);return[...new Set([r.length>0?t.join(r,\`browser\`,\`config.toml\`):null,i].filter(Boolean))]}function codexLinuxBrowserUseResetSitePermissions(){let e=codexLinuxBrowserUseBuiltins(),t=e.fs;if(!t)return{removedCount:0};let n=0;for(let e of codexLinuxBrowserUseResetBrowserConfigCandidates())try{t.rmSync(e,{force:!0}),n+=1}catch{}return{removedCount:n}}function codexLinuxBrowserUseResetSitePermissionsMenuItem(){return{id:\`codex-linux-browser-use-reset-site-permissions\`,label:\`Reset Browser Use site permissions\`,click:()=>{let e=codexLinuxBrowserUseResetSitePermissions();n.dialog.showMessageBox({type:\`info\`,title:\`Browser Use permissions reset\`,message:\`Browser Use site permissions were reset.\`,detail:e.removedCount>0?\`Removed saved Browser Use site permissions.\`:\`No saved Browser Use site permissions were found.\`})}}}async function codexLinuxBrowserUseCreateElicitation(e){if(e?.meta?.connector_id!==\`browser-use\`)throw Error(\`Linux Browser Use permission prompts only support Browser Use elicitations.\`);if(codexLinuxBrowserUseShouldAutoAcceptAllOrigins(e))return{action:\`accept\`};let t=typeof e.message===\`string\`&&e.message.trim().length>0?e.message:\`Allow Browser Use to continue?\`,r=codexLinuxBrowserUseElicitationOrigin(e),i=e?.meta?.sensitive_data===\`browsing_history\`?\`This allows Browser Use to read browsing history for this task.\`:r!=null?\`This allows Browser Use to navigate to and inspect \${r} for this task.\`:\`This allows Browser Use to continue this task.\`,a=await n.dialog.showMessageBox({type:\`question\`,buttons:[\`Allow\`,\`Deny\`],defaultId:0,cancelId:1,noLink:!0,title:\`Allow Browser Use?\`,message:t,detail:i});return{action:a.response===0?\`accept\`:\`decline\`}}/* ${LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER} */`;
 }
 
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
   /let (?<createdSessionVar>[A-Za-z_$][\w$]*)=(?<resumeSessionVar>[A-Za-z_$][\w$]*)\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:n,hostId:r\?\?null,cwd:i\?\?null\}\);(?<sessionRef>[A-Za-z_$][\w$]*)\.current=\k<createdSessionVar>,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1;/;
-const TERMINAL_POST_INIT_MARKERS = ['p(),M.current=!1;', 'm(),A.current=!1;', 'g();let _='];
+const TERMINAL_POST_INIT_MARKERS = ['p(),M.current=!1;', 'm(),A.current=!1;', 'g();let _=', '_();let v='];
 const TERMINAL_ATTACH_WITH_ATTACH_PATTERN =
   /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:\k<resumeSessionVar>,conversationId:n,hostId:r\?\?null,cwd:i\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
 const TERMINAL_ATTACH_WITH_CREATE_PATTERN =
@@ -1396,11 +1428,22 @@ export function injectLinuxBrowserUseHostFetchPatch(bundleSource, options = {}) 
     bundleSource,
     options.sourceName
   );
+  const authHeaderMatch = bundleSource.match(BROWSER_USE_AUTH_HEADER_HELPER_PATTERN);
+  const desktopOriginatorMatch =
+    bundleSource.match(BROWSER_USE_DESKTOP_ORIGINATOR_OPTIONS_PATTERN) ??
+    bundleSource.match(BROWSER_USE_DESKTOP_ORIGINATOR_LEGACY_PATTERN);
+  if (!authHeaderMatch?.groups || !desktopOriginatorMatch?.groups) {
+    throw new Error(errorMessage);
+  }
+  const browserUseContext = {
+    authHeaderFn: authHeaderMatch.groups.authHeaderFn,
+    desktopOriginatorVar: desktopOriginatorMatch.groups.desktopOriginatorVar
+  };
   let updated = replaceRegexOrThrow(
     bundleSource,
     BROWSER_USE_HOST_FETCH_HELPER_ANCHOR_PATTERN,
     ({ stateFactory, registryClass }) =>
-      `${buildLinuxBrowserUseHostFetchHelper()}function ${stateFactory}(){return{apiImpl:null,server:null,starting:null}}var ${registryClass}=class{`,
+      `${buildLinuxBrowserUseHostFetchHelper(browserUseContext)}function ${stateFactory}(){return{apiImpl:null,server:null,starting:null}}var ${registryClass}=class{`,
     errorMessage
   );
   updated = replaceRegexOrThrow(
@@ -1420,8 +1463,8 @@ export function injectLinuxBrowserUseHostFetchPatch(bundleSource, options = {}) 
   updated = replaceRegexOrThrow(
     updated,
     BROWSER_SESSION_REGISTRY_INSTANTIATION_PATTERN,
-    ({ registryClass }) =>
-      `this.browserSessionRegistry=new ${registryClass}({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter,appServerConnection:()=>this.getAppServerConnection(this.hostId)})`,
+    ({ registryClass, buildFlavor }) =>
+      `this.browserSessionRegistry=new ${registryClass}({appSessionId:e.t,buildFlavor:${buildFlavor},errorReporter:this.errorReporter,appServerConnection:()=>this.getAppServerConnection(this.hostId)})`,
     errorMessage
   );
   if (updated.includes(BROWSER_USE_VIEW_MENU_INSERTION_ANCHOR)) {
@@ -1581,8 +1624,8 @@ export function injectLinuxAvatarOverlayRendererPatch(bundleSource, options = {}
   return replaceRegexOrThrow(
     bundleSource,
     LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN,
-    ({ sampleVar, eventVar, body }) =>
-      `let ${sampleVar}=V(${eventVar});${body}{cursorScreenX:${sampleVar}.screenX,cursorScreenY:${sampleVar}.screenY})/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */`,
+    ({ sampleVar, sampleFn, eventVar, body }) =>
+      `let ${sampleVar}=${sampleFn}(${eventVar});${body}{cursorScreenX:${sampleVar}.screenX,cursorScreenY:${sampleVar}.screenY})/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */`,
     errorMessage
   );
 }
@@ -1609,15 +1652,11 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
     bundleSource,
     options.sourceName
   );
-  let updated = replaceRegexOrThrow(
-    bundleSource,
-    LINUX_PET_YAPPING_USAGE_REACT_QUERY_IMPORT_PATTERN,
-    ({ imports, module }) => {
-      const nextImports = appendNamedImportAlias(imports, 'y', 'codexLinuxUseQuery');
-      return `import{${nextImports}}from"${module}";`;
-    },
-    errorMessage
-  );
+  const reactMatch = bundleSource.match(LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN);
+  if (!reactMatch?.groups?.reactVar) {
+    throw new Error(errorMessage);
+  }
+  let updated = bundleSource;
   updated = replaceRegexOrThrow(
     updated,
     LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN,
@@ -1627,23 +1666,38 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
     },
     errorMessage
   );
+  const insertionMatch = updated.match(LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN);
+  if (!insertionMatch?.groups) {
+    throw new Error(errorMessage);
+  }
+  const petContext = {
+    jsxVar: insertionMatch.groups.jsxVar,
+    reactVar: reactMatch.groups.reactVar
+  };
   updated = replaceRegexOrThrow(
     updated,
     LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN,
-    ({ mascotFn }) => `var G=d();${buildLinuxPetYappingUsageComponent()}function ${mascotFn}(`,
+    ({ jsxVar, jsxFactory, mascotFn }) =>
+      `var ${jsxVar}=${jsxFactory}();${buildLinuxPetYappingUsageComponent({
+        jsxVar,
+        reactVar: petContext.reactVar
+      })}function ${mascotFn}(`,
     errorMessage
   );
   updated = replaceRegexOrThrow(
     updated,
     LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN,
     ({ avatar, badge }) =>
-      `children:[${avatar},(0,G.jsx)(codexLinuxPetYappingUsage,{}),${badge}]}/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`,
+      `children:[${avatar},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{}),${badge}]}/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`,
     errorMessage
   );
   updated = replaceRegexOrThrow(
     updated,
     LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN,
-    ({ layoutQuery }) => `ft(e.querySelector(\`.codex-usage-yap-wrap\`))??${layoutQuery}`,
+    ({ layoutQuery }) => {
+      const measureFn = layoutQuery.match(/^([A-Za-z_$][\w$]*)\(/)?.[1] ?? 'ft';
+      return `${measureFn}(e.querySelector(\`.codex-usage-yap-wrap\`))??${layoutQuery}`;
+    },
     errorMessage
   );
   return updated;
@@ -1778,6 +1832,9 @@ export function injectLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options 
   const loggerMatch = bundleSource.match(
     /(?<loggerFn>[A-Za-z_$][\w$]*)\(\)\.warning\(`\[worktree-delete\] cleanup-config-unavailable`/
   );
+  const deleteWorktreeIdMatch = bundleSource.match(
+    /async function [A-Za-z_$][\w$]*\(e,t,n(?:=!1)?,r\)\{let [A-Za-z_$][\w$]*=(?<hashFn>[A-Za-z_$][\w$]*)\((?<normalizeFn>[A-Za-z_$][\w$]*)\(e\)\),[A-Za-z_$][\w$]*=/
+  );
   if (
     !cleanupCallMatch?.groups ||
     !deleteCleanupMatch?.groups ||
@@ -1791,7 +1848,10 @@ export function injectLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options 
     deleteCleanupFn: deleteCleanupMatch.groups.deleteCleanupFn,
     loggerFn: loggerMatch.groups.loggerFn,
     sourceRootEnvVar: setupEnvironmentMatch.groups.sourceRootEnvVar,
-    worktreeRootEnvVar: setupEnvironmentMatch.groups.worktreeRootEnvVar
+    worktreeRootEnvVar: setupEnvironmentMatch.groups.worktreeRootEnvVar,
+    worktreeIdExpression: deleteWorktreeIdMatch?.groups
+      ? `${deleteWorktreeIdMatch.groups.hashFn}(${deleteWorktreeIdMatch.groups.normalizeFn}(e.sourceWorktreeRoot))`
+      : 'e.sourceWorktreeRoot'
   };
   let updated = replaceRegexOrThrow(
     bundleSource,
@@ -1817,10 +1877,11 @@ export function injectLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options 
     (groups) => buildLinuxWorktreeEnvironmentWorkerCleanupCallReplacement(groups, workerBundleContext),
     errorMessage
   );
-  updated = replaceSnippetOrThrow(
+  updated = replaceRegexOrThrow(
     updated,
-    LINUX_WORKTREE_ENVIRONMENT_WORKER_MOVE_TO_LOCAL_SUCCESS_SNIPPET_CURRENT,
-    buildLinuxWorktreeEnvironmentWorkerMoveToLocalReplacement(workerBundleContext),
+    LINUX_WORKTREE_ENVIRONMENT_WORKER_MOVE_TO_LOCAL_SUCCESS_PATTERN,
+    (groups) =>
+      buildLinuxWorktreeEnvironmentWorkerMoveToLocalReplacement(workerBundleContext, groups),
     errorMessage
   );
   return replaceSnippetOrThrow(
@@ -1932,6 +1993,11 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
         target: TERMINAL_POST_INIT_MARKERS[2],
         replacement:
           'g();let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{},_='
+      },
+      {
+        target: TERMINAL_POST_INIT_MARKERS[3],
+        replacement:
+          '_();let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{},v='
       }
     ],
     errorMessage
@@ -3489,8 +3555,8 @@ function analyzeLinuxWorktreeEnvironmentWorkerBundle(bundleSource) {
     storedEnvironmentSelection: LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_PATTERN.test(bundleSource),
     setupSkipBranch: bundleSource.includes('No local environment selected'),
     cleanupCall: LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_PATTERN.test(bundleSource),
-    moveToLocalSuccess: bundleSource.includes(
-      LINUX_WORKTREE_ENVIRONMENT_WORKER_MOVE_TO_LOCAL_SUCCESS_SNIPPET_CURRENT
+    moveToLocalSuccess: LINUX_WORKTREE_ENVIRONMENT_WORKER_MOVE_TO_LOCAL_SUCCESS_PATTERN.test(
+      bundleSource
     ),
     cleanupSkipBranch: bundleSource.includes('if(i==null||i===`__none__`)return;')
   };
@@ -3697,7 +3763,10 @@ function analyzeLinuxNotificationSoundBundle(bundleSource) {
 
 function analyzeLinuxBrowserUseHostFetchBundle(bundleSource) {
   const detected = {
-    authHeaderHelper: bundleSource.includes('function Qc(') && bundleSource.includes('getAuthToken'),
+    authHeaderHelper: BROWSER_USE_AUTH_HEADER_HELPER_PATTERN.test(bundleSource),
+    desktopOriginator:
+      BROWSER_USE_DESKTOP_ORIGINATOR_OPTIONS_PATTERN.test(bundleSource) ||
+      BROWSER_USE_DESKTOP_ORIGINATOR_LEGACY_PATTERN.test(bundleSource),
     nativePipeRegistry: BROWSER_USE_HOST_FETCH_HELPER_ANCHOR_PATTERN.test(bundleSource),
     iabApiClass: BROWSER_USE_IAB_API_PING_ANCHOR_PATTERN.test(bundleSource),
     iabRegistryOptions: BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN.test(bundleSource),
@@ -3708,6 +3777,7 @@ function analyzeLinuxBrowserUseHostFetchBundle(bundleSource) {
     detected,
     missingAnchors: [
       !detected.authHeaderHelper && 'authenticated API header helper',
+      !detected.desktopOriginator && 'desktop originator value',
       !detected.nativePipeRegistry && 'Browser Use native pipe registry',
       !detected.iabApiClass && 'IAB API class',
       !detected.iabRegistryOptions && 'IAB route backend options',
@@ -3779,7 +3849,9 @@ function analyzeLinuxAvatarOverlayRendererBundle(bundleSource) {
     dragMoveDispatch:
       bundleSource.includes(LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER) ||
       LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN.test(bundleSource),
-    pointerSample: bundleSource.includes('=V('),
+    pointerSample: /let [A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\);[\s\S]*?`avatar-overlay-drag-move`/.test(
+      bundleSource
+    ),
     avatarOverlayMoveMessage: bundleSource.includes('`avatar-overlay-drag-move`')
   };
 
@@ -3795,7 +3867,7 @@ function analyzeLinuxAvatarOverlayRendererBundle(bundleSource) {
 
 function analyzeLinuxPetYappingUsageBundle(bundleSource) {
   const detected = {
-    reactQueryImport: LINUX_PET_YAPPING_USAGE_REACT_QUERY_IMPORT_PATTERN.test(bundleSource),
+    reactRuntime: LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN.test(bundleSource),
     usageApiImport: LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN.test(bundleSource),
     insertionPoint: LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN.test(bundleSource),
     mascotChildren: LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN.test(bundleSource),
@@ -3805,7 +3877,7 @@ function analyzeLinuxPetYappingUsageBundle(bundleSource) {
   return {
     detected,
     missingAnchors: [
-      !detected.reactQueryImport && 'React Query hook import',
+      !detected.reactRuntime && 'React runtime binding',
       !detected.usageApiImport && 'Codex usage API import',
       !detected.insertionPoint && 'avatar overlay component insertion point',
       !detected.mascotChildren && 'mascot children array',
@@ -4420,6 +4492,11 @@ async function installChannelRuntime({
     homeDir,
     logger
   });
+  const chromeExtensionHost = await installLinuxChromeExtensionHost({
+    resourcesDir,
+    homeDir,
+    logger
+  });
   await copyFile(packagedAsarPath, path.join(resourcesDir, 'app.asar'));
   await installUnpackedRuntime({
     upstreamResourcesDir,
@@ -4450,7 +4527,8 @@ async function installChannelRuntime({
   logger.info(`Installed wrapper ${executablePath}`);
   return {
     iconPath,
-    ...browserUseRuntime
+    ...browserUseRuntime,
+    ...chromeExtensionHost
   };
 }
 
@@ -5015,6 +5093,95 @@ function readBrowserUsePreferences() {
   }
 }
 
+function getBrowserUseConfigCandidates() {
+  const codexHome = typeof process.env.CODEX_HOME === 'string' ? process.env.CODEX_HOME.trim() : '';
+  return [
+    codexHome.length > 0 ? path.join(codexHome, 'browser', 'config.toml') : null,
+    path.join(os.homedir(), '.codex', 'browser', 'config.toml')
+  ].filter(Boolean);
+}
+
+function readBrowserUseConfig() {
+  const defaults = {
+    approvalMode: 'always_ask',
+    historyApprovalMode: 'always_ask',
+    deniedOrigins: []
+  };
+  for (const configPath of getBrowserUseConfigCandidates()) {
+    try {
+      const raw = fsSync.readFileSync(configPath, 'utf8');
+      return {
+        approvalMode: readTomlStringValue(raw, 'approval_mode') ?? defaults.approvalMode,
+        historyApprovalMode: readTomlStringValue(raw, 'history_approval_mode') ?? defaults.historyApprovalMode,
+        deniedOrigins: readTomlStringArrayValue(raw, 'denied')
+      };
+    } catch {}
+  }
+  return defaults;
+}
+
+function readTomlStringValue(raw, key) {
+  const line = raw
+    .split(/\\r?\\n/)
+    .find((entry) => entry.trimStart().startsWith(key));
+  if (!line) {
+    return null;
+  }
+  const equalsIndex = line.indexOf('=');
+  if (equalsIndex === -1) {
+    return null;
+  }
+  const value = line.slice(equalsIndex + 1).trim();
+  const quote = value[0];
+  if (quote !== '"' && quote !== "'") {
+    return null;
+  }
+  const endIndex = value.indexOf(quote, 1);
+  return endIndex === -1 ? null : value.slice(1, endIndex);
+}
+
+function readTomlStringArrayValue(raw, key) {
+  const lines = raw.split(/\\r?\\n/);
+  let startIndex = -1;
+  for (let index = 0; index < lines.length; index += 1) {
+    if (lines[index].trimStart().startsWith(key)) {
+      startIndex = index;
+      break;
+    }
+  }
+  if (startIndex === -1) {
+    return [];
+  }
+  let value = lines[startIndex].slice(lines[startIndex].indexOf('=') + 1);
+  for (let index = startIndex + 1; !value.includes(']') && index < lines.length; index += 1) {
+    value += '\\n' + lines[index];
+  }
+  const openIndex = value.indexOf('[');
+  const closeIndex = value.indexOf(']', openIndex + 1);
+  if (openIndex === -1 || closeIndex === -1) {
+    return [];
+  }
+  return Array.from(value.slice(openIndex + 1, closeIndex).matchAll(/["']([^"']+)["']/g), (item) => item[1]);
+}
+
+function shouldAutoAcceptBrowserUseConfig(params) {
+  if (params?.meta?.connector_id !== 'browser-use') {
+    return false;
+  }
+  const config = readBrowserUseConfig();
+  if (params?.meta?.sensitive_data === 'browsing_history') {
+    return config.historyApprovalMode === 'never_ask';
+  }
+  const origin = getBrowserUseElicitationOrigin(params);
+  if (origin == null) {
+    return false;
+  }
+  if (config.deniedOrigins.includes(origin.origin)) {
+    return false;
+  }
+  return config.approvalMode === 'never_ask';
+}
+
 function shouldAutoAcceptAllBrowserUseOrigins(params) {
   const meta = params?.meta;
   if (!isObject(meta)) {
@@ -5338,6 +5505,9 @@ function createKernel() {
     async createElicitation(params) {
       if (!hasClientElicitationSupport()) {
         throw new Error('nodeRepl.createElicitation requires MCP client elicitation support');
+      }
+      if (shouldAutoAcceptBrowserUseConfig(params)) {
+        return { action: 'accept' };
       }
       if (shouldAutoAcceptAllBrowserUseOrigins(params)) {
         return { action: 'accept' };
@@ -5741,6 +5911,227 @@ exec ${shellQuote(sources.node.sourcePath)} "$@"
   };
 }
 
+export async function installLinuxChromeExtensionHost({
+  resourcesDir,
+  homeDir = getPaths().home,
+  extensionId = CHROME_EXTENSION_ID,
+  hostName = CHROME_EXTENSION_HOST_NAME,
+  logger = null
+}) {
+  const hostModulePath = path.join(resourcesDir, CHROME_EXTENSION_HOST_MODULE_FILE_NAME);
+  const hostExecutablePath = path.join(resourcesDir, CHROME_EXTENSION_HOST_FILE_NAME);
+  const nodePath = path.join(resourcesDir, 'node');
+  const manifestPath = path.join(
+    homeDir,
+    '.config',
+    'google-chrome',
+    'NativeMessagingHosts',
+    `${hostName}.json`
+  );
+  const manifest = {
+    name: hostName,
+    description: 'Codex chrome native messaging host',
+    type: 'stdio',
+    path: hostExecutablePath,
+    allowed_origins: [`chrome-extension://${extensionId}/`]
+  };
+
+  await ensureDir(resourcesDir);
+  await fs.promises.writeFile(hostModulePath, buildLinuxChromeExtensionHostModule(), 'utf8');
+  await writeExecutable(
+    hostExecutablePath,
+    `#!/usr/bin/env bash
+set -euo pipefail
+exec "$(dirname "$0")/node" "$(dirname "$0")/${CHROME_EXTENSION_HOST_MODULE_FILE_NAME}" "$@"
+`
+  );
+  await ensureDir(path.dirname(manifestPath));
+  await fs.promises.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  await assertLinuxExecutableFile(hostExecutablePath, 'Installed Chrome extension host');
+  logger?.info?.(`Installed Chrome native messaging host manifest ${manifestPath}`);
+
+  return {
+    chromeExtensionHost: {
+      status: 'installed',
+      targetPath: hostExecutablePath,
+      modulePath: hostModulePath,
+      nodePath
+    },
+    chromeNativeMessagingHost: {
+      status: 'installed',
+      manifestPath,
+      hostName,
+      extensionId
+    }
+  };
+}
+
+export function buildLinuxChromeExtensionHostModule() {
+  return `import crypto from 'node:crypto';
+import fs from 'node:fs';
+import net from 'node:net';
+import path from 'node:path';
+
+const FRAME_HEADER_BYTES = 4;
+const SOCKET_DIR = process.env.CODEX_BROWSER_USE_SOCKET_DIR || '/tmp/codex-browser-use';
+const SOCKET_PATH = path.join(SOCKET_DIR, crypto.randomUUID() + '.sock');
+const pendingRequests = new Map();
+const clients = new Set();
+let nextRequestId = 1;
+let shuttingDown = false;
+
+class FrameDecoder {
+  chunks = [];
+  byteLength = 0;
+
+  push(chunk) {
+    this.chunks.push(Buffer.from(chunk));
+    this.byteLength += chunk.byteLength;
+    const messages = [];
+    while (this.byteLength >= FRAME_HEADER_BYTES) {
+      const header = this.peek(FRAME_HEADER_BYTES);
+      const bodyLength = header.readUInt32LE(0);
+      const frameLength = FRAME_HEADER_BYTES + bodyLength;
+      if (this.byteLength < frameLength) break;
+      const frame = this.consume(frameLength);
+      messages.push(JSON.parse(frame.subarray(FRAME_HEADER_BYTES).toString('utf8')));
+    }
+    return messages;
+  }
+
+  peek(length) {
+    if (this.chunks[0]?.byteLength >= length) return this.chunks[0].subarray(0, length);
+    const out = Buffer.allocUnsafe(length);
+    let offset = 0;
+    for (const chunk of this.chunks) {
+      const copied = chunk.copy(out, offset, 0, length - offset);
+      offset += copied;
+      if (offset === length) break;
+    }
+    return out;
+  }
+
+  consume(length) {
+    const out = Buffer.allocUnsafe(length);
+    let offset = 0;
+    while (offset < length) {
+      const chunk = this.chunks[0];
+      if (!chunk) throw new Error('Frame decoder underflow.');
+      const copied = chunk.copy(out, offset, 0, length - offset);
+      offset += copied;
+      this.byteLength -= copied;
+      if (copied === chunk.byteLength) this.chunks.shift();
+      else this.chunks[0] = chunk.subarray(copied);
+    }
+    return out;
+  }
+}
+
+function encode(message) {
+  const body = Buffer.from(JSON.stringify(message), 'utf8');
+  const frame = Buffer.allocUnsafe(FRAME_HEADER_BYTES + body.byteLength);
+  frame.writeUInt32LE(body.byteLength, 0);
+  body.copy(frame, FRAME_HEADER_BYTES);
+  return frame;
+}
+
+function sendToChrome(message) {
+  process.stdout.write(encode(message));
+}
+
+function sendToClient(client, message) {
+  if (!client.destroyed) client.write(encode(message));
+}
+
+function handleChromeMessage(message) {
+  if (message && typeof message === 'object' && 'method' in message) {
+    if ('id' in message) {
+      if (message.method === 'ping') {
+        sendToChrome({ jsonrpc: '2.0', id: message.id, result: 'pong' });
+      } else {
+        sendToChrome({
+          jsonrpc: '2.0',
+          id: message.id,
+          error: { code: -32601, message: 'No handler registered for method: ' + message.method }
+        });
+      }
+      return;
+    }
+    for (const client of clients) sendToClient(client, message);
+    return;
+  }
+
+  const pending = pendingRequests.get(message?.id);
+  if (!pending) return;
+  pendingRequests.delete(message.id);
+  sendToClient(pending.client, { ...message, id: pending.id });
+}
+
+function handleClientMessage(client, message) {
+  if (message && typeof message === 'object' && 'method' in message) {
+    if ('id' in message) {
+      const hostId = nextRequestId++;
+      pendingRequests.set(hostId, { client, id: message.id });
+      sendToChrome({ ...message, id: hostId });
+    } else {
+      sendToChrome(message);
+    }
+  }
+}
+
+function removeClient(client) {
+  clients.delete(client);
+  for (const [id, pending] of pendingRequests) {
+    if (pending.client === client) pendingRequests.delete(id);
+  }
+}
+
+function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  for (const client of clients) client.destroy();
+  server.close(() => {});
+  fs.rmSync(SOCKET_PATH, { force: true });
+}
+
+await fs.promises.mkdir(SOCKET_DIR, { recursive: true });
+fs.rmSync(SOCKET_PATH, { force: true });
+
+const server = net.createServer((client) => {
+  clients.add(client);
+  const decoder = new FrameDecoder();
+  client.on('data', (chunk) => {
+    for (const message of decoder.push(chunk)) handleClientMessage(client, message);
+  });
+  client.on('error', () => removeClient(client));
+  client.on('close', () => removeClient(client));
+});
+
+await new Promise((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(SOCKET_PATH, () => {
+    server.off('error', reject);
+    resolve();
+  });
+});
+
+const chromeDecoder = new FrameDecoder();
+process.stdin.on('data', (chunk) => {
+  for (const message of chromeDecoder.push(chunk)) handleChromeMessage(message);
+});
+process.stdin.on('end', shutdown);
+process.stdin.on('error', shutdown);
+process.on('SIGTERM', () => {
+  shutdown();
+  process.exit(0);
+});
+process.on('SIGINT', () => {
+  shutdown();
+  process.exit(0);
+});
+`;
+}
+
 async function resolveCodexCliPath() {
   const candidatePaths = [];
 
@@ -5994,6 +6385,8 @@ export function createInstallDiagnosticManifest({
   browserUseRuntime = null,
   browserUseNodeRepl = null,
   browserUseNode = null,
+  chromeExtensionHost = null,
+  chromeNativeMessagingHost = null,
   patches
 }) {
   return {
@@ -6016,6 +6409,8 @@ export function createInstallDiagnosticManifest({
     browserUseRuntime,
     browserUseNodeRepl,
     browserUseNode,
+    chromeExtensionHost,
+    chromeNativeMessagingHost,
     patches
   };
 }

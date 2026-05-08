@@ -26,10 +26,12 @@ import {
   applyLinuxVisualCompatCssPatch,
   applyLinuxVisualCompatJsPatch,
   buildWrapperScript,
+  buildLinuxChromeExtensionHostModule,
   copyUpstreamResources,
   createInstallDiagnosticManifest,
   findExecutableInPath,
   installBrowserUseRuntime,
+  installLinuxChromeExtensionHost,
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxBrowserUseHostFetchPatch,
@@ -64,6 +66,18 @@ import {
   resolveFirstExecutablePath
 } from '../src/repack.js';
 import { CHANNELS } from '../src/constants.js';
+
+const EMPTY_TEST_CODEX_HOME = path.join(os.tmpdir(), 'codex-linux-app-test-empty-codex-home');
+const EMPTY_TEST_HOME = path.join(os.tmpdir(), 'codex-linux-app-test-empty-home');
+
+function nodeReplTestEnv() {
+  const hasExplicitCodexHome = process.env.CODEX_HOME != null;
+  return {
+    ...process.env,
+    CODEX_HOME: process.env.CODEX_HOME ?? EMPTY_TEST_CODEX_HOME,
+    HOME: hasExplicitCodexHome ? process.env.HOME : EMPTY_TEST_HOME
+  };
+}
 
 async function pathExists(filePath) {
   try {
@@ -182,6 +196,19 @@ const LINUX_NOTIFICATION_SOUND_BUNDLE_CURRENT =
   'const e=require(`./app-session.js`);let n=require(`electron`);n=e.lr(n);let r=require(`node:os`);r=e.lr(r);let i=require(`node:path`);i=e.lr(i);let a=require(`node:util`),o=require(`node:fs`);o=e.lr(o);let s=require(`node:crypto`),c=require(`node:child_process`),l=require(`node:process`);l=e.lr(l);var Fi=`codex-notification`,Ii=`${Fi}.wav`,Li=t.Or(`desktop-notifications`),Ri=class{isSupported;createNotification;logger=Li();notificationSoundStaged=!1;notifications=new Map;constructor(e){this.options=e,this.isSupported=e.isSupported??(()=>n.Notification.isSupported()),e.createNotification?this.createNotification=e.createNotification:this.createNotification=e=>{let t=new n.Notification(e);return{show:()=>t.show(),on:(e,n)=>{switch(e){case`action`:return t.on(`action`,(e,t)=>{n(e,t)});case`click`:return t.on(`click`,()=>{n(void 0)});case`close`:return t.on(`close`,()=>{n(void 0)})}},close:()=>t.close()}}}showNotification(e,t,n){if(this.stageNotificationSoundIfNeeded(),!this.isSupported())return;let r=(e.actions??[]).slice(0,4),i=e.kind===`permission`||e.kind===`question`?`never`:void 0,a=e.kind===`turn-complete`&&typeof e.replyPlaceholder==`string`;this.notifications.get(e.id)?.notification.close?.();let o=this.createNotification({title:e.title,body:e.body,silent:!1,sound:this.options.platform===`darwin`?Fi:void 0,timeoutType:i,hasReply:a,replyPlaceholder:a?e.replyPlaceholder??void 0:void 0,actions:r.map(e=>({type:`button`,text:e.title}))});o.on(`close`,()=>{this.notifications.delete(e.id)}),this.notifications.set(e.id,{notification:o,conversationId:e.conversationId??null}),o.show()}stageNotificationSoundIfNeeded(){if(this.notificationSoundStaged||(this.notificationSoundStaged=!0,this.options.platform!==`darwin`)||typeof process.resourcesPath!=`string`)return;let e=i.default.join(process.resourcesPath,Ii),t=i.default.join(__dirname,`..`,`assets`,`sounds`,Ii),n=(0,o.existsSync)(e)?e:t;if(!(0,o.existsSync)(n))return;let a=i.default.join(r.default.homedir(),`Library`,`Sounds`);try{(0,o.mkdirSync)(a,{recursive:!0}),(0,o.copyFileSync)(n,i.default.join(a,Ii))}catch(e){this.logger.warning(`failed to stage notification sound`,{safe:{},sensitive:{error:e}})}}};';
 const BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT =
   'function Qc({action:e,appServerClient:t,desktopOriginator:n,headers:r={},refreshToken:i=!1}){return t.getAuthToken({refreshToken:i})}var Gi=`desktop`,EC=`about:blank`,DC=15e3,OC=2e4,kC=1500,AC=t.Pr(`browser-use-iab-api`),jC=class{tabsById=new Map;constructor(e,t,n={}){this.getBrowserHost=e,this.options=n,this.disposeBrowserUseNavigationBlockedListener=t(e=>{this.emitBrowserUseNavigationBlockedEvent(e)})}ping(){return`pong`}requireBrowserUseSession(e){return e}emitBrowserUseNavigationBlockedEvent(e){}};function WC(){return{apiImpl:null,server:null,starting:null}}var GC=class{constructor(n={appSessionId:e.t,buildFlavor:t.C.Dev,errorReporter:{reportNonFatal:()=>void 0}}){this.options=n}ensureBackendForBrowserRoute(e){let n={};n.starting=(async()=>{let t=null;t=new jC(t=>this.canServeTurnForBrowserRoute(t,e)?this.getBrowserUseHost(t):null,e=>this.getDelegate().addBrowserUseNavigationBlockedListener(e),{appSessionId:this.options.appSessionId,browserRoute:e,buildFlavor:this.options.buildFlavor,canServeRoute:t=>this.canServeTurnForBrowserRoute(t,e)}),n.apiImpl=t})()}};class App{constructor(){this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter})}getAppServerConnection(e){return null}}';
+const BROWSER_USE_HOST_FETCH_BUNDLE_26_506 = BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT
+  .replace(
+    'function Qc({action:e,appServerClient:t,desktopOriginator:n,headers:r={},refreshToken:i=!1}){return t.getAuthToken({refreshToken:i})}',
+    'async function ju({action:e,appServerClient:t,desktopOriginator:n,headers:r={},refreshToken:i=!1}){let a=await t.getAuthToken({refreshToken:i});if(!a)throw Error(`Sign in to ChatGPT in Codex Desktop to ${e}.`);return r}'
+  )
+  .replace(
+    'var Gi=`desktop`,EC=`about:blank`',
+    'var Co=`Codex Desktop`,So=`dev`,xo=`prod`,$E={desktopOriginator:Co,devApiBaseUrl:So,prodApiBaseUrl:xo},EC=`about:blank`'
+  )
+  .replace(
+    'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter})',
+    'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:w,errorReporter:this.errorReporter})'
+  );
 const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
   new URL('../main-SLemWUtC.js', import.meta.url),
   'utf8'
@@ -197,10 +224,16 @@ const AVATAR_OVERLAY_CONTENT_BOUNDS_BUNDLE_CURRENT = AVATAR_OVERLAY_BUNDLE_26_42
   );
 const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
   'function $e(){let P={current:null};let Y=e=>{let t=P.current;if(t==null||t.pointerId!==e.pointerId)return;let n=V(e);t.samples=U([...t.samples,n]);let r=n.screenX-t.screenX,i=n.screenY-t.screenY;Math.abs(r)<Ge&&Math.abs(i)<Ge||(t.hasMoved=!0,t.screenX=n.screenX,t.screenY=n.screenY,s(e=>ut({currentDragState:e,deltaX:r})),f.dispatchMessage(`avatar-overlay-drag-move`,{}))}}';
+const AVATAR_OVERLAY_RENDERER_BUNDLE_26_506 = AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT.replace(
+  'let n=V(e);',
+  'let n=W(e);'
+);
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT =
   'import{_r as r,d as i}from"./vscode-api-Cvzk5den.js";import{v as u}from"./codex-api-DPPuXJuP.js";import{t as d}from"./jsx-runtime-lEsnPbkx.js";var R=e(t(),1);var G=d();function K(e){let x=(0,G.jsx)(E,{assetRef:r,className:`relative z-10`,spritesheetUrl:s,state:m}),w=null;return(0,G.jsxs)(`div`,{children:[x,w]})}function dt(e){if(e==null)return null;let t=ft(e.querySelector(`[data-avatar-overlay-hit-region="mascot"]`))??ft(e.querySelector(qe)),n=ft(e.querySelector(Je));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_429 =
   'import{_r as r,d as i}from"./vscode-api-Cvzk5den.js";import{v as u}from"./codex-api-DPPuXJuP.js";import{t as d}from"./jsx-runtime-lEsnPbkx.js";var R=e(t(),1);var G=d();function K(e){let x=(0,G.jsx)(E,{assetRef:r,className:`relative z-10`,spritesheetUrl:s,state:m}),w=null;return(0,G.jsxs)(`div`,{children:[x,w]})}function dt(e){if(e==null)return null;let t=ft(e.querySelector(qe)),n=ft(e.querySelector(Je));return t==null?null:{mascot:t,tray:n}}';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_506 =
+  'import{_r as r,d as i}from"./vscode-api-Cvzk5den.js";import{v as u}from"./codex-api-DPPuXJuP.js";import{t as f}from"./jsx-runtime-lEsnPbkx.js";var ae=m(),B=e(d(),1),V=1600;var K=f();function ce(e){let S=(0,K.jsx)(E,{assetRef:r,className:`relative z-10`,spritesheetUrl:s,state:m}),C=null;return(0,K.jsxs)(`div`,{children:[S,C]})}function ht(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -234,12 +267,25 @@ const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE
   );
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_422 =
   'function ov({globalState:e,worktreeDir:n}){let r=t.Ft(n).replace(/\\/+$/,``);return t.o(e).some(e=>{let n=t.Ft(e).replace(/\\/+$/,``);return n===r||n.startsWith(`${r}/`)})}var sv=32e3,cv=t.Or(`worktree-service`),lv=class{statesById=new Map;newbornWorktreeRoots=new Set;newbornWorktreeRootsByStreamId=new Map;cleanupRunning=!1;cleanupPending=!1;async start(n){let r=this.statesById.get(n);if(!r)return;let{entry:i}=r,a={abortController:new AbortController,outputDecoder:new TextDecoder,streamId:(0,s.randomUUID)()};r.runtime=a,this.updateEntry(n,e=>({...e,phase:`creating`,outputText:uv(``,`[info] Starting worktree creation\n`)}));try{let r=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.hostConfig,cwd:e.Ot(i.sourceWorkspaceRoot),startingState:i.startingState,localEnvironmentConfigPath:i.localEnvironmentConfigPath,streamId:a.streamId,setUpSyncedBranch:i.launchMode===`create-stable-worktree`?!1:void 0},signal:a.abortController.signal});if(this.updateEntry(n,e=>({...e,phase:`worktree-ready`,worktreeGitRoot:r.worktreeGitRoot,worktreeWorkspaceRoot:r.worktreeWorkspaceRoot})),cv().info(`[worktree-create] ready`,{safe:{worktreeId:t.Ut(r.worktreeGitRoot),flow:`pending`,launchMode:i.launchMode,hasLocalEnvironment:i.localEnvironmentConfigPath!=null,wasNewbornProtected:this.newbornWorktreeRoots.has(r.worktreeGitRoot),protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.forgetNewbornWorktreeStream(a.streamId),i.launchMode===`create-stable-worktree`){this.addWorkspaceRoot(r.worktreeWorkspaceRoot,i.label),this.statesById.delete(n),this.publish();return}let o=this.statesById.get(n);o&&(o.runtime=null),this.runCleanup()}catch(e){}}async createManagedWorktree({hostId:n,cwd:r,startingState:i,localEnvironmentConfigPath:a,streamId:o}){try{let s=await this.requestGitWorker({method:`create-worktree`,params:{hostConfig:this.options.getHostConfigForHostId(n),cwd:e.Ot(r),startingState:i,localEnvironmentConfigPath:a,streamId:o}}),c=this.newbornWorktreeRoots.has(s.worktreeGitRoot);return this.newbornWorktreeRoots.add(s.worktreeGitRoot),cv().info(`[worktree-create] ready`,{safe:{worktreeId:t.Ut(s.worktreeGitRoot),flow:`managed`,hasLocalEnvironment:a!=null,wasNewbornProtected:c,protectedNewbornCount:this.newbornWorktreeRoots.size},sensitive:{}}),this.runCleanup(),s}catch(e){throw this.forgetNewbornWorktreeStream(o),e}}};';
+const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_506 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_422
+  .replace(
+    'hostConfig:this.options.hostConfig,cwd:e.Ot(i.sourceWorkspaceRoot)',
+    'hostConfig:this.options.hostConfig,operationSource:`worktree_pending_create`,cwd:e.Ot(i.sourceWorkspaceRoot)'
+  )
+  .replace(
+    'hostConfig:this.options.getHostConfigForHostId(n),cwd:e.Ot(r)',
+    'hostConfig:this.options.getHostConfigForHostId(n),operationSource:`worktree_managed_create`,cwd:e.Ot(r)'
+  );
 const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT = `async function MZ(e,t,n){let r=await AZ(e,t,n);r!=null&&await cz.rm(r,void 0,t)}async function cX(e,t,n,r,i,a){return uX({workspaceRoot:e,localEnvironment:t,scriptType:\`setup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r})}async function lX(e,t,n,r,i){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){if(o?.aborted)return{success:!1,error:Error(\`Request canceled\`)};let l=(await e.getWorktreeRepository(NL(t),a))?.root;if(!l)return{success:!1,error:Error(\`Not a git repository\`)};let m={worktreeGitRoot:\`/tmp/source/.git\`,worktreeWorkspaceRoot:\`/tmp/worktree\`},{worktreeGitRoot:h,worktreeWorkspaceRoot:g}=m;c?.(h);if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\n\`,\`utf8\`)),await vZ(g,r??\`__none__\`,a,\`worktree\`,o)||s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config
 \`,\`utf8\`)),r==null)return s?.(\`info\`,ce.Buffer.from(\`No local environment selected
 \`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await QJ(r,a);if(v.type===\`error\`)return s?.(\`stderr\`,ce.Buffer.from(\`\${v.error.message}\n\`,\`utf8\`)),{success:!1,error:v.error};s?.(\`info\`,ce.Buffer.from(\`Running setup script \${v.configPath}\n\`,\`utf8\`));let y=await cX(h,v,(e,t)=>{s?.(e,t)},o,{[UL]:t,[WL]:g},a);return{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:y?.setupResult??null}}async function RX(e,t,n,r){let i=await nX(e,n,\`worktree\`,r);if(i==null||i===\`__none__\`)return;let a=await QJ(i,n);if(a.type===\`error\`){NX().warning(\`[worktree-delete] cleanup-config-unavailable\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:a.error}});return}if(!a.environment.cleanup)return;NX().info(\`[worktree-delete] cleanup-script-start\`,{safe:{worktreeId:t},sensitive:{configPath:i}});let o=await lX(e,a,void 0,r,n);if(o!=null){if(o?.status===\`failed\`)throw Error(o.error??\`Cleanup script failed\`)}}async function W1(e,{appServerClient:t,signal:n,onProgress:r}){let i=[];if(e.sourceBranch.trim().length===0)return X({status:\`error\`,error:\`invalid-params\`,message:\`Missing source branch\`,rollbackErrors:[],warnings:i});let a=null,o=null,s=!1,c=!1;try{if(await YY(e.sourceWorktreeCwd,t,n)==null)return X({status:\`error\`,error:\`source-not-on-branch\`,message:\`Source worktree must be on a branch to move to local\`,rollbackErrors:[],warnings:i});o=await YY(e.localGitRoot,t,n);let l=await B1(e.sourceWorktreeCwd,t,n);if(l==null)return X({status:\`error\`,error:\`source-detach-failed\`,message:\`Unable to resolve worktree HEAD commit\`,rollbackErrors:[],warnings:i});let u=await XZ({cwd:e.sourceWorktreeCwd,branch:l,stashUncommitted:!0},t,{onStashStatusChange:e=>{r?.(\`stash-source-changes\`,e)},onCheckoutStatusChange:e=>{r?.(\`detach-worktree-branch\`,e)}});if(u.status===\`error\`)return X({status:\`error\`,error:\`source-detach-failed\`,message:u.error,rollbackErrors:[],warnings:i,execOutput:u.execOutput});a=u.stashRef,s=!0;if(o!==e.sourceBranch){let n=await XZ({cwd:e.localGitRoot,branch:e.sourceBranch,stashUncommitted:!1},t,{onCheckoutStatusChange:e=>{r?.(\`checkout-local-branch\`,e)}});if(n.status===\`error\`)return X({status:\`error\`,error:\`checkout-local-failed\`,message:n.error,rollbackErrors:[],warnings:i,execOutput:n.execOutput});c=!0}else r?.(\`checkout-local-branch\`,\`skipped\`);if(a!=null){r?.(\`apply-changes-to-local\`,\`started\`);let n=await V1({cwd:e.localGitRoot,stashRef:a,mode:\`apply\`},t);if(n.status===\`error\`)return X({status:\`error\`,error:\`apply-source-stash-failed\`,message:n.error,rollbackErrors:[],warnings:i,execOutput:n.execOutput});r?.(\`apply-changes-to-local\`,\`completed\`),(await V1({cwd:e.localGitRoot,stashRef:a,mode:\`drop\`},t)).status===\`error\`&&i.push(\`drop-source-stash-failed\`)}else r?.(\`apply-changes-to-local\`,\`skipped\`);return X({status:\`success\`,warnings:i})}catch{return c&&(await U1({cwd:e.localGitRoot,branch:o,stashRef:null,restoreBranchError:\`restore-local-branch-failed\`,restoreStashError:\`restore-local-stash-failed\`,appServerClient:t})),s&&(await U1({cwd:e.sourceWorktreeCwd,branch:e.sourceBranch,stashRef:a,restoreBranchError:\`restore-source-branch-failed\`,restoreStashError:\`restore-source-stash-failed\`,appServerClient:t})),X({status:\`error\`,error:\`unexpected-error\`,message:\`Failed to move thread to local\`,rollbackErrors:[],warnings:i})}}`;
 const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_422 = `async function aX(e,t,n,r,i,a){return sX({workspaceRoot:e,localEnvironment:t,scriptType:\`setup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r})}async function oX(e,t,n,r,i){return(await sX({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}async function jZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){if(o?.aborted)return{success:!1,error:Error(\`Request canceled\`)};let l=(await e.getWorktreeRepository(PL(t),a))?.root;if(!l)return{success:!1,error:Error(\`Not a git repository\`)};let m={worktreeGitRoot:\`/tmp/source/.git\`,worktreeWorkspaceRoot:\`/tmp/worktree\`},{worktreeGitRoot:h,worktreeWorkspaceRoot:g}=m;c?.(h);if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\n\`,\`utf8\`)),await gZ(g,r??\`__none__\`,a,\`worktree\`,o)||s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config
 \`,\`utf8\`)),r==null)return s?.(\`info\`,ce.Buffer.from(\`No local environment selected
 \`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await YJ(r,a);if(v.type===\`error\`)return s?.(\`stderr\`,ce.Buffer.from(\`\${v.error.message}\n\`,\`utf8\`)),{success:!1,error:v.error};s?.(\`info\`,ce.Buffer.from(\`Running setup script \${v.configPath}\n\`,\`utf8\`));let y=await aX(h,v,(e,t)=>{s?.(e,t)},o,{[JL]:t,[YL]:g},a);return{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:y?.setupResult??null}}async function FX(e,t,n,r){let i=await $Y(e,n,\`worktree\`,r);if(i==null||i===\`__none__\`)return;let a=await YJ(i,n);if(a.type===\`error\`){AX().warning(\`[worktree-delete] cleanup-config-unavailable\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:a.error}});return}if(!a.environment.cleanup)return;AX().info(\`[worktree-delete] cleanup-script-start\`,{safe:{worktreeId:t},sensitive:{configPath:i}});let o=await oX(e,a,void 0,r,n);if(o!=null){if(o?.status===\`failed\`)throw AX().warning(\`[worktree-delete] cleanup-script-failed\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:o.error}}),Error(o.error??\`Cleanup script failed\`);AX().info(\`[worktree-delete] cleanup-script-finished\`,{safe:{worktreeId:t},sensitive:{configPath:i}})}}async function P1(e,{appServerClient:t,signal:n,onProgress:r}){let i=[];if(e.sourceBranch.trim().length===0)return X({status:\`error\`,error:\`invalid-params\`,message:\`Missing source branch\`,rollbackErrors:[],warnings:i});let a=null,o=null,s=!1,c=!1;try{if(await KY(e.sourceWorktreeCwd,t,n)==null)return X({status:\`error\`,error:\`source-not-on-branch\`,message:\`Source worktree must be on a branch to move to local\`,rollbackErrors:[],warnings:i});o=await KY(e.localGitRoot,t,n);if(o!==e.sourceBranch){let n=await UZ({cwd:e.localGitRoot,branch:e.sourceBranch,stashUncommitted:!1},t,{onCheckoutStatusChange:e=>{r?.(\`checkout-local-branch\`,e)}});if(n.status===\`error\`)return X({status:\`error\`,error:\`checkout-local-failed\`,message:n.error,rollbackErrors:i,warnings:i,execOutput:n.execOutput});c=!0}else r?.(\`checkout-local-branch\`,\`skipped\`);if(a!=null){r?.(\`apply-changes-to-local\`,\`started\`);let n=await j1({cwd:e.localGitRoot,stashRef:a,mode:\`apply\`},t);if(n.status===\`error\`)return X({status:\`error\`,error:\`apply-source-stash-failed\`,message:n.error,rollbackErrors:[],warnings:i,execOutput:n.execOutput});r?.(\`apply-changes-to-local\`,\`completed\`),(await j1({cwd:e.localGitRoot,stashRef:a,mode:\`drop\`},t)).status===\`error\`&&i.push(\`drop-source-stash-failed\`)}else r?.(\`apply-changes-to-local\`,\`skipped\`);return X({status:\`success\`,warnings:i})}catch{let n=[];return c&&(n=[...n]),s&&(n=[...n]),X({status:\`error\`,error:\`unexpected-error\`,message:\`Failed to move thread to local\`,rollbackErrors:n,warnings:i})}}`;
+const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_506 = WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT.replace(
+  'return X({status:`success`,warnings:i})',
+  'return Z({status:`success`,warnings:i})'
+);
 const TERMINAL_PANEL_BLOCK_LEGACY =
   'function vDe(e){let ee,te;t[29]!==n||t[30]!==i||t[31]!==r||t[32]!==o||t[33]!==m?(ee=()=>{let e=T.current;if(!e)return;let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;let a=!1,s=new nDe.Terminal({allowTransparency:!0,cursorStyle:`bar`,fontSize:j.current,allowProposedApi:!0,cursorBlink:!0,fontFamily:A.current,letterSpacing:0,lineHeight:1.2,theme:RQ()}),c=null,l=()=>{c??=requestAnimationFrame(()=>{c=null,s.scrollToBottom()})};E.current=s;let u=new aDe.ClipboardAddon,d=new iDe.FitAddon;D.current=d;let f=new rDe.WebLinksAddon(bDe);s.loadAddon(u),s.loadAddon(d),s.loadAddon(f),s.attachCustomKeyEventHandler(e=>lDe({clipboard:typeof navigator<`u`&&navigator.clipboard!=null&&m?navigator.clipboard:void 0,event:e,sendText:e=>{St.write(t,e)},term:s})),s.open(e);let p=n=>{a||e.isConnected&&requestAnimationFrame(()=>{a||e.isConnected&&(k.current?IQ(s,d,t):LQ(d),n?.())})};p(),M.current=!1;let h=St.register(t,{onInitLog:e=>{s.write(e),l()},onData:e=>{M.current||(M.current=!0,P(`Running`),I(null)),s.write(e),l()},onExit:()=>{a||P(`Exited`)},onError:e=>{a||(P(`Error`),I(e))},onAttach:(e,t)=>{a||(k.current=!0,P(`Running`),I(null),R(t??null),p())}}),g=s.onData(e=>{St.write(t,e)}),_=s.onKey(yDe);o&&requestAnimationFrame(()=>{a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});let v=new ResizeObserver(()=>{p()});return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||St.close(t),s.dispose(),E.current=null}},te=[n,i,r,o,m],t[29]=n,t[30]=i,t[31]=r,t[32]=o,t[33]=m,t[34]=ee,t[35]=te):(ee=t[34],te=t[35]),(0,Z.useEffect)(ee,te);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_CURRENT =
@@ -628,6 +674,7 @@ test('resolveBrowserUseRuntimeSources uses primary runtime node before PATH node
 function runJsonLineProcess(command, input) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, [], {
+      env: nodeReplTestEnv(),
       stdio: ['pipe', 'pipe', 'pipe']
     });
     let stdout = '';
@@ -673,6 +720,7 @@ async function installGeneratedNodeReplFixture(rootDir) {
 
 function startJsonLineProcess(command) {
   const child = spawn(command, [], {
+    env: nodeReplTestEnv(),
     stdio: ['pipe', 'pipe', 'pipe']
   });
   let stdoutBuffer = '';
@@ -1120,6 +1168,81 @@ test('generated node_repl auto-accepts non-local Browser Use origins when allow-
   }
 });
 
+test('generated node_repl auto-accepts Browser Use origins when browser config never asks', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-never-ask-'));
+  try {
+    const codexHome = path.join(rootDir, 'codex-home');
+    const browserConfigPath = path.join(codexHome, 'browser', 'config.toml');
+    await fs.promises.mkdir(path.dirname(browserConfigPath), { recursive: true });
+    await fs.promises.writeFile(
+      browserConfigPath,
+      [
+        'approval_mode = "never_ask"',
+        'history_approval_mode = "never_ask"',
+        '',
+        '[origins]',
+        'denied = ["https://blocked.example"]',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const previousCodexHome = process.env.CODEX_HOME;
+    process.env.CODEX_HOME = codexHome;
+    try {
+      const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+      const input = [
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: { capabilities: { elicitation: {} } }
+        },
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'js',
+            arguments: {
+              code: `
+                const result = await globalThis.nodeRepl.createElicitation({
+                  message: "Allow Browser Use to access https://youtube.com?",
+                  meta: {
+                    codex_approval_kind: "mcp_tool_call",
+                    connector_id: "browser-use",
+                    connector_name: "Browser Use",
+                    persist: "always",
+                    tool_params: {},
+                    origin: "https://youtube.com"
+                  }
+                });
+                console.log(result.action);
+              `
+            }
+          }
+        }
+      ]
+        .map((message) => JSON.stringify(message))
+        .join('\n') + '\n';
+
+      const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
+      assert.equal(responses.length, 2);
+      assert.equal(responses[1].id, 2);
+      assert.equal(responses[1].result.isError, false);
+      assert.equal(responses[1].result.content[0].text, 'accept');
+    } finally {
+      if (previousCodexHome == null) {
+        delete process.env.CODEX_HOME;
+      } else {
+        process.env.CODEX_HOME = previousCodexHome;
+      }
+    }
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('generated node_repl does not auto-accept non-local Browser Use permission on unsupported host', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-remote-elicit-'));
   try {
@@ -1556,6 +1679,57 @@ test('installBrowserUseRuntime installs executable Linux runtime files', async (
   }
 });
 
+test('installLinuxChromeExtensionHost installs executable host and Chrome manifest', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-chrome-host-install-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    await fs.promises.mkdir(resourcesDir, { recursive: true });
+    await writeTestExecutable(path.join(resourcesDir, 'node'), '#!/usr/bin/env bash\necho node\n');
+
+    const result = await installLinuxChromeExtensionHost({
+      resourcesDir,
+      homeDir: rootDir,
+      extensionId: 'extension-id',
+      hostName: 'com.openai.test'
+    });
+
+    const hostExecutablePath = path.join(resourcesDir, 'chrome-extension-host');
+    const hostModulePath = path.join(resourcesDir, 'chrome-extension-host.mjs');
+    const manifestPath = path.join(
+      rootDir,
+      '.config',
+      'google-chrome',
+      'NativeMessagingHosts',
+      'com.openai.test.json'
+    );
+    const manifest = JSON.parse(await fs.promises.readFile(manifestPath, 'utf8'));
+
+    assert.equal(await isExecutable(hostExecutablePath), true);
+    assert.match(await fs.promises.readFile(hostExecutablePath, 'utf8'), /chrome-extension-host\.mjs/);
+    assert.match(await fs.promises.readFile(hostModulePath, 'utf8'), /CODEX_BROWSER_USE_SOCKET_DIR/);
+    assert.deepEqual(manifest, {
+      name: 'com.openai.test',
+      description: 'Codex chrome native messaging host',
+      type: 'stdio',
+      path: hostExecutablePath,
+      allowed_origins: ['chrome-extension://extension-id/']
+    });
+    assert.equal(result.chromeExtensionHost.targetPath, hostExecutablePath);
+    assert.equal(result.chromeNativeMessagingHost.manifestPath, manifestPath);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('buildLinuxChromeExtensionHostModule includes ping handler and native pipe bridge', () => {
+  const source = buildLinuxChromeExtensionHostModule();
+
+  assert.match(source, /method === 'ping'/);
+  assert.match(source, /'\/tmp\/codex-browser-use'/);
+  assert.match(source, /pendingRequests\.set/);
+  assert.match(source, /process\.stdout\.write\(encode\(message\)\)/);
+});
+
 test('installBrowserUseRuntime rejects macOS Browser Use binaries', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-macho-'));
   try {
@@ -1833,6 +2007,18 @@ test('injectLinuxBrowserUseHostFetchPatch supports renamed browser session regis
   );
 });
 
+test('injectLinuxBrowserUseHostFetchPatch supports 26.506 auth and registry drift', () => {
+  const updated = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_26_506);
+
+  assert.match(updated, /codexLinuxBrowserUseHostFetch/);
+  assert.match(updated, /await ju\(\{action:`load Browser Use policy status`/);
+  assert.match(updated, /desktopOriginator:Co/);
+  assert.match(
+    updated,
+    /this\.browserSessionRegistry=new GC\(\{appSessionId:e\.t,buildFlavor:w,errorReporter:this\.errorReporter,appServerConnection:\(\)=>this\.getAppServerConnection\(this\.hostId\)\}\)/
+  );
+});
+
 test('injectLinuxBrowserUseHostFetchPatch is idempotent', () => {
   const once = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT);
   const twice = injectLinuxBrowserUseHostFetchPatch(once);
@@ -1854,7 +2040,7 @@ test('injectLinuxBrowserUseHostFetchPatch reports diagnostics when host fetch an
     () => injectLinuxBrowserUseHostFetchPatch('const noop = true;', { sourceName: 'main.js' }),
     {
       message:
-        /Could not patch Linux Browser Use authenticated host fetch into the Electron main bundle\. Source: main\.js\. Missing anchors: authenticated API header helper, Browser Use native pipe registry, IAB API class, IAB route backend options, Browser session registry instantiation\. Detected anchors: authHeaderHelper=no, nativePipeRegistry=no, iabApiClass=no, iabRegistryOptions=no, registryInstantiation=no\./
+        /Could not patch Linux Browser Use authenticated host fetch into the Electron main bundle\. Source: main\.js\. Missing anchors: authenticated API header helper, desktop originator value, Browser Use native pipe registry, IAB API class, IAB route backend options, Browser session registry instantiation\. Detected anchors: authHeaderHelper=no, desktopOriginator=no, nativePipeRegistry=no, iabApiClass=no, iabRegistryOptions=no, registryInstantiation=no\./
     }
   );
 });
@@ -1920,6 +2106,17 @@ test('injectLinuxAvatarOverlayRendererPatch sends pointer screen coordinates wit
   );
 });
 
+test('injectLinuxAvatarOverlayRendererPatch supports renamed pointer sample helper', () => {
+  const updated = injectLinuxAvatarOverlayRendererPatch(AVATAR_OVERLAY_RENDERER_BUNDLE_26_506);
+
+  assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
+  assert.match(
+    updated,
+    /f\.dispatchMessage\(`avatar-overlay-drag-move`,\{cursorScreenX:n\.screenX,cursorScreenY:n\.screenY\}\)/
+  );
+  assert.match(updated, /let n=W\(e\);/);
+});
+
 test('injectLinuxAvatarOverlayRendererPatch is idempotent', () => {
   const once = injectLinuxAvatarOverlayRendererPatch(AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT);
   const twice = injectLinuxAvatarOverlayRendererPatch(once);
@@ -1976,10 +2173,12 @@ test('injectLinuxPetYappingUsagePatch adds yapping usage bubble to avatar overla
   const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT);
 
   assert.match(updated, /codexLinuxPetYappingUsage/);
-  assert.match(updated, /codex-pet-rate-limit-status/);
+  assert.match(updated, /R\.useState\(null\)/);
+  assert.match(updated, /R\.useEffect/);
+  assert.match(updated, /setInterval\(t,1e4\)/);
   assert.match(updated, /await codexLinuxFetchUsage\(\)/);
-  assert.match(updated, /y as codexLinuxUseQuery/);
   assert.match(updated, /n as codexLinuxFetchUsage/);
+  assert.doesNotMatch(updated, /codexLinuxUseQuery/);
   assert.match(
     updated,
     /children:\[x,\(0,G\.jsx\)\(codexLinuxPetYappingUsage,\{\}\),w\]\}/
@@ -1995,6 +2194,22 @@ test('injectLinuxPetYappingUsagePatch expands 26.429 layout measurement for visi
   assert.match(
     updated,
     /let t=ft\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?ft\(e\.querySelector\(qe\)\),n=ft\(e\.querySelector\(Je\)\)/
+  );
+});
+
+test('injectLinuxPetYappingUsagePatch supports 26.506 avatar renderer symbols', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_506);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /B\.useState\(null\)/);
+  assert.match(updated, /B\.useEffect/);
+  assert.match(
+    updated,
+    /children:\[S,\(0,K\.jsx\)\(codexLinuxPetYappingUsage,\{\}\),C\]\}/
+  );
+  assert.match(
+    updated,
+    /let t=_t\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?_t\(e\.querySelector\(\$e\)\),n=vt\(e\.querySelector\(et\)\)/
   );
 });
 
@@ -2031,7 +2246,8 @@ test('applyLinuxPetYappingUsagePatch skips patching when disabled', () => {
 for (const [label, fixture] of [
   ['current', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT],
   ['26.417', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417],
-  ['26.422', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_422]
+  ['26.422', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_422],
+  ['26.506', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_506]
 ]) {
   test(`injectLinuxWorktreeEnvironmentMainPatch adds environment propagation to the ${label} main bundle`, () => {
     const updated = injectLinuxWorktreeEnvironmentMainPatch(fixture);
@@ -2052,6 +2268,10 @@ for (const [label, fixture] of [
       updated,
       /hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`/
     );
+    if (label === '26.506') {
+      assert.match(updated, /operationSource:`worktree_pending_create`/);
+      assert.match(updated, /operationSource:`worktree_managed_create`/);
+    }
   });
 }
 
@@ -2101,10 +2321,7 @@ test('injectLinuxWorktreeEnvironmentWorkerPatch adds single-environment fallback
   assert.match(updated, /cleanup-source-root-unavailable/);
   assert.match(updated, /cleanup-source-worktree-failed/);
   assert.match(updated, /await RX\(e.sourceWorktreeRoot,codexLinuxWorktreeCleanupId,t,n\)/);
-  assert.match(
-    updated,
-    /let codexLinuxWorktreeCleanupId=typeof MX===`function`\?MX\(e.sourceWorktreeRoot\):e.sourceWorktreeRoot;/
-  );
+  assert.match(updated, /let codexLinuxWorktreeCleanupId=e\.sourceWorktreeRoot;/);
   assert.match(
     updated,
     /let codexLinuxWorktreeSourceWorkspaceRoot=codexLinuxResolveWorktreeSourceWorkspaceRoot\(e\),codexLinuxInjectedCleanupEnvironment=codexLinuxWorktreeSourceWorkspaceRoot==null\?\(NX\(\)\.info\(`\[worktree-delete\] cleanup-source-root-unavailable`,\{safe:\{worktreeId:t\},sensitive:\{workspaceRoot:e\}\}\),\{\[WL\]:e\}\):\{\[UL\]:codexLinuxWorktreeSourceWorkspaceRoot,\[WL\]:e\};let o=await lX\(e,a,void 0,r,codexLinuxInjectedCleanupEnvironment,n\);/
@@ -2123,13 +2340,19 @@ test('injectLinuxWorktreeEnvironmentWorkerPatch supports the 26.422 worker symbo
   assert.match(updated, /let v=await YJ\(codexLinuxLocalEnvironmentConfigPath,a\);/);
   assert.match(updated, /\{\[JL\]:t,\[YL\]:g\}/);
   assert.match(updated, /AX\(\)\.info\(`\[worktree-create\] auto-selected-single-environment`/);
-  assert.match(
-    updated,
-    /let codexLinuxWorktreeCleanupId=typeof MX===`function`\?MX\(e.sourceWorktreeRoot\):e.sourceWorktreeRoot;/
-  );
+  assert.match(updated, /let codexLinuxWorktreeCleanupId=e\.sourceWorktreeRoot;/);
   assert.match(updated, /await FX\(e.sourceWorktreeRoot,codexLinuxWorktreeCleanupId,t,n\)/);
   assert.match(updated, /let o=await oX\(e,a,void 0,r,codexLinuxInjectedCleanupEnvironment,n\);/);
   assert.match(updated, /cleanup-skipped-no-environment/);
+});
+
+test('injectLinuxWorktreeEnvironmentWorkerPatch supports renamed 26.506 success result helper', () => {
+  const updated = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_506);
+
+  assert.match(updated, /codexLinuxWorktreeEnvironmentWorker/);
+  assert.match(updated, /return Z\(\{status:`success`,warnings:i\}\)/);
+  assert.match(updated, /await RX\(e.sourceWorktreeRoot,codexLinuxWorktreeCleanupId,t,n\)/);
+  assert.match(updated, /let codexLinuxWorktreeCleanupId=e\.sourceWorktreeRoot;/);
 });
 
 test('injectLinuxWorktreeEnvironmentWorkerPatch is idempotent', () => {
@@ -3552,6 +3775,18 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       sourcePath: '/usr/bin/node',
       targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node'
     },
+    chromeExtensionHost: {
+      status: 'installed',
+      targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host',
+      modulePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host.mjs',
+      nodePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node'
+    },
+    chromeNativeMessagingHost: {
+      status: 'installed',
+      manifestPath: '/home/user/.config/google-chrome/NativeMessagingHosts/com.openai.codexextension.json',
+      hostName: 'com.openai.codexextension',
+      extensionId: 'hehggadaopoacecdllhhajmbjkdcmajg'
+    },
     patches: {
       bootstrap: {
         status: 'applied',
@@ -3665,6 +3900,18 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       sourceKind: 'path',
       sourcePath: '/usr/bin/node',
       targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node'
+    },
+    chromeExtensionHost: {
+      status: 'installed',
+      targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host',
+      modulePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host.mjs',
+      nodePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node'
+    },
+    chromeNativeMessagingHost: {
+      status: 'installed',
+      manifestPath: '/home/user/.config/google-chrome/NativeMessagingHosts/com.openai.codexextension.json',
+      hostName: 'com.openai.codexextension',
+      extensionId: 'hehggadaopoacecdllhhajmbjkdcmajg'
     },
     patches: {
       bootstrap: {

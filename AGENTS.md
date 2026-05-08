@@ -59,9 +59,42 @@ The avatar overlay must not keep Codex alive after the main Codex window closes.
 - The avatar overlay window should close itself when it is the only remaining `BrowserWindow`.
 - Preserve `CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_AUTO_CLOSE=1` as a local escape hatch.
 
+## Chrome Extension Host
+
+Linux repacks must install a Chrome native messaging host for the Codex Chrome extension.
+
+- Keep `installLinuxChromeExtensionHost` in `src/repack.js` wired into `installChannelRuntime`.
+- The manifest path must be `~/.config/google-chrome/NativeMessagingHosts/com.openai.codexextension.json`.
+- The manifest must allow `chrome-extension://hehggadaopoacecdllhhajmbjkdcmajg/`.
+- The generated host must bridge Chrome native messaging stdio to `/tmp/codex-browser-use/*.sock` with the same 4-byte length-prefixed JSON framing used by Browser Use native pipes.
+- The host must answer extension `ping` requests itself so the extension can show `Connected` even before a Codex task attaches.
+- Keep tests for `installLinuxChromeExtensionHost` and `buildLinuxChromeExtensionHostModule` in `test/repack.test.js`.
+
+## Browser Use Permissions
+
+The generated Linux `node_repl` must respect Browser Use approval config.
+
+- If `~/.codex/browser/config.toml` or `$CODEX_HOME/browser/config.toml` has `approval_mode = "never_ask"`, Browser Use origin elicitations should auto-accept unless the origin is explicitly denied.
+- If `history_approval_mode = "never_ask"`, browsing-history elicitations should auto-accept.
+- Preserve the native prompt path for normal `always_ask` mode; do not bypass prompts by default.
+- Keep generated `node_repl` tests for `never_ask`, local origins, allow-all preferences, and native-pipe fallback.
+- Local Browser Use approval settings do not override upstream Browser Use site policy. If a domain is denied by the policy response, do not add a local bypass.
+
+## Linux Browser Install Repair
+
+When Chrome or Browser Use breaks after an upstream Codex app update, fix the repack pipeline first. Do not rely on manual edits to the installed `app.asar`.
+
+- Run `npm test` before reinstalling.
+- Reinstall with `./install-desktop` for stable, or `./install-desktop --beta` for beta.
+- The install must write Browser Use runtime files into the channel app resources: `node`, `node_repl`, and `node_repl.mjs`.
+- The install must write Chrome extension host files into the channel app resources: `chrome-extension-host` and `chrome-extension-host.mjs`.
+- The install must write the Chrome native messaging manifest at `~/.config/google-chrome/NativeMessagingHosts/com.openai.codexextension.json`.
+- After install, check the channel diagnostic manifest at `~/.local/share/codex-linux-app/channels/<stable-or-beta>/install-diagnostic-manifest.json` for `browserUseRuntime`, `browserUseNodeRepl`, `browserUseNode`, `chromeExtensionHost`, and `chromeNativeMessagingHost`.
+- If Chrome helper scripts look for `google-chrome` but the distro only ships `google-chrome-stable`, keep the user-level launcher shim in `~/.local/bin/google-chrome -> /usr/bin/google-chrome-stable` and make sure `~/.local/bin` is on `PATH`.
+
 ## Validation
 
-Before handing off pet overlay changes, run:
+Before handing off repack changes, run:
 
 ```bash
 npm test
