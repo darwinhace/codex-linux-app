@@ -393,6 +393,8 @@ const TODO_PROGRESS_BUNDLE_26_406_RENAMED = TODO_PROGRESS_BUNDLE_26_406
   .replaceAll('(0,$.jsx)(Qze,{item:', '(0,$.jsx)(IAe,{item:');
 const TODO_PROGRESS_BUNDLE_26_409_DIRECT_COMPACT =
   'case`todo-list`:return(0,$.jsx)(a5,{item:e});function a5(e){let t=(0,Q.c)(46),{item:n,isComplete:r}=e,i=r===void 0?!1:r,a=Ni(),[o,s]=(0,Z.useState)(!0),{elementHeightPx:c,elementRef:l}=g1(),u=(0,Z.useRef)(null),d;t[0]===n.plan?d=t[1]:(d=(0,xJ.default)(n.plan,lke),t[0]=n.plan,t[1]=d);let f=d,p=n.plan.length,m;t[2]===n.plan?m=t[3]:(m=n.plan.findIndex(cke),t[2]=n.plan,t[3]=m);let h=m,k;t[17]!==h||t[18]!==a||t[19]!==i||t[20]!==n.plan?(k=n.plan.map((e,t)=>(0,$.jsx)(`span`,{className:Y(`x`,e.status===`completed`&&`line-through`),children:e.step},t)),t[17]=h,t[18]=a,t[19]=i,t[20]=n.plan,t[21]=k):k=t[21];let P;t[36]!==f||t[37]!==p?(P=(0,$.jsx)(X,{id:`localConversationPage.planItemsCompleted`,defaultMessage:`{completedItems} out of {totalItems, plural, one {# task completed} other {# tasks completed}}`,values:{completedItems:f,totalItems:p}}),t[36]=f,t[37]=p,t[38]=P):P=t[38];return P}function ske(e){return!e}function cke(e){return e.status===`in_progress`}function lke(e){return e.status===`completed`?1:0}function Fke(e,t){return e+(t.status===`completed`?1:0)}function Pke(e){return!e}function Nke(e){let t=(0,Q.c)(37),{item:n}=e,r=n.plan.length,i=n.plan.reduce(Fke,0),[a,o]=(0,Z.useState)(!1),{elementHeightPx:s,elementRef:c}=g1(),l=Ni(),u=i===0?l.formatMessage({id:`codex.plan.todoListCreated`,defaultMessage:`To do list created with {total} tasks`},{total:r}):l.formatMessage({id:`codex.plan.tasksCompletedSummary`,defaultMessage:`{completed} out of {total} tasks completed`},{completed:i,total:r}),T;if(t[19]!==l||t[20]!==n.plan){let e;t[22]===l?e=t[23]:(e=(e,t)=>(0,$.jsx)(`span`,{className:Y(`x`,e.status===`completed`&&`line-through`),children:e.step},t),t[22]=l,t[23]=e),T=n.plan.map(e),t[19]=l,t[20]=n.plan,t[21]=T}else T=t[21];return u}function h5(e){let a=e.entry.item,u;u=a.type===`todo-list`?(0,$.jsx)(Nke,{item:a}):null;return u}function Yke(e){let t=(0,Q.c)(16),{conversationId:n,hasBlockingRequest:r,todoListItem:i,unifiedDiffItem:a,conversationDetailLevel:o,cwd:s}=e,[c,l]=(0,Z.useState)(null),f=i!=null,p=a!=null&&o!==`STEPS_PROSE`;if(!(c&&!r&&(f||p)))return null;let m;t[2]!==f||t[3]!==i?(m=f&&i!=null&&(0,$.jsx)(a5,{item:i}),t[2]=f,t[3]=i,t[4]=m):m=t[4];return m}function Zke(){return null}var z=1;';
+const TODO_PROGRESS_BUNDLE_26_506_EXPANDED_ITEM_CACHE =
+  'function PC(e){let t=(0,Z.c)(48),{item:n,isComplete:r}=e,i=r===void 0?!1:r,a=Ci(),d;t[0]===n.plan?d=t[1]:(d=n.plan.reduce(LC,0),t[0]=n.plan,t[1]=d);let f=d,p=n.plan.length,m;t[2]===n.plan?m=t[3]:(m=n.plan.findIndex(IC),t[2]=n.plan,t[3]=m);let h=m,k;t[17]!==h||t[18]!==a||t[19]!==i||t[20]!==n.plan?(k=n.plan.map((e,t)=>(0,$.jsx)(`span`,{className:Y(`text-size-chat`,e.status===`completed`&&`line-through`),children:e.step},t)),t[17]=h,t[18]=a,t[19]=i,t[20]=n.plan,t[21]=k):k=t[21];let L;t[38]!==f||t[39]!==p?(L=(0,$.jsx)(X,{id:`localConversationPage.planItemsCompleted`,defaultMessage:`{completedItems} out of {totalItems, plural, one {# task completed} other {# tasks completed}}`,values:{completedItems:f,totalItems:p}}),t[38]=f,t[39]=p,t[40]=L):L=t[40];return L}function IC(e){return e.status===`in_progress`}function LC(e,t){return e+(t.status===`completed`?1:0)}function hw(e){let t=(0,Z.c)(37),{item:n}=e,r=n.plan.length,i=n.plan.reduce(_w,0),l=Ci(),u=i===0?l.formatMessage({id:`codex.plan.todoListCreated`,defaultMessage:`To do list created with {total} tasks`},{total:r}):l.formatMessage({id:`codex.plan.tasksCompletedSummary`,defaultMessage:`{completed} out of {total} tasks completed`},{completed:i,total:r}),T;if(t[19]!==l||t[20]!==n.plan){let e;t[22]===l?e=t[23]:(e=(e,t)=>(0,$.jsx)(`span`,{className:Y(`text-size-chat`,e.status===`completed`&&`line-through`),children:e.step},t),t[22]=l,t[23]=e),T=n.plan.map(e),t[19]=l,t[20]=n.plan,t[21]=T}else T=t[21];return u}function _w(e,t){return e+(t.status===`completed`?1:0)}function dw(e){let t=(0,Z.c)(205),{item:n}=e;switch(n.type){case`todo-list`:{let e;return t[154]===n?e=t[155]:(e=(0,$.jsx)(PC,{item:n}),t[154]=n,t[155]=e),e}}}function Jw(e){let t=(0,Z.c)(61),{unit:n}=e,F;{let e=n.entry.item;if(e.type===`todo-list`){let n;t[34]===e?n=t[35]:(n=(0,$.jsx)(hw,{item:e}),t[34]=e,t[35]=n),F=n}}return F}';
 
 test('parseArgs accepts diagnostic and patch skip flags', () => {
   const options = parseArgs([
@@ -2892,6 +2894,18 @@ test('injectLinuxTodoProgressPatch rewrites portal todo cache keys for the 26.40
   assert.match(updated, /\(i==null\?i:\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TODO_PROGRESS_PATCH===`1`\?i:/);
   assert.doesNotMatch(updated, /t\[3\]!==i/);
   assert.doesNotMatch(updated, /t\[3\]=i/);
+});
+
+test('injectLinuxTodoProgressPatch rewrites expanded todo item cache keys for the 26.506 renderer bundle', () => {
+  const updated = injectLinuxTodoProgressPatch(TODO_PROGRESS_BUNDLE_26_506_EXPANDED_ITEM_CACHE);
+
+  assert.match(updated, /codexLinuxTodoProgress/);
+  assert.doesNotMatch(updated, /t\[154\]===n/);
+  assert.doesNotMatch(updated, /t\[154\]=n/);
+  assert.doesNotMatch(updated, /t\[34\]===e/);
+  assert.doesNotMatch(updated, /t\[34\]=e/);
+  assert.match(updated, /n\.plan\.map\(\(e,t\)=>String\(t\)\+`:`\+e\.status\+`:`\+e\.step\)\.join\(`\|`\)/);
+  assert.match(updated, /e\.plan\.map\(\(e,t\)=>String\(t\)\+`:`\+e\.status\+`:`\+e\.step\)\.join\(`\|`\)/);
 });
 
 test('injectLinuxTodoProgressPatch is idempotent', () => {

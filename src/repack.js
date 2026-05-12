@@ -2689,7 +2689,7 @@ export function injectLinuxTodoProgressPatch(bundleSource, options = {}) {
       return nextValue;
     }
   });
-  updated = patchTodoPortalRenderCache({
+  updated = patchTodoExpandedItemRenderCache({
     source: updated,
     errorMessage,
     expandedComponentName: componentNames.expanded,
@@ -4170,19 +4170,57 @@ function patchTodoCompactItemRenderCache({
   includeMarker,
   compactComponentName
 }) {
-  const compactComponentPattern = escapeRegExp(compactComponentName);
-  const compactDirectRenderPattern = new RegExp(
-    `\\.type===\\\`todo-list\\\`\\?(?:\\(?(?:[A-Za-z_$][\\w$]*=)?)?\\(0,\\$\\.jsx\\)\\(${compactComponentPattern},\\{item:[A-Za-z_$][\\w$]*\\}\\)`
+  return patchTodoItemRenderCache({
+    source,
+    errorMessage,
+    includeMarker,
+    componentName: compactComponentName
+  });
+}
+
+function patchTodoExpandedItemRenderCache({
+  source,
+  errorMessage,
+  includeMarker,
+  expandedComponentName
+}) {
+  try {
+    return patchTodoItemRenderCache({
+      source,
+      errorMessage,
+      includeMarker,
+      componentName: expandedComponentName
+    });
+  } catch {
+    return patchTodoPortalRenderCache({
+      source,
+      errorMessage,
+      includeMarker,
+      expandedComponentName
+    });
+  }
+}
+
+function patchTodoItemRenderCache({
+  source,
+  errorMessage,
+  includeMarker,
+  componentName
+}) {
+  const componentPattern = escapeRegExp(componentName);
+  const directRenderPattern = new RegExp(
+    `\\.type===\\\`todo-list\\\`\\?(?:\\(?(?:[A-Za-z_$][\\w$]*=)?)?\\(0,\\$\\.jsx\\)\\(${componentPattern},\\{item:[A-Za-z_$][\\w$]*\\}\\)`
   );
-  const anchorMarker = `(0,$.jsx)(${compactComponentName},{item:`;
+  const anchorMarker = `(0,$.jsx)(${componentName},{item:`;
   const anchorIndex = source.indexOf(anchorMarker);
   if (anchorIndex === -1) {
     throw new Error(errorMessage);
   }
 
   const start = source.lastIndexOf('function ', anchorIndex);
-  const end = source.indexOf('function ', anchorIndex + anchorMarker.length);
-  if (start === -1 || end === -1 || end <= start) {
+  const nextFunctionIndex = source.indexOf('function ', anchorIndex + anchorMarker.length);
+  const end = nextFunctionIndex === -1 ? source.length : nextFunctionIndex;
+  if (start === -1 || end <= start) {
     throw new Error(errorMessage);
   }
 
@@ -4190,22 +4228,22 @@ function patchTodoCompactItemRenderCache({
   const block = source.slice(start, end);
   const after = source.slice(end);
   const pattern = new RegExp(
-    `t\\[(?<depIdx>\\d+)\\]===(?<itemVar>[A-Za-z_$][\\w$]*)\\?(?<outVar>[A-Za-z_$][\\w$]*)=t\\[(?<cacheIdx>\\d+)\\]:\\(\\k<outVar>=\\(0,\\$\\.jsx\\)\\(${compactComponentPattern},\\{item:\\k<itemVar>\\}\\),t\\[\\k<depIdx>\\]=\\k<itemVar>,t\\[\\k<cacheIdx>\\]=\\k<outVar>\\),(?<resultVar>[A-Za-z_$][\\w$]*)=\\k<outVar>`
+    `t\\[(?<depIdx>\\d+)\\]===(?<itemVar>[A-Za-z_$][\\w$]*)\\?(?<outVar>[A-Za-z_$][\\w$]*)=t\\[(?<cacheIdx>\\d+)\\]:\\(\\k<outVar>=\\(0,\\$\\.jsx\\)\\(${componentPattern},\\{item:\\k<itemVar>\\}\\),t\\[\\k<depIdx>\\]=\\k<itemVar>,t\\[\\k<cacheIdx>\\]=\\k<outVar>\\),(?<suffix>(?:[A-Za-z_$][\\w$]*=)?\\k<outVar>)`
   );
   const match = block.match(pattern);
   if (!match?.groups) {
-    if (compactDirectRenderPattern.test(block)) {
+    if (directRenderPattern.test(block)) {
       return source;
     }
     throw new Error(errorMessage);
   }
-  const { depIdx, itemVar, outVar, cacheIdx, resultVar } = match.groups;
+  const { depIdx, itemVar, outVar, cacheIdx, suffix } = match.groups;
   const todoItemKey = buildTodoItemCacheKeyExpression(itemVar, {
     includeMarker: includeMarker()
   });
   const updated = block.replace(
     pattern,
-    `t[${depIdx}]===${todoItemKey}?${outVar}=t[${cacheIdx}]:(${outVar}=(0,$.jsx)(${compactComponentName},{item:${itemVar}}),t[${depIdx}]=${todoItemKey},t[${cacheIdx}]=${outVar}),${resultVar}=${outVar}`
+    `t[${depIdx}]===${todoItemKey}?${outVar}=t[${cacheIdx}]:(${outVar}=(0,$.jsx)(${componentName},{item:${itemVar}}),t[${depIdx}]=${todoItemKey},t[${cacheIdx}]=${outVar}),${suffix}`
   );
   return `${before}${updated}${after}`;
 }
