@@ -5,7 +5,7 @@
 Every desktop repackage must preserve the Linux `/pet` overlay customizations in `src/repack.js`.
 
 - Keep the pixel pet usage UI as a yapping speech bubble, not neon rings.
-- The bubble polls Codex usage every 10 seconds through the app usage API.
+- The bubble polls Codex usage every 10 seconds through the main-process app bridge.
 - Bubble text must stay in English:
   - `5-hour usage left: N%`
   - `Weekly usage left: N%`
@@ -15,10 +15,12 @@ Every desktop repackage must preserve the Linux `/pet` overlay customizations in
 - Keep the transparent overlay footprint only as large as needed for the pet, bubble, and hover info. `.codex-usage-yap-wrap` is intentionally used as the avatar layout measurement target so the speech bubble and hover info are not clipped, but do not add extra unused transparent padding beyond those visible elements.
 - Do not add a glow ring, aura, halo, or external usage ring around the pet unless the user explicitly asks to bring that design back.
 - If the yapping bubble disappears after an upstream update, inspect the installed `webview/assets/avatar-overlay-page-*.js`, not only the unit fixture. The injection must use the real JSX runtime from the `jsx-runtime` import and attach to the mascot hit-region (`data-avatar-overlay-hit-region="mascot"`), not to notification scroll controls or the React compiler cache helper.
-- Installed-bundle verification should confirm `codexLinuxPetYappingUsage`, `codexLinuxFetchUsage`, `.codex-usage-yap-wrap`, and the mascot hit-region are all present together, and that stale `codexLinuxUseQuery` is absent.
+- If the yapping bubble stays on `Checking usage...`, do not import a minified `codex-api` export as the usage fetcher; in 26.513 `codex-api` export `n` was a worktree upload helper, not usage. The renderer must call the VS Code bridge handler `codex-linux-pet-usage`, and the main-process provider must read the latest `payload.rate_limits` from `~/.codex/sessions/**/*.jsonl`.
+- Installed-bundle verification should confirm `codexLinuxPetYappingUsage`, `codexLinuxFetchUsage`, `.codex-usage-yap-wrap`, `codex-linux-pet-usage`, and the mascot hit-region are all present together, and that stale `codexLinuxUseQuery` is absent.
 
 Reference implementation:
 
+- Main usage provider patch: `patchMainProcessLinuxPetYappingUsage`, `injectLinuxPetYappingUsageMainPatch`, and `buildLinuxPetYappingUsageMainHandler` in `src/repack.js`.
 - Renderer JS patch: `patchRendererLinuxPetYappingUsage`, `injectLinuxPetYappingUsagePatch`, and `buildLinuxPetYappingUsageComponent` in `src/repack.js`.
 - Renderer CSS patch: `injectLinuxPetYappingUsageCssPatch` and `buildLinuxPetYappingUsageCss` in `src/repack.js`.
 - Tests: `injectLinuxPetYappingUsagePatch adds yapping usage bubble to avatar overlay renderer` and `injectLinuxPetYappingUsageCssPatch adds pixel yapping styles` in `test/repack.test.js`.
@@ -26,17 +28,7 @@ Reference implementation:
 Reference behavior shape:
 
 ```js
-codexLinuxUseQuery({
-  queryKey: ['codex-pet-rate-limit-status'],
-  queryFn: async () => codexLinuxFetchUsage(),
-  staleTime: 0,
-  refetchInterval: 10_000,
-  refetchIntervalInBackground: true,
-  refetchOnMount: 'always',
-  refetchOnWindowFocus: true,
-  refetchOnReconnect: true,
-  gcTime: 0
-});
+codexLinuxFetchUsage(`codex-linux-pet-usage`);
 ```
 
 ```css

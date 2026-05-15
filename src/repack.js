@@ -77,6 +77,8 @@ const LINUX_AVATAR_OVERLAY_RENDERER_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux avatar overlay drag coordinates into the renderer bundle.';
 const LINUX_PET_YAPPING_USAGE_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer pet yapping usage bubble into the avatar overlay bundle.';
+const LINUX_PET_YAPPING_USAGE_MAIN_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the main-process pet yapping usage provider into the Electron main bundle.';
 
 export function parseArgs(argv) {
   const options = {
@@ -294,6 +296,11 @@ export async function installDesktop(options, logger) {
     logger
   );
   assertRequiredPatchApplied('Linux avatar overlay renderer', linuxAvatarOverlayRendererPatch);
+  const linuxPetYappingUsageMainPatch = await patchMainProcessLinuxPetYappingUsage(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux pet yapping usage main', linuxPetYappingUsageMainPatch);
   const linuxPetYappingUsagePatch = await patchRendererLinuxPetYappingUsage(
     extractedAppDir,
     logger
@@ -377,6 +384,7 @@ export async function installDesktop(options, logger) {
     linuxRemoteControlKeepAwake: linuxRemoteControlKeepAwakePatch,
     linuxAvatarOverlay: linuxAvatarOverlayPatch,
     linuxAvatarOverlayRenderer: linuxAvatarOverlayRendererPatch,
+    linuxPetYappingUsageMain: linuxPetYappingUsageMainPatch,
     linuxPetYappingUsage: linuxPetYappingUsagePatch,
     terminalLifecycle: terminalPatch,
     newThreadModel: newThreadModelPatch,
@@ -453,6 +461,7 @@ export async function installDesktop(options, logger) {
       linuxRemoteControlKeepAwake: linuxRemoteControlKeepAwakePatch,
       linuxAvatarOverlay: linuxAvatarOverlayPatch,
       linuxAvatarOverlayRenderer: linuxAvatarOverlayRendererPatch,
+      linuxPetYappingUsageMain: linuxPetYappingUsageMainPatch,
       linuxPetYappingUsage: linuxPetYappingUsagePatch,
       terminalLifecycle: terminalPatch,
       newThreadModel: newThreadModelPatch,
@@ -674,6 +683,7 @@ const LINUX_AVATAR_OVERLAY_PATCH_MARKER = 'codexLinuxAvatarOverlay';
 const LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER =
   'codexLinuxAvatarOverlayScreenPointDrag';
 const LINUX_AVATAR_OVERLAY_AUTO_CLOSE_PATCH_MARKER = 'codexLinuxAvatarOverlayAutoClose';
+const LINUX_PET_YAPPING_USAGE_MAIN_PATCH_MARKER = 'codexLinuxPetYappingUsageProvider';
 const LINUX_PET_YAPPING_USAGE_PATCH_MARKER = 'codexLinuxPetYappingUsage';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
@@ -778,12 +788,14 @@ const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN =
   /throwWithVelocity\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<velocityXVar>[A-Za-z_$][\w$]*),(?<velocityYVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|!Number\.isFinite\(\k<velocityXVar>\)\|\|!Number\.isFinite\(\k<velocityYVar>\)\|\|\k<velocityXVar>===0&&\k<velocityYVar>===0\)return;/;
 const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN =
   /let (?<sampleVar>[A-Za-z_$][\w$]*)=(?<sampleFn>[A-Za-z_$][\w$]*)\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{\}\)/;
+const LINUX_PET_YAPPING_USAGE_MAIN_HANDLER_PATTERN =
+  /(?<anchor>"fast-mode-rollout-metrics":async (?<paramsVar>[A-Za-z_$][\w$]*)=>[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.hostConfig\)\?null:[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\{codexHome:[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\{preferWsl:[A-Za-z_$][\w$]*,hostConfig:this\.hostConfig\}\),params:\k<paramsVar>\}\),)/;
 const LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN =
   /(?:^|[;,]|\bvar\s+)(?<reactVar>[A-Za-z_$][\w$]*)=e\([A-Za-z_$][\w$]*\(\),1\)/;
+const LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN =
+  /import\{(?<imports>[^}]*)\}from"(?<module>\.\/vscode-api-[^"]+\.js)";/;
 const LINUX_PET_YAPPING_USAGE_JSX_RUNTIME_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"\.\/jsx-runtime-[^"]+\.js";/;
-const LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN =
-  /import\{(?<imports>[^}]*)\}from"(?<module>\.\/codex-api-[^"]+\.js)";/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN =
   /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:)(?<mascotCall>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{ariaLabel:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\))/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN =
@@ -846,6 +858,10 @@ function buildLinuxWorktreeEnvironmentWorkerCleanupHelperReplacement({
 
 function buildLinuxSystemSleepInhibitorMethods() {
   return `codexLinuxSyncSystemSleepInhibitor(e){/* ${LINUX_POWER_SAVE_BLOCKER_PATCH_MARKER} */if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_SYSTEM_SLEEP_INHIBITOR===\`1\`)return;e?this.codexLinuxStartSystemSleepInhibitor():this.codexLinuxStopSystemSleepInhibitor()}codexLinuxStartSystemSleepInhibitor(){if(this.codexLinuxSystemSleepInhibitorProcess!=null)return;let e=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:child_process\`):null;if(e?.spawn==null)return;try{let t=e.spawn(\`systemd-inhibit\`,[\`--what=sleep:idle\`,\`--mode=block\`,\`--who=codex\`,\`--why=Codex remote access keep awake\`,\`sleep\`,\`infinity\`],{stdio:\`ignore\`}),n=()=>{try{t.kill()}catch{}};this.codexLinuxSystemSleepInhibitorProcess=t,process.once?.(\`exit\`,n),t.once(\`error\`,()=>{process.off?.(\`exit\`,n),this.codexLinuxSystemSleepInhibitorProcess===t&&(this.codexLinuxSystemSleepInhibitorProcess=null)}),t.once(\`exit\`,()=>{process.off?.(\`exit\`,n),this.codexLinuxSystemSleepInhibitorProcess===t&&(this.codexLinuxSystemSleepInhibitorProcess=null)}),t.unref?.()}catch{this.codexLinuxSystemSleepInhibitorProcess=null}}codexLinuxStopSystemSleepInhibitor(){let e=this.codexLinuxSystemSleepInhibitorProcess;if(e==null)return;this.codexLinuxSystemSleepInhibitorProcess=null;try{e.kill()}catch{}}`;
+}
+
+function buildLinuxPetYappingUsageMainHandler() {
+  return `"codex-linux-pet-usage":async()=>{/* ${LINUX_PET_YAPPING_USAGE_MAIN_PATCH_MARKER} */let e=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:fs\`):null,t=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:path\`):null,n=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:os\`):null;if(e?.readdirSync==null||e?.readFileSync==null||e?.statSync==null||t==null||n==null)return null;let r=t.join(n.homedir(),\`.codex\`,\`sessions\`),i=[];function a(n){let r;try{r=e.readdirSync(n,{withFileTypes:!0})}catch{return}for(let o of r){let r=t.join(n,o.name);if(o.isDirectory())a(r);else o.isFile()&&o.name.endsWith(\`.jsonl\`)&&i.push(r)}}function o(e){return e==null?null:{used_percent:e.used_percent??0,limit_window_seconds:(e.window_minutes??0)*60,resets_at:e.resets_at??null}}function s(e){return e==null?null:{rate_limit:{primary_window:o(e.primary),secondary_window:o(e.secondary)},rate_limits:e}}try{a(r);let t=i.map(t=>{try{return{path:t,mtime:e.statSync(t).mtimeMs}}catch{return null}}).filter(Boolean).sort((e,t)=>t.mtime-e.mtime).slice(0,200);for(let n of t){let t;try{t=e.readFileSync(n.path,\`utf8\`).trim().split(/\\r?\\n/).reverse()}catch{continue}for(let e of t){if(!e.includes(\`rate_limits\`))continue;try{let t=JSON.parse(e),n=t?.payload?.rate_limits??t?.payload?.info?.rate_limits,r=s(n);if(r)return r}catch{}}}}catch{}return null},`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerCreateReplacement(
@@ -939,7 +955,7 @@ function findLinuxPetYappingUsageJsxRuntime(bundleSource) {
 }
 
 function buildLinuxPetYappingUsageComponent({ jsxVar, reactVar }) {
-  return `function codexLinuxPetYappingUsage(){let[codexLinuxUsageData,codexLinuxSetUsageData]=${reactVar}.useState(null),[codexLinuxUsageTick,codexLinuxSetUsageTick]=${reactVar}.useState(()=>Date.now());${reactVar}.useEffect(()=>{let e=!1,t=async()=>{try{let t=await codexLinuxFetchUsage();e||codexLinuxSetUsageData(t)}catch{e||codexLinuxSetUsageData(null)}};t();let n=setInterval(t,1e4);return()=>{e=!0,clearInterval(n)}},[]),${reactVar}.useEffect(()=>{let e=setInterval(()=>{codexLinuxSetUsageTick(Date.now())},1e4);return()=>{clearInterval(e)}},[]);let e=codexLinuxUsageData?.rate_limit,t=[e?.primary_window,e?.secondary_window].filter(Boolean),n=e=>e==null?null:{used:e.used_percent??0,remaining:Math.min(Math.max(100-(e.used_percent??0),0),100),mins:e.limit_window_seconds==null?null:e.limit_window_seconds/60},r=(e,t)=>e.length===0?null:e.reduce((e,n)=>{let r=Math.abs((e.limit_window_seconds??0)/60-t),i=Math.abs((n.limit_window_seconds??0)/60-t);return i<r?n:i>r?e:(n.limit_window_seconds??0)>(e.limit_window_seconds??0)?n:e}),i=n(r(t.filter(e=>((e.limit_window_seconds??0)/60)<1440),300)),a=n(r(t.filter(e=>((e.limit_window_seconds??0)/60)>=1440),10080)),o=i?.remaining,s=a?.remaining,c=Math.max(0,Math.min(100,o??0)),l=Math.max(0,Math.min(100,s??0)),u=Math.floor(codexLinuxUsageTick/1e4),d=o==null&&s==null,f=u%2===0,p=d?\`Checking usage...\`:f?\`5-hour usage left: \${Math.round(c)}%\`:\`Weekly usage left: \${Math.round(l)}%\`,m=d?\`Usage loading...\`:\`5H left \${Math.round(c)}% | Weekly left \${Math.round(l)}%\`;return(0,${jsxVar}.jsxs)(\`div\`,{className:\`codex-usage-yap-wrap\`,\"aria-hidden\":\`true\`,children:[(0,${jsxVar}.jsxs)(\`div\`,{key:u,className:\`codex-usage-yap-pop \${f?\`codex-usage-yap-five-hour\`:\`codex-usage-yap-weekly\`}\`,children:[(0,${jsxVar}.jsxs)(\`svg\`,{className:\`codex-usage-yap-svg\`,viewBox:\`0 0 220 74\`,preserveAspectRatio:\`none\`,children:[(0,${jsxVar}.jsx)(\`path\`,{className:\`codex-usage-yap-shadow\`,d:\`M43 8H170V14H190V20H204V44H190V50H122V56H98V70H84V56H43V50H24V44H12V20H24V14H43Z\`}),(0,${jsxVar}.jsx)(\`path\`,{className:\`codex-usage-yap-fill\`,d:\`M42 6H168V12H188V18H202V42H188V48H120V54H96V68H86V54H42V48H24V42H14V18H24V12H42Z\`})]}),(0,${jsxVar}.jsx)(\`span\`,{className:\`codex-usage-yap-text\`,children:p})]}),(0,${jsxVar}.jsx)(\`div\`,{className:\`codex-usage-hover-info\`,children:m})]})}`;
+  return `function codexLinuxPetYappingUsage(){let[codexLinuxUsageData,codexLinuxSetUsageData]=${reactVar}.useState(null),[codexLinuxUsageTick,codexLinuxSetUsageTick]=${reactVar}.useState(()=>Date.now());${reactVar}.useEffect(()=>{let e=!1,t=async()=>{try{let t=await codexLinuxFetchUsage(\`codex-linux-pet-usage\`);e||codexLinuxSetUsageData(t)}catch{e||codexLinuxSetUsageData(null)}};t();let n=setInterval(t,1e4);return()=>{e=!0,clearInterval(n)}},[]),${reactVar}.useEffect(()=>{let e=setInterval(()=>{codexLinuxSetUsageTick(Date.now())},1e4);return()=>{clearInterval(e)}},[]);let e=codexLinuxUsageData?.rate_limit,t=[e?.primary_window,e?.secondary_window].filter(Boolean),n=e=>e==null?null:{used:e.used_percent??0,remaining:Math.min(Math.max(100-(e.used_percent??0),0),100),mins:e.limit_window_seconds==null?null:e.limit_window_seconds/60},r=(e,t)=>e.length===0?null:e.reduce((e,n)=>{let r=Math.abs((e.limit_window_seconds??0)/60-t),i=Math.abs((n.limit_window_seconds??0)/60-t);return i<r?n:i>r?e:(n.limit_window_seconds??0)>(e.limit_window_seconds??0)?n:e}),i=n(r(t.filter(e=>((e.limit_window_seconds??0)/60)<1440),300)),a=n(r(t.filter(e=>((e.limit_window_seconds??0)/60)>=1440),10080)),o=i?.remaining,s=a?.remaining,c=Math.max(0,Math.min(100,o??0)),l=Math.max(0,Math.min(100,s??0)),u=Math.floor(codexLinuxUsageTick/1e4),d=o==null&&s==null,f=u%2===0,p=d?\`Checking usage...\`:f?\`5-hour usage left: \${Math.round(c)}%\`:\`Weekly usage left: \${Math.round(l)}%\`,m=d?\`Usage loading...\`:\`5H left \${Math.round(c)}% | Weekly left \${Math.round(l)}%\`;return(0,${jsxVar}.jsxs)(\`div\`,{className:\`codex-usage-yap-wrap\`,\"aria-hidden\":\`true\`,children:[(0,${jsxVar}.jsxs)(\`div\`,{key:u,className:\`codex-usage-yap-pop \${f?\`codex-usage-yap-five-hour\`:\`codex-usage-yap-weekly\`}\`,children:[(0,${jsxVar}.jsxs)(\`svg\`,{className:\`codex-usage-yap-svg\`,viewBox:\`0 0 220 74\`,preserveAspectRatio:\`none\`,children:[(0,${jsxVar}.jsx)(\`path\`,{className:\`codex-usage-yap-shadow\`,d:\`M43 8H170V14H190V20H204V44H190V50H122V56H98V70H84V56H43V50H24V44H12V20H24V14H43Z\`}),(0,${jsxVar}.jsx)(\`path\`,{className:\`codex-usage-yap-fill\`,d:\`M42 6H168V12H188V18H202V42H188V48H120V54H96V68H86V54H42V48H24V42H14V18H24V12H42Z\`})]}),(0,${jsxVar}.jsx)(\`span\`,{className:\`codex-usage-yap-text\`,children:p})]}),(0,${jsxVar}.jsx)(\`div\`,{className:\`codex-usage-hover-info\`,children:m})]})}`;
 }
 
 function buildLinuxPetYappingUsageCss() {
@@ -952,7 +968,7 @@ function buildLinuxPetYappingUsageCss() {
 .codex-usage-yap-text{position:absolute;top:1.44rem;left:.65rem;right:.65rem;z-index:1;display:block;transform:translateY(-50%);white-space:nowrap;text-align:center;text-shadow:none}
 .codex-usage-yap-weekly,.codex-usage-yap-five-hour{color:#050505}
 .codex-usage-hover-info{position:absolute;left:.6rem;bottom:.08rem;z-index:2;min-width:10.4rem;border:3px solid #000;background:#fff;color:#050505;box-shadow:3px 3px 0 rgba(0,0,0,.28);padding:5px 7px;font:600 9px/1.2 "Press Start 2P","Silkscreen","Pixelify Sans","Pixel Operator",ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0;text-align:center;white-space:nowrap;image-rendering:pixelated;opacity:0;transform:translateY(-2px) scale(.96);transition:opacity .12s steps(2,end),transform .12s steps(2,end)}
-[data-avatar-mascot="true"]:hover .codex-usage-hover-info{opacity:1;transform:translateY(0) scale(1)}
+[data-avatar-overlay-hit-region="mascot"]:hover .codex-usage-hover-info,[data-avatar-mascot="true"]:hover .codex-usage-hover-info{opacity:1;transform:translateY(0) scale(1)}
 @keyframes codex-usage-yap-pop{0%{opacity:0;transform:translateY(8px) scale(.9)}3%{opacity:1;transform:translateY(0) scale(1)}5%{transform:translateY(-2px) scale(1.02,.98)}7%{transform:translateY(0) scale(.99,1.02)}9%{transform:translateY(-1px) scale(1.01,.99)}12%{transform:translateY(0) scale(1)}24%{opacity:1;transform:translateY(0) scale(1)}34%{opacity:0;transform:translateY(-4px) scale(.96)}100%{opacity:0;transform:translateY(-4px) scale(.96)}}`;
 }
 
@@ -1328,6 +1344,28 @@ async function patchMainProcessLinuxPowerSaveBlocker(extractedAppDir, logger) {
   if (result.updated !== original) {
     await fs.promises.writeFile(mainPath, result.updated, 'utf8');
     logger.info('Patched Linux system sleep inhibition into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+async function patchMainProcessLinuxPetYappingUsage(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for pet yapping usage provider`);
+  const result = applyLinuxPetYappingUsageMainPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched pet yapping usage provider into the Electron main bundle');
   }
   return {
     status: result.status,
@@ -1869,6 +1907,36 @@ export function injectLinuxRemoteControlKeepAwakePatch(bundleSource, options = {
   );
 }
 
+export function applyLinuxPetYappingUsageMainPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxPetYappingUsageMainPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxPetYappingUsageMainPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_PET_YAPPING_USAGE_MAIN_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const errorMessage = buildLinuxPetYappingUsageMainPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_PET_YAPPING_USAGE_MAIN_HANDLER_PATTERN,
+    ({ anchor }) => `${anchor}${buildLinuxPetYappingUsageMainHandler()}`,
+    errorMessage
+  );
+}
+
 export function applyLinuxAvatarOverlayPatch(bundleSource, options = {}) {
   if (options.skip) {
     return {
@@ -2056,7 +2124,7 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
   let updated = bundleSource;
   updated = replaceRegexOrThrow(
     updated,
-    LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN,
+    LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN,
     ({ imports, module }) => {
       const nextImports = appendNamedImportAlias(imports, 'n', 'codexLinuxFetchUsage');
       return `import{${nextImports}}from"${module}";`;
@@ -4182,6 +4250,14 @@ function buildLinuxPetYappingUsagePatchErrorMessage(bundleSource, sourceName) {
   );
 }
 
+function buildLinuxPetYappingUsageMainPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_PET_YAPPING_USAGE_MAIN_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxPetYappingUsageMainBundle(bundleSource)
+  );
+}
+
 function analyzeLinuxMenuBarBundle(bundleSource) {
   const detected = {
     browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
@@ -4434,7 +4510,7 @@ function analyzeLinuxPetYappingUsageBundle(bundleSource) {
   const detected = {
     reactRuntime: LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN.test(bundleSource),
     jsxRuntime: findLinuxPetYappingUsageJsxRuntime(bundleSource) != null,
-    usageApiImport: LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN.test(bundleSource),
+    vscodeApiImport: LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN.test(bundleSource),
     mascotHitRegion: LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource),
     mascotChildren: hasMascotHitRegion
       ? LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource)
@@ -4447,9 +4523,26 @@ function analyzeLinuxPetYappingUsageBundle(bundleSource) {
     missingAnchors: [
       !detected.reactRuntime && 'React runtime binding',
       !detected.jsxRuntime && 'JSX runtime binding',
-      !detected.usageApiImport && 'Codex usage API import',
+      !detected.vscodeApiImport && 'VS Code API import',
       !detected.mascotChildren && 'mascot children array',
       !detected.layoutQuery && 'avatar overlay layout measurement query'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxPetYappingUsageMainBundle(bundleSource) {
+  const detected = {
+    vscodeRequestBridge: bundleSource.includes('handleVSCodeRequest'),
+    handlerMap: /handlers=\{/.test(bundleSource),
+    fastModeHandler: LINUX_PET_YAPPING_USAGE_MAIN_HANDLER_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.vscodeRequestBridge && 'VS Code request bridge',
+      !detected.handlerMap && 'VS Code handler map',
+      !detected.fastModeHandler && 'fast-mode rollout handler anchor'
     ].filter(Boolean)
   };
 }

@@ -16,6 +16,7 @@ import {
   applyLinuxRemoteControlKeepAwakePatch,
   applyLinuxAvatarOverlayPatch,
   applyLinuxAvatarOverlayRendererPatch,
+  applyLinuxPetYappingUsageMainPatch,
   applyLinuxPetYappingUsagePatch,
   applyLinuxCloseCancelPatch,
   applyLinuxWorktreeEnvironmentMainPatch,
@@ -47,6 +48,7 @@ import {
   injectLinuxAvatarOverlayPatch,
   injectLinuxAvatarOverlayRendererPatch,
   injectLinuxPetYappingUsageCssPatch,
+  injectLinuxPetYappingUsageMainPatch,
   injectLinuxPetYappingUsagePatch,
   injectLinuxCloseCancelPatch,
   injectLinuxWorktreeEnvironmentMainPatch,
@@ -231,6 +233,8 @@ const POWER_SAVE_BLOCKER_BUNDLE_26_513 =
   'var Zz=class{powerSaveBlockerId=null;powerSaveBlockingWebContentsIds=new Set;pluggedInRemoteControlPowerSaveWebContentsIds=new Set;powerSaveTrackedWebContentsIds=new Set;constructor(){n.powerMonitor.on(`on-ac`,()=>{this.syncPowerSaveBlocker()}),n.powerMonitor.on(`on-battery`,()=>{this.syncPowerSaveBlocker()})}updatePowerSaveBlocker(e,t,n){let r=e.id;this.powerSaveTrackedWebContentsIds.has(r)||(this.powerSaveTrackedWebContentsIds.add(r),e.once(`destroyed`,()=>{this.powerSaveTrackedWebContentsIds.delete(r),this.powerSaveBlockingWebContentsIds.delete(r),this.pluggedInRemoteControlPowerSaveWebContentsIds.delete(r),this.syncPowerSaveBlocker()})),t?this.powerSaveBlockingWebContentsIds.add(r):this.powerSaveBlockingWebContentsIds.delete(r),n?this.pluggedInRemoteControlPowerSaveWebContentsIds.add(r):this.pluggedInRemoteControlPowerSaveWebContentsIds.delete(r),this.syncPowerSaveBlocker()}syncPowerSaveBlocker(){let e=this.powerSaveBlockingWebContentsIds.size>0||!n.powerMonitor.isOnBatteryPower()&&this.pluggedInRemoteControlPowerSaveWebContentsIds.size>0;if(e&&this.powerSaveBlockerId==null){this.powerSaveBlockerId=n.powerSaveBlocker.start(`prevent-app-suspension`);return}!e&&this.powerSaveBlockerId!=null&&(n.powerSaveBlocker.stop(this.powerSaveBlockerId),this.powerSaveBlockerId=null)}async sendCustomPrompts(e){return null}};';
 const REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513 =
   'function jP(){let e=(0,Z.c)(7),t=K(G),{data:n}=Qc(y.PREVENT_SLEEP_WHILE_RUNNING),{data:r}=Qc(y.KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN),[i]=zo(`local_app_server_feature_enablement`),a=i?.remote_control??!1,o,s;e[0]!==r||e[1]!==n||e[2]!==a||e[3]!==t?(o=()=>t.watch(e=>{let{get:t}=e;J.dispatchMessage(`power-save-blocker-set`,{shouldBlock:!!n&&t(Ct),keepRemoteControlAwakeWhilePluggedIn:!!r&&a})}),s=[r,n,a,t],e[0]=r,e[1]=n,e[2]=a,e[3]=t,e[4]=o,e[5]=s):(o=e[4],s=e[5]),(0,Q.useEffect)(o,s);let c;return e[6]===Symbol.for(`react.memo_cache_sentinel`)?(c=[],e[6]=c):c=e[6],(0,Q.useEffect)(MP,c),null}';
+const PET_YAPPING_USAGE_MAIN_BUNDLE_26_513 =
+  'var WD=class{constructor(){this.handlers={"fast-mode-rollout-metrics":async n=>e.zt(this.hostConfig)?null:t.sn({codexHome:t.Rr({preferWsl:MD,hostConfig:this.hostConfig}),params:n}),"refresh-remote-connections":async()=>this.remoteConnectionsHandler.refreshRemoteConnections()}}handleVSCodeRequest(n,r,i,a,o){let s=r,c=this.handlers[s];if(typeof c!=`function`)throw Error(`${r} not implemented`);return c({...a,origin:n,windowHostId:i})}};';
 const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
   new URL('../main-SLemWUtC.js', import.meta.url),
   'utf8'
@@ -257,7 +261,7 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_429 =
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_506 =
   'import{_r as r,d as i}from"./vscode-api-Cvzk5den.js";import{v as u}from"./codex-api-DPPuXJuP.js";import{t as f}from"./jsx-runtime-lEsnPbkx.js";var ae=m(),B=e(d(),1),V=1600;var K=f();function ce(e){let S=(0,K.jsx)(E,{assetRef:r,className:`relative z-10`,spritesheetUrl:s,state:m}),C=null;return(0,K.jsxs)(`div`,{children:[S,C]})}function ht(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_513 =
-  'import{n as g,t as _}from"./jsx-runtime-Bj4hVTj7.js";import{y as P}from"./codex-api-BlFw_ca9.js";var I=x(),L=e(g(),1),ve=1600,R=100,z=320;function ct(e){let g=(0,Q.jsx)(M,{}),_=null;return(0,Q.jsxs)(k.button,{children:[g,_]})}var Q=_(),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:n}=e;return(0,Q.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:`absolute`,style:{width:112},children:(0,Q.jsx)(me,{ariaLabel:`Pet`,assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:n,resizeHandle:void 0,state:t.mascotState,style:{},transientState:null})})}function on(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
+  'import{n as g,t as _}from"./jsx-runtime-Bj4hVTj7.js";import{y as P}from"./codex-api-BlFw_ca9.js";import{B as y,H as b,pt as x,v as S,y as ee}from"./vscode-api-DH_DWhkY.js";var I=x(),L=e(g(),1),ve=1600,R=100,z=320;function ct(e){let g=(0,Q.jsx)(M,{}),_=null;return(0,Q.jsxs)(k.button,{children:[g,_]})}var Q=_(),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:n}=e;return(0,Q.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:`absolute`,style:{width:112},children:(0,Q.jsx)(me,{ariaLabel:`Pet`,assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:n,resizeHandle:void 0,state:t.mascotState,style:{},transientState:null})})}function on(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -2452,6 +2456,45 @@ test('injectLinuxAvatarOverlayRendererPatch reports diagnostics when drag anchor
   );
 });
 
+test('injectLinuxPetYappingUsageMainPatch adds session-backed usage provider to main bundle', () => {
+  const updated = injectLinuxPetYappingUsageMainPatch(PET_YAPPING_USAGE_MAIN_BUNDLE_26_513);
+
+  assert.match(updated, /codexLinuxPetYappingUsageProvider/);
+  assert.match(updated, /"codex-linux-pet-usage":async\(\)=>/);
+  assert.match(updated, /\.codex/);
+  assert.match(updated, /sessions/);
+  assert.match(updated, /rate_limits/);
+  assert.match(updated, /primary_window/);
+  assert.match(updated, /secondary_window/);
+  assert.match(updated, /"fast-mode-rollout-metrics"/);
+});
+
+test('injectLinuxPetYappingUsageMainPatch is idempotent', () => {
+  const once = injectLinuxPetYappingUsageMainPatch(PET_YAPPING_USAGE_MAIN_BUNDLE_26_513);
+  const twice = injectLinuxPetYappingUsageMainPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxPetYappingUsageMainPatch skips patching when disabled', () => {
+  const result = applyLinuxPetYappingUsageMainPatch(PET_YAPPING_USAGE_MAIN_BUNDLE_26_513, {
+    skip: true
+  });
+
+  assert.equal(result.updated, PET_YAPPING_USAGE_MAIN_BUNDLE_26_513);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxPetYappingUsageMainPatch reports diagnostics when handler anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxPetYappingUsageMainPatch('const noop = true;', { sourceName: 'main.js' }),
+    {
+      message:
+        /Could not patch the main-process pet yapping usage provider into the Electron main bundle\. Source: main\.js\. Missing anchors: VS Code request bridge, VS Code handler map, fast-mode rollout handler anchor\. Detected anchors: vscodeRequestBridge=no, handlerMap=no, fastModeHandler=no\./
+    }
+  );
+});
+
 test('injectLinuxPetYappingUsagePatch adds yapping usage bubble to avatar overlay renderer', () => {
   const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_CURRENT);
 
@@ -2459,8 +2502,10 @@ test('injectLinuxPetYappingUsagePatch adds yapping usage bubble to avatar overla
   assert.match(updated, /R\.useState\(null\)/);
   assert.match(updated, /R\.useEffect/);
   assert.match(updated, /setInterval\(t,1e4\)/);
-  assert.match(updated, /await codexLinuxFetchUsage\(\)/);
+  assert.match(updated, /await codexLinuxFetchUsage\(`codex-linux-pet-usage`\)/);
   assert.match(updated, /n as codexLinuxFetchUsage/);
+  assert.match(updated, /from"\.\/vscode-api-/);
+  assert.doesNotMatch(updated, /from"\.\/codex-api-[^"]+\.js";[^;]*codexLinuxFetchUsage/);
   assert.doesNotMatch(updated, /codexLinuxUseQuery/);
   assert.match(
     updated,
@@ -2524,6 +2569,7 @@ test('injectLinuxPetYappingUsageCssPatch adds pixel yapping styles', () => {
   assert.match(updated, /shape-rendering:crispEdges/);
   assert.match(updated, /Press Start 2P/);
   assert.match(updated, /codex-usage-hover-info/);
+  assert.match(updated, /\[data-avatar-overlay-hit-region="mascot"\]:hover \.codex-usage-hover-info/);
   assert.doesNotMatch(updated, /-5\.85rem|-3\.9rem|-2\.95rem|-2\.35rem|-1\.8rem/);
 });
 
