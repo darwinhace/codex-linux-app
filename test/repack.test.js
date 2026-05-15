@@ -12,6 +12,8 @@ import {
   applyLinuxBrowserUseHostFetchPatch,
   applyLinuxRemoteControlPatch,
   applyLinuxRemoteControlVisibilityPatch,
+  applyLinuxPowerSaveBlockerPatch,
+  applyLinuxRemoteControlKeepAwakePatch,
   applyLinuxAvatarOverlayPatch,
   applyLinuxAvatarOverlayRendererPatch,
   applyLinuxPetYappingUsagePatch,
@@ -40,6 +42,8 @@ import {
   injectLinuxBrowserUseHostFetchPatch,
   injectLinuxRemoteControlPatch,
   injectLinuxRemoteControlVisibilityPatch,
+  injectLinuxPowerSaveBlockerPatch,
+  injectLinuxRemoteControlKeepAwakePatch,
   injectLinuxAvatarOverlayPatch,
   injectLinuxAvatarOverlayRendererPatch,
   injectLinuxPetYappingUsageCssPatch,
@@ -223,6 +227,10 @@ const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513_20950 =
   'var fe={ambientSuggestions:!1,artifactsPane:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,control:!1,deviceAttestation:!1,multiWindow:!1},pe=Object.keys(fe),me={...fe},he=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function ge(){return me}function _e(e){return pe.every(t=>typeof e[t]==`boolean`)}function ve(e){let t={...me,...e};return pe.every(e=>t[e]===me[e])?!1:(me=t,!0)}function ye(e,{buildFlavor:n=t.D.resolve(),env:r=d.default.env,platform:i=d.default.platform}={}){let a=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...e,computerUse:!0,computerUseNodeRepl:!0}:e,o=n===t.D.Dev?be(r):null;return o==null?a:{...a,...o}}function be(e){let t=e[he]?.trim();if(!t)return null;return JSON.parse(t)}';
 const REMOTE_CONTROL_VISIBILITY_BUNDLE_26_513 =
   'import{p as e,pt as t}from"./vscode-api-DH_DWhkY.js";import{r as n}from"./remote-connection-visibility-CMLPP7XS.js";var r=t();function i(){let t=(0,r.c)(3),[i]=e(`remote_control_connections_state`),o=n(),s;return t[0]!==i||t[1]!==o?(s=a({remoteControlConnectionsState:i,slingshotEnabled:o}),t[0]=i,t[1]=o,t[2]=s):s=t[2],s}function a({remoteControlConnectionsState:e,slingshotEnabled:t}){return t&&(e?.available??!0)&&e?.accessRequired!==!0}export{i as t};';
+const POWER_SAVE_BLOCKER_BUNDLE_26_513 =
+  'var Zz=class{powerSaveBlockerId=null;powerSaveBlockingWebContentsIds=new Set;pluggedInRemoteControlPowerSaveWebContentsIds=new Set;powerSaveTrackedWebContentsIds=new Set;constructor(){n.powerMonitor.on(`on-ac`,()=>{this.syncPowerSaveBlocker()}),n.powerMonitor.on(`on-battery`,()=>{this.syncPowerSaveBlocker()})}updatePowerSaveBlocker(e,t,n){let r=e.id;this.powerSaveTrackedWebContentsIds.has(r)||(this.powerSaveTrackedWebContentsIds.add(r),e.once(`destroyed`,()=>{this.powerSaveTrackedWebContentsIds.delete(r),this.powerSaveBlockingWebContentsIds.delete(r),this.pluggedInRemoteControlPowerSaveWebContentsIds.delete(r),this.syncPowerSaveBlocker()})),t?this.powerSaveBlockingWebContentsIds.add(r):this.powerSaveBlockingWebContentsIds.delete(r),n?this.pluggedInRemoteControlPowerSaveWebContentsIds.add(r):this.pluggedInRemoteControlPowerSaveWebContentsIds.delete(r),this.syncPowerSaveBlocker()}syncPowerSaveBlocker(){let e=this.powerSaveBlockingWebContentsIds.size>0||!n.powerMonitor.isOnBatteryPower()&&this.pluggedInRemoteControlPowerSaveWebContentsIds.size>0;if(e&&this.powerSaveBlockerId==null){this.powerSaveBlockerId=n.powerSaveBlocker.start(`prevent-app-suspension`);return}!e&&this.powerSaveBlockerId!=null&&(n.powerSaveBlocker.stop(this.powerSaveBlockerId),this.powerSaveBlockerId=null)}async sendCustomPrompts(e){return null}};';
+const REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513 =
+  'function jP(){let e=(0,Z.c)(7),t=K(G),{data:n}=Qc(y.PREVENT_SLEEP_WHILE_RUNNING),{data:r}=Qc(y.KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN),[i]=zo(`local_app_server_feature_enablement`),a=i?.remote_control??!1,o,s;e[0]!==r||e[1]!==n||e[2]!==a||e[3]!==t?(o=()=>t.watch(e=>{let{get:t}=e;J.dispatchMessage(`power-save-blocker-set`,{shouldBlock:!!n&&t(Ct),keepRemoteControlAwakeWhilePluggedIn:!!r&&a})}),s=[r,n,a,t],e[0]=r,e[1]=n,e[2]=a,e[3]=t,e[4]=o,e[5]=s):(o=e[4],s=e[5]),(0,Q.useEffect)(o,s);let c;return e[6]===Symbol.for(`react.memo_cache_sentinel`)?(c=[],e[6]=c):c=e[6],(0,Q.useEffect)(MP,c),null}';
 const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
   new URL('../main-SLemWUtC.js', import.meta.url),
   'utf8'
@@ -249,7 +257,7 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_429 =
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_506 =
   'import{_r as r,d as i}from"./vscode-api-Cvzk5den.js";import{v as u}from"./codex-api-DPPuXJuP.js";import{t as f}from"./jsx-runtime-lEsnPbkx.js";var ae=m(),B=e(d(),1),V=1600;var K=f();function ce(e){let S=(0,K.jsx)(E,{assetRef:r,className:`relative z-10`,spritesheetUrl:s,state:m}),C=null;return(0,K.jsxs)(`div`,{children:[S,C]})}function ht(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_513 =
-  'import{y as P}from"./codex-api-BlFw_ca9.js";var I=x(),L=e(g(),1),ve=1600,R=100,z=320;function ye(e){return{screenX:e.screenX}}function nt(e){let S=(0,I.jsx)(me,{assetRef:e.assetRef}),C=null;return(0,I.jsxs)(`div`,{children:[S,C]})}function on(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
+  'import{n as g,t as _}from"./jsx-runtime-Bj4hVTj7.js";import{y as P}from"./codex-api-BlFw_ca9.js";var I=x(),L=e(g(),1),ve=1600,R=100,z=320;function ct(e){let g=(0,Q.jsx)(M,{}),_=null;return(0,Q.jsxs)(k.button,{children:[g,_]})}var Q=_(),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:n}=e;return(0,Q.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:`absolute`,style:{width:112},children:(0,Q.jsx)(me,{ariaLabel:`Pet`,assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:n,resizeHandle:void 0,state:t.mascotState,style:{},transientState:null})})}function on(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -2247,6 +2255,79 @@ test('injectLinuxRemoteControlVisibilityPatch reports diagnostics when visibilit
   );
 });
 
+test('injectLinuxPowerSaveBlockerPatch adds systemd sleep blocker on Linux', () => {
+  const updated = injectLinuxPowerSaveBlockerPatch(POWER_SAVE_BLOCKER_BUNDLE_26_513);
+
+  assert.match(updated, /codexLinuxSystemSleepInhibitor/);
+  assert.match(updated, /systemd-inhibit/);
+  assert.match(updated, /--what=sleep:idle/);
+  assert.match(updated, /--mode=block/);
+  assert.match(updated, /Codex remote access keep awake/);
+  assert.match(updated, /this\.codexLinuxSyncSystemSleepInhibitor\(e\)/);
+  assert.match(updated, /powerSaveBlocker\.start\(`prevent-app-suspension`\)/);
+});
+
+test('injectLinuxPowerSaveBlockerPatch is idempotent', () => {
+  const once = injectLinuxPowerSaveBlockerPatch(POWER_SAVE_BLOCKER_BUNDLE_26_513);
+  const twice = injectLinuxPowerSaveBlockerPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxPowerSaveBlockerPatch skips patching when disabled', () => {
+  const result = applyLinuxPowerSaveBlockerPatch(POWER_SAVE_BLOCKER_BUNDLE_26_513, {
+    skip: true
+  });
+
+  assert.equal(result.updated, POWER_SAVE_BLOCKER_BUNDLE_26_513);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxPowerSaveBlockerPatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxPowerSaveBlockerPatch('const noop = true;', { sourceName: 'main.js' }),
+    {
+      message:
+        /Could not patch Linux system sleep inhibition into the Electron main bundle\. Source: main\.js\. Missing anchors: power-save blocker state, remote-control power-save state, battery monitor check, Electron prevent-app-suspension blocker, power-save sync method\. Detected anchors: powerSaveBlockerState=no, remoteControlPowerSaveState=no, batteryMonitor=no, preventAppSuspension=no, syncMethod=no\./
+    }
+  );
+});
+
+test('injectLinuxRemoteControlKeepAwakePatch uses the visible remote keep-awake toggle value', () => {
+  const updated = injectLinuxRemoteControlKeepAwakePatch(REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513);
+
+  assert.match(updated, /codexLinuxRemoteControlKeepAwakeSetting/);
+  assert.match(updated, /keepRemoteControlAwakeWhilePluggedIn:!!\(r\|\|n\)&&a/);
+  assert.match(updated, /PREVENT_SLEEP_WHILE_RUNNING/);
+  assert.match(updated, /KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN/);
+});
+
+test('injectLinuxRemoteControlKeepAwakePatch is idempotent', () => {
+  const once = injectLinuxRemoteControlKeepAwakePatch(REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513);
+  const twice = injectLinuxRemoteControlKeepAwakePatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxRemoteControlKeepAwakePatch skips patching when disabled', () => {
+  const result = applyLinuxRemoteControlKeepAwakePatch(REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513, {
+    skip: true
+  });
+
+  assert.equal(result.updated, REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxRemoteControlKeepAwakePatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxRemoteControlKeepAwakePatch('const noop = true;', { sourceName: 'app.js' }),
+    {
+      message:
+        /Could not patch Linux remote-control keep-awake setting dispatch into the renderer bundle\. Source: app\.js\. Missing anchors: power-save dispatch, prevent-sleep setting read, remote keep-awake setting read, remote-control enabled state, remote keep-awake dispatch field\. Detected anchors: powerSaveDispatch=no, preventSleepSetting=no, remoteKeepAwakeSetting=no, remoteControlEnabled=no, keepAwakeDispatch=no\./
+    }
+  );
+});
+
 test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main bundle', () => {
   const updated = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_BUNDLE_26_429_30905);
 
@@ -2420,11 +2501,12 @@ test('injectLinuxPetYappingUsagePatch supports 26.513 combined jsx/react var pre
 
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /L\.useState\(null\)/);
-  assert.match(updated, /var L=e\(g\(\),1\),ve=1600,R=100,z=320;function ye/);
+  assert.match(updated, /var Q=_\(\);function codexLinuxPetYappingUsage/);
   assert.match(
     updated,
-    /children:\[S,\(0,I\.jsx\)\(codexLinuxPetYappingUsage,\{\}\),C\]\}/
+    /children:\[\(0,Q\.jsx\)\(me,\{ariaLabel:`Pet`,assetRef:t\.assetRef,spritesheetUrl:t\.spritesheetUrl,notificationBadge:n,resizeHandle:void 0,state:t\.mascotState,style:\{\},transientState:null\}\),\(0,Q\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
   );
+  assert.doesNotMatch(updated, /children:\[g,\(0,Q\.jsx\)\(codexLinuxPetYappingUsage,\{\}\),_\]/);
   assert.match(
     updated,
     /let t=_t\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?_t\(e\.querySelector\(\$e\)\),n=vt\(e\.querySelector\(et\)\)/

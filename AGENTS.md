@@ -14,6 +14,8 @@ Every desktop repackage must preserve the Linux `/pet` overlay customizations in
 - The bubble should be pixelated, compact, close to the pet head, and should fade out instead of disappearing instantly.
 - Keep the transparent overlay footprint only as large as needed for the pet, bubble, and hover info. `.codex-usage-yap-wrap` is intentionally used as the avatar layout measurement target so the speech bubble and hover info are not clipped, but do not add extra unused transparent padding beyond those visible elements.
 - Do not add a glow ring, aura, halo, or external usage ring around the pet unless the user explicitly asks to bring that design back.
+- If the yapping bubble disappears after an upstream update, inspect the installed `webview/assets/avatar-overlay-page-*.js`, not only the unit fixture. The injection must use the real JSX runtime from the `jsx-runtime` import and attach to the mascot hit-region (`data-avatar-overlay-hit-region="mascot"`), not to notification scroll controls or the React compiler cache helper.
+- Installed-bundle verification should confirm `codexLinuxPetYappingUsage`, `codexLinuxFetchUsage`, `.codex-usage-yap-wrap`, and the mascot hit-region are all present together, and that stale `codexLinuxUseQuery` is absent.
 
 Reference implementation:
 
@@ -69,6 +71,8 @@ Linux repacks must install a Chrome native messaging host for the Codex Chrome e
 - The generated host must bridge Chrome native messaging stdio to `/tmp/codex-browser-use/*.sock` with the same 4-byte length-prefixed JSON framing used by Browser Use native pipes.
 - The host must answer extension `ping` requests itself so the extension can show `Connected` even before a Codex task attaches.
 - Keep tests for `installLinuxChromeExtensionHost` and `buildLinuxChromeExtensionHostModule` in `test/repack.test.js`.
+- If the Chrome plugin fails to install or connect after an upstream update, verify both host paths: the root resource host used by the native messaging manifest (`app/resources/chrome-extension-host`) and the bundled plugin Linux wrapper (`app/resources/plugins/openai-bundled/plugins/chrome/extension-host/linux/x64/extension-host`).
+- The installer diagnostic manifest must include `chromeExtensionHost` and `chromeNativeMessagingHost`; do not treat the Chrome plugin as repaired until the manifest path and wrapper executable both exist in the installed channel resources.
 
 ## Browser Use Permissions
 
@@ -79,6 +83,17 @@ The generated Linux `node_repl` must respect Browser Use approval config.
 - Preserve the native prompt path for normal `always_ask` mode; do not bypass prompts by default.
 - Keep generated `node_repl` tests for `never_ask`, local origins, allow-all preferences, and native-pipe fallback.
 - Local Browser Use approval settings do not override upstream Browser Use site policy. If a domain is denied by the policy response, do not add a local bypass.
+
+## Remote Control Keep Awake
+
+Linux repacks must make the Remote Connections `Keep this Mac awake` toggle actually block Linux sleep while the upstream power-save state is active.
+
+- Keep `patchMainProcessLinuxPowerSaveBlocker`, `injectLinuxPowerSaveBlockerPatch`, and `buildLinuxSystemSleepInhibitorMethods` in `src/repack.js`.
+- Keep `patchRendererLinuxRemoteControlKeepAwake` and `injectLinuxRemoteControlKeepAwakePatch` so the visible Remote Connections keep-awake toggle value is included in `power-save-blocker-set`.
+- Preserve upstream Electron `powerSaveBlocker.start("prevent-app-suspension")`; the Linux patch adds a systemd inhibitor on top of it instead of replacing upstream behavior.
+- The Linux inhibitor must use `systemd-inhibit --what=sleep:idle --mode=block --who=codex --why="Codex remote access keep awake"` so `systemd-inhibit --list` shows a real `block` inhibitor when the toggle is active and the machine is plugged in.
+- Keep `CODEX_DESKTOP_DISABLE_LINUX_SYSTEM_SLEEP_INHIBITOR=1` as a local escape hatch.
+- Keep tests for `injectLinuxPowerSaveBlockerPatch` and `injectLinuxRemoteControlKeepAwakePatch` in `test/repack.test.js`.
 
 ## Linux Browser Install Repair
 

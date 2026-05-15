@@ -67,6 +67,10 @@ const LINUX_REMOTE_CONTROL_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux remote-control feature availability into the Electron main bundle.';
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux remote-control settings visibility into the renderer bundle.';
+const LINUX_POWER_SAVE_BLOCKER_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux system sleep inhibition into the Electron main bundle.';
+const LINUX_REMOTE_CONTROL_KEEP_AWAKE_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux remote-control keep-awake setting dispatch into the renderer bundle.';
 const LINUX_AVATAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux avatar overlay window behavior into the Electron main bundle.';
 const LINUX_AVATAR_OVERLAY_RENDERER_PATCH_BASE_ERROR_MESSAGE =
@@ -273,6 +277,16 @@ export async function installDesktop(options, logger) {
     'Linux remote control settings visibility',
     linuxRemoteControlVisibilityPatch
   );
+  const linuxPowerSaveBlockerPatch = await patchMainProcessLinuxPowerSaveBlocker(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux power save blocker', linuxPowerSaveBlockerPatch);
+  const linuxRemoteControlKeepAwakePatch = await patchRendererLinuxRemoteControlKeepAwake(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux remote control keep-awake', linuxRemoteControlKeepAwakePatch);
   const linuxAvatarOverlayPatch = await patchMainProcessLinuxAvatarOverlay(extractedAppDir, logger);
   assertRequiredPatchApplied('Linux avatar overlay', linuxAvatarOverlayPatch);
   const linuxAvatarOverlayRendererPatch = await patchRendererLinuxAvatarOverlay(
@@ -359,6 +373,8 @@ export async function installDesktop(options, logger) {
     linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
     linuxRemoteControl: linuxRemoteControlPatch,
     linuxRemoteControlVisibility: linuxRemoteControlVisibilityPatch,
+    linuxPowerSaveBlocker: linuxPowerSaveBlockerPatch,
+    linuxRemoteControlKeepAwake: linuxRemoteControlKeepAwakePatch,
     linuxAvatarOverlay: linuxAvatarOverlayPatch,
     linuxAvatarOverlayRenderer: linuxAvatarOverlayRendererPatch,
     linuxPetYappingUsage: linuxPetYappingUsagePatch,
@@ -433,6 +449,8 @@ export async function installDesktop(options, logger) {
       linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
       linuxRemoteControl: linuxRemoteControlPatch,
       linuxRemoteControlVisibility: linuxRemoteControlVisibilityPatch,
+      linuxPowerSaveBlocker: linuxPowerSaveBlockerPatch,
+      linuxRemoteControlKeepAwake: linuxRemoteControlKeepAwakePatch,
       linuxAvatarOverlay: linuxAvatarOverlayPatch,
       linuxAvatarOverlayRenderer: linuxAvatarOverlayRendererPatch,
       linuxPetYappingUsage: linuxPetYappingUsagePatch,
@@ -650,6 +668,8 @@ const LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER = 'codexLinuxBrowserUseHostFetch
 const LINUX_REMOTE_CONTROL_PATCH_MARKER = 'codexLinuxRemoteControlFeatureAvailability';
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_MARKER =
   'codexLinuxRemoteControlSettingsVisibility';
+const LINUX_POWER_SAVE_BLOCKER_PATCH_MARKER = 'codexLinuxSystemSleepInhibitor';
+const LINUX_REMOTE_CONTROL_KEEP_AWAKE_PATCH_MARKER = 'codexLinuxRemoteControlKeepAwakeSetting';
 const LINUX_AVATAR_OVERLAY_PATCH_MARKER = 'codexLinuxAvatarOverlay';
 const LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER =
   'codexLinuxAvatarOverlayScreenPointDrag';
@@ -726,6 +746,10 @@ const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_OVERRIDES_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\((?<featuresVar>[A-Za-z_$][\w$]*),\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*)=(?<buildFlavorDefault>[^,]+),env:(?<envVar>[A-Za-z_$][\w$]*)=(?<envDefault>[^,]+),platform:(?<platformVar>[A-Za-z_$][\w$]*)=(?<platformDefault>[^}]+)\}=\{\}\)\{let (?<computedVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`win32`&&\k<envVar>\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`\?\{\.\.\.\k<featuresVar>,computerUse:!0,computerUseNodeRepl:!0\}:\k<featuresVar>,(?<overridesVar>[A-Za-z_$][\w$]*)=(?<overrideExpr>[^;]+);return \k<overridesVar>==null\?\k<computedVar>:\{\.\.\.\k<computedVar>,\.\.\.\k<overridesVar>\}\}/;
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\(\{remoteControlConnectionsState:(?<stateVar>[A-Za-z_$][\w$]*),slingshotEnabled:(?<flagVar>[A-Za-z_$][\w$]*)\}\)\{return \k<flagVar>&&\(\k<stateVar>\?\.available\?\?!0\)&&\k<stateVar>\?\.accessRequired!==!0\}/;
+const LINUX_POWER_SAVE_BLOCKER_SYNC_PATTERN =
+  /syncPowerSaveBlocker\(\)\{let (?<activeVar>[A-Za-z_$][\w$]*)=this\.powerSaveBlockingWebContentsIds\.size>0\|\|!(?<electronVar>[A-Za-z_$][\w$]*)\.powerMonitor\.isOnBatteryPower\(\)&&this\.pluggedInRemoteControlPowerSaveWebContentsIds\.size>0;if\(\k<activeVar>&&this\.powerSaveBlockerId==null\)\{this\.powerSaveBlockerId=\k<electronVar>\.powerSaveBlocker\.start\(`prevent-app-suspension`\);return\}!\k<activeVar>&&this\.powerSaveBlockerId!=null&&\(\k<electronVar>\.powerSaveBlocker\.stop\(this\.powerSaveBlockerId\),this\.powerSaveBlockerId=null\)\}/;
+const LINUX_REMOTE_CONTROL_KEEP_AWAKE_DISPATCH_PATTERN =
+  /(?<prefix>\{data:(?<preventVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.PREVENT_SLEEP_WHILE_RUNNING\),\{data:(?<keepVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN\)[\s\S]*?keepRemoteControlAwakeWhilePluggedIn:)!!\k<keepVar>&&(?<enabledVar>[A-Za-z_$][\w$]*)/;
 const LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN =
   /process\.platform===`darwin`\?(?<windowVar>[A-Za-z_$][\w$]*)\.setVisibleOnAllWorkspaces\(!0,\{visibleOnFullScreen:!0,skipTransformProcessType:!0\}\):\k<windowVar>\.setVisibleOnAllWorkspaces\(!0\),\k<windowVar>\.setAlwaysOnTop\(!0,`floating`\),\k<windowVar>\.setMenuBarVisibility\(!1\)/;
 const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
@@ -756,10 +780,12 @@ const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN =
   /let (?<sampleVar>[A-Za-z_$][\w$]*)=(?<sampleFn>[A-Za-z_$][\w$]*)\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{\}\)/;
 const LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN =
   /(?:^|[;,]|\bvar\s+)(?<reactVar>[A-Za-z_$][\w$]*)=e\([A-Za-z_$][\w$]*\(\),1\)/;
+const LINUX_PET_YAPPING_USAGE_JSX_RUNTIME_IMPORT_PATTERN =
+  /import\{(?<imports>[^}]*)\}from"\.\/jsx-runtime-[^"]+\.js";/;
 const LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"(?<module>\.\/codex-api-[^"]+\.js)";/;
-const LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN =
-  /var (?<jsxVar>[A-Za-z_$][\w$]*)=(?<jsxFactory>[A-Za-z_$][\w$]*)\(\)(?<varTail>,[^;]+)?;function (?<mascotFn>[A-Za-z_$][\w$]*)\(/;
+const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN =
+  /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:)(?<mascotCall>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{ariaLabel:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\))/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN =
   /children:\[(?<avatar>[A-Za-z_$][\w$]*),(?<badge>[A-Za-z_$][\w$]*)\]\}/;
 const LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN =
@@ -818,6 +844,10 @@ function buildLinuxWorktreeEnvironmentWorkerCleanupHelperReplacement({
   return `async function ${cleanupFn}(e,t,n,r,i,a){return(await ${environmentRunnerFn}({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r}))?.setupResult??null}`;
 }
 
+function buildLinuxSystemSleepInhibitorMethods() {
+  return `codexLinuxSyncSystemSleepInhibitor(e){/* ${LINUX_POWER_SAVE_BLOCKER_PATCH_MARKER} */if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_SYSTEM_SLEEP_INHIBITOR===\`1\`)return;e?this.codexLinuxStartSystemSleepInhibitor():this.codexLinuxStopSystemSleepInhibitor()}codexLinuxStartSystemSleepInhibitor(){if(this.codexLinuxSystemSleepInhibitorProcess!=null)return;let e=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:child_process\`):null;if(e?.spawn==null)return;try{let t=e.spawn(\`systemd-inhibit\`,[\`--what=sleep:idle\`,\`--mode=block\`,\`--who=codex\`,\`--why=Codex remote access keep awake\`,\`sleep\`,\`infinity\`],{stdio:\`ignore\`}),n=()=>{try{t.kill()}catch{}};this.codexLinuxSystemSleepInhibitorProcess=t,process.once?.(\`exit\`,n),t.once(\`error\`,()=>{process.off?.(\`exit\`,n),this.codexLinuxSystemSleepInhibitorProcess===t&&(this.codexLinuxSystemSleepInhibitorProcess=null)}),t.once(\`exit\`,()=>{process.off?.(\`exit\`,n),this.codexLinuxSystemSleepInhibitorProcess===t&&(this.codexLinuxSystemSleepInhibitorProcess=null)}),t.unref?.()}catch{this.codexLinuxSystemSleepInhibitorProcess=null}}codexLinuxStopSystemSleepInhibitor(){let e=this.codexLinuxSystemSleepInhibitorProcess;if(e==null)return;this.codexLinuxSystemSleepInhibitorProcess=null;try{e.kill()}catch{}}`;
+}
+
 function buildLinuxWorktreeEnvironmentWorkerCreateReplacement(
   { storeEnvFn, readEnvironmentFn, bufferVar },
   { loggerFn }
@@ -867,6 +897,45 @@ function appendNamedImportAlias(imports, importedName, aliasName) {
     return imports;
   }
   return [...parts, `${importedName} as ${aliasName}`].join(',');
+}
+
+function getNamedImportLocalName(imports, importedName) {
+  const parts = imports
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  for (const part of parts) {
+    const aliasMatch = new RegExp(`^${escapeRegExp(importedName)}\\s+as\\s+(.+)$`).exec(part);
+    if (aliasMatch?.[1]) {
+      return aliasMatch[1].trim();
+    }
+    if (part === importedName) {
+      return importedName;
+    }
+  }
+  return null;
+}
+
+function findLinuxPetYappingUsageJsxRuntime(bundleSource) {
+  const importMatch = bundleSource.match(LINUX_PET_YAPPING_USAGE_JSX_RUNTIME_IMPORT_PATTERN);
+  const jsxFactory = importMatch?.groups?.imports
+    ? getNamedImportLocalName(importMatch.groups.imports, 't')
+    : null;
+  if (!jsxFactory) {
+    return null;
+  }
+  const declarationPattern = new RegExp(
+    `var (?<jsxVar>[A-Za-z_$][\\w$]*)=${escapeRegExp(jsxFactory)}\\(\\)(?<varTail>,[^;]+)?;`
+  );
+  const declarationMatch = bundleSource.match(declarationPattern);
+  if (!declarationMatch?.groups?.jsxVar) {
+    return null;
+  }
+  return {
+    declarationPattern,
+    jsxFactory,
+    jsxVar: declarationMatch.groups.jsxVar
+  };
 }
 
 function buildLinuxPetYappingUsageComponent({ jsxVar, reactVar }) {
@@ -1244,6 +1313,28 @@ async function patchMainProcessLinuxRemoteControl(extractedAppDir, logger) {
   };
 }
 
+async function patchMainProcessLinuxPowerSaveBlocker(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for Linux power-save patch`);
+  const result = applyLinuxPowerSaveBlockerPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux system sleep inhibition into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
 async function patchRendererLinuxRemoteControlVisibility(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
@@ -1292,6 +1383,55 @@ async function patchRendererLinuxRemoteControlVisibility(extractedAppDir, logger
   throw (
     lastError ??
     new Error('Could not patch the renderer remote-control visibility bundle for Linux.')
+  );
+}
+
+async function patchRendererLinuxRemoteControlKeepAwake(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let lastError = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate =
+      original.includes('power-save-blocker-set') &&
+      original.includes('PREVENT_SLEEP_WHILE_RUNNING') &&
+      original.includes('KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN');
+
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer remote-control keep-awake bundle ${assetName}`);
+
+    try {
+      const result = applyLinuxRemoteControlKeepAwakePatch(original, { sourceName: assetName });
+      if (result.updated !== original) {
+        await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+        logger.info(`Patched Linux remote-control keep-awake dispatch into ${assetName}`);
+      }
+      return {
+        status: result.status,
+        sourceName: assetName
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!sawCandidate) {
+    throw new Error(
+      'Could not locate the renderer remote-control keep-awake bundle inside the extracted app.'
+    );
+  }
+
+  throw (
+    lastError ??
+    new Error('Could not patch the renderer remote-control keep-awake bundle for Linux.')
   );
 }
 
@@ -1667,6 +1807,68 @@ export function injectLinuxRemoteControlVisibilityPatch(bundleSource, options = 
   );
 }
 
+export function applyLinuxPowerSaveBlockerPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxPowerSaveBlockerPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxPowerSaveBlockerPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_POWER_SAVE_BLOCKER_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const errorMessage = buildLinuxPowerSaveBlockerPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_POWER_SAVE_BLOCKER_SYNC_PATTERN,
+    ({ activeVar, electronVar }) =>
+      `${buildLinuxSystemSleepInhibitorMethods()}syncPowerSaveBlocker(){let ${activeVar}=this.powerSaveBlockingWebContentsIds.size>0||!${electronVar}.powerMonitor.isOnBatteryPower()&&this.pluggedInRemoteControlPowerSaveWebContentsIds.size>0;this.codexLinuxSyncSystemSleepInhibitor(${activeVar});if(${activeVar}&&this.powerSaveBlockerId==null){this.powerSaveBlockerId=${electronVar}.powerSaveBlocker.start(\`prevent-app-suspension\`);return}!${activeVar}&&this.powerSaveBlockerId!=null&&(${electronVar}.powerSaveBlocker.stop(this.powerSaveBlockerId),this.powerSaveBlockerId=null)}`,
+    errorMessage
+  );
+}
+
+export function applyLinuxRemoteControlKeepAwakePatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxRemoteControlKeepAwakePatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxRemoteControlKeepAwakePatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_REMOTE_CONTROL_KEEP_AWAKE_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const errorMessage = buildLinuxRemoteControlKeepAwakePatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_REMOTE_CONTROL_KEEP_AWAKE_DISPATCH_PATTERN,
+    ({ prefix, preventVar, keepVar, enabledVar }) =>
+      `${prefix}!!(${keepVar}||${preventVar})&&${enabledVar}/* ${LINUX_REMOTE_CONTROL_KEEP_AWAKE_PATCH_MARKER} */`,
+    errorMessage
+  );
+}
+
 export function applyLinuxAvatarOverlayPatch(bundleSource, options = {}) {
   if (options.skip) {
     return {
@@ -1847,6 +2049,10 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
   if (!reactMatch?.groups?.reactVar) {
     throw new Error(errorMessage);
   }
+  const jsxRuntime = findLinuxPetYappingUsageJsxRuntime(bundleSource);
+  if (!jsxRuntime) {
+    throw new Error(errorMessage);
+  }
   let updated = bundleSource;
   updated = replaceRegexOrThrow(
     updated,
@@ -1857,31 +2063,39 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
     },
     errorMessage
   );
-  const insertionMatch = updated.match(LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN);
-  if (!insertionMatch?.groups) {
-    throw new Error(errorMessage);
-  }
   const petContext = {
-    jsxVar: insertionMatch.groups.jsxVar,
+    jsxVar: jsxRuntime.jsxVar,
     reactVar: reactMatch.groups.reactVar
   };
   updated = replaceRegexOrThrow(
     updated,
-    LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN,
-    ({ jsxVar, jsxFactory, mascotFn, varTail }) =>
-      `var ${jsxVar}=${jsxFactory}();${buildLinuxPetYappingUsageComponent({
-        jsxVar,
+    jsxRuntime.declarationPattern,
+    ({ jsxVar, varTail }) =>
+      `var ${jsxVar}=${jsxRuntime.jsxFactory}();${buildLinuxPetYappingUsageComponent({
+        jsxVar: petContext.jsxVar,
         reactVar: petContext.reactVar
-      })}${varTail ? `var ${varTail.slice(1)};` : ''}function ${mascotFn}(`,
+      })}${varTail ? `var ${varTail.slice(1)};` : ''}`,
     errorMessage
   );
-  updated = replaceRegexOrThrow(
-    updated,
-    LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN,
-    ({ avatar, badge }) =>
-      `children:[${avatar},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{}),${badge}]}/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`,
-    errorMessage
-  );
+  if (LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(updated)) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN,
+      ({ prefix, mascotCall, jsxVar }) =>
+        `${prefix}(0,${jsxVar}.jsxs)(${jsxVar}.Fragment,{children:[${mascotCall},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{})]})/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`,
+      errorMessage
+    );
+  } else if (!updated.includes('"data-avatar-overlay-hit-region":`mascot`')) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN,
+      ({ avatar, badge }) =>
+        `children:[${avatar},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{}),${badge}]}/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`,
+      errorMessage
+    );
+  } else {
+    throw new Error(errorMessage);
+  }
   updated = replaceRegexOrThrow(
     updated,
     LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN,
@@ -3928,6 +4142,22 @@ function buildLinuxRemoteControlVisibilityPatchErrorMessage(bundleSource, source
   );
 }
 
+function buildLinuxPowerSaveBlockerPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_POWER_SAVE_BLOCKER_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxPowerSaveBlockerBundle(bundleSource)
+  );
+}
+
+function buildLinuxRemoteControlKeepAwakePatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_REMOTE_CONTROL_KEEP_AWAKE_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxRemoteControlKeepAwakeBundle(bundleSource)
+  );
+}
+
 function buildLinuxAvatarOverlayPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     LINUX_AVATAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE,
@@ -4075,6 +4305,48 @@ function analyzeLinuxRemoteControlVisibilityBundle(bundleSource) {
   };
 }
 
+function analyzeLinuxPowerSaveBlockerBundle(bundleSource) {
+  const detected = {
+    powerSaveBlockerState: bundleSource.includes('powerSaveBlockerId=null'),
+    remoteControlPowerSaveState: bundleSource.includes('pluggedInRemoteControlPowerSaveWebContentsIds'),
+    batteryMonitor: bundleSource.includes('powerMonitor.isOnBatteryPower()'),
+    preventAppSuspension: bundleSource.includes('powerSaveBlocker.start(`prevent-app-suspension`)'),
+    syncMethod: LINUX_POWER_SAVE_BLOCKER_SYNC_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.powerSaveBlockerState && 'power-save blocker state',
+      !detected.remoteControlPowerSaveState && 'remote-control power-save state',
+      !detected.batteryMonitor && 'battery monitor check',
+      !detected.preventAppSuspension && 'Electron prevent-app-suspension blocker',
+      !detected.syncMethod && 'power-save sync method'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxRemoteControlKeepAwakeBundle(bundleSource) {
+  const detected = {
+    powerSaveDispatch: bundleSource.includes('power-save-blocker-set'),
+    preventSleepSetting: bundleSource.includes('PREVENT_SLEEP_WHILE_RUNNING'),
+    remoteKeepAwakeSetting: bundleSource.includes('KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN'),
+    remoteControlEnabled: bundleSource.includes('local_app_server_feature_enablement'),
+    keepAwakeDispatch: LINUX_REMOTE_CONTROL_KEEP_AWAKE_DISPATCH_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.powerSaveDispatch && 'power-save dispatch',
+      !detected.preventSleepSetting && 'prevent-sleep setting read',
+      !detected.remoteKeepAwakeSetting && 'remote keep-awake setting read',
+      !detected.remoteControlEnabled && 'remote-control enabled state',
+      !detected.keepAwakeDispatch && 'remote keep-awake dispatch field'
+    ].filter(Boolean)
+  };
+}
+
 function analyzeLinuxAvatarOverlayBundle(bundleSource) {
   const detected = {
     avatarOverlayRoute: bundleSource.includes('`/avatar-overlay`'),
@@ -4155,11 +4427,18 @@ function analyzeLinuxAvatarOverlayRendererBundle(bundleSource) {
 }
 
 function analyzeLinuxPetYappingUsageBundle(bundleSource) {
+  const hasMascotHitRegion = bundleSource.includes('"data-avatar-overlay-hit-region":`mascot`');
+  const hasLegacyMascotChildren = LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN.test(
+    bundleSource
+  );
   const detected = {
     reactRuntime: LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN.test(bundleSource),
+    jsxRuntime: findLinuxPetYappingUsageJsxRuntime(bundleSource) != null,
     usageApiImport: LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN.test(bundleSource),
-    insertionPoint: LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN.test(bundleSource),
-    mascotChildren: LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN.test(bundleSource),
+    mascotHitRegion: LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource),
+    mascotChildren: hasMascotHitRegion
+      ? LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource)
+      : hasLegacyMascotChildren,
     layoutQuery: LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN.test(bundleSource)
   };
 
@@ -4167,8 +4446,8 @@ function analyzeLinuxPetYappingUsageBundle(bundleSource) {
     detected,
     missingAnchors: [
       !detected.reactRuntime && 'React runtime binding',
+      !detected.jsxRuntime && 'JSX runtime binding',
       !detected.usageApiImport && 'Codex usage API import',
-      !detected.insertionPoint && 'avatar overlay component insertion point',
       !detected.mascotChildren && 'mascot children array',
       !detected.layoutQuery && 'avatar overlay layout measurement query'
     ].filter(Boolean)
