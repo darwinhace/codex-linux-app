@@ -63,6 +63,10 @@ const LINUX_NOTIFICATION_SOUND_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux notification sound playback in the Electron main bundle.';
 const LINUX_BROWSER_USE_HOST_FETCH_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux Browser Use authenticated host fetch into the Electron main bundle.';
+const LINUX_REMOTE_CONTROL_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux remote-control feature availability into the Electron main bundle.';
+const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux remote-control settings visibility into the renderer bundle.';
 const LINUX_AVATAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux avatar overlay window behavior into the Electron main bundle.';
 const LINUX_AVATAR_OVERLAY_RENDERER_PATCH_BASE_ERROR_MESSAGE =
@@ -259,6 +263,16 @@ export async function installDesktop(options, logger) {
     logger
   );
   assertRequiredPatchApplied('Browser Use authenticated host fetch', linuxBrowserUseHostFetchPatch);
+  const linuxRemoteControlPatch = await patchMainProcessLinuxRemoteControl(extractedAppDir, logger);
+  assertRequiredPatchApplied('Linux remote control feature availability', linuxRemoteControlPatch);
+  const linuxRemoteControlVisibilityPatch = await patchRendererLinuxRemoteControlVisibility(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied(
+    'Linux remote control settings visibility',
+    linuxRemoteControlVisibilityPatch
+  );
   const linuxAvatarOverlayPatch = await patchMainProcessLinuxAvatarOverlay(extractedAppDir, logger);
   assertRequiredPatchApplied('Linux avatar overlay', linuxAvatarOverlayPatch);
   const linuxAvatarOverlayRendererPatch = await patchRendererLinuxAvatarOverlay(
@@ -343,6 +357,8 @@ export async function installDesktop(options, logger) {
     linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
     linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
     linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
+    linuxRemoteControl: linuxRemoteControlPatch,
+    linuxRemoteControlVisibility: linuxRemoteControlVisibilityPatch,
     linuxAvatarOverlay: linuxAvatarOverlayPatch,
     linuxAvatarOverlayRenderer: linuxAvatarOverlayRendererPatch,
     linuxPetYappingUsage: linuxPetYappingUsagePatch,
@@ -379,7 +395,8 @@ export async function installDesktop(options, logger) {
     browserUseNodeRepl,
     browserUseNode,
     chromeExtensionHost,
-    chromeNativeMessagingHost
+    chromeNativeMessagingHost,
+    chromeBundledPluginHost
   } = installResult;
 
   await writeDesktopEntry({
@@ -404,6 +421,7 @@ export async function installDesktop(options, logger) {
     browserUseNode,
     chromeExtensionHost,
     chromeNativeMessagingHost,
+    chromeBundledPluginHost,
     patches: {
       bootstrap: bootstrapPatch,
       openTargets: openTargetsPatch,
@@ -413,6 +431,8 @@ export async function installDesktop(options, logger) {
       linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
       linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
       linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
+      linuxRemoteControl: linuxRemoteControlPatch,
+      linuxRemoteControlVisibility: linuxRemoteControlVisibilityPatch,
       linuxAvatarOverlay: linuxAvatarOverlayPatch,
       linuxAvatarOverlayRenderer: linuxAvatarOverlayRendererPatch,
       linuxPetYappingUsage: linuxPetYappingUsagePatch,
@@ -627,6 +647,9 @@ const LINUX_NOTIFICATION_SOUND_PATCH_MARKER = 'codexLinuxNotificationSound';
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentWorker';
 const LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER = 'codexLinuxBrowserUseHostFetch';
+const LINUX_REMOTE_CONTROL_PATCH_MARKER = 'codexLinuxRemoteControlFeatureAvailability';
+const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_MARKER =
+  'codexLinuxRemoteControlSettingsVisibility';
 const LINUX_AVATAR_OVERLAY_PATCH_MARKER = 'codexLinuxAvatarOverlay';
 const LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER =
   'codexLinuxAvatarOverlayScreenPointDrag';
@@ -654,7 +677,7 @@ const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_429 =
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_429 =
   'n.app.on(`before-quit`,o=>{let s=Pw(),c=t.Yn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:ED({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=a.showLastActivePrimaryWindow();e?(e.isMinimized()&&e.restore(),e.show(),e.focus()):Promise.resolve(s(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus())})}return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_GENERIC_PATTERN =
-  /(?<prefix>[A-Za-z_$][\w$]*\.app\.on\(`before-quit`,(?<eventVar>[A-Za-z_$][\w$]*)=>\{[\s\S]*?buttons:\[`Quit`,`Cancel`\][\s\S]*?\{)\k<eventVar>\.preventDefault\(\);return(?<suffix>\}[\s\S]*?,[A-Za-z_$][\w$]*\.app\.on\(`activate`,\(\)=>\{[A-Za-z_$][\w$]*\|\|\((?<windowsVar>[A-Za-z_$][\w$]*)\.showLastActivePrimaryWindow\(\)\|\|(?<ensureHostWindowVar>[A-Za-z_$][\w$]*)\(`local`\),[A-Za-z_$][\w$]*\.refresh\(\)\)\}\))/;
+  /(?<prefix>[A-Za-z_$][\w$]*\.app\.on\(`before-quit`,(?<eventVar>[A-Za-z_$][\w$]*)=>\{[\s\S]*?buttons:\[`Quit`,`Cancel`\][\s\S]*?\{)\k<eventVar>\.preventDefault\(\);return(?<suffix>\}[\s\S]*?,[A-Za-z_$][\w$]*\.app\.on\(`activate`,\(\)=>\{[A-Za-z_$][\w$]*\|\|\((?<windowsVar>[A-Za-z_$][\w$]*)\.showLastActivePrimaryWindow\(\)\|\|(?<ensureWindowCall>[A-Za-z_$][\w$]*\((?:`local`)?\)),[A-Za-z_$][\w$]*\.refresh\(\)\)\}\))/;
 const LINUX_NOTIFICATION_SOUND_SHOW_PATTERN =
   /(?<showVar>[A-Za-z_$][\w$]*)\.show\(\)\}stageNotificationSoundIfNeeded\(\)\{/;
 const LINUX_NOTIFICATION_SOUND_CHILD_PROCESS_PATTERN =
@@ -674,7 +697,7 @@ const LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_PATTERN =
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_HELPER_PATTERN =
   /async function (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,t,n,r,i\)\{return\(await (?<environmentRunnerFn>[A-Za-z_$][\w$]*)\(\{workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,appServerClient:i,onLog:n,signal:r\}\)\)\?\.setupResult\?\?null\}/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_PATTERN =
-  /if\(s\?\.\(`info`,ce\.Buffer\.from\(`Worktree created at \$\{g\}(?:\\n|\n)`,`utf8`\)\),await (?<storeEnvFn>[A-Za-z_$][\w$]*)\(g,(?<selectedVar>[A-Za-z_$][\w$]*)\?\?`__none__`,a,`worktree`,o\)\|\|s\?\.\(`stderr`,ce\.Buffer\.from\(`Failed to store selected environment in git config(?:\\n|\n)`,`utf8`\)\),\k<selectedVar>==null\)return s\?\.\(`info`,ce\.Buffer\.from\(`No local environment selected(?:\\n|\n)`,`utf8`\)\),\{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null\};let v=await (?<readEnvironmentFn>[A-Za-z_$][\w$]*)\(\k<selectedVar>,a\);/;
+  /if\(s\?\.\(`info`,(?<bufferVar>[A-Za-z_$][\w$]*)\.Buffer\.from\(`Worktree created at \$\{g\}(?:\\n|\n)`,`utf8`\)\),await (?<storeEnvFn>[A-Za-z_$][\w$]*)\(g,(?<selectedVar>[A-Za-z_$][\w$]*)\?\?`__none__`,a,`worktree`,o\)\|\|s\?\.\(`stderr`,\k<bufferVar>\.Buffer\.from\(`Failed to store selected environment in git config(?:\\n|\n)`,`utf8`\)\),\k<selectedVar>==null\)return s\?\.\(`info`,\k<bufferVar>\.Buffer\.from\(`No local environment selected(?:\\n|\n)`,`utf8`\)\),\{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null\};let v=await (?<readEnvironmentFn>[A-Za-z_$][\w$]*)\(\k<selectedVar>,a\);/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_PATTERN =
   /let (?<cleanupResultVar>[A-Za-z_$][\w$]*)=await (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,a,void 0,r,n\);/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_DELETE_CLEANUP_FUNCTION_PATTERN =
@@ -697,6 +720,12 @@ const BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN =
   /new (?<className>[A-Za-z_$][\w$]*)\((?<getHostArg>t=>this\.canServeTurnForBrowserRoute\(t,e\)\?this\.getBrowserUseHost\(t\):null),(?<blockedArg>e=>this\.getDelegate\(\)\.addBrowserUseNavigationBlockedListener\(e\)),\{(?<options>appSessionId:this\.options\.appSessionId,browserRoute:e,buildFlavor:this\.options\.buildFlavor,canServeRoute:t=>this\.canServeTurnForBrowserRoute\(t,e\))\}\)/;
 const BROWSER_SESSION_REGISTRY_INSTANTIATION_PATTERN =
   /this\.browserSessionRegistry=new (?<registryClass>[A-Za-z_$][\w$]*)\(\{appSessionId:e\.t,buildFlavor:(?<buildFlavor>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?),errorReporter:this\.errorReporter\}\)/;
+const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\((?<featuresVar>[A-Za-z_$][\w$]*),\{env:(?<envVar>[A-Za-z_$][\w$]*)=process\.env,platform:(?<platformVar>[A-Za-z_$][\w$]*)=process\.platform\}=\{\}\)\{return \k<platformVar>!==`win32`\|\|\k<envVar>\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE!==`1`\?\k<featuresVar>:\{\.\.\.\k<featuresVar>,computerUse:!0,computerUseNodeRepl:!0\}\}/;
+const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_OVERRIDES_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\((?<featuresVar>[A-Za-z_$][\w$]*),\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*)=(?<buildFlavorDefault>[^,]+),env:(?<envVar>[A-Za-z_$][\w$]*)=(?<envDefault>[^,]+),platform:(?<platformVar>[A-Za-z_$][\w$]*)=(?<platformDefault>[^}]+)\}=\{\}\)\{let (?<computedVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`win32`&&\k<envVar>\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`\?\{\.\.\.\k<featuresVar>,computerUse:!0,computerUseNodeRepl:!0\}:\k<featuresVar>,(?<overridesVar>[A-Za-z_$][\w$]*)=(?<overrideExpr>[^;]+);return \k<overridesVar>==null\?\k<computedVar>:\{\.\.\.\k<computedVar>,\.\.\.\k<overridesVar>\}\}/;
+const LINUX_REMOTE_CONTROL_VISIBILITY_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\(\{remoteControlConnectionsState:(?<stateVar>[A-Za-z_$][\w$]*),slingshotEnabled:(?<flagVar>[A-Za-z_$][\w$]*)\}\)\{return \k<flagVar>&&\(\k<stateVar>\?\.available\?\?!0\)&&\k<stateVar>\?\.accessRequired!==!0\}/;
 const LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN =
   /process\.platform===`darwin`\?(?<windowVar>[A-Za-z_$][\w$]*)\.setVisibleOnAllWorkspaces\(!0,\{visibleOnFullScreen:!0,skipTransformProcessType:!0\}\):\k<windowVar>\.setVisibleOnAllWorkspaces\(!0\),\k<windowVar>\.setAlwaysOnTop\(!0,`floating`\),\k<windowVar>\.setMenuBarVisibility\(!1\)/;
 const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
@@ -730,7 +759,7 @@ const LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN =
 const LINUX_PET_YAPPING_USAGE_CODEX_API_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"(?<module>\.\/codex-api-[^"]+\.js)";/;
 const LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN =
-  /var (?<jsxVar>[A-Za-z_$][\w$]*)=(?<jsxFactory>[A-Za-z_$][\w$]*)\(\);function (?<mascotFn>[A-Za-z_$][\w$]*)\(/;
+  /var (?<jsxVar>[A-Za-z_$][\w$]*)=(?<jsxFactory>[A-Za-z_$][\w$]*)\(\)(?<varTail>,[^;]+)?;function (?<mascotFn>[A-Za-z_$][\w$]*)\(/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN =
   /children:\[(?<avatar>[A-Za-z_$][\w$]*),(?<badge>[A-Za-z_$][\w$]*)\]\}/;
 const LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN =
@@ -775,8 +804,11 @@ function buildLinuxWorktreeEnvironmentManagedRequestReplacement(
   return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(e.${pathResolver}(${cwdVar}),${envVar});codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar}}}):${envVar}==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar},configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.getHostConfigForHostId(${hostVar}),${operationSource ?? ''}cwd:e.${pathResolver}(${cwdVar}),startingState:${startingStateVar},localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${streamVar}}}),${newbornVar}=this.newbornWorktreeRoots.has(${resultVar}.worktreeGitRoot);`;
 }
 
-function buildLinuxWorktreeEnvironmentWorkerHelperReplacement({ createWorktreeFn }) {
-  return `var codexLinuxWorktreeEnvironmentWorkerBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};async function codexLinuxListEnvironmentConfigPaths(e,t){let n=await t.platformPath(),r=n.join(e,\`.codex\`,\`environments\`),i;try{i=await cz.readdir(r,t)}catch{return[]}return i.filter(e=>typeof e===\`string\`&&e.endsWith(\`.toml\`)).map(e=>n.join(r,e)).sort()}async function codexLinuxResolveWorktreeEnvironmentConfigPath(e,t,n){if(t===\`__none__\`)return{configPath:t,source:\`explicit-none\`};if(t!=null)return{configPath:t,source:\`explicit-selection\`};let r=await codexLinuxListEnvironmentConfigPaths(e,n);return r.length===1?{configPath:r[0],source:\`single-environment-fallback\`}:{configPath:null,source:\`missing\`}}function codexLinuxResolveWorktreeSourceWorkspaceRoot(e){let t=codexLinuxWorktreeEnvironmentWorkerBuiltins.fs,n=codexLinuxWorktreeEnvironmentWorkerBuiltins.path;if(!e||!t||!n)return null;let r=n.join(e,\`.git\`),i;try{i=t.readFileSync(r,\`utf8\`)}catch{return null}let a=i.match(/^gitdir:\\s*(.+)$/m)?.[1]?.trim();if(!a)return null;let o=n.normalize(n.isAbsolute(a)?a:n.resolve(e,a)),s=n.dirname(o),c=n.dirname(s);return n.basename(s)!==\`worktrees\`||n.basename(c)!==\`.git\`?null:n.dirname(c)}/* ${LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER} */async function ${createWorktreeFn}({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){`;
+function buildLinuxWorktreeEnvironmentWorkerHelperReplacement(
+  { createWorktreeFn },
+  { fsApiVar }
+) {
+  return `var codexLinuxWorktreeEnvironmentWorkerBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};async function codexLinuxListEnvironmentConfigPaths(e,t){let n=await t.platformPath(),r=n.join(e,\`.codex\`,\`environments\`),i;try{i=await ${fsApiVar}.readdir(r,t)}catch{return[]}return i.filter(e=>typeof e===\`string\`&&e.endsWith(\`.toml\`)).map(e=>n.join(r,e)).sort()}async function codexLinuxResolveWorktreeEnvironmentConfigPath(e,t,n){if(t===\`__none__\`)return{configPath:t,source:\`explicit-none\`};if(t!=null)return{configPath:t,source:\`explicit-selection\`};let r=await codexLinuxListEnvironmentConfigPaths(e,n);return r.length===1?{configPath:r[0],source:\`single-environment-fallback\`}:{configPath:null,source:\`missing\`}}function codexLinuxResolveWorktreeSourceWorkspaceRoot(e){let t=codexLinuxWorktreeEnvironmentWorkerBuiltins.fs,n=codexLinuxWorktreeEnvironmentWorkerBuiltins.path;if(!e||!t||!n)return null;let r=n.join(e,\`.git\`),i;try{i=t.readFileSync(r,\`utf8\`)}catch{return null}let a=i.match(/^gitdir:\\s*(.+)$/m)?.[1]?.trim();if(!a)return null;let o=n.normalize(n.isAbsolute(a)?a:n.resolve(e,a)),s=n.dirname(o),c=n.dirname(s);return n.basename(s)!==\`worktrees\`||n.basename(c)!==\`.git\`?null:n.dirname(c)}/* ${LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER} */async function ${createWorktreeFn}({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerCleanupHelperReplacement({
@@ -787,10 +819,10 @@ function buildLinuxWorktreeEnvironmentWorkerCleanupHelperReplacement({
 }
 
 function buildLinuxWorktreeEnvironmentWorkerCreateReplacement(
-  { storeEnvFn, readEnvironmentFn },
+  { storeEnvFn, readEnvironmentFn, bufferVar },
   { loggerFn }
 ) {
-  return `let codexLinuxEnvironmentSelection=await codexLinuxResolveWorktreeEnvironmentConfigPath(t,r,a),codexLinuxLocalEnvironmentConfigPath=codexLinuxEnvironmentSelection.configPath;codexLinuxEnvironmentSelection.source===\`single-environment-fallback\`?${loggerFn}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}):codexLinuxEnvironmentSelection.source===\`explicit-none\`&&${loggerFn}().info(\`[worktree-create] explicit-no-environment\`,{safe:{},sensitive:{workspaceRoot:t}});if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\\n\`,\`utf8\`)),await ${storeEnvFn}(g,codexLinuxLocalEnvironmentConfigPath??\`__none__\`,a,\`worktree\`,o)||(${loggerFn}().warning(\`[worktree-create] failed-to-store-environment-selection\`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}),s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config\\n\`,\`utf8\`))),(codexLinuxLocalEnvironmentConfigPath==null||codexLinuxLocalEnvironmentConfigPath===\`__none__\`))return s?.(\`info\`,ce.Buffer.from(\`No local environment selected\\n\`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await ${readEnvironmentFn}(codexLinuxLocalEnvironmentConfigPath,a);`;
+  return `let codexLinuxEnvironmentSelection=await codexLinuxResolveWorktreeEnvironmentConfigPath(t,r,a),codexLinuxLocalEnvironmentConfigPath=codexLinuxEnvironmentSelection.configPath;codexLinuxEnvironmentSelection.source===\`single-environment-fallback\`?${loggerFn}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}):codexLinuxEnvironmentSelection.source===\`explicit-none\`&&${loggerFn}().info(\`[worktree-create] explicit-no-environment\`,{safe:{},sensitive:{workspaceRoot:t}});if(s?.(\`info\`,${bufferVar}.Buffer.from(\`Worktree created at \${g}\\n\`,\`utf8\`)),await ${storeEnvFn}(g,codexLinuxLocalEnvironmentConfigPath??\`__none__\`,a,\`worktree\`,o)||(${loggerFn}().warning(\`[worktree-create] failed-to-store-environment-selection\`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}),s?.(\`stderr\`,${bufferVar}.Buffer.from(\`Failed to store selected environment in git config\\n\`,\`utf8\`))),(codexLinuxLocalEnvironmentConfigPath==null||codexLinuxLocalEnvironmentConfigPath===\`__none__\`))return s?.(\`info\`,${bufferVar}.Buffer.from(\`No local environment selected\\n\`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await ${readEnvironmentFn}(codexLinuxLocalEnvironmentConfigPath,a);`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerCleanupCallReplacement(
@@ -861,12 +893,18 @@ function buildLinuxBrowserUseHostFetchHelper({ authHeaderFn, desktopOriginatorVa
 
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
-  /let (?<createdSessionVar>[A-Za-z_$][\w$]*)=(?<resumeSessionVar>[A-Za-z_$][\w$]*)\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:n,hostId:r\?\?null,cwd:i\?\?null\}\);(?<sessionRef>[A-Za-z_$][\w$]*)\.current=\k<createdSessionVar>,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1;/;
-const TERMINAL_POST_INIT_MARKERS = ['p(),M.current=!1;', 'm(),A.current=!1;', 'g();let _=', '_();let v='];
+  /(?<createDeclaration>let (?:[A-Za-z_$][\w$]*=[^,;]+,)*)?(?<createdSessionVar>[A-Za-z_$][\w$]*)=(?<resumeSessionVar>[A-Za-z_$][\w$]*)\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:(?<conversationIdVar>[A-Za-z_$][\w$]*),(?:conversationTitle:(?<conversationTitleVar>[A-Za-z_$][\w$]*),)?hostId:(?<hostIdVar>[A-Za-z_$][\w$]*)\?\?null,cwd:(?<cwdVar>[A-Za-z_$][\w$]*)\?\?null\}\);(?<sessionRef>[A-Za-z_$][\w$]*)\.current=\k<createdSessionVar>,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1;/;
+const TERMINAL_POST_INIT_MARKERS = [
+  'p(),M.current=!1;',
+  'm(),A.current=!1;',
+  'g();let _=',
+  '_();let v=',
+  'v();let y='
+];
 const TERMINAL_ATTACH_WITH_ATTACH_PATTERN =
-  /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:\k<resumeSessionVar>,conversationId:n,hostId:r\?\?null,cwd:i\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
+  /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:\k<resumeSessionVar>,conversationId:(?<conversationIdVar>[A-Za-z_$][\w$]*),(?:conversationTitle:(?<conversationTitleVar>[A-Za-z_$][\w$]*),)?hostId:(?<hostIdVar>[A-Za-z_$][\w$]*)\?\?null,cwd:(?<cwdVar>[A-Za-z_$][\w$]*)\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
 const TERMINAL_ATTACH_WITH_CREATE_PATTERN =
-  /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.create\(\{sessionId:\k<resumeSessionVar>,conversationId:n,hostId:r\?\?null,cwd:i\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
+  /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.create\(\{sessionId:\k<resumeSessionVar>,conversationId:(?<conversationIdVar>[A-Za-z_$][\w$]*),(?:conversationTitle:(?<conversationTitleVar>[A-Za-z_$][\w$]*),)?hostId:(?<hostIdVar>[A-Za-z_$][\w$]*)\?\?null,cwd:(?<cwdVar>[A-Za-z_$][\w$]*)\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
 const TERMINAL_ON_ATTACH_WITH_DETAILS_PREFIX_PATTERN =
   /onAttach:\((?<eventVar>[A-Za-z_$][\w$]*),(?<detailsVar>[A-Za-z_$][\w$]*)\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|\(/;
 const TERMINAL_ON_ATTACH_NO_ARGS_PREFIX_PATTERN =
@@ -1184,6 +1222,79 @@ async function patchMainProcessLinuxBrowserUseHostFetch(extractedAppDir, logger)
   };
 }
 
+async function patchMainProcessLinuxRemoteControl(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for remote-control patch`);
+  const result = applyLinuxRemoteControlPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux remote-control feature availability into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+async function patchRendererLinuxRemoteControlVisibility(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let lastError = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate =
+      original.includes('remote_control_connections_state') &&
+      original.includes('remoteControlConnectionsState') &&
+      original.includes('slingshotEnabled');
+
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer remote-control visibility bundle ${assetName}`);
+
+    try {
+      const result = applyLinuxRemoteControlVisibilityPatch(original, { sourceName: assetName });
+      if (result.updated !== original) {
+        await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+        logger.info(
+          `Patched Linux remote-control settings visibility into renderer bundle ${assetName}`
+        );
+      }
+      return {
+        status: result.status,
+        sourceName: assetName
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!sawCandidate) {
+    throw new Error(
+      'Could not locate the renderer remote-control visibility bundle inside the extracted app.'
+    );
+  }
+
+  throw (
+    lastError ??
+    new Error('Could not patch the renderer remote-control visibility bundle for Linux.')
+  );
+}
+
 async function patchMainProcessLinuxAvatarOverlay(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
   const files = await fs.promises.readdir(buildDir);
@@ -1368,8 +1479,8 @@ export function injectLinuxCloseCancelPatch(bundleSource, options = {}) {
   return replaceRegexOrThrow(
     bundleSource,
     LINUX_CLOSE_CANCEL_BEFORE_QUIT_GENERIC_PATTERN,
-    ({ prefix, eventVar, suffix, windowsVar, ensureHostWindowVar }) =>
-      `/* ${LINUX_CLOSE_CANCEL_PATCH_MARKER} */${prefix}${eventVar}.preventDefault();if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==\`1\`){let e=${windowsVar}.showLastActivePrimaryWindow();e?(e.isMinimized()&&e.restore(),e.show(),e.focus()):Promise.resolve(${ensureHostWindowVar}(\`local\`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus())})}return${suffix}`,
+    ({ prefix, eventVar, suffix, windowsVar, ensureWindowCall }) =>
+      `/* ${LINUX_CLOSE_CANCEL_PATCH_MARKER} */${prefix}${eventVar}.preventDefault();if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==\`1\`){let e=${windowsVar}.showLastActivePrimaryWindow();e?(e.isMinimized()&&e.restore(),e.show(),e.focus()):Promise.resolve(${ensureWindowCall}).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus())})}return${suffix}`,
     buildLinuxCloseCancelPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
@@ -1474,6 +1585,86 @@ export function injectLinuxBrowserUseHostFetchPatch(bundleSource, options = {}) 
     );
   }
   return updated;
+}
+
+export function applyLinuxRemoteControlPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxRemoteControlPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxRemoteControlPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_REMOTE_CONTROL_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const errorMessage = buildLinuxRemoteControlPatchErrorMessage(bundleSource, options.sourceName);
+  return replaceFirstMatchingRegexOrThrow(
+    bundleSource,
+    [
+      {
+        pattern: LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_PATTERN,
+        replacement: ({ fnName, featuresVar, envVar, platformVar }) =>
+          `function ${fnName}(${featuresVar},{env:${envVar}=process.env,platform:${platformVar}=process.platform}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0}:${featuresVar};return ${platformVar}!==\`win32\`||${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE!==\`1\`?codexLinuxRemoteControlFeatures:{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
+      },
+      {
+        pattern: LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_OVERRIDES_PATTERN,
+        replacement: ({
+          fnName,
+          featuresVar,
+          buildFlavorVar,
+          buildFlavorDefault,
+          envVar,
+          envDefault,
+          platformVar,
+          platformDefault,
+          computedVar,
+          overridesVar,
+          overrideExpr
+        }) =>
+          `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0}:${featuresVar},${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}:codexLinuxRemoteControlFeatures,${overridesVar}=${overrideExpr};return ${overridesVar}==null?${computedVar}:{...${computedVar},...${overridesVar}}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
+      }
+    ],
+    errorMessage
+  );
+}
+
+export function applyLinuxRemoteControlVisibilityPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxRemoteControlVisibilityPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxRemoteControlVisibilityPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const errorMessage = buildLinuxRemoteControlVisibilityPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_REMOTE_CONTROL_VISIBILITY_PATTERN,
+    ({ fnName, stateVar, flagVar }) =>
+      `function codexLinuxRemoteControlSettingsVisible(){try{return document?.documentElement?.dataset?.codexOs===\`linux\`&&(typeof process===\`undefined\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_VISIBILITY_PATCH!==\`1\`)}catch{return!1}}function ${fnName}({remoteControlConnectionsState:${stateVar},slingshotEnabled:${flagVar}}){return codexLinuxRemoteControlSettingsVisible()||${flagVar}&&(${stateVar}?.available??!0)&&${stateVar}?.accessRequired!==!0}/* ${LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_MARKER} */`,
+    errorMessage
+  );
 }
 
 export function applyLinuxAvatarOverlayPatch(bundleSource, options = {}) {
@@ -1677,11 +1868,11 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
   updated = replaceRegexOrThrow(
     updated,
     LINUX_PET_YAPPING_USAGE_INSERTION_PATTERN,
-    ({ jsxVar, jsxFactory, mascotFn }) =>
+    ({ jsxVar, jsxFactory, mascotFn, varTail }) =>
       `var ${jsxVar}=${jsxFactory}();${buildLinuxPetYappingUsageComponent({
         jsxVar,
         reactVar: petContext.reactVar
-      })}function ${mascotFn}(`,
+      })}${varTail ? `var ${varTail.slice(1)};` : ''}function ${mascotFn}(`,
     errorMessage
   );
   updated = replaceRegexOrThrow(
@@ -1829,6 +2020,9 @@ export function injectLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options 
   const setupEnvironmentMatch = bundleSource.match(
     /\{\[(?<sourceRootEnvVar>[A-Za-z_$][\w$]*)\]:t,\[(?<worktreeRootEnvVar>[A-Za-z_$][\w$]*)\]:g\}/
   );
+  const fsApiMatch = bundleSource.match(
+    /await (?<fsApiVar>[A-Za-z_$][\w$]*)\.rm\([A-Za-z_$][\w$]*,void 0,[A-Za-z_$][\w$]*\)/
+  );
   const loggerMatch = bundleSource.match(
     /(?<loggerFn>[A-Za-z_$][\w$]*)\(\)\.warning\(`\[worktree-delete\] cleanup-config-unavailable`/
   );
@@ -1846,6 +2040,7 @@ export function injectLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options 
   const workerBundleContext = {
     cleanupFn: cleanupCallMatch.groups.cleanupFn,
     deleteCleanupFn: deleteCleanupMatch.groups.deleteCleanupFn,
+    fsApiVar: fsApiMatch?.groups?.fsApiVar ?? 'cz',
     loggerFn: loggerMatch.groups.loggerFn,
     sourceRootEnvVar: setupEnvironmentMatch.groups.sourceRootEnvVar,
     worktreeRootEnvVar: setupEnvironmentMatch.groups.worktreeRootEnvVar,
@@ -1856,7 +2051,7 @@ export function injectLinuxWorktreeEnvironmentWorkerPatch(bundleSource, options 
   let updated = replaceRegexOrThrow(
     bundleSource,
     LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_PATTERN,
-    buildLinuxWorktreeEnvironmentWorkerHelperReplacement,
+    (groups) => buildLinuxWorktreeEnvironmentWorkerHelperReplacement(groups, workerBundleContext),
     errorMessage
   );
   updated = replaceRegexOrThrow(
@@ -1974,8 +2169,19 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
   updated = replaceRegexOrThrow(
     updated,
     TERMINAL_SESSION_CREATE_PATTERN,
-    ({ createdSessionVar, resumeSessionVar, service, sessionRef, attachStateRef }) =>
-      `${buildLinuxTerminalLifecycleHelpers()}let ${createdSessionVar}=${resumeSessionVar}??${service}.create({conversationId:n,hostId:r??null,cwd:i??null}),codexLinuxTerminalMountKey=\`${'${r??`local`}'}:${'${' + createdSessionVar + '}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);codexLinuxTraceTerminalCreate(codexLinuxTerminalMountKey);${sessionRef}.current=${createdSessionVar},${attachStateRef}.current=!1;`,
+    ({
+      createDeclaration,
+      createdSessionVar,
+      resumeSessionVar,
+      service,
+      conversationIdVar,
+      conversationTitleVar,
+      hostIdVar,
+      cwdVar,
+      sessionRef,
+      attachStateRef
+    }) =>
+      `${buildLinuxTerminalLifecycleHelpers()}${createDeclaration ?? 'let '}${createdSessionVar}=${resumeSessionVar}??${service}.create({${buildTerminalConversationProps({ conversationIdVar, conversationTitleVar, hostIdVar, cwdVar })}}),codexLinuxTerminalMountKey=\`${'${' + hostIdVar + '??`local`}'}:${'${' + createdSessionVar + '}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);codexLinuxTraceTerminalCreate(codexLinuxTerminalMountKey);${sessionRef}.current=${createdSessionVar},${attachStateRef}.current=!1;`,
     errorMessage
   );
   updated = replaceFirstMatchingSnippetOrThrow(
@@ -1998,6 +2204,11 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
         target: TERMINAL_POST_INIT_MARKERS[3],
         replacement:
           '_();let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{},v='
+      },
+      {
+        target: TERMINAL_POST_INIT_MARKERS[4],
+        replacement:
+          'v();let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{},y='
       }
     ],
     errorMessage
@@ -2007,13 +2218,31 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
     [
       {
         pattern: TERMINAL_ATTACH_WITH_ATTACH_PATTERN,
-        replacement: ({ resumeSessionVar, guardVar, service, terminalVar }) =>
-          `${resumeSessionVar}&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,${guardVar}||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.attach({sessionId:${resumeSessionVar},conversationId:n,hostId:r??null,cwd:i??null,cols:${terminalVar}.cols,rows:${terminalVar}.rows}))}));`
+        replacement: ({
+          resumeSessionVar,
+          guardVar,
+          service,
+          conversationIdVar,
+          conversationTitleVar,
+          hostIdVar,
+          cwdVar,
+          terminalVar
+        }) =>
+          `${resumeSessionVar}&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,${guardVar}||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.attach({sessionId:${resumeSessionVar},${buildTerminalConversationProps({ conversationIdVar, conversationTitleVar, hostIdVar, cwdVar })},cols:${terminalVar}.cols,rows:${terminalVar}.rows}))}));`
       },
       {
         pattern: TERMINAL_ATTACH_WITH_CREATE_PATTERN,
-        replacement: ({ resumeSessionVar, guardVar, service, terminalVar }) =>
-          `${resumeSessionVar}&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,${guardVar}||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.create({sessionId:${resumeSessionVar},conversationId:n,hostId:r??null,cwd:i??null,cols:${terminalVar}.cols,rows:${terminalVar}.rows}))}));`
+        replacement: ({
+          resumeSessionVar,
+          guardVar,
+          service,
+          conversationIdVar,
+          conversationTitleVar,
+          hostIdVar,
+          cwdVar,
+          terminalVar
+        }) =>
+          `${resumeSessionVar}&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,${guardVar}||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.create({sessionId:${resumeSessionVar},${buildTerminalConversationProps({ conversationIdVar, conversationTitleVar, hostIdVar, cwdVar })},cols:${terminalVar}.cols,rows:${terminalVar}.rows}))}));`
       }
     ],
     errorMessage
@@ -2050,6 +2279,11 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
   );
   assertValidLinuxTerminalLifecyclePatchOutput(updated, options.sourceName);
   return updated;
+}
+
+function buildTerminalConversationProps({ conversationIdVar, conversationTitleVar, hostIdVar, cwdVar }) {
+  const titleProp = conversationTitleVar == null ? '' : `conversationTitle:${conversationTitleVar},`;
+  return `conversationId:${conversationIdVar},${titleProp}hostId:${hostIdVar}??null,cwd:${cwdVar}??null`;
 }
 
 function buildTerminalCleanupReplacement({
@@ -3678,6 +3912,22 @@ function buildLinuxBrowserUseHostFetchPatchErrorMessage(bundleSource, sourceName
   );
 }
 
+function buildLinuxRemoteControlPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_REMOTE_CONTROL_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxRemoteControlBundle(bundleSource)
+  );
+}
+
+function buildLinuxRemoteControlVisibilityPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxRemoteControlVisibilityBundle(bundleSource)
+  );
+}
+
 function buildLinuxAvatarOverlayPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     LINUX_AVATAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE,
@@ -3725,7 +3975,8 @@ function analyzeLinuxCloseCancelBundle(bundleSource) {
     quitCancelPrompt: bundleSource.includes('buttons:[`Quit`,`Cancel`]'),
     cancelPreventDefault: /[A-Za-z_$][\w$]*\.preventDefault\(\);return/.test(bundleSource),
     showLastActivePrimaryWindow: bundleSource.includes('showLastActivePrimaryWindow()'),
-    ensureHostWindowDependency: bundleSource.includes('ensureHostWindow:')
+    ensureWindowDependency:
+      bundleSource.includes('ensureHostWindow:') || bundleSource.includes('ensureLocalWindow:')
   };
 
   return {
@@ -3735,7 +3986,7 @@ function analyzeLinuxCloseCancelBundle(bundleSource) {
       !detected.quitCancelPrompt && 'Quit/Cancel confirmation dialog',
       !detected.cancelPreventDefault && 'cancel preventDefault branch',
       !detected.showLastActivePrimaryWindow && 'showLastActivePrimaryWindow hook',
-      !detected.ensureHostWindowDependency && 'ensureHostWindow dependency'
+      !detected.ensureWindowDependency && 'ensure window dependency'
     ].filter(Boolean)
   };
 }
@@ -3782,6 +4033,44 @@ function analyzeLinuxBrowserUseHostFetchBundle(bundleSource) {
       !detected.iabApiClass && 'IAB API class',
       !detected.iabRegistryOptions && 'IAB route backend options',
       !detected.registryInstantiation && 'Browser session registry instantiation'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxRemoteControlBundle(bundleSource) {
+  const detected = {
+    featureAvailabilityDefaults: /control:!1/.test(bundleSource),
+    windowsComputerUseHelper: bundleSource.includes('CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE'),
+    availabilityPatchFunction:
+      LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_PATTERN.test(bundleSource) ||
+      LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_OVERRIDES_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.featureAvailabilityDefaults && 'desktop feature availability control flag',
+      !detected.windowsComputerUseHelper && 'desktop feature availability helper',
+      !detected.availabilityPatchFunction && 'Windows computer-use availability branch'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxRemoteControlVisibilityBundle(bundleSource) {
+  const detected = {
+    remoteControlStateAtom: bundleSource.includes('remote_control_connections_state'),
+    slingshotVisibilityGate: bundleSource.includes('slingshotEnabled'),
+    remoteControlVisibilityHelper: LINUX_REMOTE_CONTROL_VISIBILITY_PATTERN.test(bundleSource),
+    accessRequiredGate: bundleSource.includes('accessRequired!==!0')
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.remoteControlStateAtom && 'remote-control connections state atom',
+      !detected.slingshotVisibilityGate && 'slingshot visibility gate',
+      !detected.remoteControlVisibilityHelper && 'remote-control visibility helper',
+      !detected.accessRequiredGate && 'remote-control access-required gate'
     ].filter(Boolean)
   };
 }
@@ -4535,6 +4824,12 @@ async function installChannelRuntime({
     homeDir,
     logger
   });
+  const chromeBundledPluginHost = await installLinuxChromeBundledPluginHost({
+    resourcesDir,
+    homeDir,
+    hostExecutablePath: chromeExtensionHost.chromeExtensionHost.targetPath,
+    logger
+  });
   await copyFile(packagedAsarPath, path.join(resourcesDir, 'app.asar'));
   await installUnpackedRuntime({
     upstreamResourcesDir,
@@ -4566,7 +4861,8 @@ async function installChannelRuntime({
   return {
     iconPath,
     ...browserUseRuntime,
-    ...chromeExtensionHost
+    ...chromeExtensionHost,
+    chromeBundledPluginHost
   };
 }
 
@@ -6004,6 +6300,93 @@ exec "$(dirname "$0")/node" "$(dirname "$0")/${CHROME_EXTENSION_HOST_MODULE_FILE
   };
 }
 
+export async function installLinuxChromeBundledPluginHost({
+  resourcesDir,
+  homeDir = getPaths().home,
+  hostExecutablePath = path.join(resourcesDir, CHROME_EXTENSION_HOST_FILE_NAME),
+  logger = null
+}) {
+  const arch = process.arch;
+  if (arch !== 'x64' && arch !== 'arm64') {
+    return {
+      status: 'skipped',
+      reason: `unsupported-arch-${arch}`,
+      targetPaths: []
+    };
+  }
+
+  const targetPaths = [
+    path.join(
+      resourcesDir,
+      'plugins',
+      'openai-bundled',
+      'plugins',
+      'chrome',
+      'extension-host',
+      'linux',
+      arch,
+      'extension-host'
+    )
+  ];
+  const chromeCacheRoot = path.join(
+    homeDir,
+    '.codex',
+    'plugins',
+    'cache',
+    'openai-bundled',
+    'chrome'
+  );
+  for (const cacheEntry of await listExistingChromePluginCacheEntries(chromeCacheRoot)) {
+    targetPaths.push(path.join(cacheEntry, 'extension-host', 'linux', arch, 'extension-host'));
+  }
+
+  const installedTargetPaths = [];
+  for (const targetPath of targetPaths) {
+    await ensureDir(path.dirname(targetPath));
+    await writeExecutable(
+      targetPath,
+      `#!/usr/bin/env bash
+set -euo pipefail
+exec '${hostExecutablePath.replaceAll("'", "'\\''")}' "$@"
+`
+    );
+    await assertLinuxExecutableFile(targetPath, 'Installed Chrome bundled plugin host wrapper');
+    installedTargetPaths.push(targetPath);
+  }
+
+  logger?.info?.(
+    `Installed Chrome bundled plugin Linux host wrapper${installedTargetPaths.length === 1 ? '' : 's'} ${installedTargetPaths.join(',')}`
+  );
+
+  return {
+    status: 'installed',
+    targetPaths: installedTargetPaths,
+    hostExecutablePath
+  };
+}
+
+async function listExistingChromePluginCacheEntries(chromeCacheRoot) {
+  let entries;
+  try {
+    entries = await fs.promises.readdir(chromeCacheRoot, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const cacheEntries = [];
+  for (const entry of entries) {
+    const entryPath = path.join(chromeCacheRoot, entry.name);
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) {
+      continue;
+    }
+    const pluginJsonPath = path.join(entryPath, '.codex-plugin', 'plugin.json');
+    if (await fileExists(pluginJsonPath)) {
+      cacheEntries.push(entryPath);
+    }
+  }
+  return cacheEntries;
+}
+
 export function buildLinuxChromeExtensionHostModule() {
   return `import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -6258,6 +6641,23 @@ async function resolveRuntimeSourceDir({ cacheHome, electronVersion, logger }) {
   }
 
   if (!(await fileExists(runtimeSourceDir))) {
+    await retryForever(`download-electron-runtime-${electronVersion}`, logger, async () => {
+      await runCommand(process.execPath, ['node_modules/electron/install.js'], {
+        cwd: runtimeRoot,
+        env: {
+          electron_config_cache: path.join(cacheHome, 'electron'),
+          ELECTRON_INSTALL_PLATFORM: 'linux',
+          ELECTRON_INSTALL_ARCH: process.arch,
+          npm_config_update_notifier: 'false',
+          npm_config_fund: 'false',
+          npm_config_audit: 'false'
+        },
+        logger
+      });
+    });
+  }
+
+  if (!(await fileExists(runtimeSourceDir))) {
     throw new Error(`Electron runtime ${electronVersion} could not be installed for Linux.`);
   }
 
@@ -6319,7 +6719,77 @@ async function prepareNativeRebuildWorkspace({
     });
   }
 
+  await patchNativeRebuildWorkspaceSources({ workspaceRoot, electronVersion, logger });
+
   return workspaceRoot;
+}
+
+async function patchNativeRebuildWorkspaceSources({ workspaceRoot, electronVersion, logger }) {
+  if (getMajorVersion(electronVersion) < 42) {
+    return;
+  }
+
+  const betterSqlite3Root = path.join(workspaceRoot, 'node_modules', 'better-sqlite3');
+  if (!(await fileExists(path.join(betterSqlite3Root, 'package.json')))) {
+    return;
+  }
+
+  const result = await patchBetterSqlite3V8ExternalPointerTagSource(betterSqlite3Root);
+  if (result.status === 'applied') {
+    logger.info('Patched better-sqlite3 source for Electron 42 V8 external pointer tags');
+  }
+}
+
+export async function patchBetterSqlite3V8ExternalPointerTagSource(moduleRoot) {
+  const replacements = [
+    {
+      filePath: path.join(moduleRoot, 'src', 'better_sqlite3.cpp'),
+      patches: [
+        [
+          'v8::External::New(isolate, addon)',
+          'v8::External::New(isolate, addon, v8::kExternalPointerTypeTagDefault)'
+        ]
+      ]
+    },
+    {
+      filePath: path.join(moduleRoot, 'src', 'util', 'macros.cpp'),
+      patches: [
+        [
+          'info.Data().As<v8::External>()->Value()',
+          'info.Data().As<v8::External>()->Value(v8::kExternalPointerTypeTagDefault)'
+        ]
+      ]
+    },
+    {
+      filePath: path.join(moduleRoot, 'src', 'util', 'helpers.cpp'),
+      patches: [[/(\n[ \t]*func,\n)[ \t]*0,(\n[ \t]*data\n)/g, '$1\t\t\tnullptr,$2']]
+    }
+  ];
+
+  let changed = false;
+  for (const { filePath, patches } of replacements) {
+    if (!(await fileExists(filePath))) {
+      continue;
+    }
+    let source = await fs.promises.readFile(filePath, 'utf8');
+    let updated = source;
+    for (const [target, replacement] of patches) {
+      updated = updated.replaceAll(target, replacement);
+    }
+    if (updated !== source) {
+      await fs.promises.writeFile(filePath, updated, 'utf8');
+      changed = true;
+    }
+  }
+
+  return {
+    status: changed ? 'applied' : 'already-applied'
+  };
+}
+
+function getMajorVersion(version) {
+  const major = Number.parseInt(String(version).split('.')[0] ?? '', 10);
+  return Number.isFinite(major) ? major : 0;
 }
 
 async function workspaceHasDependencies(workspaceRoot, dependencies) {
@@ -6425,6 +6895,7 @@ export function createInstallDiagnosticManifest({
   browserUseNode = null,
   chromeExtensionHost = null,
   chromeNativeMessagingHost = null,
+  chromeBundledPluginHost = null,
   patches
 }) {
   return {
@@ -6449,6 +6920,7 @@ export function createInstallDiagnosticManifest({
     browserUseNode,
     chromeExtensionHost,
     chromeNativeMessagingHost,
+    chromeBundledPluginHost,
     patches
   };
 }
