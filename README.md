@@ -11,7 +11,7 @@ sudo pacman -S --needed base-devel python nodejs npm curl unzip ripgrep bash gtk
 npm install -g @openai/codex@latest
 ```
 
-Ubuntu/Debian:
+Ubuntu/Debian 13+:
 
 ```bash
 sudo apt update
@@ -19,9 +19,24 @@ sudo apt install -y build-essential python3 make g++ nodejs npm curl unzip ripgr
 npm install -g @openai/codex@latest
 ```
 
+Debian 12:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential python3 make g++ nodejs npm curl unzip ripgrep bash libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libdrm2 libgbm1 libasound2
+npm install -g @openai/codex@latest
+```
+
 The installer auto-runs `npm install --no-audit --no-fund` for this repo when dependencies are missing, so a fresh clone can run `./install-desktop` directly.
 
 Browser Use is a required desktop runtime. The installer installs Linux `resources/node` and `resources/node_repl`, prefers the Codex primary runtime cache when available, and fails with the exact paths it checked if a usable Linux runtime cannot be found.
+
+Chrome Browser Use needs Google Chrome installed. On Debian systems that provide only `google-chrome-stable`, add a user-level `google-chrome` shim if Browser Use cannot find Chrome:
+
+```bash
+mkdir -p ~/.local/bin
+ln -sf /usr/bin/google-chrome-stable ~/.local/bin/google-chrome
+```
 
 ## Usage
 
