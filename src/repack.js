@@ -4869,17 +4869,20 @@ function patchTodoItemRenderCache({
   componentName
 }) {
   const componentPattern = escapeRegExp(componentName);
+  const jsxCallPattern = `\\(0,(?<jsxVar>[A-Za-z_$][\\w$]*)\\.jsx\\)`;
   const directRenderPattern = new RegExp(
-    `\\.type===\\\`todo-list\\\`\\?(?:\\(?(?:[A-Za-z_$][\\w$]*=)?)?\\(0,\\$\\.jsx\\)\\(${componentPattern},\\{item:[A-Za-z_$][\\w$]*\\}\\)`
+    `\\.type===\\\`todo-list\\\`\\?(?:\\(?(?:[A-Za-z_$][\\w$]*=)?)?\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${componentPattern},\\{item:[A-Za-z_$][\\w$]*\\}\\)`
   );
-  const anchorMarker = `(0,$.jsx)(${componentName},{item:`;
-  const anchorIndex = source.indexOf(anchorMarker);
-  if (anchorIndex === -1) {
+  const anchorPattern = new RegExp(`${jsxCallPattern}\\(${componentPattern},\\{item:`);
+  const anchorMatch = source.match(anchorPattern);
+  if (!anchorMatch?.groups) {
     throw new Error(errorMessage);
   }
+  const anchorIndex = anchorMatch.index ?? -1;
+  const jsxVar = anchorMatch.groups.jsxVar;
 
   const start = source.lastIndexOf('function ', anchorIndex);
-  const nextFunctionIndex = source.indexOf('function ', anchorIndex + anchorMarker.length);
+  const nextFunctionIndex = source.indexOf('function ', anchorIndex + anchorMatch[0].length);
   const end = nextFunctionIndex === -1 ? source.length : nextFunctionIndex;
   if (start === -1 || end <= start) {
     throw new Error(errorMessage);
@@ -4889,7 +4892,7 @@ function patchTodoItemRenderCache({
   const block = source.slice(start, end);
   const after = source.slice(end);
   const pattern = new RegExp(
-    `t\\[(?<depIdx>\\d+)\\]===(?<itemVar>[A-Za-z_$][\\w$]*)\\?(?<outVar>[A-Za-z_$][\\w$]*)=t\\[(?<cacheIdx>\\d+)\\]:\\(\\k<outVar>=\\(0,\\$\\.jsx\\)\\(${componentPattern},\\{item:\\k<itemVar>\\}\\),t\\[\\k<depIdx>\\]=\\k<itemVar>,t\\[\\k<cacheIdx>\\]=\\k<outVar>\\),(?<suffix>(?:[A-Za-z_$][\\w$]*=)?\\k<outVar>)`
+    `t\\[(?<depIdx>\\d+)\\]===(?<itemVar>[A-Za-z_$][\\w$]*)\\?(?<outVar>[A-Za-z_$][\\w$]*)=t\\[(?<cacheIdx>\\d+)\\]:\\(\\k<outVar>=\\(0,${escapeRegExp(jsxVar)}\\.jsx\\)\\(${componentPattern},\\{item:\\k<itemVar>\\}\\),t\\[\\k<depIdx>\\]=\\k<itemVar>,t\\[\\k<cacheIdx>\\]=\\k<outVar>\\),(?<suffix>(?:[A-Za-z_$][\\w$]*=)?\\k<outVar>)`
   );
   const match = block.match(pattern);
   if (!match?.groups) {
@@ -4904,7 +4907,7 @@ function patchTodoItemRenderCache({
   });
   const updated = block.replace(
     pattern,
-    `t[${depIdx}]===${todoItemKey}?${outVar}=t[${cacheIdx}]:(${outVar}=(0,$.jsx)(${componentName},{item:${itemVar}}),t[${depIdx}]=${todoItemKey},t[${cacheIdx}]=${outVar}),${suffix}`
+    `t[${depIdx}]===${todoItemKey}?${outVar}=t[${cacheIdx}]:(${outVar}=(0,${jsxVar}.jsx)(${componentName},{item:${itemVar}}),t[${depIdx}]=${todoItemKey},t[${cacheIdx}]=${outVar}),${suffix}`
   );
   return `${before}${updated}${after}`;
 }
@@ -4916,7 +4919,10 @@ function patchTodoPortalRenderCache({
   expandedComponentName
 }) {
   const patchBlock = (block) => {
-    if (!block.includes(`(0,$.jsx)(${expandedComponentName},{item:`)) {
+    const expandedRenderPattern = new RegExp(
+      `\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${escapeRegExp(expandedComponentName)},\\{item:`
+    );
+    if (!expandedRenderPattern.test(block)) {
       throw new Error(errorMessage);
     }
 
@@ -5033,10 +5039,14 @@ function buildTodoProgressPatchErrorMessage(bundleSource, sourceName) {
 function analyzeTodoProgressBundle(bundleSource) {
   const componentNames = resolveTodoComponentNames(bundleSource);
   const compactRenderCachePattern = componentNames.compact
-    ? new RegExp(`\\(0,\\$\\.jsx\\)\\(${escapeRegExp(componentNames.compact)},\\{item:[A-Za-z_$][\\w$]*\\}\\)`)
+    ? new RegExp(
+        `\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${escapeRegExp(componentNames.compact)},\\{item:[A-Za-z_$][\\w$]*\\}\\)`
+      )
     : null;
   const portalRenderCachePattern = componentNames.expanded
-    ? new RegExp(`\\(0,\\$\\.jsx\\)\\(${escapeRegExp(componentNames.expanded)},\\{item:[A-Za-z_$][\\w$]*\\}\\)`)
+    ? new RegExp(
+        `\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${escapeRegExp(componentNames.expanded)},\\{item:[A-Za-z_$][\\w$]*\\}\\)`
+      )
     : null;
 
   const detected = {
