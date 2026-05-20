@@ -2340,6 +2340,7 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
   assert.match(updated, /codexLinuxAvatarOverlay/);
   assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
   assert.match(updated, /codexLinuxAvatarOverlayAutoClose/);
+  assert.match(updated, /codexLinuxAvatarOverlayVisibilityRecovery/);
   assert.match(updated, /codexLinuxRegisterAvatarOverlayAutoClose\([A-Za-z_$][\w$]*\)/);
   assert.match(updated, /browser-window-created/);
   assert.match(updated, /before-quit/);
@@ -2356,7 +2357,19 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
   assert.doesNotMatch(updated, /type:`dock`|focusable:!0/);
   assert.match(
     updated,
-    /showWindow\([A-Za-z_$][\w$]*\)\{[\s\S]*?showInactive\(\),this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*,!0\)/
+    /showWindow\([A-Za-z_$][\w$]*\)\{[\s\S]*?showInactive\(\),this\.codexLinuxRecoverAvatarOverlayVisibility\([A-Za-z_$][\w$]*\),this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*,!0\)/
+  );
+  assert.match(
+    updated,
+    /async open\([A-Za-z_$][\w$]*\)\{[\s\S]*?this\.rendererReady\?\(this\.showWindow\([A-Za-z_$][\w$]*\),this\.applyPointerInteractivityPolicy\(\)\):this\.codexLinuxScheduleAvatarOverlayVisibilityRecovery\([A-Za-z_$][\w$]*\)\}/
+  );
+  assert.match(
+    updated,
+    /codexLinuxRecoverAvatarOverlayVisibility\([A-Za-z_$][\w$]*\)\{\/\* codexLinuxAvatarOverlayVisibilityRecovery \*\/[\s\S]*?setTimeout\([A-Za-z_$][\w$]*,50\),setTimeout\([A-Za-z_$][\w$]*,250\)/
+  );
+  assert.match(
+    updated,
+    /codexLinuxScheduleAvatarOverlayVisibilityRecovery\([A-Za-z_$][\w$]*\)\{[\s\S]*?this\.windowManager\.isWebContentsReady\([A-Za-z_$][\w$]*\.webContents\.id\)[\s\S]*?this\.showWindow\([A-Za-z_$][\w$]*\)/
   );
   assert.match(
     updated,
