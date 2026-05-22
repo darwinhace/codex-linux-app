@@ -11,6 +11,7 @@ import {
   applyLinuxBrowserCommentSubmitModePatch,
   applyLinuxBackgroundSubagentsPanelPatch,
   applyLinuxBrowserUseHostFetchPatch,
+  applyLinuxChromeExtensionSettingsPatch,
   applyLinuxRemoteControlPatch,
   applyLinuxRemoteControlVisibilityPatch,
   applyLinuxPowerSaveBlockerPatch,
@@ -43,6 +44,7 @@ import {
   injectLinuxBrowserCommentSubmitModePatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxBrowserUseHostFetchPatch,
+  injectLinuxChromeExtensionSettingsPatch,
   injectLinuxRemoteControlPatch,
   injectLinuxRemoteControlVisibilityPatch,
   injectLinuxPowerSaveBlockerPatch,
@@ -65,6 +67,7 @@ import {
   injectLinuxVisualCompatCssPatch,
   injectLinuxVisualCompatJsPatch,
   isChannelAppProcessCommandLine,
+  isLinuxChromeExtensionHostProcessCommandLine,
   patchRendererCompactSlashCommandBundle,
   patchRendererBackgroundSubagentsPanelBundle,
   patchRendererLinuxBrowserCommentSubmitModeBundle,
@@ -78,7 +81,8 @@ import {
   parseProcCmdline,
   renderHelp,
   resolveBrowserUseRuntimeSources,
-  resolveFirstExecutablePath
+  resolveFirstExecutablePath,
+  stopRunningLinuxChromeExtensionHostProcesses
 } from '../src/repack.js';
 import { CHANNELS } from '../src/constants.js';
 
@@ -226,6 +230,8 @@ const BROWSER_USE_HOST_FETCH_BUNDLE_26_506 = BROWSER_USE_HOST_FETCH_BUNDLE_CURRE
     'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter})',
     'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:w,errorReporter:this.errorReporter})'
   );
+const CHROME_EXTENSION_SETTINGS_BUNDLE_26_519 =
+  'function aa(e){return`chrome://extensions/?id=${ua(e)}`}function oa({extensionId:e,homeDir:t=(0,r.homedir)(),localAppDataDir:n=process.env.LOCALAPPDATA,platform:a=process.platform}){let s=ua(e),c=da({homeDir:t,localAppDataDir:n,platform:a});return c==null||!(0,o.existsSync)(c)?!1:(0,o.readdirSync)(c,{withFileTypes:!0}).some(e=>e.isDirectory()&&(0,o.existsSync)((0,i.join)(c,e.name,`Extensions`,s)))}async function sa({extensionId:e,platform:t=process.platform,detectChromeCommand:n=ca,runCommand:r=zi}){if(t===`darwin`){await r(ra,[`-b`,na,aa(e)]);return}if(t===`win32`){let t=n();if(t==null)throw Error(`Google Chrome is not installed`);await r(t,[aa(e)]);return}throw Error(`Opening Chrome extension settings is only supported on macOS and Windows`)}function da({homeDir:e,localAppDataDir:t,platform:n}){return n===`darwin`?(0,i.join)(e,`Library`,`Application Support`,`Google`,`Chrome`):n===`win32`?(0,i.join)(t??(0,i.join)(e,`AppData`,`Local`),`Google`,`Chrome`,`User Data`):null}function ua(e){return e}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513 =
   'var ce={avatarOverlay:!1,ambientSuggestions:!1,artifactsPane:!1,browserAgent:!1,browserAgentAvailable:!1,browserPane:!1,computerUse:!1,computerUseNodeRepl:!1,control:!1,multiWindow:!1},le=Object.keys(ce),ue={...ce};function de(){return ue}function fe(e){return le.every(t=>typeof e[t]==`boolean`)}function pe(e){let t={...ue,...e};return le.every(e=>t[e]===ue[e])?!1:(ue=t,!0)}function me(e,{env:t=process.env,platform:n=process.platform}={}){return n!==`win32`||t.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE!==`1`?e:{...e,computerUse:!0,computerUseNodeRepl:!0}}function he(t){return de().ambientSuggestions&&t.get(e.Rt.AMBIENT_SUGGESTIONS_ENABLED)===!0}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513_20950 =
@@ -510,6 +516,66 @@ test('isChannelAppProcessCommandLine matches only installed channel app processe
     ),
     false
   );
+});
+
+test('isLinuxChromeExtensionHostProcessCommandLine matches only Chrome extension native hosts', () => {
+  assert.equal(
+    isLinuxChromeExtensionHostProcessCommandLine([
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host.mjs',
+      'chrome-extension://hehggadaopoacecdllhhajmbjkdcmajg/'
+    ]),
+    true
+  );
+  assert.equal(
+    isLinuxChromeExtensionHostProcessCommandLine([
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
+      '/tmp/browser-client.mjs'
+    ]),
+    false
+  );
+});
+
+test('stopRunningLinuxChromeExtensionHostProcesses terminates only Chrome extension native hosts', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-chrome-host-proc-'));
+  try {
+    const procRoot = path.join(rootDir, 'proc');
+    await fs.promises.mkdir(path.join(procRoot, '100'), { recursive: true });
+    await fs.promises.mkdir(path.join(procRoot, '101'), { recursive: true });
+    await fs.promises.writeFile(
+      path.join(procRoot, '100', 'cmdline'),
+      Buffer.from(
+        [
+          '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
+          '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host.mjs',
+          'chrome-extension://hehggadaopoacecdllhhajmbjkdcmajg/',
+          ''
+        ].join('\0')
+      )
+    );
+    await fs.promises.writeFile(
+      path.join(procRoot, '101', 'cmdline'),
+      Buffer.from(['/usr/bin/google-chrome-stable', '--type=renderer', ''].join('\0'))
+    );
+    const killed = [];
+
+    const result = await stopRunningLinuxChromeExtensionHostProcesses({
+      procRoot,
+      killProcess(pid, signal) {
+        killed.push({ pid, signal });
+        fs.rmSync(path.join(procRoot, String(pid)), { recursive: true, force: true });
+      }
+    });
+
+    assert.deepEqual(killed, [{ pid: 100, signal: 'SIGTERM' }]);
+    assert.deepEqual(result, {
+      status: 'terminated',
+      terminatedPids: [100],
+      remainingPids: []
+    });
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
 });
 
 test('renderHelp keeps recovery flags out of the normal command surface', () => {
@@ -968,6 +1034,41 @@ test('generated node_repl supports ESM imports, request metadata, and response m
     assert.equal(responses[1].result.content[0].text, '42\nsession-123');
     assert.deepEqual(responses[1].result._meta, { 'codex/browserUse': true });
   } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('generated node_repl exposes process env for the Chrome browser client', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-env-'));
+  const previousAmbientNetwork = process.env.BROWSER_USE_DISABLE_AMBIENT_NETWORK;
+  try {
+    process.env.BROWSER_USE_DISABLE_AMBIENT_NETWORK = '1';
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const input = `${JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'js',
+        arguments: {
+          code: `
+            const key = "BROWSER_USE_DISABLE_AMBIENT_NETWORK";
+            console.log(globalThis.nodeRepl?.env[key]);
+            console.log(globalThis.nodeRepl?.env?.CODEX_BROWSER_USE_ENV_PROBE ?? "missing");
+          `
+        }
+      }
+    })}\n`;
+
+    const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
+    assert.equal(responses[0].result.isError, false);
+    assert.equal(responses[0].result.content[0].text, '1\nmissing');
+  } finally {
+    if (previousAmbientNetwork == null) {
+      delete process.env.BROWSER_USE_DISABLE_AMBIENT_NETWORK;
+    } else {
+      process.env.BROWSER_USE_DISABLE_AMBIENT_NETWORK = previousAmbientNetwork;
+    }
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
 });
@@ -1863,6 +1964,7 @@ test('buildLinuxChromeExtensionHostModule includes ping handler and native pipe 
 
   assert.match(source, /method === 'ping'/);
   assert.match(source, /'\/tmp\/codex-browser-use'/);
+  assert.match(source, /'chrome-extension-' \+ crypto\.randomUUID\(\) \+ '\.sock'/);
   assert.match(source, /pendingRequests\.set/);
   assert.match(source, /process\.stdout\.write\(encode\(message\)\)/);
 });
@@ -2193,6 +2295,44 @@ test('injectLinuxBrowserUseHostFetchPatch reports diagnostics when host fetch an
     {
       message:
         /Could not patch Linux Browser Use authenticated host fetch into the Electron main bundle\. Source: main\.js\. Missing anchors: authenticated API header helper, desktop originator value, Browser Use native pipe registry, IAB API class, IAB route backend options, Browser session registry instantiation\. Detected anchors: authHeaderHelper=no, desktopOriginator=no, nativePipeRegistry=no, iabApiClass=no, iabRegistryOptions=no, registryInstantiation=no\./
+    }
+  );
+});
+
+test('injectLinuxChromeExtensionSettingsPatch supports Linux Chrome profile detection and install flow', () => {
+  const updated = injectLinuxChromeExtensionSettingsPatch(CHROME_EXTENSION_SETTINGS_BUNDLE_26_519);
+
+  assert.match(updated, /codexLinuxChromeExtensionSettings/);
+  assert.match(updated, /n===`linux`\?\(0,i\.join\)\(typeof process\.env\.XDG_CONFIG_HOME===`string`/);
+  assert.match(updated, /\(0,i\.join\)\(e,`\.config`\),`google-chrome`\):null/);
+  assert.match(updated, /if\(t===`linux`\)\{let codexLinuxChromeUrl=aa\(e\)/);
+  assert.match(updated, /google-chrome-stable/);
+  assert.match(updated, /chromium/);
+  assert.match(updated, /codexLinuxDetectChromeCommand/);
+});
+
+test('injectLinuxChromeExtensionSettingsPatch is idempotent', () => {
+  const once = injectLinuxChromeExtensionSettingsPatch(CHROME_EXTENSION_SETTINGS_BUNDLE_26_519);
+  const twice = injectLinuxChromeExtensionSettingsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxChromeExtensionSettingsPatch skips patching when disabled', () => {
+  const result = applyLinuxChromeExtensionSettingsPatch(CHROME_EXTENSION_SETTINGS_BUNDLE_26_519, {
+    skip: true
+  });
+
+  assert.equal(result.updated, CHROME_EXTENSION_SETTINGS_BUNDLE_26_519);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxChromeExtensionSettingsPatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxChromeExtensionSettingsPatch('const noop = true;', { sourceName: 'main.js' }),
+    {
+      message:
+        /Could not patch Linux Chrome extension settings detection into the Electron main bundle\. Source: main\.js\. Missing anchors: Chrome extension URL helper, Chrome profile directory helper, Chrome extension open helper\. Detected anchors: chromeExtensionUrl=no, profileDirHelper=no, openSettingsHelper=no\./
     }
   );
 });
@@ -4486,6 +4626,11 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       hostExecutablePath:
         '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host'
     },
+    chromeExtensionHostCleanup: {
+      status: 'terminated',
+      terminatedPids: [1234],
+      remainingPids: []
+    },
     patches: {
       bootstrap: {
         status: 'applied',
@@ -4623,6 +4768,11 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       ],
       hostExecutablePath:
         '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host'
+    },
+    chromeExtensionHostCleanup: {
+      status: 'terminated',
+      terminatedPids: [1234],
+      remainingPids: []
     },
     patches: {
       bootstrap: {

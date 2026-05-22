@@ -65,6 +65,8 @@ const LINUX_NOTIFICATION_SOUND_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux notification sound playback in the Electron main bundle.';
 const LINUX_BROWSER_USE_HOST_FETCH_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux Browser Use authenticated host fetch into the Electron main bundle.';
+const LINUX_CHROME_EXTENSION_SETTINGS_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux Chrome extension settings detection into the Electron main bundle.';
 const LINUX_REMOTE_CONTROL_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux remote-control feature availability into the Electron main bundle.';
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_BASE_ERROR_MESSAGE =
@@ -271,6 +273,14 @@ export async function installDesktop(options, logger) {
     logger
   );
   assertRequiredPatchApplied('Browser Use authenticated host fetch', linuxBrowserUseHostFetchPatch);
+  const linuxChromeExtensionSettingsPatch = await patchMainProcessLinuxChromeExtensionSettings(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied(
+    'Linux Chrome extension settings',
+    linuxChromeExtensionSettingsPatch
+  );
   const linuxRemoteControlPatch = await patchMainProcessLinuxRemoteControl(extractedAppDir, logger);
   assertRequiredPatchApplied('Linux remote control feature availability', linuxRemoteControlPatch);
   const linuxRemoteControlVisibilityPatch = await patchRendererLinuxRemoteControlVisibility(
@@ -382,6 +392,7 @@ export async function installDesktop(options, logger) {
     linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
     linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
     linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
+    linuxChromeExtensionSettings: linuxChromeExtensionSettingsPatch,
     linuxRemoteControl: linuxRemoteControlPatch,
     linuxRemoteControlVisibility: linuxRemoteControlVisibilityPatch,
     linuxPowerSaveBlocker: linuxPowerSaveBlockerPatch,
@@ -425,7 +436,8 @@ export async function installDesktop(options, logger) {
     browserUseNode,
     chromeExtensionHost,
     chromeNativeMessagingHost,
-    chromeBundledPluginHost
+    chromeBundledPluginHost,
+    chromeExtensionHostCleanup
   } = installResult;
 
   await writeDesktopEntry({
@@ -451,6 +463,7 @@ export async function installDesktop(options, logger) {
     chromeExtensionHost,
     chromeNativeMessagingHost,
     chromeBundledPluginHost,
+    chromeExtensionHostCleanup,
     patches: {
       bootstrap: bootstrapPatch,
       openTargets: openTargetsPatch,
@@ -460,6 +473,7 @@ export async function installDesktop(options, logger) {
       linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
       linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
       linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
+      linuxChromeExtensionSettings: linuxChromeExtensionSettingsPatch,
       linuxRemoteControl: linuxRemoteControlPatch,
       linuxRemoteControlVisibility: linuxRemoteControlVisibilityPatch,
       linuxPowerSaveBlocker: linuxPowerSaveBlockerPatch,
@@ -527,6 +541,25 @@ export function isChannelAppProcessCommandLine(cmdlineArgs, { channelAppDir, exe
   });
 }
 
+export function isLinuxChromeExtensionHostProcessCommandLine(
+  cmdlineArgs,
+  { extensionId = CHROME_EXTENSION_ID } = {}
+) {
+  if (!Array.isArray(cmdlineArgs) || cmdlineArgs.length === 0) {
+    return false;
+  }
+  const expectedOrigin = `chrome-extension://${extensionId}/`;
+  const hasHostModule = cmdlineArgs.some((arg) => {
+    if (typeof arg !== 'string' || arg.length === 0) {
+      return false;
+    }
+    const basename = path.basename(arg);
+    return basename === CHROME_EXTENSION_HOST_MODULE_FILE_NAME;
+  });
+  const hasExtensionOrigin = cmdlineArgs.some((arg) => arg === expectedOrigin);
+  return hasHostModule && hasExtensionOrigin;
+}
+
 export async function collectRunningChannelProcesses({
   channelAppDir,
   executableName,
@@ -563,6 +596,41 @@ export async function collectRunningChannelProcesses({
   return matches.sort((left, right) => left.pid - right.pid);
 }
 
+export async function collectRunningLinuxChromeExtensionHostProcesses({
+  extensionId = CHROME_EXTENSION_ID,
+  procRoot = '/proc'
+} = {}) {
+  let entries;
+  try {
+    entries = await fs.promises.readdir(procRoot, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const ownPid = process.pid;
+  const matches = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) {
+      continue;
+    }
+    const pid = Number(entry.name);
+    if (!Number.isSafeInteger(pid) || pid === ownPid) {
+      continue;
+    }
+    let cmdline;
+    try {
+      cmdline = await fs.promises.readFile(path.join(procRoot, entry.name, 'cmdline'));
+    } catch {
+      continue;
+    }
+    const cmdlineArgs = parseProcCmdline(cmdline);
+    if (isLinuxChromeExtensionHostProcessCommandLine(cmdlineArgs, { extensionId })) {
+      matches.push({ pid, cmdlineArgs });
+    }
+  }
+  return matches.sort((left, right) => left.pid - right.pid);
+}
+
 async function waitForChannelProcessesToExit({ channelAppDir, executableName, timeoutMs = 5000 }) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -573,6 +641,65 @@ async function waitForChannelProcessesToExit({ channelAppDir, executableName, ti
     await delay(100);
   }
   return collectRunningChannelProcesses({ channelAppDir, executableName });
+}
+
+async function waitForLinuxChromeExtensionHostProcessesToExit({
+  extensionId = CHROME_EXTENSION_ID,
+  procRoot = '/proc',
+  timeoutMs = 1500
+} = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const running = await collectRunningLinuxChromeExtensionHostProcesses({ extensionId, procRoot });
+    if (running.length === 0) {
+      return [];
+    }
+    await delay(100);
+  }
+  return collectRunningLinuxChromeExtensionHostProcesses({ extensionId, procRoot });
+}
+
+export async function stopRunningLinuxChromeExtensionHostProcesses({
+  extensionId = CHROME_EXTENSION_ID,
+  procRoot = '/proc',
+  killProcess = process.kill,
+  logger = null
+} = {}) {
+  const running = await collectRunningLinuxChromeExtensionHostProcesses({ extensionId, procRoot });
+  if (running.length === 0) {
+    return {
+      status: 'not-running',
+      terminatedPids: [],
+      remainingPids: []
+    };
+  }
+
+  logger?.warn?.(
+    `Stopping stale Chrome extension native host processes before install: ${running
+      .map((processInfo) => processInfo.pid)
+      .join(', ')}`
+  );
+  const terminatedPids = [];
+  for (const processInfo of running) {
+    try {
+      killProcess(processInfo.pid, 'SIGTERM');
+      terminatedPids.push(processInfo.pid);
+    } catch (error) {
+      if (error?.code !== 'ESRCH') {
+        logger?.warn?.(`Failed to send SIGTERM to Chrome extension host ${processInfo.pid}: ${error.message}`);
+      }
+    }
+  }
+
+  const remaining = await waitForLinuxChromeExtensionHostProcessesToExit({
+    extensionId,
+    procRoot
+  });
+  return {
+    status: remaining.length === 0 ? 'terminated' : 'partial',
+    terminatedPids,
+    remainingPids: remaining.map((processInfo) => processInfo.pid)
+  };
 }
 
 async function stopRunningChannelProcesses({ channelAppDir, executableName, logger }) {
@@ -680,6 +807,7 @@ const LINUX_NOTIFICATION_SOUND_PATCH_MARKER = 'codexLinuxNotificationSound';
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentWorker';
 const LINUX_BROWSER_USE_HOST_FETCH_PATCH_MARKER = 'codexLinuxBrowserUseHostFetch';
+const LINUX_CHROME_EXTENSION_SETTINGS_PATCH_MARKER = 'codexLinuxChromeExtensionSettings';
 const LINUX_REMOTE_CONTROL_PATCH_MARKER = 'codexLinuxRemoteControlFeatureAvailability';
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_MARKER =
   'codexLinuxRemoteControlSettingsVisibility';
@@ -695,6 +823,12 @@ const LINUX_PET_YAPPING_USAGE_MAIN_PATCH_MARKER = 'codexLinuxPetYappingUsageProv
 const LINUX_PET_YAPPING_USAGE_PATCH_MARKER = 'codexLinuxPetYappingUsage';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
+const LINUX_CHROME_EXTENSION_PROFILE_DIR_PATTERN =
+  /function (?<fn>[A-Za-z_$][\w$]*)\(\{homeDir:(?<homeDirVar>[A-Za-z_$][\w$]*),localAppDataDir:(?<localAppDataVar>[A-Za-z_$][\w$]*),platform:(?<platformVar>[A-Za-z_$][\w$]*)\}\)\{return \k<platformVar>===`darwin`\?(?<joinCall>(?:\(0,[A-Za-z_$][\w$]*\.join\)|join))\(\k<homeDirVar>,`Library`,`Application Support`,`Google`,`Chrome`\):\k<platformVar>===`win32`\?\k<joinCall>\(\k<localAppDataVar>\?\?\k<joinCall>\(\k<homeDirVar>,`AppData`,`Local`\),`Google`,`Chrome`,`User Data`\):null\}/;
+const LINUX_CHROME_EXTENSION_URL_HELPER_PATTERN =
+  /function (?<urlFn>[A-Za-z_$][\w$]*)\(e\)\{return`(?:chrome:\/\/extensions\/\?id=\$\{[A-Za-z_$][\w$]*\(e\)\}|https:\/\/chromewebstore\.google\.com\/detail\/\$\{e\})`\}/;
+const LINUX_CHROME_EXTENSION_OPEN_SETTINGS_PATTERN =
+  /async function (?<fn>[A-Za-z_$][\w$]*)\(\{extensionId:(?<extensionIdVar>[A-Za-z_$][\w$]*),platform:(?<platformVar>[A-Za-z_$][\w$]*)=process\.platform,detectChromeCommand:(?<detectVar>[A-Za-z_$][\w$]*)=(?<defaultDetectVar>[A-Za-z_$][\w$]*),runCommand:(?<runVar>[A-Za-z_$][\w$]*)=(?<defaultRunVar>[A-Za-z_$][\w$]*)\}\)\{(?<body>if\(\k<platformVar>===`darwin`\)\{.*?\}if\(\k<platformVar>===`win32`\)\{.*?\})throw Error\(`Opening Chrome extension settings is only supported on macOS and Windows`\)\}/;
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
 const LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT =
   'process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{}';
@@ -1355,6 +1489,28 @@ async function patchMainProcessLinuxBrowserUseHostFetch(extractedAppDir, logger)
   };
 }
 
+async function patchMainProcessLinuxChromeExtensionSettings(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for Chrome extension settings patch`);
+  const result = applyLinuxChromeExtensionSettingsPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Chrome extension settings detection into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
 async function patchMainProcessLinuxRemoteControl(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
   const files = await fs.promises.readdir(buildDir);
@@ -1812,6 +1968,49 @@ export function injectLinuxBrowserUseHostFetchPatch(bundleSource, options = {}) 
       BROWSER_USE_VIEW_MENU_INSERTION_REPLACEMENT
     );
   }
+  return updated;
+}
+
+export function applyLinuxChromeExtensionSettingsPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxChromeExtensionSettingsPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxChromeExtensionSettingsPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_CHROME_EXTENSION_SETTINGS_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const errorMessage = buildLinuxChromeExtensionSettingsPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  const urlHelperMatch = bundleSource.match(LINUX_CHROME_EXTENSION_URL_HELPER_PATTERN);
+  if (!urlHelperMatch?.groups) {
+    throw new Error(errorMessage);
+  }
+  let updated = replaceRegexOrThrow(
+    bundleSource,
+    LINUX_CHROME_EXTENSION_PROFILE_DIR_PATTERN,
+    ({ fn, homeDirVar, localAppDataVar, platformVar, joinCall }) =>
+      `function ${fn}({homeDir:${homeDirVar},localAppDataDir:${localAppDataVar},platform:${platformVar}}){return ${platformVar}===\`darwin\`?${joinCall}(${homeDirVar},\`Library\`,\`Application Support\`,\`Google\`,\`Chrome\`):${platformVar}===\`win32\`?${joinCall}(${localAppDataVar}??${joinCall}(${homeDirVar},\`AppData\`,\`Local\`),\`Google\`,\`Chrome\`,\`User Data\`):${platformVar}===\`linux\`?${joinCall}(typeof process.env.XDG_CONFIG_HOME===\`string\`&&process.env.XDG_CONFIG_HOME.trim().length>0?process.env.XDG_CONFIG_HOME:${joinCall}(${homeDirVar},\`.config\`),\`google-chrome\`):null}/* ${LINUX_CHROME_EXTENSION_SETTINGS_PATCH_MARKER} */`,
+    errorMessage
+  );
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_CHROME_EXTENSION_OPEN_SETTINGS_PATTERN,
+    ({ fn, extensionIdVar, platformVar, detectVar, defaultDetectVar, runVar, defaultRunVar, body }) =>
+      `async function ${fn}({extensionId:${extensionIdVar},platform:${platformVar}=process.platform,detectChromeCommand:${detectVar}=${defaultDetectVar},runCommand:${runVar}=${defaultRunVar}}){${body}if(${platformVar}===\`linux\`){let codexLinuxChromeUrl=${urlHelperMatch.groups.urlFn}(${extensionIdVar}),codexLinuxChromeCommand=codexLinuxDetectChromeCommand()??\`google-chrome-stable\`;return await ${runVar}(codexLinuxChromeCommand,[codexLinuxChromeUrl]),{url:codexLinuxChromeUrl}}throw Error(\`Opening Chrome extension settings is only supported on macOS, Windows, and Linux\`)}function codexLinuxDetectChromeCommand(){let e=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:fs\`):null,t=process.env.PATH??\`\`;for(let n of [\`google-chrome\`,\`google-chrome-stable\`,\`chromium\`])for(let r of t.split(\`:\`)){if(r.trim().length===0)continue;let t=\`${'${'}r}/${'${'}n}\`;try{if(e?.accessSync(t,e.constants.X_OK),e)return t}catch{}}return null}`,
+    errorMessage
+  );
   return updated;
 }
 
@@ -4466,6 +4665,14 @@ function buildLinuxBrowserUseHostFetchPatchErrorMessage(bundleSource, sourceName
   );
 }
 
+function buildLinuxChromeExtensionSettingsPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_CHROME_EXTENSION_SETTINGS_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxChromeExtensionSettingsBundle(bundleSource)
+  );
+}
+
 function buildLinuxRemoteControlPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     LINUX_REMOTE_CONTROL_PATCH_BASE_ERROR_MESSAGE,
@@ -4611,6 +4818,23 @@ function analyzeLinuxBrowserUseHostFetchBundle(bundleSource) {
       !detected.iabApiClass && 'IAB API class',
       !detected.iabRegistryOptions && 'IAB route backend options',
       !detected.registryInstantiation && 'Browser session registry instantiation'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxChromeExtensionSettingsBundle(bundleSource) {
+  const detected = {
+    chromeExtensionUrl: LINUX_CHROME_EXTENSION_URL_HELPER_PATTERN.test(bundleSource),
+    profileDirHelper: LINUX_CHROME_EXTENSION_PROFILE_DIR_PATTERN.test(bundleSource),
+    openSettingsHelper: LINUX_CHROME_EXTENSION_OPEN_SETTINGS_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.chromeExtensionUrl && 'Chrome extension URL helper',
+      !detected.profileDirHelper && 'Chrome profile directory helper',
+      !detected.openSettingsHelper && 'Chrome extension open helper'
     ].filter(Boolean)
   };
 }
@@ -5507,6 +5731,9 @@ async function installChannelRuntime({
     hostExecutablePath: chromeExtensionHost.chromeExtensionHost.targetPath,
     logger
   });
+  const chromeExtensionHostCleanup = await stopRunningLinuxChromeExtensionHostProcesses({
+    logger
+  });
   await copyFile(packagedAsarPath, path.join(resourcesDir, 'app.asar'));
   await installUnpackedRuntime({
     upstreamResourcesDir,
@@ -5539,7 +5766,8 @@ async function installChannelRuntime({
     iconPath,
     ...browserUseRuntime,
     ...chromeExtensionHost,
-    chromeBundledPluginHost
+    chromeBundledPluginHost,
+    chromeExtensionHostCleanup
   };
 }
 
@@ -6503,6 +6731,9 @@ function createKernel() {
     get requestMeta() {
       return nextKernel.requestMeta;
     },
+    get env() {
+      return process.env;
+    },
     nativePipe: nextKernel.nativePipeBridge,
     fetch: (...args) => hostFetch(...args),
     setResponseMeta(meta) {
@@ -7073,7 +7304,7 @@ import path from 'node:path';
 
 const FRAME_HEADER_BYTES = 4;
 const SOCKET_DIR = process.env.CODEX_BROWSER_USE_SOCKET_DIR || '/tmp/codex-browser-use';
-const SOCKET_PATH = path.join(SOCKET_DIR, crypto.randomUUID() + '.sock');
+const SOCKET_PATH = path.join(SOCKET_DIR, 'chrome-extension-' + crypto.randomUUID() + '.sock');
 const pendingRequests = new Map();
 const clients = new Set();
 let nextRequestId = 1;
@@ -7574,6 +7805,7 @@ export function createInstallDiagnosticManifest({
   chromeExtensionHost = null,
   chromeNativeMessagingHost = null,
   chromeBundledPluginHost = null,
+  chromeExtensionHostCleanup = null,
   patches
 }) {
   return {
@@ -7599,6 +7831,7 @@ export function createInstallDiagnosticManifest({
     chromeExtensionHost,
     chromeNativeMessagingHost,
     chromeBundledPluginHost,
+    chromeExtensionHostCleanup,
     patches
   };
 }
