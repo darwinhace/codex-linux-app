@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {
   applyLinuxBrowserCommentPositionPatch,
+  applyLinuxBrowserCommentSubmitModePatch,
   applyLinuxBackgroundSubagentsPanelPatch,
   applyLinuxBrowserUseHostFetchPatch,
   applyLinuxRemoteControlPatch,
@@ -39,6 +40,7 @@ import {
   installLinuxChromeBundledPluginHost,
   installLinuxChromeExtensionHost,
   injectLinuxBrowserCommentPositionPatch,
+  injectLinuxBrowserCommentSubmitModePatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxBrowserUseHostFetchPatch,
   injectLinuxRemoteControlPatch,
@@ -65,6 +67,7 @@ import {
   isChannelAppProcessCommandLine,
   patchRendererCompactSlashCommandBundle,
   patchRendererBackgroundSubagentsPanelBundle,
+  patchRendererLinuxBrowserCommentSubmitModeBundle,
   patchRendererLatestAgentTurnExpansionBundle,
   patchRendererLinuxBrowserCommentPositionBundle,
   patchRendererNewThreadModelBundle,
@@ -378,8 +381,14 @@ const LINUX_VISUAL_COMPAT_JS_26_409 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!wX()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 const LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT =
   'function wP(e){let x;let{message:N,root:P,popupWindow:F}=x,I=N.session.sessionId;let U;t[31]!==N.editorFrame.height||t[32]!==N.editorFrame.width||t[33]!==N.editorFrame.x||t[34]!==N.editorFrame.y?(U={left:N.editorFrame.x,top:N.editorFrame.y,width:N.editorFrame.width,height:N.editorFrame.height},t[31]=N.editorFrame.height,t[32]=N.editorFrame.width,t[33]=N.editorFrame.x,t[34]=N.editorFrame.y,t[35]=U):U=t[35];return U}function TP({conversationId:e,openerWindow:t,existingPopup:n,message:r}){let i=ze({windowId:ve.BROWSER_COMMENT_POPUP,conversationId:e});if(n!=null&&!n.window.closed&&n.frameName===i)return n;let{x:a,y:o,width:s,height:c}=r.overlayWindowBounds,l=t.open(`about:blank`,i,[`popup=yes`,`left=${Math.round(a)}`,`top=${Math.round(o)}`,`width=${Math.round(s)}`,`height=${Math.round(c)}`].join(`,`));return l==null?null:{frameName:i,window:l}}d(`browser-sidebar-comment-overlay-session`,k,A);';
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT =
+  'let H=(e,t)=>{let{body:r,attachedImages:o}=e,{submitDirectly:s}=t===void 0?{}:t,c=s===void 0?!1:s;Pi.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:I,body:r,attachedImages:o,...c?{submitDirectly:!0}:{}})},U=H,ne;t[42]===U?ne=t[43]:(ne=e=>{U(e,{submitDirectly:!0})},t[42]=U,t[43]=ne);let ie;t[47]!==z||t[48]!==G||t[49]!==V||t[50]!==C||t[51]!==M.editorFrame.height||t[52]!==M.session||t[53]!==P||t[54]!==I||t[55]!==U||t[56]!==ne||t[57]!==re?(ie=(0,Q.jsx)(df,{defaultCreateSubmitMode:`direct`,session:M.session,windowHeight:M.editorFrame.height,keyboardEventTarget:P,onSubmit:U,onDirectSubmit:ne,onDelete:re,onCancel:z,onEscape:V,onMounted:C,onAttachmentPreviewOpenChange:G,onLightDismissibilityChange:D},I),t[47]=z,t[48]=G,t[49]=V,t[50]=C,t[51]=M.editorFrame.height,t[52]=M.session,t[53]=P,t[54]=I,t[55]=U,t[56]=ne,t[57]=re,t[58]=ie):ie=t[58];';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
   'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
+const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513 =
+  'function sR(e){let t=(0,Z.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=$i();if(a.length===0)return null;return o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length})}let On=Vu(Dn,e=>sd.getState(e.view.state)?.active===!0),kn=Ge.length>0&&!mo,An=Ye||we||Te||ct!=null||On||Xe,wc=h??Az({intl:rt,followUpType:n?.type,composerMode:hr,cloudStartingState:mr,isBackgroundSubagentsPanelVisible:kn,isGoalModeActive:Vr}),panel=kn?(0,Q.jsx)(sR,{canStopAll:Ot,onOpenThread:e=>{Et(e)},onStopAll:kt,rows:Ge}):null;';
+const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513_ALREADY_RELAXED =
+  BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513.replace('kn=Ge.length>0&&!mo', 'kn=Ge.length>0&&!1');
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_417 = BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT
   .replace('function YR(e){', 'function eB(e){')
   .replace('o=ea()', 'o=pa()')
@@ -3637,6 +3646,77 @@ test('patchRendererLinuxBrowserCommentPositionBundle skips when no candidate bun
   }
 });
 
+test('injectLinuxBrowserCommentSubmitModePatch defaults browser annotations to saved notes', () => {
+  const updated = injectLinuxBrowserCommentSubmitModePatch(
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT
+  );
+
+  assert.match(updated, /codexLinuxBrowserCommentSubmitMode/);
+  assert.match(updated, /defaultCreateSubmitMode:`saved`/);
+  assert.doesNotMatch(updated, /defaultCreateSubmitMode:`direct`/);
+  assert.match(updated, /submitDirectly:!0/);
+});
+
+test('injectLinuxBrowserCommentSubmitModePatch is idempotent', () => {
+  const once = injectLinuxBrowserCommentSubmitModePatch(
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT
+  );
+  const twice = injectLinuxBrowserCommentSubmitModePatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBrowserCommentSubmitModePatch skips patching when disabled', () => {
+  const result = applyLinuxBrowserCommentSubmitModePatch(
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT,
+    { skip: true }
+  );
+
+  assert.equal(result.updated, LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxBrowserCommentSubmitModePatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () =>
+      injectLinuxBrowserCommentSubmitModePatch('const noop = true;', {
+        sourceName: 'composer.js'
+      }),
+    {
+      message:
+        /Could not patch the renderer browser comment submit mode bundle for Linux\. Source: composer\.js\. Missing anchors: overlay submit event marker, default create submit mode prop, direct create submit mode value\. Detected anchors: overlaySubmitMessage=no, submitModeProp=no, directSubmitMode=no\./
+    }
+  );
+});
+
+test('patchRendererLinuxBrowserCommentSubmitModeBundle patches the composer bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-browser-comment-submit-mode-ok-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'composer.js');
+    await fs.promises.writeFile(bundlePath, LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererLinuxBrowserCommentSubmitModeBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'composer.js'
+    });
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /defaultCreateSubmitMode:`saved`/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 for (const [label, fixture, expectedGate] of [
   [
     'current',
@@ -3647,6 +3727,11 @@ for (const [label, fixture, expectedGate] of [
     '26.417',
     BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_417,
     /In=Xe\.length>0&&!tt&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?Fn:!1\)&&!st&&!it/
+  ],
+  [
+    '26.513',
+    BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513,
+    /kn=Ge\.length>0&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?!mo:!1\)/
   ]
 ]) {
   test(`injectLinuxBackgroundSubagentsPanelPatch relaxes the inline composer gate for the ${label} subagent rows`, () => {
@@ -3657,6 +3742,40 @@ for (const [label, fixture, expectedGate] of [
     assert.match(updated, expectedGate);
   });
 }
+
+test('injectLinuxBackgroundSubagentsPanelPatch treats the 26.513 relaxed gate as applied', () => {
+  const updated = injectLinuxBackgroundSubagentsPanelPatch(
+    BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513_ALREADY_RELAXED
+  );
+
+  assert.equal(updated, BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513_ALREADY_RELAXED);
+});
+
+test('injectLinuxBackgroundSubagentsPanelPatch ignores unrelated false gates', () => {
+  const updated = injectLinuxBackgroundSubagentsPanelPatch(
+    `let aa=bb.length>0&&!1;${BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513}`
+  );
+
+  assert.match(updated, /codexLinuxBackgroundSubagentsPanel/);
+  assert.match(
+    updated,
+    /kn=Ge\.length>0&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?!mo:!1\)/
+  );
+});
+
+test('injectLinuxBackgroundSubagentsPanelPatch supports distant 26.513 placeholder state', () => {
+  const distantFixture = BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513.replace(
+    ',An=Ye||we||Te||ct!=null||On||Xe,wc=',
+    `,An=Ye||we||Te||ct!=null||On||Xe,${'noop;'.repeat(6000)}wc=`
+  );
+  const updated = injectLinuxBackgroundSubagentsPanelPatch(distantFixture);
+
+  assert.match(updated, /codexLinuxBackgroundSubagentsPanel/);
+  assert.match(
+    updated,
+    /kn=Ge\.length>0&&\(typeof process<`u`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===`1`\?!mo:!1\)/
+  );
+});
 
 test('injectLinuxBackgroundSubagentsPanelPatch is idempotent', () => {
   const once = injectLinuxBackgroundSubagentsPanelPatch(BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT);
@@ -4292,6 +4411,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         status: 'applied',
         sourceName: 'index.js'
       },
+      linuxBrowserCommentSubmitMode: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
       backgroundSubagentsPanel: {
         status: 'applied',
         sourceName: 'index.js'
@@ -4423,6 +4546,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         sourceName: 'index.js'
       },
       linuxBrowserCommentPosition: {
+        status: 'applied',
+        sourceName: 'index.js'
+      },
+      linuxBrowserCommentSubmitMode: {
         status: 'applied',
         sourceName: 'index.js'
       },

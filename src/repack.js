@@ -49,6 +49,8 @@ const LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Linux visual-compat script.';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer browser comment positioning bundle for Linux.';
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer browser comment submit mode bundle for Linux.';
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer background subagents panel bundle for Linux.';
 const LINUX_LATEST_AGENT_TURN_EXPANSION_PATCH_BASE_ERROR_MESSAGE =
@@ -323,6 +325,8 @@ export async function installDesktop(options, logger) {
     extractedAppDir,
     logger
   );
+  const linuxBrowserCommentSubmitModePatch =
+    await patchRendererLinuxBrowserCommentSubmitModeBundle(extractedAppDir, logger);
   const backgroundSubagentsPanelPatch = await patchRendererBackgroundSubagentsPanelBundle(
     extractedAppDir,
     logger
@@ -391,6 +395,7 @@ export async function installDesktop(options, logger) {
     todoProgress: todoProgressPatch,
     linuxVisualCompat: linuxVisualCompatPatch,
     linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
+    linuxBrowserCommentSubmitMode: linuxBrowserCommentSubmitModePatch,
     backgroundSubagentsPanel: backgroundSubagentsPanelPatch,
     latestAgentTurnExpansion: latestAgentTurnExpansionPatch,
     compactSlashCommand: compactSlashCommandPatch
@@ -468,6 +473,7 @@ export async function installDesktop(options, logger) {
       todoProgress: todoProgressPatch,
       linuxVisualCompat: linuxVisualCompatPatch,
       linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
+      linuxBrowserCommentSubmitMode: linuxBrowserCommentSubmitModePatch,
       backgroundSubagentsPanel: backgroundSubagentsPanelPatch,
       latestAgentTurnExpansion: latestAgentTurnExpansionPatch,
       compactSlashCommand: compactSlashCommandPatch
@@ -1124,6 +1130,7 @@ const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_422_71525 =
 const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
 const LINUX_LATEST_AGENT_TURN_EXPANSION_PATCH_MARKER = 'codexLinuxLatestAgentTurnExpanded';
 const LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN =
@@ -1142,6 +1149,10 @@ const LINUX_BROWSER_COMMENT_POSITION_CANDIDATE_MARKERS = [
   'overlayWindowBounds',
   'editorFrame.x'
 ];
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_CANDIDATE_MARKERS = [
+  'browser-sidebar-comment-overlay-submit',
+  'defaultCreateSubmitMode:'
+];
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_CANDIDATE_MARKERS = [
   'composer.backgroundSubagents.summary',
   'isBackgroundSubagentsPanelVisible:'
@@ -1155,8 +1166,14 @@ const LINUX_BROWSER_COMMENT_POSITION_OVERLAY_STATE_PATTERN =
   /let\{message:(?<messageVar>[A-Za-z_$][\w$]*),root:(?<rootVar>[A-Za-z_$][\w$]*),popupWindow:(?<popupVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*,/;
 const LINUX_BROWSER_COMMENT_POSITION_POPUP_OPEN_PATTERN =
   /let\{x:(?<xVar>[A-Za-z_$][\w$]*),y:(?<yVar>[A-Za-z_$][\w$]*),width:(?<widthVar>[A-Za-z_$][\w$]*),height:(?<heightVar>[A-Za-z_$][\w$]*)\}=(?<boundsVar>[A-Za-z_$][\w$]*)\.overlayWindowBounds,(?<popupVar>[A-Za-z_$][\w$]*)=(?<openerVar>[A-Za-z_$][\w$]*)\.open\(`about:blank`,(?<frameNameVar>[A-Za-z_$][\w$]*),\[`popup=yes`,`left=\$\{Math\.round\(\k<xVar>\)\}`,`top=\$\{Math\.round\(\k<yVar>\)\}`,`width=\$\{Math\.round\(\k<widthVar>\)\}`,`height=\$\{Math\.round\(\k<heightVar>\)\}`\]\.join\(`,`\)\);return \k<popupVar>==null\?null:\{frameName:\k<frameNameVar>,window:\k<popupVar>\}/;
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN =
+  /(?<prop>defaultCreateSubmitMode):`direct`/;
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN =
   /(?<visibleVar>[A-Za-z_$][\w$]*)=(?<rowsVar>[A-Za-z_$][\w$]*)\.length>0&&!(?<firstGuard>[A-Za-z_$][\w$]*)&&!(?<toggleGuard>[A-Za-z_$][\w$]*)&&!(?<thirdGuard>[A-Za-z_$][\w$]*)&&!(?<fourthGuard>[A-Za-z_$][\w$]*)/;
+const LINUX_BACKGROUND_SUBAGENTS_PANEL_CURRENT_VISIBILITY_PATTERN =
+  /(?<visibleVar>[A-Za-z_$][\w$]*)=(?<rowsVar>[A-Za-z_$][\w$]*)\.length>0&&!(?<guardVar>[A-Za-z_$][\w$]*)(?=[\s\S]{0,50000}isBackgroundSubagentsPanelVisible:\k<visibleVar>)/;
+const LINUX_BACKGROUND_SUBAGENTS_PANEL_FALSE_GATE_PATTERN =
+  /(?<visibleVar>[A-Za-z_$][\w$]*)=(?<rowsVar>[A-Za-z_$][\w$]*)\.length>0&&!1(?=[\s\S]{0,50000}isBackgroundSubagentsPanelVisible:\k<visibleVar>)/;
 const LINUX_LATEST_AGENT_TURN_EXPANSION_PATTERN =
   /persistedCollapsed:(?<persistedCollapsedVar>[A-Za-z_$][\w$]*)\}\),/;
 const COMPACT_SLASH_COMMAND_ID_MARKERS = ['id:`compact`', 'id:"compact"', "id:'compact'"];
@@ -3742,6 +3759,105 @@ export function injectLinuxBrowserCommentPositionPatch(bundleSource, options = {
   return updated;
 }
 
+export async function patchRendererLinuxBrowserCommentSubmitModeBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_BROWSER_COMMENT_SUBMIT_MODE_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer browser-comment submit mode bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxBrowserCommentSubmitModePatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux browser-comment submit mode patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(`Patched browser-comment submit mode into renderer bundle ${assetName}`);
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux browser-comment submit mode patch because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux browser-comment submit mode patch because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxBrowserCommentSubmitModePatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxBrowserCommentSubmitModePatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxBrowserCommentSubmitModePatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN,
+    ({ prop }) => `${prop}:\`saved\`/* ${LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER} */`,
+    buildLinuxBrowserCommentSubmitModePatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
 export async function patchRendererBackgroundSubagentsPanelBundle(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
@@ -3832,13 +3948,29 @@ export function injectLinuxBackgroundSubagentsPanelPatch(bundleSource, options =
   if (bundleSource.includes(LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER)) {
     return bundleSource;
   }
+  if (LINUX_BACKGROUND_SUBAGENTS_PANEL_FALSE_GATE_PATTERN.test(bundleSource)) {
+    return bundleSource;
+  }
 
+  const errorMessage = buildLinuxBackgroundSubagentsPanelPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  if (LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN.test(bundleSource)) {
+    return replaceRegexOrThrow(
+      bundleSource,
+      LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN,
+      ({ visibleVar, rowsVar, firstGuard, toggleGuard, thirdGuard, fourthGuard }) =>
+        `/* ${LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER} */${visibleVar}=${rowsVar}.length>0&&!${firstGuard}&&(typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===\`1\`?${toggleGuard}:!1)&&!${thirdGuard}&&!${fourthGuard}`,
+      errorMessage
+    );
+  }
   return replaceRegexOrThrow(
     bundleSource,
-    LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN,
-    ({ visibleVar, rowsVar, firstGuard, toggleGuard, thirdGuard, fourthGuard }) =>
-      `/* ${LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER} */${visibleVar}=${rowsVar}.length>0&&!${firstGuard}&&(typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===\`1\`?${toggleGuard}:!1)&&!${thirdGuard}&&!${fourthGuard}`,
-    buildLinuxBackgroundSubagentsPanelPatchErrorMessage(bundleSource, options.sourceName)
+    LINUX_BACKGROUND_SUBAGENTS_PANEL_CURRENT_VISIBILITY_PATTERN,
+    ({ visibleVar, rowsVar, guardVar }) =>
+      `/* ${LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER} */${visibleVar}=${rowsVar}.length>0&&(typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH===\`1\`?!${guardVar}:!1)`,
+    errorMessage
   );
 }
 
@@ -3957,6 +4089,14 @@ function buildLinuxBrowserCommentPositionPatchErrorMessage(bundleSource, sourceN
   );
 }
 
+function buildLinuxBrowserCommentSubmitModePatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxBrowserCommentSubmitModeBundle(bundleSource)
+  );
+}
+
 function buildLinuxBackgroundSubagentsPanelPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_BASE_ERROR_MESSAGE,
@@ -3997,11 +4137,31 @@ function analyzeLinuxBrowserCommentPositionBundle(bundleSource) {
   };
 }
 
+function analyzeLinuxBrowserCommentSubmitModeBundle(bundleSource) {
+  const detected = {
+    overlaySubmitMessage: bundleSource.includes('browser-sidebar-comment-overlay-submit'),
+    submitModeProp: bundleSource.includes('defaultCreateSubmitMode:'),
+    directSubmitMode: LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.overlaySubmitMessage && 'overlay submit event marker',
+      !detected.submitModeProp && 'default create submit mode prop',
+      !detected.directSubmitMode && 'direct create submit mode value'
+    ].filter(Boolean)
+  };
+}
+
 function analyzeLinuxBackgroundSubagentsPanelBundle(bundleSource) {
   const detected = {
     panelSummary: bundleSource.includes('composer.backgroundSubagents.summary'),
     panelPlaceholderState: bundleSource.includes('isBackgroundSubagentsPanelVisible:'),
-    panelVisibilityGate: LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN.test(bundleSource)
+    panelVisibilityGate:
+      LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN.test(bundleSource) ||
+      LINUX_BACKGROUND_SUBAGENTS_PANEL_CURRENT_VISIBILITY_PATTERN.test(bundleSource) ||
+      LINUX_BACKGROUND_SUBAGENTS_PANEL_FALSE_GATE_PATTERN.test(bundleSource)
   };
 
   return {
