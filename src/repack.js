@@ -47,6 +47,12 @@ const LINUX_VISUAL_COMPAT_CSS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Linux visual-compat stylesheet.';
 const LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Linux visual-compat script.';
+const LINUX_BROWSER_VIEWPORT_SURFACE_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer Browser viewport surface for Linux.';
+const LINUX_BROWSER_WEBVIEW_STACKING_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer Browser webview stacking for Linux.';
+const LINUX_RIGHT_PANEL_PANE_TABS_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer right panel pane tabs for Linux.';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer browser comment positioning bundle for Linux.';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_BASE_ERROR_MESSAGE =
@@ -331,6 +337,18 @@ export async function installDesktop(options, logger) {
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchRendererTodoProgressBundle(extractedAppDir, logger);
   const linuxVisualCompatPatch = await patchRendererLinuxVisualCompat(extractedAppDir, logger);
+  const linuxBrowserViewportSurfacePatch = await patchRendererLinuxBrowserViewportSurfaceBundle(
+    extractedAppDir,
+    logger
+  );
+  const linuxBrowserWebviewStackingPatch = await patchRendererLinuxBrowserWebviewStackingBundle(
+    extractedAppDir,
+    logger
+  );
+  const linuxRightPanelPaneTabsPatch = await patchRendererLinuxRightPanelPaneTabsBundle(
+    extractedAppDir,
+    logger
+  );
   const linuxBrowserCommentPositionPatch = await patchRendererLinuxBrowserCommentPositionBundle(
     extractedAppDir,
     logger
@@ -405,6 +423,9 @@ export async function installDesktop(options, logger) {
     newThreadModel: newThreadModelPatch,
     todoProgress: todoProgressPatch,
     linuxVisualCompat: linuxVisualCompatPatch,
+    linuxBrowserViewportSurface: linuxBrowserViewportSurfacePatch,
+    linuxBrowserWebviewStacking: linuxBrowserWebviewStackingPatch,
+    linuxRightPanelPaneTabs: linuxRightPanelPaneTabsPatch,
     linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
     linuxBrowserCommentSubmitMode: linuxBrowserCommentSubmitModePatch,
     backgroundSubagentsPanel: backgroundSubagentsPanelPatch,
@@ -486,6 +507,9 @@ export async function installDesktop(options, logger) {
       newThreadModel: newThreadModelPatch,
       todoProgress: todoProgressPatch,
       linuxVisualCompat: linuxVisualCompatPatch,
+      linuxBrowserViewportSurface: linuxBrowserViewportSurfacePatch,
+      linuxBrowserWebviewStacking: linuxBrowserWebviewStackingPatch,
+      linuxRightPanelPaneTabs: linuxRightPanelPaneTabsPatch,
       linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
       linuxBrowserCommentSubmitMode: linuxBrowserCommentSubmitModePatch,
       backgroundSubagentsPanel: backgroundSubagentsPanelPatch,
@@ -1283,6 +1307,24 @@ const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_519 =
   'let S=u==null?null:{...u,settings:{...u.settings,model:u.settings?.model??r.model??null,reasoning_effort:u.settings?.reasoning_effort??r.model_reasoning_effort??null}},codexLinuxFreshThreadCollaborationModeSettings=S;return{input:c,commentAttachments:l,workspaceRoots:t,collaborationMode:codexLinuxFreshThreadCollaborationModeSettings,...d===void 0?{}:{serviceTier:d},permissions:x,approvalsReviewer:x.approvalsReviewer,cwd:f,attachments:b,workspaceKind:_,...g===void 0?{}:{threadSource:g},...s===void 0?{}:{threadDetailLevel:s},...o===void 0?{}:{config:o},..._===`projectless`?{projectlessOutputDirectory:v}:{},...h===void 0?{}:{memoryPreferences:h},...y===void 0?{}:{additionalDeveloperInstructions:y}}';
 const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
+const LINUX_BROWSER_VIEWPORT_SURFACE_PATCH_MARKER = 'codexLinuxBrowserViewportSurface';
+const LINUX_BROWSER_WEBVIEW_STACKING_PATCH_MARKER = 'codexLinuxBrowserWebviewStacking';
+const LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_PATCH_MARKER = 'codexLinuxBrowserWebviewCaptureSurface';
+const LINUX_BROWSER_WEBVIEW_VISIBLE_CAPTURE_PATCH_MARKER =
+  'codexLinuxBrowserWebviewVisibleCaptureSurface';
+const LINUX_BROWSER_WEBVIEW_PANEL_HOST_PATCH_MARKER = 'codexLinuxBrowserWebviewPanelHost';
+const LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATCH_MARKER =
+  'codexLinuxBrowserWebviewVisibleWhenUrl';
+const LINUX_BROWSER_WEBVIEW_HOST_ATTACH_PATCH_MARKER = 'codexLinuxBrowserWebviewHostAttach';
+const LINUX_BROWSER_WEBVIEW_HOST_POSITION_PATCH_MARKER =
+  'codexLinuxBrowserWebviewHostPosition';
+const LINUX_BROWSER_WEBVIEW_HOST_CONTAINER_PATCH_MARKER =
+  'codexLinuxBrowserWebviewHostContainer';
+const LINUX_BROWSER_WEBVIEW_DETACH_DELAY_PATCH_MARKER = 'codexLinuxBrowserWebviewDetachDelay';
+const LINUX_RIGHT_PANEL_PANE_TABS_PATCH_MARKER = 'codexLinuxRightPanelPaneTabs';
+const LINUX_RIGHT_PANEL_OUTLET_FIRST_PATCH_MARKER = 'codexLinuxRightPanelOutletFirst';
+const LINUX_RIGHT_PANEL_TABS_FALLBACK_PATCH_MARKER = 'codexLinuxRightPanelTabsFallback';
+const LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER = 'codexLinuxRightPanelTabsFirst';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
@@ -1298,6 +1340,21 @@ const LINUX_VISUAL_COMPAT_JS_CANDIDATE_MARKERS = [
   '[data-codex-window-type="electron"]',
   'electron-opaque',
   'dataset.codexOs'
+];
+const LINUX_BROWSER_VIEWPORT_SURFACE_CANDIDATE_MARKERS = [
+  'browser-sidebar-sync',
+  'webviewRef:',
+  'backgroundColor:'
+];
+const LINUX_BROWSER_WEBVIEW_STACKING_CANDIDATE_MARKERS = [
+  'data-browser-sidebar-conversation-id',
+  'document.createElement(`webview`)',
+  'IAB_LIFECYCLE renderer created hidden browser sidebar webview'
+];
+const LINUX_RIGHT_PANEL_PANE_TABS_CANDIDATE_MARKERS = [
+  'right-panel-tab-bar-header-spacer',
+  'RightPanelTabs',
+  'codex.rightPanel.expandFullWidth'
 ];
 const LINUX_BROWSER_COMMENT_POSITION_CANDIDATE_MARKERS = [
   'browser-sidebar-comment-overlay-session',
@@ -1325,6 +1382,49 @@ const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN =
   /(?<prop>defaultCreateSubmitMode):`direct`/;
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN =
   /(?<modeVar>[A-Za-z_$][\w$]*)=(?<propVar>[A-Za-z_$][\w$]*)===void 0\?`direct`:\k<propVar>/;
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_PATTERN =
+  /(?<prop>defaultCreateSubmitMode):(?<condition>[A-Za-z_$][\w$]*)\?`saved`:`direct`/;
+const LINUX_BROWSER_VIEWPORT_SURFACE_PATTERN =
+  /ref:(?<refVar>[A-Za-z_$][\w$]*),className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:\{backgroundColor:(?<backgroundVar>[A-Za-z_$][\w$]*)\},children:\[/;
+const LINUX_BROWSER_WEBVIEW_PANEL_HOST_SIGNATURE_PATTERN =
+  /function (?<componentName>[A-Za-z_$][\w$]*)\(\{bounds:(?<boundsVar>[A-Za-z_$][\w$]*),conversationId:(?<conversationVar>[A-Za-z_$][\w$]*),initialUrl:(?<urlVar>[A-Za-z_$][\w$]*),isVisible:(?<visibleVar>[A-Za-z_$][\w$]*),scale:(?<scaleVar>[A-Za-z_$][\w$]*),transferSourceConversationId:(?<transferVar>[A-Za-z_$][\w$]*),webviewRef:(?<webviewRefVar>[A-Za-z_$][\w$]*),windowZoom:(?<zoomVar>[A-Za-z_$][\w$]*)\}\)/;
+const LINUX_BROWSER_WEBVIEW_PANEL_HOST_SYNC_PATTERN =
+  /(?<managerRef>[A-Za-z_$][\w$]*)\.current\?\.sync\(\{bounds:(?<boundsVar>[A-Za-z_$][\w$]*),isVisible:(?<visibleVar>[A-Za-z_$][\w$]*),scale:(?<scaleVar>[A-Za-z_$][\w$]*),windowZoom:(?<zoomVar>[A-Za-z_$][\w$]*)\},(?<webviewRefVar>[A-Za-z_$][\w$]*)\)/;
+const LINUX_BROWSER_WEBVIEW_PANEL_HOST_CALL_PATTERN =
+  /(?<prefix>\(0,[A-Za-z_$][\w$]*\.jsx\)\([A-Za-z_$][\w$]*,\{bounds:[^)]*?webviewRef:(?<webviewRefVar>[A-Za-z_$][\w$]*),)windowZoom:(?<zoomVar>[A-Za-z_$][\w$]*)(?<suffix>\}\))/;
+const LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATTERN =
+  /(?<prefix>initialUrl:(?<urlVar>[A-Za-z_$][\w$]*)\?[^,]+,isVisible:)(?<visibleVar>[A-Za-z_$][\w$]*)(?<suffix>,scale:)/;
+const LINUX_BROWSER_WEBVIEW_VISIBLE_STYLE_PATTERN =
+  /(?<prefix>Object\.assign\((?<containerVar>[A-Za-z_$][\w$]*)\.style,\{contain:``,height:`\$\{Math\.round\((?<boundsVar>[A-Za-z_$][\w$]*)\.height\*(?<scaleVar>[A-Za-z_$][\w$]*)\)\}px`,left:`\$\{\k<boundsVar>\.x\*(?<windowZoomVar>[A-Za-z_$][\w$]*)\}px`,opacity:`1`,overflow:`hidden`,pointerEvents:``,position:`fixed`,top:`\$\{\k<boundsVar>\.y\*\k<windowZoomVar>\}px`,transform:``,transformOrigin:``,visibility:`visible`,willChange:``,width:`\$\{Math\.round\(\k<boundsVar>\.width\*\k<scaleVar>\)\}px`,zIndex:)``/;
+const LINUX_BROWSER_WEBVIEW_VISIBLE_FUNCTION_PATTERN =
+  /function (?<functionName>[A-Za-z_$][\w$]*)\((?<containerVar>[A-Za-z_$][\w$]*),(?<webviewVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*),(?<scaleVar>[A-Za-z_$][\w$]*),(?<windowZoomVar>[A-Za-z_$][\w$]*)\)\{let (?<combinedScaleVar>[A-Za-z_$][\w$]*)=\k<scaleVar>\*\k<windowZoomVar>;Object\.assign\(\k<containerVar>\.style,\{contain:``,height:`\$\{Math\.round\(\k<boundsVar>\.height\*\k<combinedScaleVar>\)\}px`,left:`\$\{\k<boundsVar>\.x\*\k<windowZoomVar>\}px`,opacity:`1`,overflow:`hidden`,pointerEvents:``,position:`fixed`,top:`\$\{\k<boundsVar>\.y\*\k<windowZoomVar>\}px`,transform:``,transformOrigin:``,visibility:`visible`,willChange:``,width:`\$\{Math\.round\(\k<boundsVar>\.width\*\k<combinedScaleVar>\)\}px`,zIndex:(?:``|`2147483646`\/\* codexLinuxBrowserWebviewStacking \*\/)\}\),Object\.assign\(\k<webviewVar>\.style,\{height:`\$\{\k<boundsVar>\.height\}px`,transform:\k<combinedScaleVar>===1\?``:`scale\(\$\{\k<combinedScaleVar>\}\)`,transformOrigin:`top left`,willChange:\k<combinedScaleVar>===1\?``:`transform`,width:`\$\{\k<boundsVar>\.width\}px`\}\)\}/;
+const LINUX_BROWSER_WEBVIEW_SYNC_METHOD_PATTERN =
+  /sync\((?<stateArg>[A-Za-z_$][\w$]*),(?<webviewRefArg>[A-Za-z_$][\w$]*)\)\{this\.isAttached=!0,this\.state=\k<stateArg>,this\.webview\.style\.backgroundColor=(?<backgroundVar>[A-Za-z_$][\w$]*),K\(\k<webviewRefArg>,this\.webview\),this\.syncContainerStyle\(\)\}/;
+const LINUX_BROWSER_WEBVIEW_SYNC_METHOD_WITH_HOST_PATTERN =
+  /sync\((?<stateArg>[A-Za-z_$][\w$]*),(?<webviewRefArg>[A-Za-z_$][\w$]*),codexLinuxBrowserWebviewHostRef\)\{this\.isAttached=!0,this\.state=\k<stateArg>,this\.webview\.style\.backgroundColor=(?<backgroundVar>[A-Za-z_$][\w$]*),K\(\k<webviewRefArg>,this\.webview\),this\.attachToLinuxHost\(codexLinuxBrowserWebviewHostRef\?\.current\),this\.syncContainerStyle\(\)\}/;
+const LINUX_BROWSER_WEBVIEW_ATTACH_METHOD_INSERT_PATTERN =
+  /detach\((?<refArg>[A-Za-z_$][\w$]*)\)\{/;
+const LINUX_BROWSER_WEBVIEW_ATTACH_METHOD_CURRENT_PATTERN =
+  /attachToLinuxHost\(e\)\{if\(e instanceof HTMLElement\)\{this\.container\.dataset\.codexLinuxBrowserWebviewHost=`panel`;this\.container\.parentElement!==document\.body&&document\.body\.append\(this\.container\)\}\}\/\* codexLinuxBrowserWebviewHostAttach \*\//;
+const LINUX_BROWSER_WEBVIEW_DETACH_METHOD_PATTERN =
+  /detach\((?<refArg>[A-Za-z_$][\w$]*)\)\{this\.isAttached=!1,this\.state=\{bounds:this\.state\.bounds,isVisible:!1,scale:this\.state\.scale,windowZoom:this\.state\.windowZoom\},this\.webview\.style\.backgroundColor=(?<backgroundVar>[A-Za-z_$][\w$]*),K\(\k<refArg>,null,this\.webview\),this\.syncContainerStyle\(\),(?<loggerVar>[A-Za-z_$][\w$]*)\.info\(`IAB_LIFECYCLE renderer detached visible browser sidebar webview`,\{safe:\{conversationId:this\.conversationId\}\}\)\}/;
+const LINUX_BROWSER_WEBVIEW_DETACH_METHOD_SIMPLE_PATTERN =
+  /detach\((?<refArg>[A-Za-z_$][\w$]*)\)\{this\.isAttached=!1,K\(\k<refArg>,null,this\.webview\),this\.syncContainerStyle\(\)\}/;
+const LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_PATTERN =
+  /if\(this\.browserUseCaptureSurfaceSize!=null\)\{H\(this\.container,this\.webview,(?<boundsVar>[A-Za-z_$][\w$]*)\);return\}if\(this\.state\.isVisible\)\{this\.lastVisibleBounds=\k<boundsVar>,B\(this\.container,this\.webview,\k<boundsVar>,this\.state\.scale,this\.state\.windowZoom\?\?1\);return\}/;
+const LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_CURRENT_PATTERN =
+  /if\(this\.browserUseCaptureSurfaceSize!=null\)\{if\(this\.state\.isVisible&&this\.state\.bounds!=null\)\{this\.lastVisibleBounds=this\.state\.bounds,B\(this\.container,this\.webview,this\.state\.bounds,this\.state\.scale,this\.state\.windowZoom\?\?1\);return\}H\(this\.container,this\.webview,(?<boundsVar>[A-Za-z_$][\w$]*)\);return\}\/\* codexLinuxBrowserWebviewCaptureSurface \*\/if\(this\.state\.isVisible\)\{this\.lastVisibleBounds=\k<boundsVar>,B\(this\.container,this\.webview,\k<boundsVar>,this\.state\.scale,this\.state\.windowZoom\?\?1\);return\}/;
+const LINUX_RIGHT_PANEL_PANE_TABS_HEADER_PATTERN = /(?<prop>headerHeight):`toolbar`/;
+const LINUX_RIGHT_PANEL_PANE_TABS_BEFORE_LIST_PATTERN =
+  /beforeList:\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsxs\)\(\k<jsxVar>\.Fragment,\{children:\[(?<isFullWidthVar>[A-Za-z_$][\w$]*)&&!(?<isEdgeVar>[A-Za-z_$][\w$]*)&&\(0,\k<jsxVar>\.jsx\)\((?<motionVar>[A-Za-z_$][\w$]*)\.div,\{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:\{width:(?<leftWidthVar>[A-Za-z_$][\w$]*)\}\}\),(?<beforeListVar>[A-Za-z_$][\w$]*)\]\}\),/;
+const LINUX_RIGHT_PANEL_PANE_TABS_AFTER_LIST_PATTERN =
+  /afterList:\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsxs\)\(\k<jsxVar>\.Fragment,\{children:\[(?<afterListVar>[A-Za-z_$][\w$]*),\(0,\k<jsxVar>\.jsx\)\((?<expandButtonVar>[A-Za-z_$][\w$]*),\{\}\),\(0,\k<jsxVar>\.jsx\)\((?<motionVar>[A-Za-z_$][\w$]*)\.div,\{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:\{width:(?<spacerWidthVar>[A-Za-z_$][\w$]*)\}\}\)\]\}\),controller:/;
+const LINUX_RIGHT_PANEL_OUTLET_ORDER_PATTERN =
+  /(?<prefix>className:`h-full min-h-0 min-w-0 overflow-hidden \[--thread-content-top-inset:calc\(var\(--spacing\)\*8\)\]`,children:\[)(?<slotVar>[A-Za-z_$][\w$]*),(?<outletVar>[A-Za-z_$][\w$]*)(?<suffix>\]\})/;
+const LINUX_RIGHT_PANEL_BAD_OUTLET_FIRST_PATTERN =
+  /(?<prefix>className:`h-full min-h-0 min-w-0 overflow-hidden \[--thread-content-top-inset:calc\(var\(--spacing\)\*8\)\]`,children:\[)(?<outletVar>[A-Za-z_$][\w$]*),\/\* codexLinuxRightPanelOutletFirst \*\/(?<slotVar>[A-Za-z_$][\w$]*)(?<suffix>\]\})/;
+const LINUX_RIGHT_PANEL_OUTLET_FALLBACK_PATTERN =
+  /(?<tabsVar>[A-Za-z_$][\w$]*)=C\(G\)/;
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN =
   /(?<visibleVar>[A-Za-z_$][\w$]*)=(?<rowsVar>[A-Za-z_$][\w$]*)\.length>0&&!(?<firstGuard>[A-Za-z_$][\w$]*)&&!(?<toggleGuard>[A-Za-z_$][\w$]*)&&!(?<thirdGuard>[A-Za-z_$][\w$]*)&&!(?<fourthGuard>[A-Za-z_$][\w$]*)/;
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_CURRENT_VISIBILITY_PATTERN =
@@ -3727,6 +3827,529 @@ export function injectLinuxVisualCompatJsPatch(bundleSource, options = {}) {
   );
 }
 
+export async function patchRendererLinuxBrowserViewportSurfaceBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_BROWSER_VIEWPORT_SURFACE_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer Browser viewport surface bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxBrowserViewportSurfacePatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_BROWSER_VIEWPORT_SURFACE_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux Browser viewport surface patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(`Patched Linux Browser viewport surface into renderer bundle ${assetName}`);
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux Browser viewport surface patch because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux Browser viewport surface patch because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxBrowserViewportSurfacePatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxBrowserViewportSurfacePatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxBrowserViewportSurfacePatch(bundleSource, options = {}) {
+  const hasViewportMarker = bundleSource.includes(LINUX_BROWSER_VIEWPORT_SURFACE_PATCH_MARKER);
+  const hasPanelHostMarker = bundleSource.includes(LINUX_BROWSER_WEBVIEW_PANEL_HOST_PATCH_MARKER);
+  const hasVisibleWhenUrlMarker = bundleSource.includes(
+    LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATCH_MARKER
+  );
+  if (hasViewportMarker && hasPanelHostMarker && hasVisibleWhenUrlMarker) {
+    return bundleSource;
+  }
+
+  const errorMessage = buildLinuxBrowserViewportSurfacePatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  let updated = bundleSource;
+  if (!hasViewportMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_VIEWPORT_SURFACE_PATTERN,
+      ({ refVar, backgroundVar }) =>
+        `ref:${refVar},"data-codex-linux-browser-viewport":!0,/* ${LINUX_BROWSER_VIEWPORT_SURFACE_PATCH_MARKER} */className:\`relative h-full min-h-0 min-w-0 overflow-hidden codex-linux-browser-viewport-surface\`,style:{backgroundColor:${backgroundVar}},children:[`,
+      errorMessage
+    );
+  }
+  if (!hasPanelHostMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_PANEL_HOST_SIGNATURE_PATTERN,
+      ({
+        componentName,
+        boundsVar,
+        conversationVar,
+        scaleVar,
+        transferVar,
+        urlVar,
+        visibleVar,
+        webviewRefVar,
+        zoomVar
+      }) =>
+        `function ${componentName}({bounds:${boundsVar},conversationId:${conversationVar},hostRef:codexLinuxBrowserWebviewHostRef,initialUrl:${urlVar},isVisible:${visibleVar},scale:${scaleVar},transferSourceConversationId:${transferVar},webviewRef:${webviewRefVar},windowZoom:${zoomVar}})`,
+      errorMessage
+    );
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_PANEL_HOST_SYNC_PATTERN,
+      ({ boundsVar, managerRef, scaleVar, visibleVar, webviewRefVar, zoomVar }) =>
+        `${managerRef}.current?.sync({bounds:${boundsVar},isVisible:${visibleVar},scale:${scaleVar},windowZoom:${zoomVar}},${webviewRefVar},codexLinuxBrowserWebviewHostRef)`,
+      errorMessage
+    );
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_PANEL_HOST_CALL_PATTERN,
+      ({ prefix, zoomVar, suffix }) =>
+        `${prefix}hostRef:N,windowZoom:${zoomVar}${suffix}/* ${LINUX_BROWSER_WEBVIEW_PANEL_HOST_PATCH_MARKER} */`,
+      errorMessage
+    );
+  }
+  if (!hasVisibleWhenUrlMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATTERN,
+      ({ prefix, suffix, urlVar, visibleVar }) =>
+        `${prefix}${visibleVar}||${urlVar}!=null/* ${LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATCH_MARKER} */${suffix}`,
+      errorMessage
+    );
+  }
+  return updated;
+}
+
+export async function patchRendererLinuxBrowserWebviewStackingBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_BROWSER_WEBVIEW_STACKING_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer Browser webview stacking bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxBrowserWebviewStackingPatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_BROWSER_WEBVIEW_STACKING_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux Browser webview stacking patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(`Patched Linux Browser webview stacking into renderer bundle ${assetName}`);
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux Browser webview stacking patch because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux Browser webview stacking patch because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxBrowserWebviewStackingPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxBrowserWebviewStackingPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxBrowserWebviewStackingPatch(bundleSource, options = {}) {
+  const hasStackingMarker = bundleSource.includes(LINUX_BROWSER_WEBVIEW_STACKING_PATCH_MARKER);
+  const hasCaptureSurfaceMarker = bundleSource.includes(
+    LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_PATCH_MARKER
+  );
+  const hasVisibleCaptureMarker = bundleSource.includes(
+    LINUX_BROWSER_WEBVIEW_VISIBLE_CAPTURE_PATCH_MARKER
+  );
+  const hasHostAttachMarker = bundleSource.includes(
+    LINUX_BROWSER_WEBVIEW_HOST_ATTACH_PATCH_MARKER
+  );
+  const hasHostContainerMarker = bundleSource.includes(
+    LINUX_BROWSER_WEBVIEW_HOST_CONTAINER_PATCH_MARKER
+  );
+  const hasDetachDelayMarker = bundleSource.includes(LINUX_BROWSER_WEBVIEW_DETACH_DELAY_PATCH_MARKER);
+  const hasHostPositionMarker = bundleSource.includes(
+    LINUX_BROWSER_WEBVIEW_HOST_POSITION_PATCH_MARKER
+  );
+  if (
+    hasStackingMarker &&
+    hasCaptureSurfaceMarker &&
+    hasVisibleCaptureMarker &&
+    hasHostAttachMarker &&
+    hasHostContainerMarker &&
+    hasDetachDelayMarker &&
+    hasHostPositionMarker
+  ) {
+    return bundleSource;
+  }
+
+  const errorMessage = buildLinuxBrowserWebviewStackingPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  let updated = bundleSource;
+  if (!hasHostPositionMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_VISIBLE_FUNCTION_PATTERN,
+      ({
+        boundsVar,
+        combinedScaleVar,
+        containerVar,
+        functionName,
+        scaleVar,
+        webviewVar,
+        windowZoomVar
+      }) =>
+        `function ${functionName}(${containerVar},${webviewVar},${boundsVar},${scaleVar},${windowZoomVar}){let ${combinedScaleVar}=${scaleVar}*${windowZoomVar},codexLinuxBrowserHost=${containerVar}.parentElement?.dataset?.codexLinuxBrowserWebviewHost===\`panel\`?${containerVar}.parentElement.getBoundingClientRect():null,codexLinuxBrowserLeft=codexLinuxBrowserHost?Math.max(0,${boundsVar}.x*${windowZoomVar}-codexLinuxBrowserHost.x):${boundsVar}.x*${windowZoomVar},codexLinuxBrowserTop=codexLinuxBrowserHost?Math.max(0,${boundsVar}.y*${windowZoomVar}-codexLinuxBrowserHost.y):${boundsVar}.y*${windowZoomVar};Object.assign(${containerVar}.style,{contain:\`\`,height:\`\${Math.round(${boundsVar}.height*${combinedScaleVar})}px\`,left:\`\${codexLinuxBrowserLeft}px\`,opacity:\`1\`,overflow:\`hidden\`,pointerEvents:\`\`,position:codexLinuxBrowserHost?\`absolute\`:\`fixed\`,top:\`\${codexLinuxBrowserTop}px\`,transform:\`\`,transformOrigin:\`\`,visibility:\`visible\`,willChange:\`\`,width:\`\${Math.round(${boundsVar}.width*${combinedScaleVar})}px\`,zIndex:codexLinuxBrowserHost?\`1\`:\`2147483646\`/* ${LINUX_BROWSER_WEBVIEW_STACKING_PATCH_MARKER} */}),Object.assign(${webviewVar}.style,{height:\`\${${boundsVar}.height}px\`,transform:${combinedScaleVar}===1?\`\`:\`scale(\${${combinedScaleVar}})\`,transformOrigin:\`top left\`,willChange:${combinedScaleVar}===1?\`\`:\`transform\`,width:\`\${${boundsVar}.width}px\`})}/* ${LINUX_BROWSER_WEBVIEW_HOST_POSITION_PATCH_MARKER} */`,
+      errorMessage
+    );
+  } else if (!hasStackingMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_VISIBLE_STYLE_PATTERN,
+      ({ prefix }) =>
+        `${prefix}\`2147483646\`/* ${LINUX_BROWSER_WEBVIEW_STACKING_PATCH_MARKER} */`,
+      errorMessage
+    );
+  }
+  if (!hasCaptureSurfaceMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_PATTERN,
+      ({ boundsVar }) =>
+        `if(this.browserUseCaptureSurfaceSize!=null){if(this.state.isVisible&&${boundsVar}!=null){this.lastVisibleBounds=${boundsVar},B(this.container,this.webview,${boundsVar},this.state.scale,this.state.windowZoom??1);return}H(this.container,this.webview,${boundsVar});return}/* ${LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_PATCH_MARKER} ${LINUX_BROWSER_WEBVIEW_VISIBLE_CAPTURE_PATCH_MARKER} */if(this.state.isVisible){this.lastVisibleBounds=${boundsVar},B(this.container,this.webview,${boundsVar},this.state.scale,this.state.windowZoom??1);return}`,
+      errorMessage
+    );
+  } else if (!hasVisibleCaptureMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_CURRENT_PATTERN,
+      ({ boundsVar }) =>
+        `if(this.browserUseCaptureSurfaceSize!=null){if(this.state.isVisible&&${boundsVar}!=null){this.lastVisibleBounds=${boundsVar},B(this.container,this.webview,${boundsVar},this.state.scale,this.state.windowZoom??1);return}H(this.container,this.webview,${boundsVar});return}/* ${LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_PATCH_MARKER} ${LINUX_BROWSER_WEBVIEW_VISIBLE_CAPTURE_PATCH_MARKER} */if(this.state.isVisible){this.lastVisibleBounds=${boundsVar},B(this.container,this.webview,${boundsVar},this.state.scale,this.state.windowZoom??1);return}`,
+      errorMessage
+    );
+  }
+  if (!hasHostAttachMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_SYNC_METHOD_PATTERN,
+      ({ backgroundVar, stateArg, webviewRefArg }) =>
+        `sync(${stateArg},${webviewRefArg},codexLinuxBrowserWebviewHostRef){this.isAttached=!0,this.state=${stateArg},this.webview.style.backgroundColor=${backgroundVar},K(${webviewRefArg},this.webview),this.attachToLinuxHost(codexLinuxBrowserWebviewHostRef?.current),this.syncContainerStyle()}`,
+      errorMessage
+    );
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_ATTACH_METHOD_INSERT_PATTERN,
+      ({ refArg }) =>
+        `attachToLinuxHost(e){if(e instanceof HTMLElement){e.dataset.codexLinuxBrowserWebviewHost=\`panel\`,this.container.dataset.codexLinuxBrowserWebviewHost=\`panel\`,this.container.parentElement!==e&&e.append(this.container)}}/* ${LINUX_BROWSER_WEBVIEW_HOST_ATTACH_PATCH_MARKER} ${LINUX_BROWSER_WEBVIEW_HOST_CONTAINER_PATCH_MARKER} */detach(${refArg}){`,
+      errorMessage
+    );
+  } else if (!hasHostContainerMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_ATTACH_METHOD_CURRENT_PATTERN,
+      () =>
+        `attachToLinuxHost(e){if(e instanceof HTMLElement){e.dataset.codexLinuxBrowserWebviewHost=\`panel\`,this.container.dataset.codexLinuxBrowserWebviewHost=\`panel\`,this.container.parentElement!==e&&e.append(this.container)}}/* ${LINUX_BROWSER_WEBVIEW_HOST_ATTACH_PATCH_MARKER} ${LINUX_BROWSER_WEBVIEW_HOST_CONTAINER_PATCH_MARKER} */`,
+      errorMessage
+    );
+  }
+  if (!hasDetachDelayMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_BROWSER_WEBVIEW_SYNC_METHOD_WITH_HOST_PATTERN,
+      ({ backgroundVar, stateArg, webviewRefArg }) =>
+        `sync(${stateArg},${webviewRefArg},codexLinuxBrowserWebviewHostRef){this.codexLinuxBrowserDetachTimer!=null&&(clearTimeout(this.codexLinuxBrowserDetachTimer),this.codexLinuxBrowserDetachTimer=null),this.isAttached=!0,this.state=${stateArg},this.webview.style.backgroundColor=${backgroundVar},K(${webviewRefArg},this.webview),this.attachToLinuxHost(codexLinuxBrowserWebviewHostRef?.current),this.syncContainerStyle()}`,
+      errorMessage
+    );
+    if (LINUX_BROWSER_WEBVIEW_DETACH_METHOD_PATTERN.test(updated)) {
+      updated = replaceRegexOrThrow(
+        updated,
+        LINUX_BROWSER_WEBVIEW_DETACH_METHOD_PATTERN,
+        ({ backgroundVar, loggerVar, refArg }) =>
+          `detach(${refArg}){this.isAttached=!1,this.codexLinuxBrowserDetachTimer!=null&&clearTimeout(this.codexLinuxBrowserDetachTimer),this.codexLinuxBrowserDetachTimer=setTimeout(()=>{if(this.isAttached)return;this.state={bounds:this.state.bounds,isVisible:!1,scale:this.state.scale,windowZoom:this.state.windowZoom},this.webview.style.backgroundColor=${backgroundVar},K(${refArg},null,this.webview),this.syncContainerStyle(),${loggerVar}.info(\`IAB_LIFECYCLE renderer detached visible browser sidebar webview\`,{safe:{conversationId:this.conversationId}})},120)}/* ${LINUX_BROWSER_WEBVIEW_DETACH_DELAY_PATCH_MARKER} */`,
+        errorMessage
+      );
+    } else {
+      updated = replaceRegexOrThrow(
+        updated,
+        LINUX_BROWSER_WEBVIEW_DETACH_METHOD_SIMPLE_PATTERN,
+        ({ refArg }) =>
+          `detach(${refArg}){this.isAttached=!1,this.codexLinuxBrowserDetachTimer!=null&&clearTimeout(this.codexLinuxBrowserDetachTimer),this.codexLinuxBrowserDetachTimer=setTimeout(()=>{if(this.isAttached)return;K(${refArg},null,this.webview),this.syncContainerStyle()},120)}/* ${LINUX_BROWSER_WEBVIEW_DETACH_DELAY_PATCH_MARKER} */`,
+        errorMessage
+      );
+    }
+  }
+  return updated;
+}
+
+export async function patchRendererLinuxRightPanelPaneTabsBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_RIGHT_PANEL_PANE_TABS_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer right panel pane-tabs bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxRightPanelPaneTabsPatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_RIGHT_PANEL_PANE_TABS_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux right panel pane-tabs patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(`Patched Linux right panel pane tabs into renderer bundle ${assetName}`);
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux right panel pane-tabs patch because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux right panel pane-tabs patch because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxRightPanelPaneTabsPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxRightPanelPaneTabsPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxRightPanelPaneTabsPatch(bundleSource, options = {}) {
+  const hasPaneTabsMarker = bundleSource.includes(LINUX_RIGHT_PANEL_PANE_TABS_PATCH_MARKER);
+  const hasTabsFirstMarker = bundleSource.includes(LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER);
+  const hasTabsFallbackMarker = bundleSource.includes(
+    LINUX_RIGHT_PANEL_TABS_FALLBACK_PATCH_MARKER
+  );
+  if (hasPaneTabsMarker && hasTabsFirstMarker && hasTabsFallbackMarker) {
+    return bundleSource;
+  }
+
+  const errorMessage = buildLinuxRightPanelPaneTabsPatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  let updated = bundleSource;
+  if (!hasPaneTabsMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_RIGHT_PANEL_PANE_TABS_HEADER_PATTERN,
+      ({ prop }) => `${prop}:\`pane\`/* ${LINUX_RIGHT_PANEL_PANE_TABS_PATCH_MARKER} */`,
+      errorMessage
+    );
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_RIGHT_PANEL_PANE_TABS_BEFORE_LIST_PATTERN,
+      ({ beforeListVar }) => `beforeList:${beforeListVar},`,
+      errorMessage
+    );
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_RIGHT_PANEL_PANE_TABS_AFTER_LIST_PATTERN,
+      ({ afterListVar }) => `afterList:${afterListVar},controller:`,
+      errorMessage
+    );
+  }
+  if (!hasTabsFirstMarker) {
+    if (LINUX_RIGHT_PANEL_BAD_OUTLET_FIRST_PATTERN.test(updated)) {
+      updated = replaceRegexOrThrow(
+        updated,
+        LINUX_RIGHT_PANEL_BAD_OUTLET_FIRST_PATTERN,
+        ({ outletVar, prefix, slotVar, suffix }) =>
+          `${prefix}${slotVar},/* ${LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER} */${outletVar}${suffix}`,
+        errorMessage
+      );
+    } else {
+      updated = replaceRegexOrThrow(
+        updated,
+        LINUX_RIGHT_PANEL_OUTLET_ORDER_PATTERN,
+        ({ outletVar, prefix, slotVar, suffix }) =>
+          `${prefix}${slotVar},/* ${LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER} */${outletVar}${suffix}`,
+        errorMessage
+      );
+    }
+  }
+  if (!hasTabsFallbackMarker) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_RIGHT_PANEL_OUTLET_FALLBACK_PATTERN,
+      ({ tabsVar }) =>
+        `${tabsVar}=C(G)??(0,Q.jsx)($t,{})/* ${LINUX_RIGHT_PANEL_TABS_FALLBACK_PATCH_MARKER} */`,
+      errorMessage
+    );
+  }
+  return updated;
+}
+
 function buildLinuxVisualCompatCssOverride() {
   return `/* ${LINUX_VISUAL_COMPAT_PATCH_MARKER} */
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat:not(.compact-window){
@@ -3758,6 +4381,22 @@ function buildLinuxVisualCompatCssOverride() {
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface{
   transition:none!important
 }
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-codex-linux-browser-viewport],
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .codex-linux-browser-viewport-surface{
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] div:has(>[data-app-shell-tab-strip-controller]),
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]{
+  display:flex!important;
+  min-height:var(--height-toolbar)!important;
+  height:var(--height-toolbar)!important;
+  flex-shrink:0!important;
+  position:relative!important;
+  z-index:25!important;
+  background:var(--color-token-main-surface-primary)!important
+}
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .no-underline\\!{
   text-decoration:underline!important;
   text-underline-offset:2px
@@ -3773,6 +4412,30 @@ function buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, sourceName) {
     LINUX_VISUAL_COMPAT_JS_PATCH_BASE_ERROR_MESSAGE,
     sourceName,
     analyzeLinuxVisualCompatJsBundle(bundleSource)
+  );
+}
+
+function buildLinuxBrowserViewportSurfacePatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_BROWSER_VIEWPORT_SURFACE_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxBrowserViewportSurfaceBundle(bundleSource)
+  );
+}
+
+function buildLinuxBrowserWebviewStackingPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_BROWSER_WEBVIEW_STACKING_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxBrowserWebviewStackingBundle(bundleSource)
+  );
+}
+
+function buildLinuxRightPanelPaneTabsPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_RIGHT_PANEL_PANE_TABS_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxRightPanelPaneTabsBundle(bundleSource)
   );
 }
 
@@ -3814,6 +4477,90 @@ function analyzeLinuxVisualCompatJsBundle(bundleSource) {
       !detected.electronOpaqueClass && 'electron-opaque class',
       !detected.codexOsDataset && 'codexOs dataset access',
       !detected.opaqueEffectBlock && 'opaque window effect block'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxBrowserViewportSurfaceBundle(bundleSource) {
+  const detected = {
+    browserSyncMessage: bundleSource.includes('browser-sidebar-sync'),
+    webviewRefProp: bundleSource.includes('webviewRef:'),
+    viewportSurface: LINUX_BROWSER_VIEWPORT_SURFACE_PATTERN.test(bundleSource),
+    webviewPanelHostSignature: LINUX_BROWSER_WEBVIEW_PANEL_HOST_SIGNATURE_PATTERN.test(
+      bundleSource
+    ),
+    webviewPanelHostSync: LINUX_BROWSER_WEBVIEW_PANEL_HOST_SYNC_PATTERN.test(bundleSource),
+    webviewPanelHostCall: LINUX_BROWSER_WEBVIEW_PANEL_HOST_CALL_PATTERN.test(bundleSource),
+    webviewVisibleWhenUrl:
+      LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATTERN.test(bundleSource) ||
+      bundleSource.includes(LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATCH_MARKER)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.browserSyncMessage && 'browser sidebar sync event marker',
+      !detected.webviewRefProp && 'browser webview ref prop',
+      !detected.viewportSurface && 'browser viewport surface div',
+      !detected.webviewPanelHostSignature && 'browser webview panel host signature',
+      !detected.webviewPanelHostSync && 'browser webview panel host sync',
+      !detected.webviewPanelHostCall && 'browser webview panel host call',
+      !detected.webviewVisibleWhenUrl && 'browser webview visible-when-url prop'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxBrowserWebviewStackingBundle(bundleSource) {
+  const detected = {
+    browserWebviewElement: bundleSource.includes('document.createElement(`webview`)'),
+    browserWebviewLifecycleLog: bundleSource.includes(
+      'IAB_LIFECYCLE renderer created hidden browser sidebar webview'
+    ),
+    visibleWebviewStyleBlock:
+      LINUX_BROWSER_WEBVIEW_VISIBLE_STYLE_PATTERN.test(bundleSource) ||
+      LINUX_BROWSER_WEBVIEW_VISIBLE_FUNCTION_PATTERN.test(bundleSource) ||
+      bundleSource.includes(LINUX_BROWSER_WEBVIEW_HOST_POSITION_PATCH_MARKER),
+    webviewSyncMethod: LINUX_BROWSER_WEBVIEW_SYNC_METHOD_PATTERN.test(bundleSource),
+    webviewDetachMethod: LINUX_BROWSER_WEBVIEW_ATTACH_METHOD_INSERT_PATTERN.test(bundleSource),
+    captureSurfaceVisibleBranch:
+      LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_PATTERN.test(bundleSource) ||
+      LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_CURRENT_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.browserWebviewElement && 'browser webview element',
+      !detected.browserWebviewLifecycleLog && 'browser webview lifecycle log',
+      !detected.visibleWebviewStyleBlock && 'visible webview style block',
+      !detected.webviewSyncMethod && 'browser webview sync method',
+      !detected.webviewDetachMethod && 'browser webview detach method',
+      !detected.captureSurfaceVisibleBranch && 'capture-surface visible branch'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxRightPanelPaneTabsBundle(bundleSource) {
+  const detected = {
+    rightPanelHeaderSpacer: bundleSource.includes('right-panel-tab-bar-header-spacer'),
+    rightPanelTabsExport: bundleSource.includes('RightPanelTabs'),
+    rightPanelExpandButton: bundleSource.includes('codex.rightPanel.expandFullWidth'),
+    toolbarHeaderHeight: LINUX_RIGHT_PANEL_PANE_TABS_HEADER_PATTERN.test(bundleSource),
+    headerBeforeList: LINUX_RIGHT_PANEL_PANE_TABS_BEFORE_LIST_PATTERN.test(bundleSource),
+    headerAfterList: LINUX_RIGHT_PANEL_PANE_TABS_AFTER_LIST_PATTERN.test(bundleSource),
+    outletAfterSlot: LINUX_RIGHT_PANEL_OUTLET_ORDER_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.rightPanelHeaderSpacer && 'right panel header spacer',
+      !detected.rightPanelTabsExport && 'right panel tabs export',
+      !detected.rightPanelExpandButton && 'right panel expand button',
+      !detected.toolbarHeaderHeight && 'toolbar header height',
+      !detected.headerBeforeList && 'header before-list spacer',
+      !detected.headerAfterList && 'header after-list spacer',
+      !detected.outletAfterSlot && 'right panel outlet order'
     ].filter(Boolean)
   };
 }
@@ -4127,7 +4874,12 @@ export function applyLinuxBrowserCommentSubmitModePatch(bundleSource, options = 
 }
 
 export function injectLinuxBrowserCommentSubmitModePatch(bundleSource, options = {}) {
-  if (bundleSource.includes(LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER)) {
+  const hasMarker = bundleSource.includes(LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER);
+  const hasDirectMode =
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN.test(bundleSource) ||
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN.test(bundleSource) ||
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_PATTERN.test(bundleSource);
+  if (hasMarker && !hasDirectMode) {
     return bundleSource;
   }
 
@@ -4135,22 +4887,32 @@ export function injectLinuxBrowserCommentSubmitModePatch(bundleSource, options =
     bundleSource,
     options.sourceName
   );
-  if (LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN.test(bundleSource)) {
-    return replaceRegexOrThrow(
-      bundleSource,
-      LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN,
-      ({ prop }) => `${prop}:\`saved\`/* ${LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER} */`,
-      errorMessage
-    );
-  }
+  let updated = bundleSource;
+  let includeMarker = !hasMarker;
+  const takeMarker = () => {
+    if (!includeMarker) {
+      return '';
+    }
+    includeMarker = false;
+    return `/* ${LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER} */`;
+  };
 
-  return replaceRegexOrThrow(
-    bundleSource,
+  updated = updated.replace(LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN, (_, prop) => {
+    return `${prop}:\`saved\`${takeMarker()}`;
+  });
+  updated = updated.replace(
     LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN,
-    ({ modeVar, propVar }) =>
-      `${modeVar}=${propVar}===void 0?\`saved\`:${propVar}/* ${LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER} */`,
-    errorMessage
+    (_, modeVar, propVar) => `${modeVar}=${propVar}===void 0?\`saved\`:${propVar}${takeMarker()}`
   );
+  updated = updated.replace(
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_PATTERN,
+    (_, prop) => `${prop}:\`saved\`${takeMarker()}`
+  );
+
+  if (updated === bundleSource) {
+    throw new Error(errorMessage);
+  }
+  return updated;
 }
 
 export async function patchRendererBackgroundSubagentsPanelBundle(extractedAppDir, logger) {
@@ -4438,7 +5200,8 @@ function analyzeLinuxBrowserCommentSubmitModeBundle(bundleSource) {
     submitModeProp: bundleSource.includes('defaultCreateSubmitMode'),
     directSubmitMode:
       LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN.test(bundleSource) ||
-      LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN.test(bundleSource)
+      LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN.test(bundleSource) ||
+      LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_PATTERN.test(bundleSource)
   };
 
   return {

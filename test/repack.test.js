@@ -9,6 +9,9 @@ import { pathToFileURL } from 'node:url';
 import {
   applyLinuxBrowserCommentPositionPatch,
   applyLinuxBrowserCommentSubmitModePatch,
+  applyLinuxBrowserWebviewStackingPatch,
+  applyLinuxBrowserViewportSurfacePatch,
+  applyLinuxRightPanelPaneTabsPatch,
   applyLinuxBackgroundSubagentsPanelPatch,
   applyLinuxBrowserUseHostFetchPatch,
   applyLinuxChromeExtensionSettingsPatch,
@@ -42,6 +45,9 @@ import {
   installLinuxChromeExtensionHost,
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBrowserCommentSubmitModePatch,
+  injectLinuxBrowserWebviewStackingPatch,
+  injectLinuxBrowserViewportSurfacePatch,
+  injectLinuxRightPanelPaneTabsPatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxBrowserUseHostFetchPatch,
   injectLinuxChromeExtensionSettingsPatch,
@@ -71,6 +77,9 @@ import {
   patchRendererCompactSlashCommandBundle,
   patchRendererBackgroundSubagentsPanelBundle,
   patchRendererLinuxBrowserCommentSubmitModeBundle,
+  patchRendererLinuxBrowserWebviewStackingBundle,
+  patchRendererLinuxBrowserViewportSurfaceBundle,
+  patchRendererLinuxRightPanelPaneTabsBundle,
   patchRendererLatestAgentTurnExpansionBundle,
   patchRendererLinuxBrowserCommentPositionBundle,
   patchRendererNewThreadModelBundle,
@@ -408,6 +417,19 @@ const LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT =
   'let H=(e,t)=>{let{body:r,attachedImages:o}=e,{submitDirectly:s}=t===void 0?{}:t,c=s===void 0?!1:s;Pi.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:I,body:r,attachedImages:o,...c?{submitDirectly:!0}:{}})},U=H,ne;t[42]===U?ne=t[43]:(ne=e=>{U(e,{submitDirectly:!0})},t[42]=U,t[43]=ne);let ie;t[47]!==z||t[48]!==G||t[49]!==V||t[50]!==C||t[51]!==M.editorFrame.height||t[52]!==M.session||t[53]!==P||t[54]!==I||t[55]!==U||t[56]!==ne||t[57]!==re?(ie=(0,Q.jsx)(df,{defaultCreateSubmitMode:`direct`,session:M.session,windowHeight:M.editorFrame.height,keyboardEventTarget:P,onSubmit:U,onDirectSubmit:ne,onDelete:re,onCancel:z,onEscape:V,onMounted:C,onAttachmentPreviewOpenChange:G,onLightDismissibilityChange:D},I),t[47]=z,t[48]=G,t[49]=V,t[50]=C,t[51]=M.editorFrame.height,t[52]=M.session,t[53]=P,t[54]=I,t[55]=U,t[56]=ne,t[57]=re,t[58]=ie):ie=t[58];';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_26_519 =
   'function yd(e){let t=(0,q.c)(97),{conversationId:n,defaultCreateSubmitMode:i,onActiveEditorDismissRequestChange:a,showAdjustEntry:o}=e,s=i===void 0?`direct`:i,c=o===void 0?!0:o;let A=(e,t,r)=>{Ae.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:e,body:t.body,attachedImages:t.attachedImages,...r?{submitDirectly:!0}:{}})};let be=s===`direct`,Ce=H.session.target.mode===`design`?`saved`:s;return null}';
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_BUNDLE_26_519 =
+  'function yd(e){let{conversationId:n,defaultCreateSubmitMode:i}=e,s=i===void 0?`saved`:i/* codexLinuxBrowserCommentSubmitMode */;let A=(e,t,r)=>{Ae.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:e,body:t.body,attachedImages:t.attachedImages,...r?{submitDirectly:!0}:{}})};return null}function Ng(){return (0,Y.jsx)(yd,{conversationId:t,defaultCreateSubmitMode:vt?`saved`:`direct`,onActiveEditorDismissRequestChange:Un,showAdjustEntry:v})}';
+const LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519 =
+  'function Pf({bounds:e,conversationId:t,initialUrl:n,isVisible:r,scale:i,transferSourceConversationId:a,webviewRef:o,windowZoom:s}){let c=(0,J.useRef)(null);return(0,J.useLayoutEffect)(()=>{c.current?.sync({bounds:e,isVisible:r,scale:i,windowZoom:s},o)},[e,t,r,i,o,s]),null}function Yf(){let N=(0,J.useRef)(null),P=(0,J.useRef)(null),Qt=`var(--color-token-editor-background)`,Ae={dispatchMessage(){}};Ae.dispatchMessage(`browser-sidebar-sync`,{});return (0,Y.jsx)(`div`,{className:`relative min-h-0 min-w-0 flex-1`,children:(0,Y.jsxs)(`div`,{ref:N,className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:{backgroundColor:Qt},children:[(0,Y.jsx)(Pf,{bounds:Gt,conversationId:t,initialUrl:ct?at.url:`about:blank`,isVisible:p,scale:qt,transferSourceConversationId:b,webviewRef:P,windowZoom:T})]})})}';
+const LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_26_519 =
+  'var k=`data-browser-sidebar-conversation-id`,A={zIndex:``},M=`2147483647`,N=`#fff`;class L{container=document.createElement(`div`);webview=document.createElement(`webview`);constructor(){this.webview.setAttribute(k,e),n.info(`IAB_LIFECYCLE renderer created hidden browser sidebar webview`)}sync(e,t){this.isAttached=!0,this.state=e,this.webview.style.backgroundColor=N,K(t,this.webview),this.syncContainerStyle()}detach(e){this.isAttached=!1,K(e,null,this.webview),this.syncContainerStyle()}syncContainerStyle(){B(this.container,this.webview,{x:1,y:2,width:300,height:200},1,1)}}function B(e,t,n,r,i){let a=r*i;Object.assign(e.style,{contain:``,height:`${Math.round(n.height*a)}px`,left:`${n.x*i}px`,opacity:`1`,overflow:`hidden`,pointerEvents:``,position:`fixed`,top:`${n.y*i}px`,transform:``,transformOrigin:``,visibility:`visible`,willChange:``,width:`${Math.round(n.width*a)}px`,zIndex:``}),Object.assign(t.style,{height:`${n.height}px`,transform:a===1?``:`scale(${a})`,transformOrigin:`top left`,willChange:a===1?``:`transform`,width:`${n.width}px`})}function H(e,t,n){Object.assign(e.style,{contain:`layout paint size style`,height:`${n.height}px`,left:`${P.x}px`,opacity:j,overflow:``,pointerEvents:`none`,position:`fixed`,top:`${P.y}px`,transform:`translate3d(0, 0, 0)`,transformOrigin:``,visibility:`visible`,willChange:`transform`,width:`${n.width}px`,zIndex:M})}';
+const LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519 =
+  LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_26_519.replace(
+    'syncContainerStyle(){B(this.container,this.webview,{x:1,y:2,width:300,height:200},1,1)}',
+    'syncContainerStyle(){let e=z({bounds:this.state.bounds,browserUseCaptureSurfaceSize:this.browserUseCaptureSurfaceSize,browserUseViewportSize:this.browserUseViewportSize,hasBrowserUsePaintHost:this.hasBrowserUsePaintHost,isVisible:this.state.isVisible,lastVisibleBounds:this.lastVisibleBounds});if(e==null){V(this.container,this.webview,this.lastVisibleBounds,this.browserUseViewportSize,this.isBrowserUseActive||this.browserUseViewportSize!=null);return}if(this.browserUseCaptureSurfaceSize!=null){H(this.container,this.webview,e);return}if(this.state.isVisible){this.lastVisibleBounds=e,B(this.container,this.webview,e,this.state.scale,this.state.windowZoom??1);return}H(this.container,this.webview,e)}'
+  );
+const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519 =
+  'function $t(){let e=C(ie),t=C(Ae),n=C(R),r=C(ce),i=C(ne),a=C(ge),{headerLeftWidth:o,headerRightWidth:s}=Oe(),c=Dt`max(0px, calc(${s}px)`;return(0,Q.jsx)(Vt,{headerHeight:`toolbar`,beforeList:(0,Q.jsxs)(Q.Fragment,{children:[i&&!a&&(0,Q.jsx)(P.div,{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:{width:o}}),n]}),afterListSticky:t,emptyState:r,afterList:(0,Q.jsxs)(Q.Fragment,{children:[e,(0,Q.jsx)(Qt,{}),(0,Q.jsx)(P.div,{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:{width:c}})]}),controller:Ve})}function Un({children:e}){let l=C(G);return(0,Q.jsx)(`div`,{children:(0,Q.jsx)(P.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,l]})})})}var Mr={RightPanelTabs:(0,Z.memo)(fr)};function Qt(){return S().formatMessage({id:`codex.rightPanel.expandFullWidth`})}';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
   'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513 =
@@ -3658,6 +3680,11 @@ for (const [label, fixture] of [
     assert.match(updated, /\.app-shell-left-panel/);
     assert.match(updated, /transition:none!important/);
     assert.match(updated, /\.no-underline\\!/);
+    assert.match(updated, /\[data-codex-linux-browser-viewport\]/);
+    assert.match(updated, /\.codex-linux-browser-viewport-surface/);
+    assert.match(updated, /\[data-app-shell-focus-area=right-panel\] div:has\(>\[data-app-shell-tab-strip-controller\]\)/);
+    assert.match(updated, /\[data-app-shell-focus-area=right-panel\] \[data-app-shell-tab-strip-controller\]/);
+    assert.match(updated, /min-height:var\(--height-toolbar\)!important/);
     assert.match(updated, /\[data-browser-comment-editor-surface\]/);
     assert.match(updated, /max-height:clamp\(44px,18vh,88px\)!important/);
     assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\)\{/);
@@ -3742,6 +3769,258 @@ test('injectLinuxVisualCompatJsPatch reports diagnostics when JS anchors are mis
         /Could not patch the renderer Linux visual-compat script\. Source: index\.js\. Missing anchors: electron window selector, electron-opaque class, codexOs dataset access, opaque window effect block\. Detected anchors: electronWindowSelector=no, electronOpaqueClass=no, codexOsDataset=no, opaqueEffectBlock=no\./
     }
   );
+});
+
+test('injectLinuxBrowserViewportSurfacePatch makes the Browser native viewport transparent', () => {
+  const updated = injectLinuxBrowserViewportSurfacePatch(
+    LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519
+  );
+
+  assert.match(updated, /codexLinuxBrowserViewportSurface/);
+  assert.match(updated, /codexLinuxBrowserWebviewPanelHost/);
+  assert.match(updated, /codexLinuxBrowserWebviewVisibleWhenUrl/);
+  assert.match(updated, /"data-codex-linux-browser-viewport":!0/);
+  assert.match(updated, /codex-linux-browser-viewport-surface/);
+  assert.match(updated, /hostRef:codexLinuxBrowserWebviewHostRef/);
+  assert.match(updated, /sync\(\{bounds:e,isVisible:r,scale:i,windowZoom:s\},o,codexLinuxBrowserWebviewHostRef\)/);
+  assert.match(updated, /hostRef:N,windowZoom:T/);
+  assert.match(updated, /isVisible:p\|\|ct!=null\/\* codexLinuxBrowserWebviewVisibleWhenUrl \*\//);
+  assert.match(updated, /style:\{backgroundColor:Qt\}/);
+});
+
+test('injectLinuxBrowserViewportSurfacePatch is idempotent', () => {
+  const once = injectLinuxBrowserViewportSurfacePatch(LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519);
+  const twice = injectLinuxBrowserViewportSurfacePatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBrowserViewportSurfacePatch skips patching when disabled', () => {
+  const result = applyLinuxBrowserViewportSurfacePatch(LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519, {
+    skip: true
+  });
+
+  assert.equal(result.updated, LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxBrowserViewportSurfacePatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxBrowserViewportSurfacePatch('const noop = true;', { sourceName: 'browser.js' }),
+    {
+      message:
+        /Could not patch the renderer Browser viewport surface for Linux\. Source: browser\.js\. Missing anchors: browser sidebar sync event marker, browser webview ref prop, browser viewport surface div, browser webview panel host signature, browser webview panel host sync, browser webview panel host call, browser webview visible-when-url prop\. Detected anchors: browserSyncMessage=no, webviewRefProp=no, viewportSurface=no, webviewPanelHostSignature=no, webviewPanelHostSync=no, webviewPanelHostCall=no, webviewVisibleWhenUrl=no\./
+    }
+  );
+});
+
+test('patchRendererLinuxBrowserViewportSurfaceBundle patches the Browser side panel bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-browser-viewport-surface-ok-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'thread-side-panel-tabs.js');
+    await fs.promises.writeFile(bundlePath, LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererLinuxBrowserViewportSurfaceBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'thread-side-panel-tabs.js'
+    });
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /data-codex-linux-browser-viewport/
+    );
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewPanelHost/);
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewVisibleWhenUrl/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('injectLinuxBrowserWebviewStackingPatch lifts the Browser native webview above app surfaces', () => {
+  const updated = injectLinuxBrowserWebviewStackingPatch(
+    LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519
+  );
+
+  assert.match(updated, /codexLinuxBrowserWebviewStacking/);
+  assert.match(updated, /codexLinuxBrowserWebviewCaptureSurface/);
+  assert.match(updated, /codexLinuxBrowserWebviewVisibleCaptureSurface/);
+  assert.match(updated, /codexLinuxBrowserWebviewHostAttach/);
+  assert.match(updated, /codexLinuxBrowserWebviewHostPosition/);
+  assert.match(updated, /codexLinuxBrowserWebviewHostContainer/);
+  assert.match(updated, /codexLinuxBrowserWebviewDetachDelay/);
+  assert.match(updated, /position:codexLinuxBrowserHost\?`absolute`:`fixed`/);
+  assert.match(updated, /zIndex:codexLinuxBrowserHost\?`1`:`2147483646`/);
+  assert.match(updated, /zIndex:M/);
+  assert.match(updated, /this\.state\.isVisible&&e!=null/);
+  assert.match(updated, /B\(this\.container,this\.webview,e/);
+  assert.match(updated, /attachToLinuxHost\(codexLinuxBrowserWebviewHostRef\?\.current\)/);
+  assert.match(updated, /this\.container\.dataset\.codexLinuxBrowserWebviewHost=`panel`/);
+  assert.match(updated, /e\.dataset\.codexLinuxBrowserWebviewHost=`panel`/);
+  assert.match(updated, /e\.append\(this\.container\)/);
+  assert.doesNotMatch(updated, /document\.body\.append\(this\.container\)/);
+});
+
+test('injectLinuxBrowserWebviewStackingPatch is idempotent', () => {
+  const once = injectLinuxBrowserWebviewStackingPatch(
+    LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519
+  );
+  const twice = injectLinuxBrowserWebviewStackingPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBrowserWebviewStackingPatch skips patching when disabled', () => {
+  const result = applyLinuxBrowserWebviewStackingPatch(
+    LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519,
+    {
+      skip: true
+    }
+  );
+
+  assert.equal(result.updated, LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxBrowserWebviewStackingPatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () =>
+      injectLinuxBrowserWebviewStackingPatch('const noop = true;', {
+        sourceName: 'browser-sidebar-manager.js'
+      }),
+    {
+      message:
+        /Could not patch the renderer Browser webview stacking for Linux\. Source: browser-sidebar-manager\.js\. Missing anchors: browser webview element, browser webview lifecycle log, visible webview style block, browser webview sync method, browser webview detach method, capture-surface visible branch\. Detected anchors: browserWebviewElement=no, browserWebviewLifecycleLog=no, visibleWebviewStyleBlock=no, webviewSyncMethod=no, webviewDetachMethod=no, captureSurfaceVisibleBranch=no\./
+    }
+  );
+});
+
+test('patchRendererLinuxBrowserWebviewStackingBundle patches the Browser manager bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-browser-webview-stacking-ok-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'browser-sidebar-manager.js');
+    await fs.promises.writeFile(
+      bundlePath,
+      LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519,
+      'utf8'
+    );
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererLinuxBrowserWebviewStackingBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'browser-sidebar-manager.js'
+    });
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /codexLinuxBrowserWebviewStacking/
+    );
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /codexLinuxBrowserWebviewCaptureSurface/
+    );
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /codexLinuxBrowserWebviewVisibleCaptureSurface/
+    );
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewHostAttach/);
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewHostPosition/);
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewHostContainer/);
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewDetachDelay/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('injectLinuxRightPanelPaneTabsPatch renders right panel tabs in the pane strip', () => {
+  const updated = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519);
+
+  assert.match(updated, /codexLinuxRightPanelPaneTabs/);
+  assert.match(updated, /codexLinuxRightPanelTabsFirst/);
+  assert.match(updated, /codexLinuxRightPanelTabsFallback/);
+  assert.match(updated, /headerHeight:`pane`/);
+  assert.match(updated, /beforeList:n/);
+  assert.match(updated, /afterList:e,controller:Ve/);
+  assert.match(updated, /children:\[e,\/\* codexLinuxRightPanelTabsFirst \*\/l\]/);
+  assert.match(updated, /l=C\(G\)\?\?\(0,Q\.jsx\)\(\$t,\{\}\)\/\* codexLinuxRightPanelTabsFallback \*\//);
+  assert.doesNotMatch(updated, /right-panel-tab-bar-header-spacer/);
+  assert.doesNotMatch(updated, /\(0,Q\.jsx\)\(Qt,\{\}\)/);
+});
+
+test('injectLinuxRightPanelPaneTabsPatch is idempotent', () => {
+  const once = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519);
+  const twice = injectLinuxRightPanelPaneTabsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxRightPanelPaneTabsPatch skips patching when disabled', () => {
+  const result = applyLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519, {
+    skip: true
+  });
+
+  assert.equal(result.updated, LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxRightPanelPaneTabsPatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () =>
+      injectLinuxRightPanelPaneTabsPatch('const noop = true;', {
+        sourceName: 'app-shell.js'
+      }),
+    {
+      message:
+        /Could not patch the renderer right panel pane tabs for Linux\. Source: app-shell\.js\. Missing anchors: right panel header spacer, right panel tabs export, right panel expand button, toolbar header height, header before-list spacer, header after-list spacer, right panel outlet order\. Detected anchors: rightPanelHeaderSpacer=no, rightPanelTabsExport=no, rightPanelExpandButton=no, toolbarHeaderHeight=no, headerBeforeList=no, headerAfterList=no, outletAfterSlot=no\./
+    }
+  );
+});
+
+test('patchRendererLinuxRightPanelPaneTabsBundle patches the app shell bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-right-pane-tabs-ok-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'app-shell.js');
+    await fs.promises.writeFile(bundlePath, LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererLinuxRightPanelPaneTabsBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'app-shell.js'
+    });
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxRightPanelPaneTabs/);
+    assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxRightPanelTabsFirst/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
 });
 
 test('patchRendererLinuxVisualCompat skips incompatible JS anchors without aborting install', async () => {
@@ -3926,6 +4205,17 @@ test('injectLinuxBrowserCommentSubmitModePatch supports the 26.519 fallback defa
   assert.match(updated, /codexLinuxBrowserCommentSubmitMode/);
   assert.match(updated, /s=i===void 0\?`saved`:i/);
   assert.doesNotMatch(updated, /s=i===void 0\?`direct`:i/);
+  assert.match(updated, /submitDirectly:!0/);
+});
+
+test('injectLinuxBrowserCommentSubmitModePatch patches the 26.519 Browser caller override', () => {
+  const updated = injectLinuxBrowserCommentSubmitModePatch(
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_BUNDLE_26_519
+  );
+
+  assert.match(updated, /codexLinuxBrowserCommentSubmitMode/);
+  assert.match(updated, /defaultCreateSubmitMode:`saved`/);
+  assert.doesNotMatch(updated, /defaultCreateSubmitMode:vt\?`saved`:`direct`/);
   assert.match(updated, /submitDirectly:!0/);
 });
 
