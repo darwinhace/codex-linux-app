@@ -768,6 +768,8 @@ const LINUX_POWER_SAVE_BLOCKER_SYNC_PATTERN =
   /syncPowerSaveBlocker\(\)\{let (?<activeVar>[A-Za-z_$][\w$]*)=this\.powerSaveBlockingWebContentsIds\.size>0\|\|!(?<electronVar>[A-Za-z_$][\w$]*)\.powerMonitor\.isOnBatteryPower\(\)&&this\.pluggedInRemoteControlPowerSaveWebContentsIds\.size>0;if\(\k<activeVar>&&this\.powerSaveBlockerId==null\)\{this\.powerSaveBlockerId=\k<electronVar>\.powerSaveBlocker\.start\(`prevent-app-suspension`\);return\}!\k<activeVar>&&this\.powerSaveBlockerId!=null&&\(\k<electronVar>\.powerSaveBlocker\.stop\(this\.powerSaveBlockerId\),this\.powerSaveBlockerId=null\)\}/;
 const LINUX_REMOTE_CONTROL_KEEP_AWAKE_DISPATCH_PATTERN =
   /(?<prefix>\{data:(?<preventVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.PREVENT_SLEEP_WHILE_RUNNING\),\{data:(?<keepVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN\)[\s\S]*?keepRemoteControlAwakeWhilePluggedIn:)!!\k<keepVar>&&(?<enabledVar>[A-Za-z_$][\w$]*)/;
+const LINUX_REMOTE_CONTROL_KEEP_AWAKE_CURRENT_DISPATCH_PATTERN =
+  /power-save-blocker-set`[\s\S]*?shouldBlock:!![A-Za-z_$][\w$]*&&[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\)[\s\S]*?keepRemoteControlAwakeWhilePluggedIn:!![A-Za-z_$][\w$]*&&[A-Za-z_$][\w$]*/;
 const LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN =
   /process\.platform===`darwin`\?(?<windowVar>[A-Za-z_$][\w$]*)\.setVisibleOnAllWorkspaces\(!0,\{visibleOnFullScreen:!0,skipTransformProcessType:!0\}\):\k<windowVar>\.setVisibleOnAllWorkspaces\(!0\),\k<windowVar>\.setAlwaysOnTop\(!0,`floating`\),\k<windowVar>\.setMenuBarVisibility\(!1\)/;
 const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
@@ -791,7 +793,7 @@ const LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN =
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN =
   /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\|\|\(this\.cancelMomentum\(\),this\.dragState\.hasMoved=!0,this\.moveDragToCurrentCursor\(\k<windowVar>\)\)\}endDrag/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN =
-  /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=n\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\);\k<dragStateVar>\.displayBounds=\k<displayBoundsVar>,this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayBoundsVar>\)\}/;
+  /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=n\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\);\k<dragStateVar>\.displayBounds=\k<displayBoundsVar>(?:,this\.resolutionKey=[^,}]+)?,this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayBoundsVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN =
   /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|\(this\.dragState\?\.hasMoved&&this\.moveDragToCurrentCursor\(\k<windowVar>\),this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\)\)\}/;
 const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN =
@@ -804,6 +806,8 @@ const LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN =
   /(?:^|[;,]|\bvar\s+)(?<reactVar>[A-Za-z_$][\w$]*)=e\([A-Za-z_$][\w$]*\(\),1\)/;
 const LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"(?<module>\.\/vscode-api-[^"]+\.js)";/;
+const LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN =
+  /import\{(?<imports>[^}]*)\}from"(?<module>\.\/setting-storage-[^"]+\.js)";/;
 const LINUX_PET_YAPPING_USAGE_JSX_RUNTIME_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"\.\/jsx-runtime-[^"]+\.js";/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN =
@@ -1102,6 +1106,18 @@ const NEW_THREAD_MODEL_SETTER_SNIPPET_26_422_71525 =
   'setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(await g(e,n))return;if(m){Jn(t,`copilot-default-model`,e);return}';
 const NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_422_71525 =
   'setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(codexLinuxIsFreshComposer){codexLinuxSetPendingModelSettings({model:e,reasoningEffort:n,profile:c.profile,isLoading:!1});return}if(await g(e,n))return;if(m){Jn(t,`copilot-default-model`,e);return}';
+const NEW_THREAD_MODEL_STATE_SNIPPET_26_519 =
+  'b=f(a,e),x=f(s,e),S=x?.settings.model??null,C=S!=null&&S.trim().length>0?S:null,w=u?.authMethod===`copilot`,T=';
+const NEW_THREAD_MODEL_STATE_REPLACEMENT_26_519 =
+  'b=f(a,e),x=f(s,e),S=x?.settings.model??null,C=S!=null&&S.trim().length>0?S:null,w=u?.authMethod===`copilot`,codexLinuxIsFreshComposer=e==null,[codexLinuxPendingModelSettings,codexLinuxSetPendingModelSettings]=(0,U.useState)(null),T=';
+const NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_519 =
+  ',E=b?{model:C??g.model,reasoningEffort:x?.settings.reasoning_effort??null,profile:g.profile,isLoading:g.isLoading&&C==null}:w?y:g,';
+const NEW_THREAD_MODEL_SETTINGS_REPLACEMENT_26_519 =
+  ',E=codexLinuxPendingModelSettings??(b?{model:C??g.model,reasoningEffort:x?.settings.reasoning_effort??null,profile:g.profile,isLoading:g.isLoading&&C==null}:w?y:g),';
+const NEW_THREAD_MODEL_SETTER_SNIPPET_26_519 =
+  'setModelAndReasoningEffort:(0,U.useCallback)(async(e,r)=>{let a=null,s;try{if(await T(e,r))return;if(w){o(t,`copilot-default-model`,e);return}';
+const NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_519 =
+  'setModelAndReasoningEffort:(0,U.useCallback)(async(e,r)=>{let a=null,s;try{if(codexLinuxIsFreshComposer){codexLinuxSetPendingModelSettings({model:e,reasoningEffort:r,profile:g.profile,isLoading:!1});return}if(await T(e,r))return;if(w){o(t,`copilot-default-model`,e);return}';
 const LINUX_NEW_THREAD_MODEL_SUBMIT_PATCH_MARKER = 'codexLinuxFreshThreadCollaborationModeSettings';
 const NEW_THREAD_MODEL_SUBMIT_SNIPPET_CURRENT =
   'return{input:a,workspaceRoots:r,cwd:i,fileAttachments:t.fileAttachments,addedFiles:t.addedFiles,agentMode:j,model:null,serviceTier:A.serviceTier,reasoningEffort:null,collaborationMode:w,config:o}';
@@ -1127,6 +1143,10 @@ const NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422_71525 =
   'return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Xt(`agent-mode-by-host-id`,{})[I]??`auto`,model:null,reasoningEffort:null,collaborationMode:xve(t,n,i),config:Bt(a),workspaceKind:`project`}}';
 const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_422_71525 =
   'let o=xve(t,n,i),s=Bt(a),codexLinuxFreshThreadCollaborationModeSettings=o==null?null:{...o,settings:{...o.settings,model:o.settings?.model??s.model??null,reasoning_effort:o.settings?.reasoning_effort??s.model_reasoning_effort??null}};return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Xt(`agent-mode-by-host-id`,{})[I]??`auto`,model:null,reasoningEffort:null,collaborationMode:codexLinuxFreshThreadCollaborationModeSettings,config:s,workspaceKind:`project`}}';
+const NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_519 =
+  'return{input:c,commentAttachments:l,workspaceRoots:t,collaborationMode:u,...d===void 0?{}:{serviceTier:d},permissions:x,approvalsReviewer:x.approvalsReviewer,cwd:f,attachments:b,workspaceKind:_,...g===void 0?{}:{threadSource:g},...s===void 0?{}:{threadDetailLevel:s},...o===void 0?{}:{config:o},..._===`projectless`?{projectlessOutputDirectory:v}:{},...h===void 0?{}:{memoryPreferences:h},...y===void 0?{}:{additionalDeveloperInstructions:y}}';
+const NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_519 =
+  'let S=u==null?null:{...u,settings:{...u.settings,model:u.settings?.model??r.model??null,reasoning_effort:u.settings?.reasoning_effort??r.model_reasoning_effort??null}},codexLinuxFreshThreadCollaborationModeSettings=S;return{input:c,commentAttachments:l,workspaceRoots:t,collaborationMode:codexLinuxFreshThreadCollaborationModeSettings,...d===void 0?{}:{serviceTier:d},permissions:x,approvalsReviewer:x.approvalsReviewer,cwd:f,attachments:b,workspaceKind:_,...g===void 0?{}:{threadSource:g},...s===void 0?{}:{threadDetailLevel:s},...o===void 0?{}:{config:o},..._===`projectless`?{projectlessOutputDirectory:v}:{},...h===void 0?{}:{memoryPreferences:h},...y===void 0?{}:{additionalDeveloperInstructions:y}}';
 const LINUX_TODO_PROGRESS_PATCH_MARKER = 'codexLinuxTodoProgress';
 const LINUX_VISUAL_COMPAT_PATCH_MARKER = 'codexLinuxVisualCompat';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
@@ -1134,10 +1154,11 @@ const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserComment
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
 const LINUX_LATEST_AGENT_TURN_EXPANSION_PATCH_MARKER = 'codexLinuxLatestAgentTurnExpanded';
 const LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN =
-  /if\((?<elementVar>[A-Za-z_$][\w$]*)\)\{if\((?<windowStateVar>[A-Za-z_$][\w$]*)\.opaqueWindows&&!(?<opaqueGuardFn>[A-Za-z_$][\w$]*)\(\)\)\{\k<elementVar>\.classList\.add\(`electron-opaque`\);return\}\k<elementVar>\.classList\.remove\(`electron-opaque`\)\}/;
+  /if\((?<elementVar>[A-Za-z_$][\w$]*)\)\{if\((?:\((?<windowStateVar>[A-Za-z_$][\w$]*)\.opaqueWindows(?<extraOpaqueCondition>(?:\|\|[A-Za-z_$][\w$]*)*)\)|(?<legacyWindowStateVar>[A-Za-z_$][\w$]*)\.opaqueWindows)&&!(?<opaqueGuardFn>[A-Za-z_$][\w$]*)\(\)\)\{\k<elementVar>\.classList\.add\(`electron-opaque`\);return\}\k<elementVar>\.classList\.remove\(`electron-opaque`\)\}/;
 const LINUX_VISUAL_COMPAT_CSS_CANDIDATE_MARKER_SETS = [
   ['[data-codex-window-type=electron]', '.window-fx-sidebar-surface', '.sidebar-resize-handle-line'],
-  ['[data-codex-window-type=electron]', '.app-header-tint', 'electron-opaque']
+  ['[data-codex-window-type=electron]', '.app-header-tint', 'electron-opaque'],
+  ['[data-codex-window-type=electron]', '.app-shell-left-panel', 'electron-opaque']
 ];
 const LINUX_VISUAL_COMPAT_JS_CANDIDATE_MARKERS = [
   '[data-codex-window-type="electron"]',
@@ -1151,7 +1172,7 @@ const LINUX_BROWSER_COMMENT_POSITION_CANDIDATE_MARKERS = [
 ];
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_CANDIDATE_MARKERS = [
   'browser-sidebar-comment-overlay-submit',
-  'defaultCreateSubmitMode:'
+  'defaultCreateSubmitMode'
 ];
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_CANDIDATE_MARKERS = [
   'composer.backgroundSubagents.summary',
@@ -1168,6 +1189,8 @@ const LINUX_BROWSER_COMMENT_POSITION_POPUP_OPEN_PATTERN =
   /let\{x:(?<xVar>[A-Za-z_$][\w$]*),y:(?<yVar>[A-Za-z_$][\w$]*),width:(?<widthVar>[A-Za-z_$][\w$]*),height:(?<heightVar>[A-Za-z_$][\w$]*)\}=(?<boundsVar>[A-Za-z_$][\w$]*)\.overlayWindowBounds,(?<popupVar>[A-Za-z_$][\w$]*)=(?<openerVar>[A-Za-z_$][\w$]*)\.open\(`about:blank`,(?<frameNameVar>[A-Za-z_$][\w$]*),\[`popup=yes`,`left=\$\{Math\.round\(\k<xVar>\)\}`,`top=\$\{Math\.round\(\k<yVar>\)\}`,`width=\$\{Math\.round\(\k<widthVar>\)\}`,`height=\$\{Math\.round\(\k<heightVar>\)\}`\]\.join\(`,`\)\);return \k<popupVar>==null\?null:\{frameName:\k<frameNameVar>,window:\k<popupVar>\}/;
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN =
   /(?<prop>defaultCreateSubmitMode):`direct`/;
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN =
+  /(?<modeVar>[A-Za-z_$][\w$]*)=(?<propVar>[A-Za-z_$][\w$]*)===void 0\?`direct`:\k<propVar>/;
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN =
   /(?<visibleVar>[A-Za-z_$][\w$]*)=(?<rowsVar>[A-Za-z_$][\w$]*)\.length>0&&!(?<firstGuard>[A-Za-z_$][\w$]*)&&!(?<toggleGuard>[A-Za-z_$][\w$]*)&&!(?<thirdGuard>[A-Za-z_$][\w$]*)&&!(?<fourthGuard>[A-Za-z_$][\w$]*)/;
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_CURRENT_VISIBILITY_PATTERN =
@@ -1461,8 +1484,10 @@ async function patchRendererLinuxRemoteControlKeepAwake(extractedAppDir, logger)
     const original = await fs.promises.readFile(assetPath, 'utf8');
     const isCandidate =
       original.includes('power-save-blocker-set') &&
-      original.includes('PREVENT_SLEEP_WHILE_RUNNING') &&
-      original.includes('KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN');
+      ((original.includes('PREVENT_SLEEP_WHILE_RUNNING') &&
+        original.includes('KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN')) ||
+        (original.includes('preventSleepWhileRunning') &&
+          original.includes('keepRemoteControlAwakeWhilePluggedIn')));
 
     if (!isCandidate) {
       continue;
@@ -1919,6 +1944,13 @@ export function injectLinuxRemoteControlKeepAwakePatch(bundleSource, options = {
   if (bundleSource.includes(LINUX_REMOTE_CONTROL_KEEP_AWAKE_PATCH_MARKER)) {
     return bundleSource;
   }
+  if (
+    bundleSource.includes('preventSleepWhileRunning') &&
+    bundleSource.includes('keepRemoteControlAwakeWhilePluggedIn') &&
+    LINUX_REMOTE_CONTROL_KEEP_AWAKE_CURRENT_DISPATCH_PATTERN.test(bundleSource)
+  ) {
+    return bundleSource;
+  }
   const errorMessage = buildLinuxRemoteControlKeepAwakePatchErrorMessage(
     bundleSource,
     options.sourceName
@@ -2153,15 +2185,27 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
     throw new Error(errorMessage);
   }
   let updated = bundleSource;
-  updated = replaceRegexOrThrow(
-    updated,
-    LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN,
-    ({ imports, module }) => {
-      const nextImports = appendNamedImportAlias(imports, 'n', 'codexLinuxFetchUsage');
-      return `import{${nextImports}}from"${module}";`;
-    },
-    errorMessage
-  );
+  if (LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN.test(updated)) {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN,
+      ({ imports, module }) => {
+        const nextImports = appendNamedImportAlias(imports, 'n', 'codexLinuxFetchUsage');
+        return `import{${nextImports}}from"${module}";`;
+      },
+      errorMessage
+    );
+  } else {
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN,
+      ({ imports, module }) => {
+        const nextImports = appendNamedImportAlias(imports, 'l', 'codexLinuxFetchUsage');
+        return `import{${nextImports}}from"${module}";`;
+      },
+      errorMessage
+    );
+  }
   const petContext = {
     jsxVar: jsxRuntime.jsxVar,
     reactVar: reactMatch.groups.reactVar
@@ -2938,6 +2982,29 @@ function injectLinuxNewThreadModelStatePatch(bundleSource, options = {}) {
     return updated;
   }
 
+  if (bundleSource.includes(NEW_THREAD_MODEL_STATE_SNIPPET_26_519)) {
+    let updated = bundleSource;
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_519,
+      NEW_THREAD_MODEL_STATE_REPLACEMENT_26_519,
+      errorMessage
+    );
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_519,
+      NEW_THREAD_MODEL_SETTINGS_REPLACEMENT_26_519,
+      errorMessage
+    );
+    updated = replaceSnippetOrThrow(
+      updated,
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_519,
+      NEW_THREAD_MODEL_SETTER_REPLACEMENT_26_519,
+      errorMessage
+    );
+    return updated;
+  }
+
   let updated = bundleSource;
   updated = replaceSnippetOrThrow(
     updated,
@@ -3086,6 +3153,15 @@ function injectLinuxNewThreadModelSubmitPatch(bundleSource, options = {}) {
       bundleSource,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422_71525,
       NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_422_71525,
+      errorMessage
+    );
+  }
+
+  if (bundleSource.includes(NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_519)) {
+    return replaceSnippetOrThrow(
+      bundleSource,
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_519,
+      NEW_THREAD_MODEL_SUBMIT_REPLACEMENT_26_519,
       errorMessage
     );
   }
@@ -3443,8 +3519,11 @@ export function injectLinuxVisualCompatJsPatch(bundleSource, options = {}) {
   return replaceRegexOrThrow(
     bundleSource,
     LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN,
-    ({ elementVar, windowStateVar, opaqueGuardFn }) =>
-      `if(${elementVar}){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===\`linux\`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===\`1\`}catch{}let r=t&&!n;${elementVar}.classList.toggle(\`codex-linux-visual-compat\`,r);if((${windowStateVar}.opaqueWindows||r)&&!${opaqueGuardFn}()){${elementVar}.classList.add(\`electron-opaque\`);return}${elementVar}.classList.remove(\`electron-opaque\`)}`,
+    ({ elementVar, windowStateVar, legacyWindowStateVar, extraOpaqueCondition, opaqueGuardFn }) => {
+      const resolvedWindowStateVar = windowStateVar ?? legacyWindowStateVar;
+      const upstreamOpaqueCondition = `${resolvedWindowStateVar}.opaqueWindows${extraOpaqueCondition ?? ''}`;
+      return `if(${elementVar}){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===\`linux\`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===\`1\`}catch{}let r=t&&!n;${elementVar}.classList.toggle(\`codex-linux-visual-compat\`,r);if((${upstreamOpaqueCondition}||r)&&!${opaqueGuardFn}()){${elementVar}.classList.add(\`electron-opaque\`);return}${elementVar}.classList.remove(\`electron-opaque\`)}`;
+    },
     buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
@@ -3467,7 +3546,8 @@ function buildLinuxVisualCompatCssOverride() {
   background-color:transparent!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .window-fx-sidebar-surface,
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .app-header-tint{
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .app-header-tint,
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .app-shell-left-panel{
   background:var(--color-token-side-bar-background)!important;
   background-image:none!important;
   transition:none!important
@@ -3500,9 +3580,11 @@ function buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, sourceName) {
 function analyzeLinuxVisualCompatCssBundle(bundleSource) {
   const detected = {
     electronWindowTypeSelector: bundleSource.includes('[data-codex-window-type=electron]'),
-    sidebarSurfaceClass: ['.window-fx-sidebar-surface', '.app-header-tint'].some((marker) =>
-      bundleSource.includes(marker)
-    ),
+    sidebarSurfaceClass: [
+      '.window-fx-sidebar-surface',
+      '.app-header-tint',
+      '.app-shell-left-panel'
+    ].some((marker) => bundleSource.includes(marker)),
     sidebarResizeHandleClass: ['.sidebar-resize-handle-line', 'electron-opaque'].some((marker) =>
       bundleSource.includes(marker)
     )
@@ -3850,11 +3932,25 @@ export function injectLinuxBrowserCommentSubmitModePatch(bundleSource, options =
     return bundleSource;
   }
 
+  const errorMessage = buildLinuxBrowserCommentSubmitModePatchErrorMessage(
+    bundleSource,
+    options.sourceName
+  );
+  if (LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN.test(bundleSource)) {
+    return replaceRegexOrThrow(
+      bundleSource,
+      LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN,
+      ({ prop }) => `${prop}:\`saved\`/* ${LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER} */`,
+      errorMessage
+    );
+  }
+
   return replaceRegexOrThrow(
     bundleSource,
-    LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN,
-    ({ prop }) => `${prop}:\`saved\`/* ${LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER} */`,
-    buildLinuxBrowserCommentSubmitModePatchErrorMessage(bundleSource, options.sourceName)
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN,
+    ({ modeVar, propVar }) =>
+      `${modeVar}=${propVar}===void 0?\`saved\`:${propVar}/* ${LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER} */`,
+    errorMessage
   );
 }
 
@@ -4140,8 +4236,10 @@ function analyzeLinuxBrowserCommentPositionBundle(bundleSource) {
 function analyzeLinuxBrowserCommentSubmitModeBundle(bundleSource) {
   const detected = {
     overlaySubmitMessage: bundleSource.includes('browser-sidebar-comment-overlay-submit'),
-    submitModeProp: bundleSource.includes('defaultCreateSubmitMode:'),
-    directSubmitMode: LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN.test(bundleSource)
+    submitModeProp: bundleSource.includes('defaultCreateSubmitMode'),
+    directSubmitMode:
+      LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN.test(bundleSource) ||
+      LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN.test(bundleSource)
   };
 
   return {
@@ -4577,12 +4675,26 @@ function analyzeLinuxPowerSaveBlockerBundle(bundleSource) {
 }
 
 function analyzeLinuxRemoteControlKeepAwakeBundle(bundleSource) {
+  const hasLegacySettings =
+    bundleSource.includes('PREVENT_SLEEP_WHILE_RUNNING') &&
+    bundleSource.includes('KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN');
+  const hasCurrentSettings =
+    bundleSource.includes('preventSleepWhileRunning') &&
+    bundleSource.includes('keepRemoteControlAwakeWhilePluggedIn');
   const detected = {
     powerSaveDispatch: bundleSource.includes('power-save-blocker-set'),
-    preventSleepSetting: bundleSource.includes('PREVENT_SLEEP_WHILE_RUNNING'),
-    remoteKeepAwakeSetting: bundleSource.includes('KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN'),
-    remoteControlEnabled: bundleSource.includes('local_app_server_feature_enablement'),
-    keepAwakeDispatch: LINUX_REMOTE_CONTROL_KEEP_AWAKE_DISPATCH_PATTERN.test(bundleSource)
+    preventSleepSetting:
+      bundleSource.includes('PREVENT_SLEEP_WHILE_RUNNING') ||
+      bundleSource.includes('preventSleepWhileRunning'),
+    remoteKeepAwakeSetting:
+      bundleSource.includes('KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN') ||
+      bundleSource.includes('keepRemoteControlAwakeWhilePluggedIn'),
+    remoteControlEnabled:
+      bundleSource.includes('local_app_server_feature_enablement') || hasCurrentSettings,
+    keepAwakeDispatch:
+      (hasLegacySettings && LINUX_REMOTE_CONTROL_KEEP_AWAKE_DISPATCH_PATTERN.test(bundleSource)) ||
+      (hasCurrentSettings &&
+        LINUX_REMOTE_CONTROL_KEEP_AWAKE_CURRENT_DISPATCH_PATTERN.test(bundleSource))
   };
 
   return {
@@ -4681,10 +4793,13 @@ function analyzeLinuxPetYappingUsageBundle(bundleSource) {
   const hasLegacyMascotChildren = LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN.test(
     bundleSource
   );
+  const hasUsageBridgeImport =
+    LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN.test(bundleSource) ||
+    LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN.test(bundleSource);
   const detected = {
     reactRuntime: LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN.test(bundleSource),
     jsxRuntime: findLinuxPetYappingUsageJsxRuntime(bundleSource) != null,
-    vscodeApiImport: LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN.test(bundleSource),
+    vscodeApiImport: hasUsageBridgeImport,
     mascotHitRegion: LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource),
     mascotChildren: hasMascotHitRegion
       ? LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource)
@@ -4697,7 +4812,7 @@ function analyzeLinuxPetYappingUsageBundle(bundleSource) {
     missingAnchors: [
       !detected.reactRuntime && 'React runtime binding',
       !detected.jsxRuntime && 'JSX runtime binding',
-      !detected.vscodeApiImport && 'VS Code API import',
+      !detected.vscodeApiImport && 'VS Code request bridge import',
       !detected.mascotChildren && 'mascot children array',
       !detected.layoutQuery && 'avatar overlay layout measurement query'
     ].filter(Boolean)
@@ -4820,7 +4935,8 @@ function analyzeNewThreadModelStateBundle(bundleSource) {
       NEW_THREAD_MODEL_STATE_SNIPPET_26_406,
       NEW_THREAD_MODEL_STATE_SNIPPET_26_415,
       NEW_THREAD_MODEL_STATE_SNIPPET_26_422,
-      NEW_THREAD_MODEL_STATE_SNIPPET_26_422_71525
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_422_71525,
+      NEW_THREAD_MODEL_STATE_SNIPPET_26_519
     ].some((snippet) => bundleSource.includes(snippet)) ||
       NEW_THREAD_MODEL_STATE_PATTERN_26_415.test(bundleSource),
     selectorValueBranch: [
@@ -4828,14 +4944,16 @@ function analyzeNewThreadModelStateBundle(bundleSource) {
       NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_415,
       NEW_THREAD_MODEL_STATE_SNIPPET_26_406,
       NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_422,
-      NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_422_71525
+      NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_422_71525,
+      NEW_THREAD_MODEL_SETTINGS_SNIPPET_26_519
     ].some((snippet) => bundleSource.includes(snippet)),
     selectorSetter: [
       NEW_THREAD_MODEL_SETTER_SNIPPET_CURRENT,
       NEW_THREAD_MODEL_SETTER_SNIPPET_26_406,
       NEW_THREAD_MODEL_SETTER_SNIPPET_26_415,
       NEW_THREAD_MODEL_SETTER_SNIPPET_26_422,
-      NEW_THREAD_MODEL_SETTER_SNIPPET_26_422_71525
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_422_71525,
+      NEW_THREAD_MODEL_SETTER_SNIPPET_26_519
     ].some((snippet) => bundleSource.includes(snippet)) ||
       NEW_THREAD_MODEL_SETTER_PATTERN_26_415.test(bundleSource)
   };
@@ -4858,7 +4976,8 @@ function analyzeNewThreadModelSubmitBundle(bundleSource) {
       'async function F({requestClient:e,context:t,prompt:n,workspaceRoots:r,cwd:i,hostId:a}){',
       'async function OB({context:e,prompt:t,workspaceRoots:n,cwd:r,hostId:i,agentMode:a,serviceTier:o,collaborationMode:s,memoryPreferences:c,workspaceKind:l=`project`,projectlessOutputDirectory:u}){',
       'async function Nve({input:e,mode:t,model:n,projectId:r,thinking:i}){',
-      'async function bve({input:e,mode:t,model:n,projectId:r,thinking:i}){'
+      'async function bve({input:e,mode:t,model:n,projectId:r,thinking:i}){',
+      'function o({agentMode:e,workspaceRoots:t,config:r,configOverrides:o,threadDetailLevel:s,input:c,commentAttachments:l,collaborationMode:u,serviceTier:d,cwd:f,fileAttachments:p,addedFiles:m,memoryPreferences:h,threadSource:g,workspaceKind:_=`project`,projectlessOutputDirectory:v,additionalDeveloperInstructions:y}){'
     ].some((snippet) => bundleSource.includes(snippet)) ||
       (bundleSource.includes('read-config-for-host') &&
         bundleSource.includes('workspaceKind:`project`') &&
@@ -4869,7 +4988,8 @@ function analyzeNewThreadModelSubmitBundle(bundleSource) {
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_415,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_417,
       NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422,
-      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422_71525
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_422_71525,
+      NEW_THREAD_MODEL_SUBMIT_SNIPPET_26_519
     ].some((snippet) => bundleSource.includes(snippet))
   };
 
@@ -4915,7 +5035,8 @@ function collectNewThreadModelCandidateEvidence(bundleSource) {
     submitMarkers.includes('config:') &&
     (submitMarkers.includes('read-config-for-host') ||
       submitMarkers.includes('thread/start') ||
-      submitMarkers.includes('start-conversation')) &&
+      submitMarkers.includes('start-conversation') ||
+      submitAnalysis.detected.collaborationModeSubmit) &&
     (submitMarkers.includes('workspaceRoots:') ||
       submitMarkers.includes('fileAttachments:') ||
       submitMarkers.includes('addedFiles:') ||
@@ -6382,6 +6503,7 @@ function createKernel() {
     get requestMeta() {
       return nextKernel.requestMeta;
     },
+    nativePipe: nextKernel.nativePipeBridge,
     fetch: (...args) => hostFetch(...args),
     setResponseMeta(meta) {
       if (!isObject(meta)) {

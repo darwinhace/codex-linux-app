@@ -236,6 +236,8 @@ const POWER_SAVE_BLOCKER_BUNDLE_26_513 =
   'var Zz=class{powerSaveBlockerId=null;powerSaveBlockingWebContentsIds=new Set;pluggedInRemoteControlPowerSaveWebContentsIds=new Set;powerSaveTrackedWebContentsIds=new Set;constructor(){n.powerMonitor.on(`on-ac`,()=>{this.syncPowerSaveBlocker()}),n.powerMonitor.on(`on-battery`,()=>{this.syncPowerSaveBlocker()})}updatePowerSaveBlocker(e,t,n){let r=e.id;this.powerSaveTrackedWebContentsIds.has(r)||(this.powerSaveTrackedWebContentsIds.add(r),e.once(`destroyed`,()=>{this.powerSaveTrackedWebContentsIds.delete(r),this.powerSaveBlockingWebContentsIds.delete(r),this.pluggedInRemoteControlPowerSaveWebContentsIds.delete(r),this.syncPowerSaveBlocker()})),t?this.powerSaveBlockingWebContentsIds.add(r):this.powerSaveBlockingWebContentsIds.delete(r),n?this.pluggedInRemoteControlPowerSaveWebContentsIds.add(r):this.pluggedInRemoteControlPowerSaveWebContentsIds.delete(r),this.syncPowerSaveBlocker()}syncPowerSaveBlocker(){let e=this.powerSaveBlockingWebContentsIds.size>0||!n.powerMonitor.isOnBatteryPower()&&this.pluggedInRemoteControlPowerSaveWebContentsIds.size>0;if(e&&this.powerSaveBlockerId==null){this.powerSaveBlockerId=n.powerSaveBlocker.start(`prevent-app-suspension`);return}!e&&this.powerSaveBlockerId!=null&&(n.powerSaveBlocker.stop(this.powerSaveBlockerId),this.powerSaveBlockerId=null)}async sendCustomPrompts(e){return null}};';
 const REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513 =
   'function jP(){let e=(0,Z.c)(7),t=K(G),{data:n}=Qc(y.PREVENT_SLEEP_WHILE_RUNNING),{data:r}=Qc(y.KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN),[i]=zo(`local_app_server_feature_enablement`),a=i?.remote_control??!1,o,s;e[0]!==r||e[1]!==n||e[2]!==a||e[3]!==t?(o=()=>t.watch(e=>{let{get:t}=e;J.dispatchMessage(`power-save-blocker-set`,{shouldBlock:!!n&&t(Ct),keepRemoteControlAwakeWhilePluggedIn:!!r&&a})}),s=[r,n,a,t],e[0]=r,e[1]=n,e[2]=a,e[3]=t,e[4]=o,e[5]=s):(o=e[4],s=e[5]),(0,Q.useEffect)(o,s);let c;return e[6]===Symbol.for(`react.memo_cache_sentinel`)?(c=[],e[6]=c):c=e[6],(0,Q.useEffect)(MP,c),null}';
+const REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_519 =
+  'function mM(){let e=(0,Z.c)(7),t=K(G),n=qr(fe.preventSleepWhileRunning),r=qr(fe.keepRemoteControlAwakeWhilePluggedIn),i=K(tt,Tt),a,o;e[0]!==r||e[1]!==n||e[2]!==i||e[3]!==t?(a=()=>t.watch(e=>{let{get:t}=e;X.dispatchMessage(`power-save-blocker-set`,{shouldBlock:!!n&&t(He),keepRemoteControlAwakeWhilePluggedIn:!!r&&i})}),o=[r,n,i,t],e[0]=r,e[1]=n,e[2]=i,e[3]=t,e[4]=a,e[5]=o):(a=e[4],o=e[5]),(0,Q.useEffect)(a,o);let s;return e[6]===Symbol.for(`react.memo_cache_sentinel`)?(s=[],e[6]=s):s=e[6],(0,Q.useEffect)(dM,s),null}';
 const PET_YAPPING_USAGE_MAIN_BUNDLE_26_513 =
   'var WD=class{constructor(){this.handlers={"fast-mode-rollout-metrics":async n=>e.zt(this.hostConfig)?null:t.sn({codexHome:t.Rr({preferWsl:MD,hostConfig:this.hostConfig}),params:n}),"refresh-remote-connections":async()=>this.remoteConnectionsHandler.refreshRemoteConnections()}}handleVSCodeRequest(n,r,i,a,o){let s=r,c=this.handlers[s];if(typeof c!=`function`)throw Error(`${r} not implemented`);return c({...a,origin:n,windowHostId:i})}};';
 const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
@@ -251,6 +253,11 @@ const AVATAR_OVERLAY_CONTENT_BOUNDS_BUNDLE_CURRENT = AVATAR_OVERLAY_BUNDLE_26_42
     'persistWindowBounds(e){e.isDestroyed()||this.globalState.set(xe,{...e.getBounds()',
     'persistWindowBounds(e){e.isDestroyed()||this.globalState.set(xe,{...e.getContentBounds()'
   );
+const AVATAR_OVERLAY_RESOLUTION_KEY_DRAG_BUNDLE_26_519 =
+  AVATAR_OVERLAY_BUNDLE_26_429_30905.replace(
+    't.displayBounds=i,this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,i)',
+    't.displayBounds=i,this.resolutionKey=WG(i),this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,i)'
+  );
 const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
   'function $e(){let P={current:null};let Y=e=>{let t=P.current;if(t==null||t.pointerId!==e.pointerId)return;let n=V(e);t.samples=U([...t.samples,n]);let r=n.screenX-t.screenX,i=n.screenY-t.screenY;Math.abs(r)<Ge&&Math.abs(i)<Ge||(t.hasMoved=!0,t.screenX=n.screenX,t.screenY=n.screenY,s(e=>ut({currentDragState:e,deltaX:r})),f.dispatchMessage(`avatar-overlay-drag-move`,{}))}}';
 const AVATAR_OVERLAY_RENDERER_BUNDLE_26_506 = AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT.replace(
@@ -265,6 +272,8 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_506 =
   'import{_r as r,d as i}from"./vscode-api-Cvzk5den.js";import{v as u}from"./codex-api-DPPuXJuP.js";import{t as f}from"./jsx-runtime-lEsnPbkx.js";var ae=m(),B=e(d(),1),V=1600;var K=f();function ce(e){let S=(0,K.jsx)(E,{assetRef:r,className:`relative z-10`,spritesheetUrl:s,state:m}),C=null;return(0,K.jsxs)(`div`,{children:[S,C]})}function ht(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_513 =
   'import{n as g,t as _}from"./jsx-runtime-Bj4hVTj7.js";import{y as P}from"./codex-api-BlFw_ca9.js";import{B as y,H as b,pt as x,v as S,y as ee}from"./vscode-api-DH_DWhkY.js";var I=x(),L=e(g(),1),ve=1600,R=100,z=320;function ct(e){let g=(0,Q.jsx)(M,{}),_=null;return(0,Q.jsxs)(k.button,{children:[g,_]})}var Q=_(),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:n}=e;return(0,Q.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:`absolute`,style:{width:112},children:(0,Q.jsx)(me,{ariaLabel:`Pet`,assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:n,resizeHandle:void 0,state:t.mascotState,style:{},transientState:null})})}function on(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_519 =
+  'import{Cr as t,aa as l}from"./app-server-manager-signals-Csopz8aM.js";import{n as g,t as _}from"./jsx-runtime-CiQ1k8xo.js";import{t as v}from"./clsx-DDuZWq6Y.js";import{B as y,J as b,W as ee,X as x,b as te,xt as S,y as C,z as ne}from"./setting-storage-EK1Te68s.js";import{b as ie}from"./codex-api-5vE1HRY8.js";var Z=_(),R=e(g(),1),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:k}=e,o={height:121,left:244,top:191,width:112};return(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:v(`absolute`),style:{height:o.height,left:o.left,top:o.top,width:o.width},children:(0,Z.jsx)(I,{ariaLabel:ne.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:k,resizeHandle:l,state:T.mascotState,style:s,transientState:b})})}var an=`.codex-avatar-root`,on=`[data-avatar-overlay-size="notification-tray"]`;function kn(e){if(e==null)return null;let t=jn(e.querySelector(an)),n=Mn(e.querySelector(on));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -358,6 +367,10 @@ const NEW_THREAD_MODEL_SELECTOR_BLOCK_26_422_71525 =
   'function $9(e=null){let t=j(fe),n=au(e),r=n.hostId,i=w(xwe,r),a=ir(r),o=Dn(),s=n.cwd,c=Swe({hostId:r,cwd:s}),l=bwe(),u=w(jt,e),d=w(Qe,e),f=d?.settings.model??null,p=f!=null&&f.trim().length>0?f:null,m=a?.authMethod===`copilot`,g=(0,q.useCallback)(async(t,n)=>e==null||!u?!1:(await Gt(`set-model-and-reasoning-for-next-turn`,{conversationId:e,model:t,reasoningEffort:n}),!0),[e,u]),_=u?{model:p??c.model,reasoningEffort:d?.settings.reasoning_effort??null,profile:c.profile,isLoading:c.isLoading&&p==null}:m?l:c,v=Cwe({hostId:r,cwd:s}),y=(0,q.useCallback)(e=>{h.error(`Failed to update model and reasoning effort`,{safe:{},sensitive:{error:e}});let n=t.get(jo),r=wwe(o,e);n.danger(r,{id:`composer.modelSettings.updateError`})},[o,t]);return{setModelAndReasoningEffortForNextTurn:(0,q.useCallback)(async(e,t)=>{try{if(!await g(e,t))throw Error(`No conversation available for next-turn model update`)}catch(e){throw y(e),e}},[g,y]),setModelAndReasoningEffort:(0,q.useCallback)(async(e,n)=>{try{if(await g(e,n))return;if(m){Jn(t,`copilot-default-model`,e);return}if(h.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:n,profile:c.profile}}),!i)return;await Gt(`set-default-model-config-for-host`,{hostId:r,model:e,reasoningEffort:n,profile:c.profile}),await v(),await t.query.fetch(Ss,{hostId:r,cwd:s})}catch(e){y(e)}},[m,g,c.profile,v,i,r,t,y,s]),modelSettings:_}}';
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_422_71525 =
   'async function bve({input:e,mode:t,model:n,projectId:r,thinking:i}){let{config:a}=await Gt(`read-config-for-host`,{hostId:I,includeLayers:!1,cwd:r});return{input:e,workspaceRoots:[r],cwd:r,fileAttachments:[],addedFiles:[],agentMode:Xt(`agent-mode-by-host-id`,{})[I]??`auto`,model:null,reasoningEffort:null,collaborationMode:xve(t,n,i),config:Bt(a),workspaceKind:`project`}}';
+const NEW_THREAD_MODEL_SELECTOR_BLOCK_26_519 =
+  'function X(e=null){let t=v(h),n=t.queryClient,r=N(e),i=r.hostId,c=f(K,i),u=D(i),p=_(),m=r.cwd,g=q({hostId:i,cwd:m,isHostRegistered:c}),y=G(),b=f(a,e),x=f(s,e),S=x?.settings.model??null,C=S!=null&&S.trim().length>0?S:null,w=u?.authMethod===`copilot`,T=(0,U.useCallback)(async(t,n)=>e==null||!b?!1:(await l(`set-model-and-reasoning-for-next-turn`,{conversationId:e,model:t,reasoningEffort:n}),!0),[e,b]),E=b?{model:C??g.model,reasoningEffort:x?.settings.reasoning_effort??null,profile:g.profile,isLoading:g.isLoading&&C==null}:w?y:g,A=J({hostId:i,cwd:m}),j=(0,U.useCallback)(e=>{},[i,p,t]);return{setModelAndReasoningEffortForNextTurn:(0,U.useCallback)(async(e,t)=>{try{if(!await T(e,t))throw Error(`No conversation available for next-turn model update`)}catch(e){throw j(e),e}},[T,j]),setModelAndReasoningEffort:(0,U.useCallback)(async(e,r)=>{let a=null,s;try{if(await T(e,r))return;if(w){o(t,`copilot-default-model`,e);return}if(d.info(`Setting default model and reasoning effort`,{safe:{newModel:e,newEffort:r,profile:g.profile}}),!c)return;a=W(i,m),await n.cancelQueries({exact:!0,queryKey:a}),s=n.getQueryData(a),n.setQueryData(a,t=>t==null?t:Object.assign(structuredClone(t),{model:e,model_reasoning_effort:r})),await l(`set-default-model-config-for-host`,{hostId:i,model:e,reasoningEffort:r,profile:g.profile}),await A(),await t.query.fetch(I,{hostId:i,cwd:m})}catch(e){a!=null&&n.setQueryData(a,s),j(e)}},[w,T,g.profile,A,c,i,n,t,j,m]),modelSettings:E}}';
+const NEW_THREAD_MODEL_SUBMIT_BLOCK_26_519 =
+  'function o({agentMode:e,workspaceRoots:t,config:r,configOverrides:o,threadDetailLevel:s,input:c,commentAttachments:l,collaborationMode:u,serviceTier:d,cwd:f,fileAttachments:p,addedFiles:m,memoryPreferences:h,threadSource:g,workspaceKind:_=`project`,projectlessOutputDirectory:v,additionalDeveloperInstructions:y}){if(_===`projectless`&&v==null)throw Error(`Projectless conversations require an output directory`);let b=(0,a.default)([...p,...m],i.default),x=n(e,t,r);return{input:c,commentAttachments:l,workspaceRoots:t,collaborationMode:u,...d===void 0?{}:{serviceTier:d},permissions:x,approvalsReviewer:x.approvalsReviewer,cwd:f,attachments:b,workspaceKind:_,...g===void 0?{}:{threadSource:g},...s===void 0?{}:{threadDetailLevel:s},...o===void 0?{}:{config:o},..._===`projectless`?{projectlessOutputDirectory:v}:{},...h===void 0?{}:{memoryPreferences:h},...y===void 0?{}:{additionalDeveloperInstructions:y}}}';
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415 = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_415}function _t(e){return e?.latestCollaborationMode?.settings?.reasoning_effort??null}function Ft(e){return e?.latestCollaborationMode?.settings?.model??null}`;
 const NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED = NEW_THREAD_MODEL_STATE_BUNDLE_26_415
   .replace('r.get(bo)', 'r.get(So)')
@@ -373,16 +386,22 @@ const LINUX_VISUAL_COMPAT_CSS_CURRENT =
   '.window-fx-sidebar-surface{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}.app-header-tint{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}.sidebar-resize-handle-line{transition:background-color var(--transition-duration-relaxed) var(--transition-ease-basic)}[data-codex-window-type=electron]:not([data-codex-os=win32]) body{background:0 0;background:var(--color-token-editor-background)}[data-codex-window-type=electron].electron-opaque body{background-color:var(--color-background-surface-under);--color-background-elevated-primary:var(--color-background-elevated-primary-opaque);background-image:none}';
 const LINUX_VISUAL_COMPAT_CSS_26_406 =
   '[data-codex-window-type=electron] body{--padding-row-y:calc(var(--spacing)*1.25)}[data-codex-window-type=electron]:not([data-codex-os=win32]) body{background:0 0;background:var(--color-token-editor-background)}[data-codex-window-type=electron].electron-opaque{background-color:var(--color-background-surface-under);background-image:none}[data-codex-window-type=electron].electron-opaque body{background-color:var(--color-background-surface-under);--color-background-elevated-primary:var(--color-background-elevated-primary-opaque);background-image:none}.app-header-tint{background-color:var(--codex-titlebar-tint,transparent)}.main-surface:where([data-codex-window-type=electron] .main-surface){background-color:var(--color-token-main-surface-primary)}';
+const LINUX_VISUAL_COMPAT_CSS_26_519 =
+  '[data-codex-window-type=electron]{background:0 0;overflow:hidden}[data-codex-window-type=electron]:not([data-codex-os=win32]) body{background:0 0}[data-codex-window-type=electron]:not([data-codex-os=win32]) .app-shell-left-panel{background:color-mix(in srgb, var(--color-token-editor-background) 55%, transparent)}[data-codex-window-type=electron].electron-opaque{background-color:var(--color-background-surface-under);background-image:none}[data-codex-window-type=electron].electron-opaque body{background-color:var(--color-background-surface-under);--color-background-elevated-primary:var(--color-background-elevated-primary-opaque);background-image:none}';
 const LINUX_VISUAL_COMPAT_JS_CURRENT =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 const LINUX_VISUAL_COMPAT_JS_26_406 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!xY()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 const LINUX_VISUAL_COMPAT_JS_26_409 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!wX()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
+const LINUX_VISUAL_COMPAT_JS_26_519 =
+  '(0,Q.useLayoutEffect)(()=>{let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if((g.opaqueWindows||i)&&!pc()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}},[g,i]),(0,Q.useLayoutEffect)(()=>{let e=document.documentElement;if(e.dataset.codexOs===`darwin`)return},[p]);';
 const LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT =
   'function wP(e){let x;let{message:N,root:P,popupWindow:F}=x,I=N.session.sessionId;let U;t[31]!==N.editorFrame.height||t[32]!==N.editorFrame.width||t[33]!==N.editorFrame.x||t[34]!==N.editorFrame.y?(U={left:N.editorFrame.x,top:N.editorFrame.y,width:N.editorFrame.width,height:N.editorFrame.height},t[31]=N.editorFrame.height,t[32]=N.editorFrame.width,t[33]=N.editorFrame.x,t[34]=N.editorFrame.y,t[35]=U):U=t[35];return U}function TP({conversationId:e,openerWindow:t,existingPopup:n,message:r}){let i=ze({windowId:ve.BROWSER_COMMENT_POPUP,conversationId:e});if(n!=null&&!n.window.closed&&n.frameName===i)return n;let{x:a,y:o,width:s,height:c}=r.overlayWindowBounds,l=t.open(`about:blank`,i,[`popup=yes`,`left=${Math.round(a)}`,`top=${Math.round(o)}`,`width=${Math.round(s)}`,`height=${Math.round(c)}`].join(`,`));return l==null?null:{frameName:i,window:l}}d(`browser-sidebar-comment-overlay-session`,k,A);';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT =
   'let H=(e,t)=>{let{body:r,attachedImages:o}=e,{submitDirectly:s}=t===void 0?{}:t,c=s===void 0?!1:s;Pi.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:I,body:r,attachedImages:o,...c?{submitDirectly:!0}:{}})},U=H,ne;t[42]===U?ne=t[43]:(ne=e=>{U(e,{submitDirectly:!0})},t[42]=U,t[43]=ne);let ie;t[47]!==z||t[48]!==G||t[49]!==V||t[50]!==C||t[51]!==M.editorFrame.height||t[52]!==M.session||t[53]!==P||t[54]!==I||t[55]!==U||t[56]!==ne||t[57]!==re?(ie=(0,Q.jsx)(df,{defaultCreateSubmitMode:`direct`,session:M.session,windowHeight:M.editorFrame.height,keyboardEventTarget:P,onSubmit:U,onDirectSubmit:ne,onDelete:re,onCancel:z,onEscape:V,onMounted:C,onAttachmentPreviewOpenChange:G,onLightDismissibilityChange:D},I),t[47]=z,t[48]=G,t[49]=V,t[50]=C,t[51]=M.editorFrame.height,t[52]=M.session,t[53]=P,t[54]=I,t[55]=U,t[56]=ne,t[57]=re,t[58]=ie):ie=t[58];';
+const LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_26_519 =
+  'function yd(e){let t=(0,q.c)(97),{conversationId:n,defaultCreateSubmitMode:i,onActiveEditorDismissRequestChange:a,showAdjustEntry:o}=e,s=i===void 0?`direct`:i,c=o===void 0?!0:o;let A=(e,t,r)=>{Ae.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:e,body:t.body,attachedImages:t.attachedImages,...r?{submitDirectly:!0}:{}})};let be=s===`direct`,Ce=H.session.target.mode===`design`?`saved`:s;return null}';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
   'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513 =
@@ -912,6 +931,7 @@ test('generated node_repl supports ESM imports, request metadata, and response m
               console.log(fileUrlModule.value);
               console.log(absoluteModule.value);
               console.log(nativePipeModule.hasNativePipe);
+              console.log(typeof globalThis.nodeRepl.nativePipe?.createConnection);
             `
           },
           _meta: {
@@ -943,7 +963,7 @@ test('generated node_repl supports ESM imports, request metadata, and response m
 
     const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
     assert.equal(responses[0].result.isError, false);
-    assert.equal(responses[0].result.content[0].text, 'file-url-ok\nabsolute-ok\ntrue');
+    assert.equal(responses[0].result.content[0].text, 'file-url-ok\nabsolute-ok\ntrue\nfunction');
     assert.equal(responses[1].result.isError, false);
     assert.equal(responses[1].result.content[0].text, '42\nsession-123');
     assert.deepEqual(responses[1].result._meta, { 'codex/browserUse': true });
@@ -2317,6 +2337,16 @@ test('injectLinuxRemoteControlKeepAwakePatch uses the visible remote keep-awake 
   assert.match(updated, /KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN/);
 });
 
+test('applyLinuxRemoteControlKeepAwakePatch accepts the 26.519 current dispatch shape', () => {
+  const result = applyLinuxRemoteControlKeepAwakePatch(REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_519);
+
+  assert.equal(result.updated, REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_519);
+  assert.equal(result.status, 'already-applied');
+  assert.match(result.updated, /preventSleepWhileRunning/);
+  assert.match(result.updated, /keepRemoteControlAwakeWhilePluggedIn/);
+  assert.doesNotMatch(result.updated, /codexLinuxRemoteControlKeepAwakeSetting/);
+});
+
 test('injectLinuxRemoteControlKeepAwakePatch is idempotent', () => {
   const once = injectLinuxRemoteControlKeepAwakePatch(REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513);
   const twice = injectLinuxRemoteControlKeepAwakePatch(once);
@@ -2405,6 +2435,16 @@ test('injectLinuxAvatarOverlayPatch supports avatar overlay content-bounds drift
     /setWindowBounds\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\)\{[\s\S]*?getContentBounds\(\)[\s\S]*?setContentBounds\([A-Za-z_$][\w$]*,!1\)[\s\S]*?this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*\)/
   );
   assert.match(updated, /codexLinuxRegisterAvatarOverlayAutoClose\([A-Za-z_$][\w$]*\)/);
+});
+
+test('injectLinuxAvatarOverlayPatch supports 26.519 resolution-key drag drift', () => {
+  assert.match(AVATAR_OVERLAY_RESOLUTION_KEY_DRAG_BUNDLE_26_519, /this\.resolutionKey=WG\(i\)/);
+
+  const updated = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_RESOLUTION_KEY_DRAG_BUNDLE_26_519);
+
+  assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
+  assert.match(updated, /codexLinuxRegisterAvatarOverlayAutoClose\([A-Za-z_$][\w$]*\)/);
+  assert.match(updated, /moveDragToCurrentCursor\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayPoint\)/);
 });
 
 test('injectLinuxAvatarOverlayRendererPatch sends pointer screen coordinates with drag moves', () => {
@@ -2579,6 +2619,25 @@ test('injectLinuxPetYappingUsagePatch supports 26.513 combined jsx/react var pre
   assert.match(
     updated,
     /let t=_t\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?_t\(e\.querySelector\(\$e\)\),n=vt\(e\.querySelector\(et\)\)/
+  );
+});
+
+test('injectLinuxPetYappingUsagePatch supports 26.519 setting-storage bridge import', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_519);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /R\.useState\(null\)/);
+  assert.match(updated, /l as codexLinuxFetchUsage/);
+  assert.match(updated, /from"\.\/setting-storage-/);
+  assert.match(updated, /await codexLinuxFetchUsage\(`codex-linux-pet-usage`\)/);
+  assert.doesNotMatch(updated, /from"\.\/codex-api-[^"]+\.js";[^;]*codexLinuxFetchUsage/);
+  assert.match(
+    updated,
+    /children:\[\(0,Z\.jsx\)\(I,\{ariaLabel:ne\.formatMessage\(Q\.mascotLabel,\{petName:e\.displayName\}\),assetRef:t\.assetRef,spritesheetUrl:t\.spritesheetUrl,notificationBadge:k,resizeHandle:l,state:T\.mascotState,style:s,transientState:b\}\),\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
+  );
+  assert.match(
+    updated,
+    /let t=jn\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?jn\(e\.querySelector\(an\)\),n=Mn\(e\.querySelector\(on\)\)/
   );
 });
 
@@ -2935,6 +2994,24 @@ test('injectLinuxNewThreadModelPatch supports 26.422.71525 model hook and projec
   assert.match(updated, /collaborationMode:codexLinuxFreshThreadCollaborationModeSettings/);
 });
 
+test('injectLinuxNewThreadModelPatch supports 26.519 split model hook and start params shape', () => {
+  const bundle = `${NEW_THREAD_MODEL_SELECTOR_BLOCK_26_519}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_519}`;
+  const updated = injectLinuxNewThreadModelPatch(bundle);
+
+  assert.match(updated, /codexLinuxPendingModelSettings/);
+  assert.match(updated, /codexLinuxIsFreshComposer=e==null/);
+  assert.match(
+    updated,
+    /codexLinuxSetPendingModelSettings\(\{model:e,reasoningEffort:r,profile:g\.profile,isLoading:!1\}\)/
+  );
+  assert.match(updated, /codexLinuxFreshThreadCollaborationModeSettings/);
+  assert.match(updated, /model:u\.settings\?\.model\?\?r\.model\?\?null/);
+  assert.match(
+    updated,
+    /reasoning_effort:u\.settings\?\.reasoning_effort\?\?r\.model_reasoning_effort\?\?null/
+  );
+});
+
 test('injectLinuxNewThreadModelPatch scopes 26.415 fresh-effect insertion to the selector function', () => {
   const bundle = `${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DECOY_PREFIX}${NEW_THREAD_MODEL_STATE_BUNDLE_26_415_DRIFTED}${NEW_THREAD_MODEL_SUBMIT_BLOCK_26_415}`;
   const updated = injectLinuxNewThreadModelPatch(bundle);
@@ -3105,6 +3182,40 @@ test('patchRendererNewThreadModelBundle patches 26.422.71525 bundle fixture', as
     assert.match(patchedBundle, /codexLinuxPendingModelSettings/);
     assert.match(patchedBundle, /codexLinuxFreshThreadCollaborationModeSettings/);
     assert.match(patchedBundle, /let o=xve\(t,n,i\),s=Bt\(a\)/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('patchRendererNewThreadModelBundle patches split 26.519 use-model-settings and start params bundles', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-split-26519-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const stateBundlePath = path.join(assetsDir, 'use-model-settings-DMElur6E.js');
+    const submitBundlePath = path.join(assetsDir, 'build-start-conversation-params-DM-1Fk5r.js');
+    await fs.promises.writeFile(stateBundlePath, NEW_THREAD_MODEL_SELECTOR_BLOCK_26_519, 'utf8');
+    await fs.promises.writeFile(submitBundlePath, NEW_THREAD_MODEL_SUBMIT_BLOCK_26_519, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+
+    assert.equal(result.status, 'applied');
+    assert.equal(result.stateSourceName, 'use-model-settings-DMElur6E.js');
+    assert.equal(result.submitSourceName, 'build-start-conversation-params-DM-1Fk5r.js');
+
+    const patchedState = await fs.promises.readFile(stateBundlePath, 'utf8');
+    const patchedSubmit = await fs.promises.readFile(submitBundlePath, 'utf8');
+    assert.match(patchedState, /codexLinuxPendingModelSettings/);
+    assert.match(patchedState, /codexLinuxIsFreshComposer=e==null/);
+    assert.match(patchedSubmit, /codexLinuxFreshThreadCollaborationModeSettings/);
+    assert.match(patchedSubmit, /collaborationMode:codexLinuxFreshThreadCollaborationModeSettings/);
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
@@ -3395,7 +3506,8 @@ test('patchRendererTodoProgressBundle skips when no todo-progress candidate bund
 
 for (const [label, fixture] of [
   ['current', LINUX_VISUAL_COMPAT_CSS_CURRENT],
-  ['26.406', LINUX_VISUAL_COMPAT_CSS_26_406]
+  ['26.406', LINUX_VISUAL_COMPAT_CSS_26_406],
+  ['26.519', LINUX_VISUAL_COMPAT_CSS_26_519]
 ]) {
   test(`injectLinuxVisualCompatCssPatch adds Linux sidebar rendering overrides to the ${label} stylesheet`, () => {
     const updated = injectLinuxVisualCompatCssPatch(fixture);
@@ -3403,6 +3515,7 @@ for (const [label, fixture] of [
     assert.match(updated, /codexLinuxVisualCompat/);
     assert.match(updated, /codex-linux-visual-compat/);
     assert.match(updated, /background:var\(--color-token-side-bar-background\)!important/);
+    assert.match(updated, /\.app-shell-left-panel/);
     assert.match(updated, /transition:none!important/);
     assert.match(updated, /\.no-underline\\!/);
     assert.match(updated, /\[data-browser-comment-editor-surface\]/);
@@ -3419,6 +3532,14 @@ for (const [label, fixture] of [
     assert.doesNotMatch(updated, /animation:none!important/);
   });
 }
+
+test('injectLinuxVisualCompatJsPatch supports the 26.519 opaque window effect shape', () => {
+  const updated = injectLinuxVisualCompatJsPatch(LINUX_VISUAL_COMPAT_JS_26_519);
+
+  assert.match(updated, /codexLinuxVisualCompat/);
+  assert.match(updated, /classList\.toggle\(`codex-linux-visual-compat`,r\)/);
+  assert.match(updated, /\(g\.opaqueWindows\|\|i\|\|r\)&&!pc\(\)/);
+});
 
 test('injectLinuxVisualCompatCssPatch is idempotent', () => {
   const once = injectLinuxVisualCompatCssPatch(LINUX_VISUAL_COMPAT_CSS_CURRENT);
@@ -3654,6 +3775,17 @@ test('injectLinuxBrowserCommentSubmitModePatch defaults browser annotations to s
   assert.match(updated, /codexLinuxBrowserCommentSubmitMode/);
   assert.match(updated, /defaultCreateSubmitMode:`saved`/);
   assert.doesNotMatch(updated, /defaultCreateSubmitMode:`direct`/);
+  assert.match(updated, /submitDirectly:!0/);
+});
+
+test('injectLinuxBrowserCommentSubmitModePatch supports the 26.519 fallback default shape', () => {
+  const updated = injectLinuxBrowserCommentSubmitModePatch(
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_26_519
+  );
+
+  assert.match(updated, /codexLinuxBrowserCommentSubmitMode/);
+  assert.match(updated, /s=i===void 0\?`saved`:i/);
+  assert.doesNotMatch(updated, /s=i===void 0\?`direct`:i/);
   assert.match(updated, /submitDirectly:!0/);
 });
 
