@@ -3762,6 +3762,11 @@ for (const [label, fixture] of [
     assert.match(updated, /flex:1 1 auto!important/);
     assert.match(updated, /max-width:calc\(100% - 36px\)!important/);
     assert.match(updated, /min-width:0!important/);
+    assert.match(updated, /flex:0 0 max-content!important/);
+    assert.match(updated, /min-width:max-content!important/);
+    assert.match(updated, /width:max-content!important/);
+    assert.match(updated, /width:auto!important/);
+    assert.match(updated, /max-width:100%!important/);
     assert.match(updated, /flex:0 0 28px!important/);
     assert.match(updated, /position:sticky!important/);
     assert.match(updated, /margin-left:auto!important/);

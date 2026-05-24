@@ -4462,14 +4462,16 @@ function buildLinuxVisualCompatCssOverride() {
   min-width:0!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [data-app-shell-tab-controller]{
-  min-width:0!important;
-  width:auto!important;
+  flex:0 0 max-content!important;
+  min-width:max-content!important;
+  width:max-content!important;
   max-width:min(14rem,calc(100% - 40px))!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tab]{
   display:flex!important;
   align-items:center!important;
-  width:100%!important;
+  width:auto!important;
+  max-width:100%!important;
   height:28px!important;
   visibility:visible!important;
   pointer-events:auto!important
