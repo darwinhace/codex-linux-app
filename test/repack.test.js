@@ -3751,6 +3751,7 @@ for (const [label, fixture] of [
     assert.match(updated, /\[data-codex-linux-browser-viewport\]/);
     assert.match(updated, /\.codex-linux-browser-viewport-surface/);
     assert.match(updated, /codexLinuxRightPanelTabsVisible/);
+    assert.match(updated, /codexLinuxRightPanelHeaderPassthrough/);
     assert.match(updated, /\[data-app-shell-focus-area=right-panel\] div:has\(>\[data-app-shell-tab-strip-controller\]\)/);
     assert.match(updated, /\[data-app-shell-focus-area=right-panel\] \[data-app-shell-tab-strip-controller\]/);
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] \[role=tablist\]/);
@@ -3765,6 +3766,11 @@ for (const [label, fixture] of [
     assert.match(updated, /max-width:none!important/);
     assert.match(updated, /overflow:hidden!important/);
     assert.match(updated, /min-width:0!important/);
+    assert.match(updated, /pointer-events:none!important/);
+    assert.match(updated, /background:transparent!important/);
+    assert.match(updated, /background-color:transparent!important/);
+    assert.match(updated, /background-image:none!important/);
+    assert.match(updated, /pointer-events:auto!important/);
     assert.match(updated, /flex:0 0 max-content!important/);
     assert.match(updated, /min-width:max-content!important/);
     assert.match(updated, /width:max-content!important/);

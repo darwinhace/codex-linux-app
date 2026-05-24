@@ -1348,6 +1348,8 @@ const LINUX_RIGHT_PANEL_TABS_FALLBACK_PATCH_MARKER = 'codexLinuxRightPanelTabsFa
 const LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER = 'codexLinuxRightPanelTabsFirst';
 const LINUX_RIGHT_PANEL_TABS_VISIBLE_PATCH_MARKER = 'codexLinuxRightPanelTabsVisible';
 const LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER = 'codexLinuxRightPanelTabMetrics';
+const LINUX_RIGHT_PANEL_HEADER_PASSTHROUGH_PATCH_MARKER =
+  'codexLinuxRightPanelHeaderPassthrough';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
@@ -4434,6 +4436,7 @@ function buildLinuxVisualCompatCssOverride() {
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] div:has(>[data-app-shell-tab-strip-controller]){
   /* ${LINUX_RIGHT_PANEL_TABS_VISIBLE_PATCH_MARKER} */
+  /* ${LINUX_RIGHT_PANEL_HEADER_PASSTHROUGH_PATCH_MARKER} */
   display:flex!important;
   min-height:var(--height-toolbar)!important;
   height:var(--height-toolbar)!important;
@@ -4443,7 +4446,10 @@ function buildLinuxVisualCompatCssOverride() {
   width:100%!important;
   max-width:100%!important;
   min-width:0!important;
-  background:var(--color-token-main-surface-primary)!important
+  pointer-events:none!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]{
   display:flex!important;
@@ -4455,6 +4461,7 @@ function buildLinuxVisualCompatCssOverride() {
   width:max-content!important;
   max-width:calc(100% - 104px)!important;
   min-width:0!important;
+  pointer-events:auto!important;
   background:var(--color-token-main-surface-primary)!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]{
