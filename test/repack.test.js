@@ -4029,10 +4029,23 @@ test('injectLinuxRightPanelPaneTabsPatch renders right panel tabs in the pane st
   assert.match(updated, /headerHeight:`pane`/);
   assert.match(updated, /beforeList:n/);
   assert.match(updated, /afterList:e,controller:Ve/);
-  assert.match(updated, /children:\[e,\/\* codexLinuxRightPanelTabsFirst \*\/l\]/);
+  assert.match(updated, /children:\[l,\/\* codexLinuxRightPanelTabsFirst \*\/e\]/);
   assert.match(updated, /l=C\(G\)\?\?\(0,Q\.jsx\)\(\$t,\{\}\)\/\* codexLinuxRightPanelTabsFallback \*\//);
   assert.doesNotMatch(updated, /right-panel-tab-bar-header-spacer/);
   assert.doesNotMatch(updated, /\(0,Q\.jsx\)\(Qt,\{\}\)/);
+});
+
+test('injectLinuxRightPanelPaneTabsPatch repairs old marked right panel slot order', () => {
+  const desired = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519);
+  const oldInstalled = desired.replace(
+    'children:[l,/* codexLinuxRightPanelTabsFirst */e]',
+    'children:[e,/* codexLinuxRightPanelTabsFirst */l]'
+  );
+
+  const updated = injectLinuxRightPanelPaneTabsPatch(oldInstalled);
+
+  assert.equal(updated, desired);
+  assert.doesNotMatch(updated, /children:\[e,\/\* codexLinuxRightPanelTabsFirst \*\/l\]/);
 });
 
 test('injectLinuxRightPanelPaneTabsPatch is idempotent', () => {

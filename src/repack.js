@@ -1440,10 +1440,8 @@ const LINUX_RIGHT_PANEL_PANE_TABS_BEFORE_LIST_PATTERN =
   /beforeList:\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsxs\)\(\k<jsxVar>\.Fragment,\{children:\[(?<isFullWidthVar>[A-Za-z_$][\w$]*)&&!(?<isEdgeVar>[A-Za-z_$][\w$]*)&&\(0,\k<jsxVar>\.jsx\)\((?<motionVar>[A-Za-z_$][\w$]*)\.div,\{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:\{width:(?<leftWidthVar>[A-Za-z_$][\w$]*)\}\}\),(?<beforeListVar>[A-Za-z_$][\w$]*)\]\}\),/;
 const LINUX_RIGHT_PANEL_PANE_TABS_AFTER_LIST_PATTERN =
   /afterList:\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsxs\)\(\k<jsxVar>\.Fragment,\{children:\[(?<afterListVar>[A-Za-z_$][\w$]*),\(0,\k<jsxVar>\.jsx\)\((?<expandButtonVar>[A-Za-z_$][\w$]*),\{\}\),\(0,\k<jsxVar>\.jsx\)\((?<motionVar>[A-Za-z_$][\w$]*)\.div,\{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:\{width:(?<spacerWidthVar>[A-Za-z_$][\w$]*)\}\}\)\]\}\),controller:/;
-const LINUX_RIGHT_PANEL_OUTLET_ORDER_PATTERN =
-  /(?<prefix>className:`h-full min-h-0 min-w-0 overflow-hidden \[--thread-content-top-inset:calc\(var\(--spacing\)\*8\)\]`,children:\[)(?<slotVar>[A-Za-z_$][\w$]*),(?<outletVar>[A-Za-z_$][\w$]*)(?<suffix>\]\})/;
-const LINUX_RIGHT_PANEL_BAD_OUTLET_FIRST_PATTERN =
-  /(?<prefix>className:`h-full min-h-0 min-w-0 overflow-hidden \[--thread-content-top-inset:calc\(var\(--spacing\)\*8\)\]`,children:\[)(?<outletVar>[A-Za-z_$][\w$]*),\/\* codexLinuxRightPanelOutletFirst \*\/(?<slotVar>[A-Za-z_$][\w$]*)(?<suffix>\]\})/;
+const LINUX_RIGHT_PANEL_CHILDREN_ORDER_PATTERN =
+  /(?<prefix>className:`h-full min-h-0 min-w-0 overflow-hidden \[--thread-content-top-inset:calc\(var\(--spacing\)\*8\)\]`,children:\[)(?<firstVar>[A-Za-z_$][\w$]*),(?:\/\* codexLinuxRightPanel(?:TabsFirst|OutletFirst) \*\/)?(?<secondVar>[A-Za-z_$][\w$]*)(?<suffix>\]\})/;
 const LINUX_RIGHT_PANEL_OUTLET_FALLBACK_PATTERN =
   /(?<tabsVar>[A-Za-z_$][\w$]*)=C\(G\)/;
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_VISIBILITY_PATTERN =
@@ -4311,7 +4309,13 @@ export function injectLinuxRightPanelPaneTabsPatch(bundleSource, options = {}) {
   const hasTabsFallbackMarker = bundleSource.includes(
     LINUX_RIGHT_PANEL_TABS_FALLBACK_PATCH_MARKER
   );
-  if (hasPaneTabsMarker && hasTabsFirstMarker && hasTabsFallbackMarker) {
+  const tabsOrderState = getLinuxRightPanelTabsOrderState(bundleSource);
+  if (
+    hasPaneTabsMarker &&
+    hasTabsFirstMarker &&
+    hasTabsFallbackMarker &&
+    tabsOrderState === 'tabs-first'
+  ) {
     return bundleSource;
   }
 
@@ -4340,24 +4344,22 @@ export function injectLinuxRightPanelPaneTabsPatch(bundleSource, options = {}) {
       errorMessage
     );
   }
-  if (!hasTabsFirstMarker) {
-    if (LINUX_RIGHT_PANEL_BAD_OUTLET_FIRST_PATTERN.test(updated)) {
-      updated = replaceRegexOrThrow(
-        updated,
-        LINUX_RIGHT_PANEL_BAD_OUTLET_FIRST_PATTERN,
-        ({ outletVar, prefix, slotVar, suffix }) =>
-          `${prefix}${slotVar},/* ${LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER} */${outletVar}${suffix}`,
-        errorMessage
-      );
-    } else {
-      updated = replaceRegexOrThrow(
-        updated,
-        LINUX_RIGHT_PANEL_OUTLET_ORDER_PATTERN,
-        ({ outletVar, prefix, slotVar, suffix }) =>
-          `${prefix}${slotVar},/* ${LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER} */${outletVar}${suffix}`,
-        errorMessage
-      );
-    }
+  if (!hasTabsFirstMarker || getLinuxRightPanelTabsOrderState(updated) !== 'tabs-first') {
+    const tabsVar = getLinuxRightPanelTabsVar(updated);
+    updated = replaceRegexOrThrow(
+      updated,
+      LINUX_RIGHT_PANEL_CHILDREN_ORDER_PATTERN,
+      ({ firstVar, prefix, secondVar, suffix }) => {
+        if (tabsVar != null && firstVar === tabsVar) {
+          return `${prefix}${firstVar},/* ${LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER} */${secondVar}${suffix}`;
+        }
+        if (tabsVar != null && secondVar === tabsVar) {
+          return `${prefix}${secondVar},/* ${LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER} */${firstVar}${suffix}`;
+        }
+        throw new Error(errorMessage);
+      },
+      errorMessage
+    );
   }
   if (!hasTabsFallbackMarker) {
     updated = replaceRegexOrThrow(
@@ -4369,6 +4371,25 @@ export function injectLinuxRightPanelPaneTabsPatch(bundleSource, options = {}) {
     );
   }
   return updated;
+}
+
+function getLinuxRightPanelTabsVar(bundleSource) {
+  return LINUX_RIGHT_PANEL_OUTLET_FALLBACK_PATTERN.exec(bundleSource)?.groups?.tabsVar ?? null;
+}
+
+function getLinuxRightPanelTabsOrderState(bundleSource) {
+  const tabsVar = getLinuxRightPanelTabsVar(bundleSource);
+  const childrenMatch = LINUX_RIGHT_PANEL_CHILDREN_ORDER_PATTERN.exec(bundleSource);
+  if (tabsVar == null || !childrenMatch?.groups) {
+    return 'unknown';
+  }
+  if (childrenMatch.groups.firstVar === tabsVar) {
+    return 'tabs-first';
+  }
+  if (childrenMatch.groups.secondVar === tabsVar) {
+    return 'slot-first';
+  }
+  return 'unknown';
 }
 
 function buildLinuxVisualCompatCssOverride() {
@@ -4569,7 +4590,7 @@ function analyzeLinuxRightPanelPaneTabsBundle(bundleSource) {
     toolbarHeaderHeight: LINUX_RIGHT_PANEL_PANE_TABS_HEADER_PATTERN.test(bundleSource),
     headerBeforeList: LINUX_RIGHT_PANEL_PANE_TABS_BEFORE_LIST_PATTERN.test(bundleSource),
     headerAfterList: LINUX_RIGHT_PANEL_PANE_TABS_AFTER_LIST_PATTERN.test(bundleSource),
-    outletAfterSlot: LINUX_RIGHT_PANEL_OUTLET_ORDER_PATTERN.test(bundleSource)
+    outletAfterSlot: LINUX_RIGHT_PANEL_CHILDREN_ORDER_PATTERN.test(bundleSource)
   };
 
   return {
