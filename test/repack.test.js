@@ -88,7 +88,9 @@ import {
   patchBetterSqlite3V8ExternalPointerTagSource,
   parseArgs,
   parseProcCmdline,
+  readPinnedInstallVersion,
   renderHelp,
+  resolveInstallRelease,
   resolveBrowserUseRuntimeSources,
   resolveFirstExecutablePath,
   stopRunningLinuxChromeExtensionHostProcesses
@@ -487,11 +489,18 @@ const TODO_PROGRESS_BUNDLE_26_506_EXPANDED_ITEM_CACHE =
 const TODO_PROGRESS_BUNDLE_26_513_31313 =
   TODO_PROGRESS_BUNDLE_26_506_EXPANDED_ITEM_CACHE.replaceAll('(0,$.jsx)', '(0,Q.jsx)');
 
-test('parseArgs accepts diagnostic and patch skip flags', () => {
+test('parseArgs accepts dev, diagnostic, and patch skip flags', () => {
+  assert.deepEqual(parseArgs([]), {
+    dev: false,
+    help: false,
+    skipOpenTargetsPatch: false,
+    skipTerminalPatch: false,
+    skipTodoProgressPatch: false,
+    diagnosticManifest: false
+  });
+
   const options = parseArgs([
-    '--beta',
-    '--version',
-    '26.325.21211',
+    '--dev',
     '--skip-open-targets-patch',
     '--skip-terminal-patch',
     '--skip-todo-progress-patch',
@@ -499,14 +508,72 @@ test('parseArgs accepts diagnostic and patch skip flags', () => {
   ]);
 
   assert.deepEqual(options, {
-    beta: true,
-    version: '26.325.21211',
+    dev: true,
     help: false,
     skipOpenTargetsPatch: true,
     skipTerminalPatch: true,
     skipTodoProgressPatch: true,
     diagnosticManifest: true
   });
+});
+
+test('parseArgs rejects removed beta and version flags', () => {
+  assert.throws(() => parseArgs(['--beta']), /Unknown argument: --beta/);
+  assert.throws(() => parseArgs(['--version', '26.325.21211']), /Unknown argument: --version/);
+});
+
+test('readPinnedInstallVersion reads a trimmed version', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-version-'));
+  try {
+    const versionPath = path.join(rootDir, 'VERSION');
+    await fs.promises.writeFile(versionPath, '  26.519.22136\n', 'utf8');
+
+    assert.equal(await readPinnedInstallVersion(versionPath), '26.519.22136');
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('readPinnedInstallVersion rejects missing or blank version files', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-version-'));
+  try {
+    const versionPath = path.join(rootDir, 'VERSION');
+
+    await assert.rejects(() => readPinnedInstallVersion(versionPath), /does not exist/);
+    await fs.promises.writeFile(versionPath, '\n', 'utf8');
+    await assert.rejects(() => readPinnedInstallVersion(versionPath), /is empty/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveInstallRelease uses pinned version by default and latest version for dev', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-version-'));
+  try {
+    const versionPath = path.join(rootDir, 'VERSION');
+    await fs.promises.writeFile(versionPath, '1.0.0\n', 'utf8');
+    const releases = [
+      { version: '2.0.0', buildNumber: '20', pubDate: 'b', enclosureUrl: 'https://example.com/2.zip' },
+      { version: '1.0.0', buildNumber: '10', pubDate: 'a', enclosureUrl: 'https://example.com/1.zip' }
+    ];
+
+    assert.equal(
+      (await resolveInstallRelease(releases, parseArgs([]), { versionFilePath: versionPath })).version,
+      '1.0.0'
+    );
+    assert.equal(
+      (await resolveInstallRelease(releases, parseArgs(['--dev']), { versionFilePath: versionPath })).version,
+      '2.0.0'
+    );
+
+    await fs.promises.writeFile(versionPath, '3.0.0\n', 'utf8');
+    await assert.rejects(
+      () => resolveInstallRelease(releases, parseArgs([]), { versionFilePath: versionPath }),
+      /Version 3.0.0 was not found/
+    );
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
 });
 
 test('parseProcCmdline parses Linux proc cmdline buffers', () => {
@@ -603,8 +670,9 @@ test('stopRunningLinuxChromeExtensionHostProcesses terminates only Chrome extens
 test('renderHelp keeps recovery flags out of the normal command surface', () => {
   const helpText = renderHelp();
 
-  assert.match(helpText, /--version <version>/);
-  assert.match(helpText, /--beta/);
+  assert.match(helpText, /install-desktop --dev/);
+  assert.doesNotMatch(helpText, /--version <version>/);
+  assert.doesNotMatch(helpText, /--beta/);
   assert.doesNotMatch(helpText, /--skip-open-targets-patch/);
   assert.doesNotMatch(helpText, /--skip-terminal-patch/);
   assert.doesNotMatch(helpText, /--skip-todo-progress-patch/);

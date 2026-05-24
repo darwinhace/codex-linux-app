@@ -51,8 +51,8 @@ export async function fetchChannelAppcast(channelId, options = {}) {
 }
 
 export async function collectReleaseInfo(options = {}) {
-  const installedChannels = ['stable', 'beta'];
-  const appcastChannels = ['stable', 'beta'];
+  const installedChannels = ['stable'];
+  const appcastChannels = ['stable'];
 
   const current = await Promise.all(
     installedChannels.map(async (channelId) => ({

@@ -28,6 +28,8 @@ import { fetchAppcastReleases, resolveRelease } from './appcast.js';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INSTALL_DIAGNOSTIC_MANIFEST_FILE_NAME = 'install-diagnostic-manifest.json';
+const PINNED_INSTALL_VERSION_FILE_NAME = 'VERSION';
+const PINNED_INSTALL_VERSION_FILE_PATH = path.join(PROJECT_ROOT, PINNED_INSTALL_VERSION_FILE_NAME);
 const BROWSER_USE_NODE_REPL_ENV = 'CODEX_BROWSER_USE_NODE_REPL_PATH';
 const BROWSER_USE_NODE_ENV = 'CODEX_BROWSER_USE_NODE_PATH';
 const CHROME_EXTENSION_ID = 'hehggadaopoacecdllhhajmbjkdcmajg';
@@ -92,8 +94,7 @@ const LINUX_PET_YAPPING_USAGE_MAIN_PATCH_BASE_ERROR_MESSAGE =
 
 export function parseArgs(argv) {
   const options = {
-    beta: false,
-    version: null,
+    dev: false,
     help: false,
     skipOpenTargetsPatch: false,
     skipTerminalPatch: false,
@@ -103,17 +104,8 @@ export function parseArgs(argv) {
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === '--beta') {
-      options.beta = true;
-      continue;
-    }
-    if (arg === '--version') {
-      const next = argv[index + 1];
-      if (!next) {
-        throw new Error('Missing value for --version');
-      }
-      options.version = next;
-      index += 1;
+    if (arg === '--dev') {
+      options.dev = true;
       continue;
     }
     if (arg === '--help' || arg === '-h') {
@@ -146,15 +138,39 @@ export function renderHelp() {
   return [
     'Usage:',
     '  install-desktop',
-    '  install-desktop --version <version>',
-    '  install-desktop --beta',
-    '  install-desktop --beta --version <version>',
+    '  install-desktop --dev',
     '',
     'Options:',
-    '  --version <version>  install a specific version from the selected channel',
-    '  --beta               use the beta appcast feed',
+    `  --dev        install the latest stable release instead of the version pinned in ${PINNED_INSTALL_VERSION_FILE_NAME}`,
     '  -h, --help           show this help'
   ].join('\n');
+}
+
+export async function readPinnedInstallVersion(versionFilePath = PINNED_INSTALL_VERSION_FILE_PATH) {
+  let contents;
+  try {
+    contents = await fs.promises.readFile(versionFilePath, 'utf8');
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      throw new Error(
+        `Pinned install version file ${versionFilePath} does not exist. Create ${PINNED_INSTALL_VERSION_FILE_NAME} or run install-desktop --dev to install the latest stable release.`
+      );
+    }
+    throw error;
+  }
+
+  const version = contents.trim();
+  if (!version) {
+    throw new Error(`Pinned install version file ${versionFilePath} is empty.`);
+  }
+  return version;
+}
+
+export async function resolveInstallRelease(releases, options, config = {}) {
+  const version = options.dev
+    ? null
+    : await readPinnedInstallVersion(config.versionFilePath ?? PINNED_INSTALL_VERSION_FILE_PATH);
+  return resolveRelease(releases, version);
 }
 
 export async function installDesktop(options, logger) {
@@ -173,12 +189,17 @@ export async function installDesktop(options, logger) {
     );
   }
 
-  const channel = options.beta ? CHANNELS.beta : CHANNELS.stable;
+  const channel = CHANNELS.stable;
   logger.info(`Selected channel: ${channel.id}`);
   logger.info(`Selected feed: ${channel.feedUrl}`);
 
   const releases = await fetchAppcastReleases(channel.feedUrl);
-  const release = resolveRelease(releases, options.version);
+  const release = await resolveInstallRelease(releases, options);
+  if (options.dev) {
+    logger.info('Version mode: latest stable appcast (--dev)');
+  } else {
+    logger.info(`Version mode: pinned stable version from ${PINNED_INSTALL_VERSION_FILE_PATH}`);
+  }
   logger.info(
     `Selected release: version=${release.version} build=${release.buildNumber} published=${release.pubDate}`
   );

@@ -1,6 +1,6 @@
 # Codex Linux App
 
-Linux installer and repackager for the upstream Codex desktop app on `amd64`/`x64`. It reads the live OpenAI appcast, downloads the selected upstream build, preserves upstream resources, swaps macOS-only helper binaries for Linux equivalents, rebuilds native modules, and installs stable and beta side by side.
+Linux installer and repackager for the upstream Codex desktop app on `amd64`/`x64`. It reads the live OpenAI appcast, downloads the pinned or latest stable upstream build, preserves upstream resources, swaps macOS-only helper binaries for Linux equivalents, rebuilds native modules, and installs the stable desktop app.
 
 ## Requirements
 
@@ -40,31 +40,19 @@ ln -sf /usr/bin/google-chrome-stable ~/.local/bin/google-chrome
 
 ## Usage
 
-Latest stable:
+Pinned stable version from `VERSION`:
 
 ```bash
 ./install-desktop
 ```
 
-Specific stable version:
+Latest stable from the live appcast:
 
 ```bash
-./install-desktop --version 26.325.21211
+./install-desktop --dev
 ```
 
-Latest beta:
-
-```bash
-./install-desktop --beta
-```
-
-Specific beta version:
-
-```bash
-./install-desktop --beta --version 26.401.11631
-```
-
-Show installed versions and the latest appcast entries:
+Show the installed version and latest stable appcast entries:
 
 ```bash
 ./release-info
@@ -79,8 +67,7 @@ Remove repo-owned desktop installs:
 ## Install Locations
 
 - Stable: `~/.local/share/codex-linux-app/channels/stable`
-- Beta: `~/.local/share/codex-linux-app/channels/beta`
-- Desktop entries: `~/.local/share/applications/codex.desktop` and `~/.local/share/applications/codex-beta.desktop`
+- Desktop entry: `~/.local/share/applications/codex.desktop`
 - Logs and state: `~/.local/state/codex-linux-app`
 - Cache and downloads: `~/.cache/codex-linux-app`
 

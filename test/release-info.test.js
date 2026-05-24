@@ -28,7 +28,7 @@ test('readInstalledRelease returns installed package metadata', async () => {
 });
 
 test('readInstalledRelease returns null when the channel is not installed', async () => {
-  const release = await readInstalledRelease('beta', {
+  const release = await readInstalledRelease('stable', {
     paths: { dataHome: '/tmp/codex-linux-app' },
     extractFileImpl() {
       const error = new Error('missing');
@@ -110,19 +110,11 @@ test('collectReleaseInfo gathers current installs and trims appcasts to three it
         buildNumber: '40',
         flavor: 'prod'
       }
-    },
-    {
-      channelId: 'beta',
-      label: 'beta',
-      release: null
     }
   ]);
   assert.deepEqual(
     report.appcasts.map((appcast) => appcast.releases.map((release) => release.version)),
-    [
-      ['4.0.0', '3.0.0', '2.0.0'],
-      ['4.0.0', '3.0.0', '2.0.0']
-    ]
+    [['4.0.0', '3.0.0', '2.0.0']]
   );
 });
 
@@ -138,11 +130,6 @@ test('formatReleaseInfo renders installed and appcast sections', () => {
           flavor: 'prod'
         }
       },
-      {
-        channelId: 'beta',
-        label: 'beta',
-        release: null
-      }
     ],
     appcasts: [
       {
@@ -152,15 +139,9 @@ test('formatReleaseInfo renders installed and appcast sections', () => {
           { version: '26.325.21211', buildNumber: '1255', pubDate: 'Thu, 26 Mar 2026 21:54:52 +0000' }
         ],
         error: null
-      },
-      {
-        channelId: 'beta',
-        label: 'beta',
-        releases: [],
-        error: 'Failed to fetch beta'
       }
     ],
-    hasErrors: true
+    hasErrors: false
   });
 
   assert.equal(
@@ -168,13 +149,9 @@ test('formatReleaseInfo renders installed and appcast sections', () => {
     [
       'Current installs',
       'prod: 26.325.21211 build 1255 flavor prod',
-      'beta: not installed',
       '',
       'Appcast prod',
       '26.325.21211 build 1255 Thu, 26 Mar 2026 21:54:52 +0000',
-      '',
-      'Appcast beta',
-      'error: Failed to fetch beta',
       ''
     ].join('\n')
   );

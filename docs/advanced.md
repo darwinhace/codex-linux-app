@@ -55,15 +55,14 @@ These flags remain available for install recovery and A/B checks, but are hidden
 ./install-desktop --skip-todo-progress-patch
 ```
 
-The installer always writes a per-channel diagnostic manifest:
+The installer always writes a stable diagnostic manifest:
 
 - `~/.local/share/codex-linux-app/channels/stable/install-diagnostic-manifest.json`
-- `~/.local/share/codex-linux-app/channels/beta/install-diagnostic-manifest.json`
 
 ## Notes
 
 - The installer supports Linux `amd64`/`x64`.
-- Stable and beta installs are separate. Reinstalling one channel only replaces that channel.
+- `./install-desktop` installs the stable version pinned in `VERSION`; `./install-desktop --dev` installs the latest stable appcast entry.
 - Build and install stages retry and log under `~/.local/state/codex-linux-app/logs`.
 - The generated launcher falls back to `--no-sandbox --disable-setuid-sandbox` when `chrome-sandbox` is not root-owned with mode `4755`, which is normal for a per-user install.
 - Linux editor discovery is patched into the desktop runtime for supported IDEs by checking CLI commands on `PATH`, common `.desktop` launchers, and JetBrains Toolbox scripts.
