@@ -1346,6 +1346,7 @@ const LINUX_RIGHT_PANEL_PANE_TABS_PATCH_MARKER = 'codexLinuxRightPanelPaneTabs';
 const LINUX_RIGHT_PANEL_OUTLET_FIRST_PATCH_MARKER = 'codexLinuxRightPanelOutletFirst';
 const LINUX_RIGHT_PANEL_TABS_FALLBACK_PATCH_MARKER = 'codexLinuxRightPanelTabsFallback';
 const LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER = 'codexLinuxRightPanelTabsFirst';
+const LINUX_RIGHT_PANEL_TABS_VISIBLE_PATCH_MARKER = 'codexLinuxRightPanelTabsVisible';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
@@ -4431,13 +4432,54 @@ function buildLinuxVisualCompatCssOverride() {
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] div:has(>[data-app-shell-tab-strip-controller]),
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]{
+  /* ${LINUX_RIGHT_PANEL_TABS_VISIBLE_PATCH_MARKER} */
   display:flex!important;
   min-height:var(--height-toolbar)!important;
   height:var(--height-toolbar)!important;
   flex-shrink:0!important;
   position:relative!important;
-  z-index:25!important;
+  z-index:45!important;
   background:var(--color-token-main-surface-primary)!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tablist],
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [data-app-shell-tab-controller]{
+  display:flex!important;
+  align-items:center!important;
+  min-height:28px!important;
+  visibility:visible!important;
+  flex-shrink:0!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tablist]{
+  max-width:calc(100% - 40px)!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [data-app-shell-tab-controller]{
+  min-width:min(10rem,calc(100% - 40px))!important;
+  max-width:min(14rem,calc(100% - 40px))!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tab]{
+  display:flex!important;
+  align-items:center!important;
+  width:100%!important;
+  height:28px!important;
+  visibility:visible!important;
+  pointer-events:auto!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] div:has(>button:not([role=tab])){
+  display:flex!important;
+  align-items:center!important;
+  width:auto!important;
+  min-width:28px!important;
+  height:28px!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  z-index:30!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] div:has(>button:not([role=tab]))>button:not([role=tab]){
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .no-underline\\!{
   text-decoration:underline!important;
