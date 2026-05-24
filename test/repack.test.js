@@ -3759,18 +3759,26 @@ for (const [label, fixture] of [
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] div:has\(>button:not\(\[role=tab\]\)\)/);
     assert.match(updated, /min-height:var\(--height-toolbar\)!important/);
     assert.match(updated, /z-index:45!important/);
-    assert.match(updated, /flex:1 1 auto!important/);
-    assert.match(updated, /max-width:calc\(100% - 36px\)!important/);
+    assert.match(updated, /flex:0 1 auto!important/);
+    assert.match(updated, /max-width:calc\(100% - 104px\)!important/);
+    assert.match(updated, /flex:0 1 max-content!important/);
+    assert.match(updated, /max-width:none!important/);
+    assert.match(updated, /overflow:hidden!important/);
     assert.match(updated, /min-width:0!important/);
     assert.match(updated, /flex:0 0 max-content!important/);
     assert.match(updated, /min-width:max-content!important/);
     assert.match(updated, /width:max-content!important/);
+    assert.match(updated, /max-width:14rem!important/);
     assert.match(updated, /width:auto!important/);
     assert.match(updated, /max-width:100%!important/);
     assert.match(updated, /flex:0 0 28px!important/);
-    assert.match(updated, /position:sticky!important/);
-    assert.match(updated, /margin-left:auto!important/);
+    assert.match(updated, /position:relative!important/);
+    assert.match(updated, /margin-left:0!important/);
+    assert.doesNotMatch(updated, /flex:1 1 auto!important/);
+    assert.doesNotMatch(updated, /position:sticky!important/);
+    assert.doesNotMatch(updated, /margin-left:auto!important/);
     assert.doesNotMatch(updated, /min-width:min\(10rem,calc\(100% - 40px\)\)!important/);
+    assert.doesNotMatch(updated, /max-width:min\(14rem,calc\(100% - 40px\)\)!important/);
     assert.match(updated, /\[data-browser-comment-editor-surface\]/);
     assert.match(updated, /max-height:clamp\(44px,18vh,88px\)!important/);
     assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\)\{/);
@@ -3790,7 +3798,12 @@ test('injectLinuxVisualCompatJsPatch supports the 26.519 opaque window effect sh
   const updated = injectLinuxVisualCompatJsPatch(LINUX_VISUAL_COMPAT_JS_26_519);
 
   assert.match(updated, /codexLinuxVisualCompat/);
+  assert.match(updated, /codexLinuxRightPanelTabMetrics/);
   assert.match(updated, /classList\.toggle\(`codex-linux-visual-compat`,r\)/);
+  assert.match(updated, /data-app-shell-focus-area=right-panel/);
+  assert.match(updated, /getBoundingClientRect\(\)\.width/);
+  assert.match(updated, /style\.setProperty\(`width`/);
+  assert.match(updated, /style\.setProperty\(`flex`/);
   assert.match(updated, /\(g\.opaqueWindows\|\|i\|\|r\)&&!pc\(\)/);
 });
 
@@ -4046,11 +4059,11 @@ test('injectLinuxRightPanelPaneTabsPatch renders right panel tabs in the pane st
   assert.match(updated, /codexLinuxRightPanelTabsFallback/);
   assert.match(updated, /headerHeight:`pane`/);
   assert.match(updated, /beforeList:n/);
-  assert.match(updated, /afterList:e,controller:Ve/);
+  assert.match(updated, /afterList:\(0,Q\.jsxs\)\(Q\.Fragment,\{children:\[e,\(0,Q\.jsx\)\(Qt,\{\}\)\]\}\),controller:Ve/);
   assert.match(updated, /children:\[l,\/\* codexLinuxRightPanelTabsFirst \*\/e\]/);
   assert.match(updated, /l=C\(G\)\?\?\(0,Q\.jsx\)\(\$t,\{\}\)\/\* codexLinuxRightPanelTabsFallback \*\//);
   assert.doesNotMatch(updated, /right-panel-tab-bar-header-spacer/);
-  assert.doesNotMatch(updated, /\(0,Q\.jsx\)\(Qt,\{\}\)/);
+  assert.match(updated, /\(0,Q\.jsx\)\(Qt,\{\}\)/);
 });
 
 test('injectLinuxRightPanelPaneTabsPatch repairs old marked right panel slot order', () => {

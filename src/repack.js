@@ -1347,6 +1347,7 @@ const LINUX_RIGHT_PANEL_OUTLET_FIRST_PATCH_MARKER = 'codexLinuxRightPanelOutletF
 const LINUX_RIGHT_PANEL_TABS_FALLBACK_PATCH_MARKER = 'codexLinuxRightPanelTabsFallback';
 const LINUX_RIGHT_PANEL_TABS_FIRST_PATCH_MARKER = 'codexLinuxRightPanelTabsFirst';
 const LINUX_RIGHT_PANEL_TABS_VISIBLE_PATCH_MARKER = 'codexLinuxRightPanelTabsVisible';
+const LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER = 'codexLinuxRightPanelTabMetrics';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
@@ -3841,7 +3842,7 @@ export function injectLinuxVisualCompatJsPatch(bundleSource, options = {}) {
     ({ elementVar, windowStateVar, legacyWindowStateVar, extraOpaqueCondition, opaqueGuardFn }) => {
       const resolvedWindowStateVar = windowStateVar ?? legacyWindowStateVar;
       const upstreamOpaqueCondition = `${resolvedWindowStateVar}.opaqueWindows${extraOpaqueCondition ?? ''}`;
-      return `if(${elementVar}){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===\`linux\`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===\`1\`}catch{}let r=t&&!n;${elementVar}.classList.toggle(\`codex-linux-visual-compat\`,r);if((${upstreamOpaqueCondition}||r)&&!${opaqueGuardFn}()){${elementVar}.classList.add(\`electron-opaque\`);return}${elementVar}.classList.remove(\`electron-opaque\`)}`;
+      return `if(${elementVar}){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===\`linux\`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===\`1\`}catch{}let r=t&&!n;${elementVar}.classList.toggle(\`codex-linux-visual-compat\`,r);${buildLinuxRightPanelTabMetricsJs()}if((${upstreamOpaqueCondition}||r)&&!${opaqueGuardFn}()){${elementVar}.classList.add(\`electron-opaque\`);return}${elementVar}.classList.remove(\`electron-opaque\`)}`;
     },
     buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, options.sourceName)
   );
@@ -4341,7 +4342,8 @@ export function injectLinuxRightPanelPaneTabsPatch(bundleSource, options = {}) {
     updated = replaceRegexOrThrow(
       updated,
       LINUX_RIGHT_PANEL_PANE_TABS_AFTER_LIST_PATTERN,
-      ({ afterListVar }) => `afterList:${afterListVar},controller:`,
+      ({ afterListVar, expandButtonVar, jsxVar }) =>
+        `afterList:(0,${jsxVar}.jsxs)(${jsxVar}.Fragment,{children:[${afterListVar},(0,${jsxVar}.jsx)(${expandButtonVar},{})]}),controller:`,
       errorMessage
     );
   }
@@ -4430,8 +4432,7 @@ function buildLinuxVisualCompatCssOverride() {
   background-color:transparent!important;
   background-image:none!important
 }
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] div:has(>[data-app-shell-tab-strip-controller]),
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]{
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] div:has(>[data-app-shell-tab-strip-controller]){
   /* ${LINUX_RIGHT_PANEL_TABS_VISIBLE_PATCH_MARKER} */
   display:flex!important;
   min-height:var(--height-toolbar)!important;
@@ -4445,7 +4446,19 @@ function buildLinuxVisualCompatCssOverride() {
   background:var(--color-token-main-surface-primary)!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]{
-  flex:1 1 auto!important
+  display:flex!important;
+  min-height:var(--height-toolbar)!important;
+  height:var(--height-toolbar)!important;
+  flex-shrink:0!important;
+  position:relative!important;
+  z-index:45!important;
+  width:max-content!important;
+  max-width:calc(100% - 104px)!important;
+  min-width:0!important;
+  background:var(--color-token-main-surface-primary)!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]{
+  flex:0 1 auto!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tablist],
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [data-app-shell-tab-controller]{
@@ -4456,16 +4469,17 @@ function buildLinuxVisualCompatCssOverride() {
   flex-shrink:0!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tablist]{
-  flex:0 1 auto!important;
+  flex:0 1 max-content!important;
   width:max-content!important;
-  max-width:calc(100% - 36px)!important;
-  min-width:0!important
+  max-width:none!important;
+  min-width:0!important;
+  overflow:hidden!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [data-app-shell-tab-controller]{
   flex:0 0 max-content!important;
   min-width:max-content!important;
   width:max-content!important;
-  max-width:min(14rem,calc(100% - 40px))!important
+  max-width:14rem!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tab]{
   display:flex!important;
@@ -4483,9 +4497,8 @@ function buildLinuxVisualCompatCssOverride() {
   min-width:28px!important;
   flex:0 0 28px!important;
   height:28px!important;
-  position:sticky!important;
-  right:0!important;
-  margin-left:auto!important;
+  position:relative!important;
+  margin-left:0!important;
   visibility:visible!important;
   opacity:1!important;
   pointer-events:auto!important;
@@ -4537,6 +4550,10 @@ function buildLinuxRightPanelPaneTabsPatchErrorMessage(bundleSource, sourceName)
     sourceName,
     analyzeLinuxRightPanelPaneTabsBundle(bundleSource)
   );
+}
+
+function buildLinuxRightPanelTabMetricsJs() {
+  return `if(r&&!globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}){globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}=1;setTimeout(()=>{let e=0,t=()=>{cancelAnimationFrame(e),e=requestAnimationFrame(()=>{for(let e of document.querySelectorAll(\`[data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]\`)){let t=e.querySelector(\`[role=tablist]\`),n=e.querySelector(\`div:has(>button:not([role=tab]))\`),r=e.closest(\`[data-app-shell-focus-area=right-panel]\`);if(!t)continue;let i=[...t.querySelectorAll(\`[data-app-shell-tab-controller]\`)];if(i.length===0)continue;let a=getComputedStyle(t),o=parseFloat(a.columnGap||a.gap)||0,s=i.reduce((e,t)=>e+t.getBoundingClientRect().width,0)+Math.max(0,i.length-1)*o,c=n?.getBoundingClientRect().width||28,l=Math.max(0,(r?.clientWidth||innerWidth)-104),u=Math.max(0,Math.min(l,s+c)),d=Math.max(0,u-c);u>0&&(t.style.setProperty(\`width\`,d+\`px\`,\`important\`),t.style.setProperty(\`flex\`,\`0 0 \${d}px\`,\`important\`),e.style.setProperty(\`width\`,u+\`px\`,\`important\`),e.style.setProperty(\`flex\`,\`0 0 \${u}px\`,\`important\`))}})};t();setTimeout(t,80);setTimeout(t,300);new MutationObserver(t).observe(document.documentElement,{childList:!0,subtree:!0});globalThis.ResizeObserver&&new ResizeObserver(t).observe(document.documentElement)},500)}`;
 }
 
 function analyzeLinuxVisualCompatCssBundle(bundleSource) {
