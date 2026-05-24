@@ -3759,7 +3759,13 @@ for (const [label, fixture] of [
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] div:has\(>button:not\(\[role=tab\]\)\)/);
     assert.match(updated, /min-height:var\(--height-toolbar\)!important/);
     assert.match(updated, /z-index:45!important/);
-    assert.match(updated, /min-width:min\(10rem,calc\(100% - 40px\)\)!important/);
+    assert.match(updated, /flex:1 1 auto!important/);
+    assert.match(updated, /max-width:calc\(100% - 36px\)!important/);
+    assert.match(updated, /min-width:0!important/);
+    assert.match(updated, /flex:0 0 28px!important/);
+    assert.match(updated, /position:sticky!important/);
+    assert.match(updated, /margin-left:auto!important/);
+    assert.doesNotMatch(updated, /min-width:min\(10rem,calc\(100% - 40px\)\)!important/);
     assert.match(updated, /\[data-browser-comment-editor-surface\]/);
     assert.match(updated, /max-height:clamp\(44px,18vh,88px\)!important/);
     assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\)\{/);

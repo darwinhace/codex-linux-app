@@ -4439,7 +4439,13 @@ function buildLinuxVisualCompatCssOverride() {
   flex-shrink:0!important;
   position:relative!important;
   z-index:45!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
   background:var(--color-token-main-surface-primary)!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]{
+  flex:1 1 auto!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tablist],
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [data-app-shell-tab-controller]{
@@ -4450,10 +4456,14 @@ function buildLinuxVisualCompatCssOverride() {
   flex-shrink:0!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tablist]{
-  max-width:calc(100% - 40px)!important
+  flex:0 1 auto!important;
+  width:max-content!important;
+  max-width:calc(100% - 36px)!important;
+  min-width:0!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [data-app-shell-tab-controller]{
-  min-width:min(10rem,calc(100% - 40px))!important;
+  min-width:0!important;
+  width:auto!important;
   max-width:min(14rem,calc(100% - 40px))!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tab]{
@@ -4469,7 +4479,11 @@ function buildLinuxVisualCompatCssOverride() {
   align-items:center!important;
   width:auto!important;
   min-width:28px!important;
+  flex:0 0 28px!important;
   height:28px!important;
+  position:sticky!important;
+  right:0!important;
+  margin-left:auto!important;
   visibility:visible!important;
   opacity:1!important;
   pointer-events:auto!important;
