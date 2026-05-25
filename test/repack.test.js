@@ -2795,6 +2795,11 @@ test('injectLinuxPetYappingUsagePatch adds yapping usage bubble to avatar overla
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /R\.useState\(null\)/);
   assert.match(updated, /R\.useEffect/);
+  assert.match(updated, /codexLinuxWrapRef=R\.useRef\(null\)/);
+  assert.match(updated, /codexLinuxWrapRef\.current\?\.parentElement\?\.querySelector\(`\.codex-avatar-root`\)/);
+  assert.match(updated, /ResizeObserver/);
+  assert.match(updated, /"--codex-usage-avatar-width":`\$\{codexLinuxAvatarBox\.width\}px`/);
+  assert.match(updated, /ref:codexLinuxWrapRef/);
   assert.match(updated, /setInterval\(t,1e4\)/);
   assert.match(updated, /await codexLinuxFetchUsage\(`codex-linux-pet-usage`\)/);
   assert.match(updated, /n as codexLinuxFetchUsage/);
@@ -2876,7 +2881,10 @@ test('injectLinuxPetYappingUsageCssPatch adds pixel yapping styles', () => {
 
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /\.codex-usage-yap-wrap/);
-  assert.match(updated, /inset:-3\.25rem -2\.4rem -\.55rem -1\.15rem/);
+  assert.match(updated, /top:-3\.25rem;left:-1\.15rem/);
+  assert.match(updated, /width:max\(12\.8rem,calc\(var\(--codex-usage-avatar-width,112px\) \+ 3\.55rem\)\)/);
+  assert.match(updated, /height:calc\(var\(--codex-usage-avatar-height,121px\) \+ 3\.8rem\)/);
+  assert.doesNotMatch(updated, /\.codex-usage-yap-wrap\{[^}]*inset:/);
   assert.match(updated, /width:11\.2rem/);
   assert.match(updated, /font:600 10px\/1/);
   assert.match(updated, /shape-rendering:crispEdges/);
