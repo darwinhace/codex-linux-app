@@ -3809,7 +3809,11 @@ for (const [label, fixture] of [
     assert.doesNotMatch(updated, /margin-left:auto!important/);
     assert.doesNotMatch(updated, /min-width:min\(10rem,calc\(100% - 40px\)\)!important/);
     assert.doesNotMatch(updated, /max-width:min\(14rem,calc\(100% - 40px\)\)!important/);
-    assert.match(updated, /\[data-browser-comment-editor-surface\]/);
+    assert.match(
+      updated,
+      /\[data-browser-comment-editor-surface\]:not\(:has\(\[data-browser-comment-design-prompt-shell\]\)\)/
+    );
+    assert.match(updated, /codexLinuxBrowserAdjustEditorSurface/);
     assert.match(updated, /max-height:clamp\(44px,18vh,88px\)!important/);
     assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\)\{/);
     assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\) body\{/);

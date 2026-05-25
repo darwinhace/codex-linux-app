@@ -1352,6 +1352,8 @@ const LINUX_RIGHT_PANEL_HEADER_PASSTHROUGH_PATCH_MARKER =
   'codexLinuxRightPanelHeaderPassthrough';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
+const LINUX_BROWSER_ADJUST_EDITOR_SURFACE_PATCH_MARKER =
+  'codexLinuxBrowserAdjustEditorSurface';
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
 const LINUX_LATEST_AGENT_TURN_EXPANSION_PATCH_MARKER = 'codexLinuxLatestAgentTurnExpanded';
 const LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN =
@@ -4546,7 +4548,8 @@ function buildLinuxVisualCompatCssOverride() {
   text-decoration:underline!important;
   text-underline-offset:2px
 }
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]{
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]:not(:has([data-browser-comment-design-prompt-shell])){
+  /* ${LINUX_BROWSER_ADJUST_EDITOR_SURFACE_PATCH_MARKER} */
   max-height:clamp(44px,18vh,88px)!important
 }
 `;
