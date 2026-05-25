@@ -4517,6 +4517,31 @@ function buildLinuxVisualCompatCssOverride() {
   opacity:1!important;
   pointer-events:auto!important
 }
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] div:has(>[data-app-shell-tab-strip-controller])>[role=presentation]{
+  display:flex!important;
+  align-items:center!important;
+  min-height:var(--height-toolbar)!important;
+  height:var(--height-toolbar)!important;
+  flex-shrink:0!important;
+  position:relative!important;
+  z-index:46!important;
+  pointer-events:auto!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] div:has(>[data-app-shell-tab-strip-controller])>[role=presentation] button{
+  pointer-events:auto!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat #browser-device-preset{
+  color-scheme:dark!important;
+  background:var(--color-token-main-surface-primary,var(--color-background-surface-under))!important;
+  color:var(--color-token-text-primary,var(--color-token-foreground))!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat #browser-device-preset option{
+  background:var(--color-token-main-surface-primary,var(--color-background-surface-under))!important;
+  color:var(--color-token-text-primary,var(--color-token-foreground))!important
+}
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat .no-underline\\!{
   text-decoration:underline!important;
   text-underline-offset:2px

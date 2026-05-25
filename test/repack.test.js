@@ -3766,8 +3766,15 @@ for (const [label, fixture] of [
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] \[data-app-shell-tab-controller\]/);
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] \[role=tab\]/);
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] div:has\(>button:not\(\[role=tab\]\)\)/);
+    assert.match(
+      updated,
+      /\[data-app-shell-focus-area=right-panel\] div:has\(>\[data-app-shell-tab-strip-controller\]\)>\[role=presentation\]/
+    );
+    assert.match(updated, /#browser-device-preset/);
+    assert.match(updated, /#browser-device-preset option/);
     assert.match(updated, /min-height:var\(--height-toolbar\)!important/);
     assert.match(updated, /z-index:45!important/);
+    assert.match(updated, /z-index:46!important/);
     assert.match(updated, /flex:0 1 auto!important/);
     assert.match(updated, /max-width:calc\(100% - 104px\)!important/);
     assert.match(updated, /flex:0 1 max-content!important/);
@@ -3788,6 +3795,15 @@ for (const [label, fixture] of [
     assert.match(updated, /flex:0 0 28px!important/);
     assert.match(updated, /position:relative!important/);
     assert.match(updated, /margin-left:0!important/);
+    assert.match(updated, /color-scheme:dark!important/);
+    assert.match(
+      updated,
+      /background:var\(--color-token-main-surface-primary,var\(--color-background-surface-under\)\)!important/
+    );
+    assert.match(
+      updated,
+      /color:var\(--color-token-text-primary,var\(--color-token-foreground\)\)!important/
+    );
     assert.doesNotMatch(updated, /flex:1 1 auto!important/);
     assert.doesNotMatch(updated, /position:sticky!important/);
     assert.doesNotMatch(updated, /margin-left:auto!important/);
