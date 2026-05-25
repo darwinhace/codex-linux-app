@@ -258,7 +258,7 @@ const REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_519 =
 const PET_YAPPING_USAGE_MAIN_BUNDLE_26_513 =
   'var WD=class{constructor(){this.handlers={"fast-mode-rollout-metrics":async n=>e.zt(this.hostConfig)?null:t.sn({codexHome:t.Rr({preferWsl:MD,hostConfig:this.hostConfig}),params:n}),"refresh-remote-connections":async()=>this.remoteConnectionsHandler.refreshRemoteConnections()}}handleVSCodeRequest(n,r,i,a,o){let s=r,c=this.handlers[s];if(typeof c!=`function`)throw Error(`${r} not implemented`);return c({...a,origin:n,windowHostId:i})}};';
 const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
-  new URL('../main-SLemWUtC.js', import.meta.url),
+  new URL('./fixtures/upstream/26.429.30905/.vite/build/main-SLemWUtC.js', import.meta.url),
   'utf8'
 );
 const AVATAR_OVERLAY_CONTENT_BOUNDS_BUNDLE_CURRENT = AVATAR_OVERLAY_BUNDLE_26_429_30905

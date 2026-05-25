@@ -1,3 +1,5 @@
 node_modules/
 .codex/
 .worktrees/
+/*.css
+/main-*.js
