@@ -241,6 +241,8 @@ const BROWSER_USE_HOST_FETCH_BUNDLE_26_506 = BROWSER_USE_HOST_FETCH_BUNDLE_CURRE
     'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:T,errorReporter:this.errorReporter})',
     'this.browserSessionRegistry=new GC({appSessionId:e.t,buildFlavor:w,errorReporter:this.errorReporter})'
   );
+const BROWSER_USE_HOST_FETCH_BUNDLE_26_527 =
+  'let i=require(`electron`);i=e.Hi(i);async function ju({action:e,appServerClient:t,desktopOriginator:n,headers:r={},refreshToken:i=!1}){let a=await t.getAuthToken({refreshToken:i});if(!a)throw Error(`Sign in to ChatGPT in Codex Desktop to ${e}.`);return r}var Co=`Codex Desktop`,So=`dev`,xo=`prod`,$E={desktopOriginator:Co,devApiBaseUrl:So,prodApiBaseUrl:xo},wH=`about:blank`,TH=15e3,EH=2e4,DH=1500,AH=t.Fr(`browser-use-iab-api`),ke=[`e88baf79f1e54dcfa8069716ec625735541b4636`],jH=class{tabsById=new Map;constructor(e,t,n={}){this.getBrowserHost=e,this.options=n,this.disposeBrowserUseNavigationBlockedListener=t(e=>{this.emitBrowserUseNavigationBlockedEvent(e)})}ping(){return`pong`}requireBrowserUseSession(e){return e}emitBrowserUseNavigationBlockedEvent(e){}};var nU=class{backendState={apiImpl:null,server:null,starting:null};constructor(n={appSessionId:r.t,buildFlavor:t.C.Dev,errorReporter:{reportNonFatal:()=>void 0}}){this.options=n}ensureBackend(){this.backendState.starting=(async()=>{let e=null;e=new jH(e=>this.ensureSessionRoute(e)?this.getBrowserUseHost(e):null,e=>this.getDelegate().addBrowserUseNavigationBlockedListener(e),{appSessionId:this.options.appSessionId,buildFlavor:this.options.buildFlavor,ensureSessionRoute:e=>this.ensureSessionRoute(e)}),this.backendState.apiImpl=e})()}};class App{constructor(){this.browserSessionRegistry=new nU({appSessionId:r.t,buildFlavor:w,errorReporter:this.errorReporter})}getAppServerConnection(e){return null}}';
 const CHROME_EXTENSION_SETTINGS_BUNDLE_26_519 =
   'function aa(e){return`chrome://extensions/?id=${ua(e)}`}function oa({extensionId:e,homeDir:t=(0,r.homedir)(),localAppDataDir:n=process.env.LOCALAPPDATA,platform:a=process.platform}){let s=ua(e),c=da({homeDir:t,localAppDataDir:n,platform:a});return c==null||!(0,o.existsSync)(c)?!1:(0,o.readdirSync)(c,{withFileTypes:!0}).some(e=>e.isDirectory()&&(0,o.existsSync)((0,i.join)(c,e.name,`Extensions`,s)))}async function sa({extensionId:e,platform:t=process.platform,detectChromeCommand:n=ca,runCommand:r=zi}){if(t===`darwin`){await r(ra,[`-b`,na,aa(e)]);return}if(t===`win32`){let t=n();if(t==null)throw Error(`Google Chrome is not installed`);await r(t,[aa(e)]);return}throw Error(`Opening Chrome extension settings is only supported on macOS and Windows`)}function da({homeDir:e,localAppDataDir:t,platform:n}){return n===`darwin`?(0,i.join)(e,`Library`,`Application Support`,`Google`,`Chrome`):n===`win32`?(0,i.join)(t??(0,i.join)(e,`AppData`,`Local`),`Google`,`Chrome`,`User Data`):null}function ua(e){return e}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513 =
@@ -257,6 +259,8 @@ const REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_519 =
   'function mM(){let e=(0,Z.c)(7),t=K(G),n=qr(fe.preventSleepWhileRunning),r=qr(fe.keepRemoteControlAwakeWhilePluggedIn),i=K(tt,Tt),a,o;e[0]!==r||e[1]!==n||e[2]!==i||e[3]!==t?(a=()=>t.watch(e=>{let{get:t}=e;X.dispatchMessage(`power-save-blocker-set`,{shouldBlock:!!n&&t(He),keepRemoteControlAwakeWhilePluggedIn:!!r&&i})}),o=[r,n,i,t],e[0]=r,e[1]=n,e[2]=i,e[3]=t,e[4]=a,e[5]=o):(a=e[4],o=e[5]),(0,Q.useEffect)(a,o);let s;return e[6]===Symbol.for(`react.memo_cache_sentinel`)?(s=[],e[6]=s):s=e[6],(0,Q.useEffect)(dM,s),null}';
 const PET_YAPPING_USAGE_MAIN_BUNDLE_26_513 =
   'var WD=class{constructor(){this.handlers={"fast-mode-rollout-metrics":async n=>e.zt(this.hostConfig)?null:t.sn({codexHome:t.Rr({preferWsl:MD,hostConfig:this.hostConfig}),params:n}),"refresh-remote-connections":async()=>this.remoteConnectionsHandler.refreshRemoteConnections()}}handleVSCodeRequest(n,r,i,a,o){let s=r,c=this.handlers[s];if(typeof c!=`function`)throw Error(`${r} not implemented`);return c({...a,origin:n,windowHostId:i})}};';
+const PET_YAPPING_USAGE_MAIN_BUNDLE_26_527 =
+  'var WD=class{constructor(){this.handlers={"app-connect-oauth-callback-url":async()=>({callbackUrl:`codex://connector/oauth_callback`}),"fast-mode-rollout-metrics":async e=>t.Tt({codexHome:t.Sr({preferWsl:qA,hostConfig:zl}),params:e}),"refresh-remote-connections":async()=>this.remoteConnectionsHandler.refreshRemoteConnections()}}handleVSCodeRequest(n,r,i,a,o){let s=r,c=this.handlers[s];if(typeof c!=`function`)throw Error(`${r} not implemented`);return c({...a,origin:n,windowHostId:i})}};';
 const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
   new URL('./fixtures/upstream/26.429.30905/.vite/build/main-SLemWUtC.js', import.meta.url),
   'utf8'
@@ -333,6 +337,15 @@ const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_506 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE
     'hostConfig:this.options.getHostConfigForHostId(n),cwd:e.Ot(r)',
     'hostConfig:this.options.getHostConfigForHostId(n),operationSource:`worktree_managed_create`,cwd:e.Ot(r)'
   );
+const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_527 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_506
+  .replace(
+    'streamId:a.streamId,setUpSyncedBranch:i.launchMode===`create-stable-worktree`?!1:void 0',
+    'streamId:a.streamId,allowSetupFailure:!0,setUpSyncedBranch:i.launchMode===`create-stable-worktree`?!1:void 0'
+  )
+  .replace(
+    'if(this.updateEntry(n,e=>({...e,phase:`worktree-ready`',
+    'if(r.setupError!=null){cv().info(`[worktree-create] setup-failed`,{safe:{worktreeId:t.Ut(r.worktreeGitRoot),flow:`pending`,launchMode:i.launchMode,hasLocalEnvironment:i.localEnvironmentConfigPath!=null},sensitive:{}}),this.updateEntry(n,e=>({...e,phase:`failed`,errorMessage:r.setupError,worktreeGitRoot:r.worktreeGitRoot,worktreeWorkspaceRoot:r.worktreeWorkspaceRoot,needsAttention:!0}));let e=this.statesById.get(n);e&&(e.runtime=null),this.notifyFailure(n,r.setupError);return}if(this.updateEntry(n,e=>({...e,phase:`worktree-ready`'
+  );
 const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT = `async function MZ(e,t,n){let r=await AZ(e,t,n);r!=null&&await cz.rm(r,void 0,t)}async function cX(e,t,n,r,i,a){return uX({workspaceRoot:e,localEnvironment:t,scriptType:\`setup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r})}async function lX(e,t,n,r,i){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){if(o?.aborted)return{success:!1,error:Error(\`Request canceled\`)};let l=(await e.getWorktreeRepository(NL(t),a))?.root;if(!l)return{success:!1,error:Error(\`Not a git repository\`)};let m={worktreeGitRoot:\`/tmp/source/.git\`,worktreeWorkspaceRoot:\`/tmp/worktree\`},{worktreeGitRoot:h,worktreeWorkspaceRoot:g}=m;c?.(h);if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\n\`,\`utf8\`)),await vZ(g,r??\`__none__\`,a,\`worktree\`,o)||s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config
 \`,\`utf8\`)),r==null)return s?.(\`info\`,ce.Buffer.from(\`No local environment selected
 \`,\`utf8\`)),{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await QJ(r,a);if(v.type===\`error\`)return s?.(\`stderr\`,ce.Buffer.from(\`\${v.error.message}\n\`,\`utf8\`)),{success:!1,error:v.error};s?.(\`info\`,ce.Buffer.from(\`Running setup script \${v.configPath}\n\`,\`utf8\`));let y=await cX(h,v,(e,t)=>{s?.(e,t)},o,{[UL]:t,[WL]:g},a);return{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:y?.setupResult??null}}async function RX(e,t,n,r){let i=await nX(e,n,\`worktree\`,r);if(i==null||i===\`__none__\`)return;let a=await QJ(i,n);if(a.type===\`error\`){NX().warning(\`[worktree-delete] cleanup-config-unavailable\`,{safe:{worktreeId:t},sensitive:{configPath:i,error:a.error}});return}if(!a.environment.cleanup)return;NX().info(\`[worktree-delete] cleanup-script-start\`,{safe:{worktreeId:t},sensitive:{configPath:i}});let o=await lX(e,a,void 0,r,n);if(o!=null){if(o?.status===\`failed\`)throw Error(o.error??\`Cleanup script failed\`)}}async function W1(e,{appServerClient:t,signal:n,onProgress:r}){let i=[];if(e.sourceBranch.trim().length===0)return X({status:\`error\`,error:\`invalid-params\`,message:\`Missing source branch\`,rollbackErrors:[],warnings:i});let a=null,o=null,s=!1,c=!1;try{if(await YY(e.sourceWorktreeCwd,t,n)==null)return X({status:\`error\`,error:\`source-not-on-branch\`,message:\`Source worktree must be on a branch to move to local\`,rollbackErrors:[],warnings:i});o=await YY(e.localGitRoot,t,n);let l=await B1(e.sourceWorktreeCwd,t,n);if(l==null)return X({status:\`error\`,error:\`source-detach-failed\`,message:\`Unable to resolve worktree HEAD commit\`,rollbackErrors:[],warnings:i});let u=await XZ({cwd:e.sourceWorktreeCwd,branch:l,stashUncommitted:!0},t,{onStashStatusChange:e=>{r?.(\`stash-source-changes\`,e)},onCheckoutStatusChange:e=>{r?.(\`detach-worktree-branch\`,e)}});if(u.status===\`error\`)return X({status:\`error\`,error:\`source-detach-failed\`,message:u.error,rollbackErrors:[],warnings:i,execOutput:u.execOutput});a=u.stashRef,s=!0;if(o!==e.sourceBranch){let n=await XZ({cwd:e.localGitRoot,branch:e.sourceBranch,stashUncommitted:!1},t,{onCheckoutStatusChange:e=>{r?.(\`checkout-local-branch\`,e)}});if(n.status===\`error\`)return X({status:\`error\`,error:\`checkout-local-failed\`,message:n.error,rollbackErrors:[],warnings:i,execOutput:n.execOutput});c=!0}else r?.(\`checkout-local-branch\`,\`skipped\`);if(a!=null){r?.(\`apply-changes-to-local\`,\`started\`);let n=await V1({cwd:e.localGitRoot,stashRef:a,mode:\`apply\`},t);if(n.status===\`error\`)return X({status:\`error\`,error:\`apply-source-stash-failed\`,message:n.error,rollbackErrors:[],warnings:i,execOutput:n.execOutput});r?.(\`apply-changes-to-local\`,\`completed\`),(await V1({cwd:e.localGitRoot,stashRef:a,mode:\`drop\`},t)).status===\`error\`&&i.push(\`drop-source-stash-failed\`)}else r?.(\`apply-changes-to-local\`,\`skipped\`);return X({status:\`success\`,warnings:i})}catch{return c&&(await U1({cwd:e.localGitRoot,branch:o,stashRef:null,restoreBranchError:\`restore-local-branch-failed\`,restoreStashError:\`restore-local-stash-failed\`,appServerClient:t})),s&&(await U1({cwd:e.sourceWorktreeCwd,branch:e.sourceBranch,stashRef:a,restoreBranchError:\`restore-source-branch-failed\`,restoreStashError:\`restore-source-stash-failed\`,appServerClient:t})),X({status:\`error\`,error:\`unexpected-error\`,message:\`Failed to move thread to local\`,rollbackErrors:[],warnings:i})}}`;
@@ -346,6 +359,29 @@ const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_506 = WORKTREE_ENVIRONMENT_WORKER_BU
 const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_513 = WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT
   .replaceAll('ce.Buffer', 'le.Buffer')
   .replace('cz.rm', 'bq.rm');
+const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_527 = WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT
+  .replace(
+    'localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c',
+    'localEnvironmentConfigPath:r,allowSetupFailure:i=!1,setUpSyncedBranch:a=!0,appServerClient:o,signal:s,onLog:c,onWorktreePathAllocated:l'
+  )
+  .replaceAll('s?.(`info`', 'c?.(`info`')
+  .replaceAll('s?.(`stderr`', 'c?.(`stderr`')
+  .replace('if(o?.aborted)', 'if(s?.aborted)')
+  .replace('getWorktreeRepository(NL(t),a)', 'getWorktreeRepository(NL(t),o)')
+  .replace('c?.(h);', 'l?.(h);')
+  .replace('await vZ(g,r??`__none__`,a,`worktree`,o)', 'await vZ(g,r??`__none__`,o,`worktree`,s)')
+  .replace(
+    '{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null};let v=await QJ(r,a);',
+    '{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null,setupError:null};let v=await QJ(r,o);'
+  )
+  .replace(
+    '{success:!1,error:v.error};c?.(`info`',
+    'i?{success:!0,worktreeGitRoot:h,worktreeWorkspaceRoot:g,setupResult:null,setupError:v.error}:{success:!1,error:v.error};c?.(`info`'
+  )
+  .replace(
+    'let y=await cX(h,v,(e,t)=>{c?.(e,t)},o,{[UL]:t,[WL]:g},a);',
+    'let y=await cX(h,v,(e,t)=>{c?.(e,t)},s,{[UL]:t,[WL]:g},o);'
+  );
 const TERMINAL_PANEL_BLOCK_LEGACY =
   'function vDe(e){let ee,te;t[29]!==n||t[30]!==i||t[31]!==r||t[32]!==o||t[33]!==m?(ee=()=>{let e=T.current;if(!e)return;let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;let a=!1,s=new nDe.Terminal({allowTransparency:!0,cursorStyle:`bar`,fontSize:j.current,allowProposedApi:!0,cursorBlink:!0,fontFamily:A.current,letterSpacing:0,lineHeight:1.2,theme:RQ()}),c=null,l=()=>{c??=requestAnimationFrame(()=>{c=null,s.scrollToBottom()})};E.current=s;let u=new aDe.ClipboardAddon,d=new iDe.FitAddon;D.current=d;let f=new rDe.WebLinksAddon(bDe);s.loadAddon(u),s.loadAddon(d),s.loadAddon(f),s.attachCustomKeyEventHandler(e=>lDe({clipboard:typeof navigator<`u`&&navigator.clipboard!=null&&m?navigator.clipboard:void 0,event:e,sendText:e=>{St.write(t,e)},term:s})),s.open(e);let p=n=>{a||e.isConnected&&requestAnimationFrame(()=>{a||e.isConnected&&(k.current?IQ(s,d,t):LQ(d),n?.())})};p(),M.current=!1;let h=St.register(t,{onInitLog:e=>{s.write(e),l()},onData:e=>{M.current||(M.current=!0,P(`Running`),I(null)),s.write(e),l()},onExit:()=>{a||P(`Exited`)},onError:e=>{a||(P(`Error`),I(e))},onAttach:(e,t)=>{a||(k.current=!0,P(`Running`),I(null),R(t??null),p())}}),g=s.onData(e=>{St.write(t,e)}),_=s.onKey(yDe);o&&requestAnimationFrame(()=>{a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});let v=new ResizeObserver(()=>{p()});return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||St.close(t),s.dispose(),E.current=null}},te=[n,i,r,o,m],t[29]=n,t[30]=i,t[31]=r,t[32]=o,t[33]=m,t[34]=ee,t[35]=te):(ee=t[34],te=t[35]),(0,Z.useEffect)(ee,te);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_CURRENT =
@@ -432,6 +468,8 @@ const LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519 =
   );
 const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519 =
   'function $t(){let e=C(ie),t=C(Ae),n=C(R),r=C(ce),i=C(ne),a=C(ge),{headerLeftWidth:o,headerRightWidth:s}=Oe(),c=Dt`max(0px, calc(${s}px)`;return(0,Q.jsx)(Vt,{headerHeight:`toolbar`,beforeList:(0,Q.jsxs)(Q.Fragment,{children:[i&&!a&&(0,Q.jsx)(P.div,{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:{width:o}}),n]}),afterListSticky:t,emptyState:r,afterList:(0,Q.jsxs)(Q.Fragment,{children:[e,(0,Q.jsx)(Qt,{}),(0,Q.jsx)(P.div,{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:{width:c}})]}),controller:Ve})}function Un({children:e}){let l=C(G);return(0,Q.jsx)(`div`,{children:(0,Q.jsx)(P.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,l]})})})}var Mr={RightPanelTabs:(0,Z.memo)(fr)};function Qt(){return S().formatMessage({id:`codex.rightPanel.expandFullWidth`})}';
+const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_527 =
+  'function xr({children:e}){let o=T(F),s=D(ge),c=D(ve),u=D(be);return(0,Q.jsx)(B.aside,{"data-app-shell-focus-area":`right-panel`,children:(0,Q.jsx)(`div`,{children:(0,Q.jsx)(B.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [contain:layout_paint] [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,s]})})})})}function Zr(){let e=(0,$.c)(5),t=D(nt.activeTab$),n=D(J),r=D(Me),i=D(ue);if(t!=null){let t;return e[0]!==r||e[1]!==i?(t=(0,Q.jsx)(ln,{headerHeight:`pane`,afterList:r,afterListSticky:i,controller:nt}),e[0]=r,e[1]=i,e[2]=t):t=e[2],t}let a;return e[3]===n?a=e[4]:(a=n==null?null:(0,Q.jsx)(Q.Fragment,{children:n}),e[3]=n,e[4]=a),a}function $r(e){let{children:n}=e;return li(T(F),ge,n),null}var _i={RightPanelTabs:(0,Z.memo)(Zr),RightPanelOutlet:(0,Z.memo)($r)};';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
   'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513 =
@@ -2363,6 +2401,25 @@ test('injectLinuxBrowserUseHostFetchPatch supports 26.506 auth and registry drif
   );
 });
 
+test('injectLinuxBrowserUseHostFetchPatch supports 26.527 native pipe registry drift', () => {
+  const updated = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_26_527);
+
+  assert.match(updated, /codexLinuxBrowserUseHostFetch/);
+  assert.match(updated, /async nodeReplFetch\(e\)/);
+  assert.doesNotThrow(() => new Function(updated));
+  assert.doesNotMatch(updated, /,function codexLinuxBrowserUseHostFetchSession/);
+  assert.match(updated, /codexLinuxBrowserUseHostFetchSession[\s\S]*var Co=`Codex Desktop`/);
+  assert.match(updated, /hostFetch:e=>codexLinuxBrowserUseHostFetch\(e,this\.options\.appServerConnection\)/);
+  assert.match(
+    updated,
+    /this\.browserSessionRegistry=new nU\(\{appSessionId:r\.t,buildFlavor:w,errorReporter:this\.errorReporter,appServerConnection:\(\)=>this\.getAppServerConnection\(this\.hostId\)\}\)/
+  );
+  assert.match(updated, /var codexLinuxBrowserUseElectron=i/);
+  assert.match(updated, /codexLinuxBrowserUseElectron\.net\.fetch\(r\.toString\(\),\{method:i,headers:s\}\)/);
+  assert.match(updated, /codexLinuxBrowserUseElectron\.dialog\.showMessageBox\(\{type:`question`/);
+  assert.match(updated, /desktopOriginator:Co/);
+});
+
 test('injectLinuxBrowserUseHostFetchPatch is idempotent', () => {
   const once = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT);
   const twice = injectLinuxBrowserUseHostFetchPatch(once);
@@ -2763,6 +2820,14 @@ test('injectLinuxPetYappingUsageMainPatch adds session-backed usage provider to 
   assert.match(updated, /"fast-mode-rollout-metrics"/);
 });
 
+test('injectLinuxPetYappingUsageMainPatch supports 26.527 fast-mode handler drift', () => {
+  const updated = injectLinuxPetYappingUsageMainPatch(PET_YAPPING_USAGE_MAIN_BUNDLE_26_527);
+
+  assert.match(updated, /codexLinuxPetYappingUsageProvider/);
+  assert.match(updated, /"codex-linux-pet-usage":async\(\)=>/);
+  assert.match(updated, /"fast-mode-rollout-metrics":async e=>t\.Tt/);
+});
+
 test('injectLinuxPetYappingUsageMainPatch is idempotent', () => {
   const once = injectLinuxPetYappingUsageMainPatch(PET_YAPPING_USAGE_MAIN_BUNDLE_26_513);
   const twice = injectLinuxPetYappingUsageMainPatch(once);
@@ -2914,7 +2979,8 @@ for (const [label, fixture] of [
   ['current', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT],
   ['26.417', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417],
   ['26.422', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_422],
-  ['26.506', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_506]
+  ['26.506', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_506],
+  ['26.527', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_527]
 ]) {
   test(`injectLinuxWorktreeEnvironmentMainPatch adds environment propagation to the ${label} main bundle`, () => {
     const updated = injectLinuxWorktreeEnvironmentMainPatch(fixture);
@@ -2923,7 +2989,7 @@ for (const [label, fixture] of [
     assert.match(updated, /function codexLinuxResolveWorktreeLocalEnvironmentPath\(e,t\)/);
     assert.match(
       updated,
-      /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:[A-Za-z_$][\w$]*\.streamId,setUpSyncedBranch:[A-Za-z_$][\w$]*\.launchMode===`create-stable-worktree`\?!1:void 0/
+      /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:[A-Za-z_$][\w$]*\.streamId,(?:allowSetupFailure:!0,)?setUpSyncedBranch:[A-Za-z_$][\w$]*\.launchMode===`create-stable-worktree`\?!1:void 0/
     );
     assert.match(
       updated,
@@ -2935,9 +3001,13 @@ for (const [label, fixture] of [
       updated,
       /hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`/
     );
-    if (label === '26.506') {
+    if (label === '26.506' || label === '26.527') {
       assert.match(updated, /operationSource:`worktree_pending_create`/);
       assert.match(updated, /operationSource:`worktree_managed_create`/);
+    }
+    if (label === '26.527') {
+      assert.match(updated, /allowSetupFailure:!0/);
+      assert.doesNotMatch(updated, /hasLocalEnvironment:i\.localEnvironmentConfigPath!=null/);
     }
   });
 }
@@ -3030,6 +3100,20 @@ test('injectLinuxWorktreeEnvironmentWorkerPatch supports 26.513 worker aliases',
   assert.match(updated, /le\.Buffer\.from\(`Worktree created at \$\{g\}\\n`,`utf8`\)/);
   assert.match(updated, /le\.Buffer\.from\(`No local environment selected\\n`,`utf8`\)/);
   assert.match(updated, /await vZ\(g,codexLinuxLocalEnvironmentConfigPath\?\?`__none__`,a,`worktree`,o\)/);
+});
+
+test('injectLinuxWorktreeEnvironmentWorkerPatch preserves 26.527 setup failure handling', () => {
+  const updated = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_527);
+
+  assert.match(updated, /codexLinuxWorktreeEnvironmentWorker/);
+  assert.match(
+    updated,
+    /allowSetupFailure:i=!1,setUpSyncedBranch:a=!0,appServerClient:o,signal:s,onLog:c,onWorktreePathAllocated:l/
+  );
+  assert.match(updated, /await vZ\(g,codexLinuxLocalEnvironmentConfigPath\?\?`__none__`,o,`worktree`,s\)/);
+  assert.match(updated, /let v=await QJ\(codexLinuxLocalEnvironmentConfigPath,o\);/);
+  assert.match(updated, /setupError:null/);
+  assert.match(updated, /setupError:v\.error/);
 });
 
 test('injectLinuxWorktreeEnvironmentWorkerPatch is idempotent', () => {
@@ -3459,6 +3543,58 @@ test('patchRendererNewThreadModelBundle patches split 26.519 use-model-settings 
   }
 });
 
+test('patchRendererNewThreadModelBundle accepts 26.527 upstream fresh-thread model flow', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-upstream-26527-'));
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+
+    const collaborationModeBundle = [
+      'import{t as p}from"./use-model-settings-DhE-8qP1.js";',
+      'function C(o){let{modelSettings:h}=p(o),w={mode:n,settings:{model:h.model,reasoning_effort:h.reasoningEffort,developer_instructions:null}};',
+      'let B={...j.settings,model:h.model,reasoning_effort:h.reasoningEffort};',
+      'return{modes:k,activeMode:V,selectedMode:O,setSelectedMode:F}}'
+    ].join('');
+    const startParamsBundle = [
+      'function n({agentMode:n,workspaceRoots:r,config:i,configOverrides:a,input:o,collaborationMode:c,cwd:d}){',
+      'let x=e(n,r,i),g=`project`;return{input:o,workspaceRoots:r,collaborationMode:c,permissions:x,approvalsReviewer:x.approvalsReviewer,cwd:d,workspaceKind:g}}'
+    ].join('');
+    const composerBundle = [
+      'function Cv({scope:e,activeCollaborationMode:t,setEffectiveCollaborationMode:y,startConversationWithPrimaryRuntimeForFirstTurn:b}){',
+      'let v=await n_({context:r,prompt:C,workspaceRoots:s.workspaceRoots,cwd:g,hostId:p,agentMode:n,serviceTier:_,collaborationMode:t,memoryPreferences:h??void 0,workspaceKind:u?`projectless`:`project`});',
+      'return a({startConversationParamsInput:v})}'
+    ].join('');
+
+    await fs.promises.writeFile(
+      path.join(assetsDir, 'use-collaboration-mode-B_YKft0A.js'),
+      collaborationModeBundle,
+      'utf8'
+    );
+    await fs.promises.writeFile(
+      path.join(assetsDir, 'build-start-conversation-params-NLWgpXGB.js'),
+      startParamsBundle,
+      'utf8'
+    );
+    await fs.promises.writeFile(path.join(assetsDir, 'composer-zFOdryLS.js'), composerBundle, 'utf8');
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererNewThreadModelBundle(extractedAppDir, logger);
+
+    assert.equal(result.status, 'already-applied');
+    assert.equal(result.upstream, true);
+    assert.match(result.sourceName, /use-collaboration-mode-B_YKft0A\.js/);
+    assert.match(result.sourceName, /build-start-conversation-params-NLWgpXGB\.js/);
+    assert.match(result.sourceName, /composer-zFOdryLS\.js/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('patchRendererNewThreadModelBundle patches split 26.415 bundles with setter helper drift', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-new-thread-split-26415-'));
   try {
@@ -3760,6 +3896,7 @@ for (const [label, fixture] of [
     assert.match(updated, /\.codex-linux-browser-viewport-surface/);
     assert.match(updated, /codexLinuxRightPanelTabsVisible/);
     assert.match(updated, /codexLinuxRightPanelHeaderPassthrough/);
+    assert.match(updated, /codexLinuxRightPanelHeaderOffset/);
     assert.match(updated, /\[data-app-shell-focus-area=right-panel\] div:has\(>\[data-app-shell-tab-strip-controller\]\)/);
     assert.match(updated, /\[data-app-shell-focus-area=right-panel\] \[data-app-shell-tab-strip-controller\]/);
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] \[role=tablist\]/);
@@ -3782,6 +3919,7 @@ for (const [label, fixture] of [
     assert.match(updated, /overflow:hidden!important/);
     assert.match(updated, /min-width:0!important/);
     assert.match(updated, /pointer-events:none!important/);
+    assert.match(updated, /margin-top:var\(--height-toolbar\)!important/);
     assert.match(updated, /background:transparent!important/);
     assert.match(updated, /background-color:transparent!important/);
     assert.match(updated, /background-image:none!important/);
@@ -4100,6 +4238,19 @@ test('injectLinuxRightPanelPaneTabsPatch renders right panel tabs in the pane st
   assert.match(updated, /\(0,Q\.jsx\)\(Qt,\{\}\)/);
 });
 
+test('injectLinuxRightPanelPaneTabsPatch reorders 26.527 upstream pane tabs before right panel content', () => {
+  const updated = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_527);
+
+  assert.match(updated, /codexLinuxRightPanelTabsFirst/);
+  assert.match(
+    updated,
+    /children:\[s,\/\* codexLinuxRightPanelTabsFirst \*\/e\]/
+  );
+  assert.doesNotMatch(updated, /children:\[e,s\]/);
+  assert.doesNotMatch(updated, /codexLinuxRightPanelTabsFallback/);
+  assert.match(updated, /headerHeight:`pane`/);
+});
+
 test('injectLinuxRightPanelPaneTabsPatch repairs old marked right panel slot order', () => {
   const desired = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519);
   const oldInstalled = desired.replace(
@@ -4113,8 +4264,28 @@ test('injectLinuxRightPanelPaneTabsPatch repairs old marked right panel slot ord
   assert.doesNotMatch(updated, /children:\[e,\/\* codexLinuxRightPanelTabsFirst \*\/l\]/);
 });
 
+test('injectLinuxRightPanelPaneTabsPatch repairs old marked 26.527 right panel slot order', () => {
+  const desired = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_527);
+  const oldInstalled = desired.replace(
+    'children:[s,/* codexLinuxRightPanelTabsFirst */e]',
+    'children:[e,/* codexLinuxRightPanelTabsFirst */s]'
+  );
+
+  const updated = injectLinuxRightPanelPaneTabsPatch(oldInstalled);
+
+  assert.equal(updated, desired);
+  assert.doesNotMatch(updated, /children:\[e,\/\* codexLinuxRightPanelTabsFirst \*\/s\]/);
+});
+
 test('injectLinuxRightPanelPaneTabsPatch is idempotent', () => {
   const once = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519);
+  const twice = injectLinuxRightPanelPaneTabsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('injectLinuxRightPanelPaneTabsPatch is idempotent for 26.527 upstream pane tabs', () => {
+  const once = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_527);
   const twice = injectLinuxRightPanelPaneTabsPatch(once);
 
   assert.equal(twice, once);
