@@ -1387,6 +1387,8 @@ const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPos
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
 const LINUX_BROWSER_ADJUST_EDITOR_SURFACE_PATCH_MARKER =
   'codexLinuxBrowserAdjustEditorSurface';
+const LINUX_BROWSER_COMMENT_COMPOSER_LAYOUT_PATCH_MARKER =
+  'codexLinuxBrowserCommentComposerLayout';
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_MARKER = 'codexLinuxBackgroundSubagentsPanel';
 const LINUX_LATEST_AGENT_TURN_EXPANSION_PATCH_MARKER = 'codexLinuxLatestAgentTurnExpanded';
 const LINUX_VISUAL_COMPAT_JS_TARGET_PATTERN =
@@ -4819,7 +4821,45 @@ function buildLinuxVisualCompatCssOverride() {
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]:not(:has([data-browser-comment-design-prompt-shell])){
   /* ${LINUX_BROWSER_ADJUST_EDITOR_SURFACE_PATCH_MARKER} */
-  max-height:clamp(44px,18vh,88px)!important
+  /* ${LINUX_BROWSER_COMMENT_COMPOSER_LAYOUT_PATCH_MARKER} */
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:flex-start!important;
+  align-content:flex-start!important;
+  box-sizing:border-box!important;
+  gap:8px!important;
+  min-height:72px!important;
+  max-height:clamp(72px,28vh,180px)!important;
+  overflow:hidden!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]:not(:has([data-browser-comment-design-prompt-shell]))>*{
+  min-width:0!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]:not(:has([data-browser-comment-design-prompt-shell])) :is(textarea,[contenteditable=true],[role=textbox]){
+  box-sizing:border-box!important;
+  order:1!important;
+  flex:1 1 100%!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  max-height:calc(180px - 56px)!important;
+  overflow:auto!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  white-space:pre-wrap!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]:not(:has([data-browser-comment-design-prompt-shell])) button{
+  flex:0 0 auto!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  pointer-events:auto!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]:not(:has([data-browser-comment-design-prompt-shell])) button:not(:has(svg)){
+  order:2!important;
+  align-self:flex-end!important
+}
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-browser-comment-editor-surface]:not(:has([data-browser-comment-design-prompt-shell])) button:not(:has(svg)):has(+ button:not(:has(svg))){
+  margin-left:auto!important
 }
 `;
 }

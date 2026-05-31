@@ -3942,9 +3942,7 @@ for (const [label, fixture] of [
       updated,
       /color:var\(--color-token-text-primary,var\(--color-token-foreground\)\)!important/
     );
-    assert.doesNotMatch(updated, /flex:1 1 auto!important/);
     assert.doesNotMatch(updated, /position:sticky!important/);
-    assert.doesNotMatch(updated, /margin-left:auto!important/);
     assert.doesNotMatch(updated, /min-width:min\(10rem,calc\(100% - 40px\)\)!important/);
     assert.doesNotMatch(updated, /max-width:min\(14rem,calc\(100% - 40px\)\)!important/);
     assert.match(
@@ -3952,7 +3950,27 @@ for (const [label, fixture] of [
       /\[data-browser-comment-editor-surface\]:not\(:has\(\[data-browser-comment-design-prompt-shell\]\)\)/
     );
     assert.match(updated, /codexLinuxBrowserAdjustEditorSurface/);
-    assert.match(updated, /max-height:clamp\(44px,18vh,88px\)!important/);
+    assert.match(updated, /codexLinuxBrowserCommentComposerLayout/);
+    assert.match(updated, /flex-wrap:wrap!important/);
+    assert.match(updated, /align-content:flex-start!important/);
+    assert.match(updated, /align-items:flex-start!important/);
+    assert.match(updated, /min-height:72px!important/);
+    assert.match(updated, /max-height:clamp\(72px,28vh,180px\)!important/);
+    assert.match(updated, /\:is\(textarea,\[contenteditable=true\],\[role=textbox\]\)/);
+    assert.match(updated, /order:1!important/);
+    assert.match(updated, /flex:1 1 100%!important/);
+    assert.match(updated, /width:100%!important/);
+    assert.match(updated, /min-width:0!important/);
+    assert.match(updated, /max-width:100%!important/);
+    assert.match(updated, /max-height:calc\(180px - 56px\)!important/);
+    assert.match(updated, /overflow:auto!important/);
+    assert.match(updated, /overflow-wrap:anywhere!important/);
+    assert.match(updated, /word-break:break-word!important/);
+    assert.match(updated, /white-space:pre-wrap!important/);
+    assert.match(updated, /button:not\(:has\(svg\)\)/);
+    assert.match(updated, /order:2!important/);
+    assert.match(updated, /align-self:flex-end!important/);
+    assert.match(updated, /margin-left:auto!important/);
     assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\)\{/);
     assert.match(updated, /\.codex-linux-visual-compat:not\(\.compact-window\) body\{/);
     assert.match(updated, /\.codex-linux-visual-compat\.compact-window,\n\[data-codex-window-type=electron\]\[data-codex-os=linux\]\.codex-linux-visual-compat\.compact-window body\{/);
