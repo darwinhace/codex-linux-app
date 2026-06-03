@@ -249,6 +249,8 @@ const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513 =
   'var ce={avatarOverlay:!1,ambientSuggestions:!1,artifactsPane:!1,browserAgent:!1,browserAgentAvailable:!1,browserPane:!1,computerUse:!1,computerUseNodeRepl:!1,control:!1,multiWindow:!1},le=Object.keys(ce),ue={...ce};function de(){return ue}function fe(e){return le.every(t=>typeof e[t]==`boolean`)}function pe(e){let t={...ue,...e};return le.every(e=>t[e]===ue[e])?!1:(ue=t,!0)}function me(e,{env:t=process.env,platform:n=process.platform}={}){return n!==`win32`||t.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE!==`1`?e:{...e,computerUse:!0,computerUseNodeRepl:!0}}function he(t){return de().ambientSuggestions&&t.get(e.Rt.AMBIENT_SUGGESTIONS_ENABLED)===!0}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513_20950 =
   'var fe={ambientSuggestions:!1,artifactsPane:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,control:!1,deviceAttestation:!1,multiWindow:!1},pe=Object.keys(fe),me={...fe},he=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function ge(){return me}function _e(e){return pe.every(t=>typeof e[t]==`boolean`)}function ve(e){let t={...me,...e};return pe.every(e=>t[e]===me[e])?!1:(me=t,!0)}function ye(e,{buildFlavor:n=t.D.resolve(),env:r=d.default.env,platform:i=d.default.platform}={}){let a=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...e,computerUse:!0,computerUseNodeRepl:!0}:e,o=n===t.D.Dev?be(r):null;return o==null?a:{...a,...o}}function be(e){let t=e[he]?.trim();if(!t)return null;return JSON.parse(t)}';
+const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_601 =
+  'var fe={ambientSuggestions:!1,artifactsPane:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,control:!1,deviceAttestation:!1,multiWindow:!1},pe=Object.keys(fe),me={...fe},he=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function ge(){return me}function _e(e){return pe.every(t=>typeof e[t]==`boolean`)}function ve(e){let t={...me,...e};return pe.every(e=>t[e]===me[e])?!1:(me=t,!0)}function ye(e,{buildFlavor:n=t.D.resolve(),env:r=d.default.env,platform:i=d.default.platform}={}){let a=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...e,computerUse:!0,computerUseNodeRepl:!0}:e,o=n===t.D.Dev?be(r):null;return o==null?{...a,deviceAttestation:xe({platform:i})}:{...a,...o,deviceAttestation:xe({platform:i})}}function be(e){let t=e[he]?.trim();if(!t)return null;return JSON.parse(t)}';
 const REMOTE_CONTROL_VISIBILITY_BUNDLE_26_513 =
   'import{p as e,pt as t}from"./vscode-api-DH_DWhkY.js";import{r as n}from"./remote-connection-visibility-CMLPP7XS.js";var r=t();function i(){let t=(0,r.c)(3),[i]=e(`remote_control_connections_state`),o=n(),s;return t[0]!==i||t[1]!==o?(s=a({remoteControlConnectionsState:i,slingshotEnabled:o}),t[0]=i,t[1]=o,t[2]=s):s=t[2],s}function a({remoteControlConnectionsState:e,slingshotEnabled:t}){return t&&(e?.available??!0)&&e?.accessRequired!==!0}export{i as t};';
 const POWER_SAVE_BLOCKER_BUNDLE_26_513 =
@@ -459,6 +461,8 @@ const LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_BUNDLE_26_519 =
   'function yd(e){let{conversationId:n,defaultCreateSubmitMode:i}=e,s=i===void 0?`saved`:i/* codexLinuxBrowserCommentSubmitMode */;let A=(e,t,r)=>{Ae.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:e,body:t.body,attachedImages:t.attachedImages,...r?{submitDirectly:!0}:{}})};return null}function Ng(){return (0,Y.jsx)(yd,{conversationId:t,defaultCreateSubmitMode:vt?`saved`:`direct`,onActiveEditorDismissRequestChange:Un,showAdjustEntry:v})}';
 const LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519 =
   'function Pf({bounds:e,conversationId:t,initialUrl:n,isVisible:r,scale:i,transferSourceConversationId:a,webviewRef:o,windowZoom:s}){let c=(0,J.useRef)(null);return(0,J.useLayoutEffect)(()=>{c.current?.sync({bounds:e,isVisible:r,scale:i,windowZoom:s},o)},[e,t,r,i,o,s]),null}function Yf(){let N=(0,J.useRef)(null),P=(0,J.useRef)(null),Qt=`var(--color-token-editor-background)`,Ae={dispatchMessage(){}};Ae.dispatchMessage(`browser-sidebar-sync`,{});return (0,Y.jsx)(`div`,{className:`relative min-h-0 min-w-0 flex-1`,children:(0,Y.jsxs)(`div`,{ref:N,className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:{backgroundColor:Qt},children:[(0,Y.jsx)(Pf,{bounds:Gt,conversationId:t,initialUrl:ct?at.url:`about:blank`,isVisible:p,scale:qt,transferSourceConversationId:b,webviewRef:P,windowZoom:T})]})})}';
+const LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_601 =
+  'import{t as ma}from"./browser-sidebar-webview-D1L6cqaW.js";import{t as ha}from"./browser-sidebar-retained-webview-DS1n6LTx.js";function Yf(){let j=(0,J.useRef)(null),M=(0,J.useRef)(null),An=`var(--color-token-editor-background)`,Ae={dispatchMessage(){}};Ae.dispatchMessage(`browser-sidebar-sync`,{});return(0,$.jsx)(`div`,{className:`relative min-h-0 min-w-0 flex-1`,children:(0,$.jsxs)(`div`,{ref:j,className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:{backgroundColor:An},children:[(0,$.jsx)(ma,{bounds:xn,browserTabId:n,conversationId:t,initialUrl:X.url.length===0?`about:blank`:X.url,isVisible:d,scale:Cn,webviewRef:M,windowZoom:x})]})})}';
 const LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_26_519 =
   'var k=`data-browser-sidebar-conversation-id`,A={zIndex:``},M=`2147483647`,N=`#fff`;class L{container=document.createElement(`div`);webview=document.createElement(`webview`);constructor(){this.webview.setAttribute(k,e),n.info(`IAB_LIFECYCLE renderer created hidden browser sidebar webview`)}sync(e,t){this.isAttached=!0,this.state=e,this.webview.style.backgroundColor=N,K(t,this.webview),this.syncContainerStyle()}detach(e){this.isAttached=!1,K(e,null,this.webview),this.syncContainerStyle()}syncContainerStyle(){B(this.container,this.webview,{x:1,y:2,width:300,height:200},1,1)}}function B(e,t,n,r,i){let a=r*i;Object.assign(e.style,{contain:``,height:`${Math.round(n.height*a)}px`,left:`${n.x*i}px`,opacity:`1`,overflow:`hidden`,pointerEvents:``,position:`fixed`,top:`${n.y*i}px`,transform:``,transformOrigin:``,visibility:`visible`,willChange:``,width:`${Math.round(n.width*a)}px`,zIndex:``}),Object.assign(t.style,{height:`${n.height}px`,transform:a===1?``:`scale(${a})`,transformOrigin:`top left`,willChange:a===1?``:`transform`,width:`${n.width}px`})}function H(e,t,n){Object.assign(e.style,{contain:`layout paint size style`,height:`${n.height}px`,left:`${P.x}px`,opacity:j,overflow:``,pointerEvents:`none`,position:`fixed`,top:`${P.y}px`,transform:`translate3d(0, 0, 0)`,transformOrigin:``,visibility:`visible`,willChange:`transform`,width:`${n.width}px`,zIndex:M})}';
 const LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519 =
@@ -470,6 +474,8 @@ const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519 =
   'function $t(){let e=C(ie),t=C(Ae),n=C(R),r=C(ce),i=C(ne),a=C(ge),{headerLeftWidth:o,headerRightWidth:s}=Oe(),c=Dt`max(0px, calc(${s}px)`;return(0,Q.jsx)(Vt,{headerHeight:`toolbar`,beforeList:(0,Q.jsxs)(Q.Fragment,{children:[i&&!a&&(0,Q.jsx)(P.div,{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:{width:o}}),n]}),afterListSticky:t,emptyState:r,afterList:(0,Q.jsxs)(Q.Fragment,{children:[e,(0,Q.jsx)(Qt,{}),(0,Q.jsx)(P.div,{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:{width:c}})]}),controller:Ve})}function Un({children:e}){let l=C(G);return(0,Q.jsx)(`div`,{children:(0,Q.jsx)(P.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,l]})})})}var Mr={RightPanelTabs:(0,Z.memo)(fr)};function Qt(){return S().formatMessage({id:`codex.rightPanel.expandFullWidth`})}';
 const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_527 =
   'function xr({children:e}){let o=T(F),s=D(ge),c=D(ve),u=D(be);return(0,Q.jsx)(B.aside,{"data-app-shell-focus-area":`right-panel`,children:(0,Q.jsx)(`div`,{children:(0,Q.jsx)(B.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [contain:layout_paint] [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,s]})})})})}function Zr(){let e=(0,$.c)(5),t=D(nt.activeTab$),n=D(J),r=D(Me),i=D(ue);if(t!=null){let t;return e[0]!==r||e[1]!==i?(t=(0,Q.jsx)(ln,{headerHeight:`pane`,afterList:r,afterListSticky:i,controller:nt}),e[0]=r,e[1]=i,e[2]=t):t=e[2],t}let a;return e[3]===n?a=e[4]:(a=n==null?null:(0,Q.jsx)(Q.Fragment,{children:n}),e[3]=n,e[4]=a),a}function $r(e){let{children:n}=e;return li(T(F),ge,n),null}var _i={RightPanelTabs:(0,Z.memo)(Zr),RightPanelOutlet:(0,Z.memo)($r)};';
+const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_601 =
+  'function Sn(){let e=(0,$.c)(5),t=D(nt.activeTab$),n=D(J),r=D(Me),i=D(ue);if(t!=null)return(0,Q.jsx)(ln,{headerHeight:`pane`,afterList:r,afterListSticky:i,controller:nt});return null}function Tn(){let e=y(ue),t=y(Ce),n=y(Se),r=y(we),i=y(xe),a=y(Ze),{headerLeftWidth:o,headerRightWidth:s}=Je(),c=Jt`max(0px, calc(${s}px)`;return(0,Q.jsx)(fn,{headerHeight:`toolbar`,beforeList:(0,Q.jsxs)(Q.Fragment,{children:[i&&!a&&(0,Q.jsx)(U.div,{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:{width:o}}),n]}),afterListSticky:t,emptyState:r,afterList:(0,Q.jsxs)(Q.Fragment,{children:[e,(0,Q.jsx)(Cn,{}),(0,Q.jsx)(U.div,{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:{width:c}})]}),controller:rt})}function Or({children:e,isRightPanelOpen:t,mainContentWidth:n,rightPanelWidth:r,rightPanelWidthRatio:i,widthMode:a}){let o=v(I),s=y(de),l=y(We),u=y(_e),d=y(Fe),{rightPanelLayoutTick:f}=Je(),p=a===`full`,m=Jt`${r}px`;return(0,Q.jsx)(U.aside,{"data-app-shell-focus-area":`right-panel`,children:(0,Q.jsx)(`div`,{children:(0,Q.jsx)(U.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [contain:layout_paint] [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,s]})})})})}function Cn(){return D().formatMessage({id:`codex.rightPanel.expandFullWidth`})}function ri(e){return null}function ii(){return(0,Q.jsx)(Tn,{})}function oi(e){let{children:n}=e,o=v(I);return gi(o,de,n),null}var wi={RightPanelTabs:(0,Z.memo)(ii),RightPanelOutlet:(0,Z.memo)(oi)};';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
   'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513 =
@@ -2510,6 +2516,19 @@ test('injectLinuxRemoteControlPatch supports 26.513 feature override helper drif
   assert.match(updated, /return o==null\?a:\{\.\.\.a,\.\.\.o\}/);
 });
 
+test('injectLinuxRemoteControlPatch supports 26.601 device attestation helper drift', () => {
+  const updated = injectLinuxRemoteControlPatch(
+    REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_601
+  );
+
+  assert.match(updated, /codexLinuxRemoteControlFeatureAvailability/);
+  assert.match(updated, /codexLinuxRemoteControlFeatures=i===`linux`&&r\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0\}:e/);
+  assert.match(
+    updated,
+    /return o==null\?\{\.\.\.a,deviceAttestation:xe\(\{platform:i\}\)\}:\{\.\.\.a,\.\.\.o,deviceAttestation:xe\(\{platform:i\}\)\}/
+  );
+});
+
 test('injectLinuxRemoteControlPatch is idempotent', () => {
   const once = injectLinuxRemoteControlPatch(REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513);
   const twice = injectLinuxRemoteControlPatch(once);
@@ -4077,6 +4096,18 @@ test('injectLinuxBrowserViewportSurfacePatch makes the Browser native viewport t
   assert.match(updated, /style:\{backgroundColor:Qt\}/);
 });
 
+test('injectLinuxBrowserViewportSurfacePatch supports 26.601 imported webview components', () => {
+  const updated = injectLinuxBrowserViewportSurfacePatch(
+    LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_601
+  );
+
+  assert.match(updated, /codexLinuxBrowserViewportSurface/);
+  assert.match(updated, /"data-codex-linux-browser-viewport":!0/);
+  assert.match(updated, /codex-linux-browser-viewport-surface/);
+  assert.match(updated, /isVisible:d\|\|X\.url\.length>0\/\* codexLinuxBrowserWebviewVisibleWhenUrl \*\//);
+  assert.doesNotMatch(updated, /codexLinuxBrowserWebviewPanelHost/);
+});
+
 test('injectLinuxBrowserViewportSurfacePatch is idempotent', () => {
   const once = injectLinuxBrowserViewportSurfacePatch(LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519);
   const twice = injectLinuxBrowserViewportSurfacePatch(once);
@@ -4269,6 +4300,16 @@ test('injectLinuxRightPanelPaneTabsPatch reorders 26.527 upstream pane tabs befo
   assert.match(updated, /headerHeight:`pane`/);
 });
 
+test('injectLinuxRightPanelPaneTabsPatch reorders 26.601 right panel tabs before content', () => {
+  const updated = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_601);
+
+  assert.match(updated, /codexLinuxRightPanelPaneTabs/);
+  assert.match(updated, /codexLinuxRightPanelTabsFirst/);
+  assert.match(updated, /headerHeight:`pane`/);
+  assert.match(updated, /children:\[s,\/\* codexLinuxRightPanelTabsFirst \*\/e\]/);
+  assert.doesNotMatch(updated, /children:\[e,s\]/);
+});
+
 test('injectLinuxRightPanelPaneTabsPatch repairs old marked right panel slot order', () => {
   const desired = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519);
   const oldInstalled = desired.replace(
@@ -4304,6 +4345,13 @@ test('injectLinuxRightPanelPaneTabsPatch is idempotent', () => {
 
 test('injectLinuxRightPanelPaneTabsPatch is idempotent for 26.527 upstream pane tabs', () => {
   const once = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_527);
+  const twice = injectLinuxRightPanelPaneTabsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('injectLinuxRightPanelPaneTabsPatch is idempotent for 26.601 right panel order', () => {
+  const once = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_601);
   const twice = injectLinuxRightPanelPaneTabsPatch(once);
 
   assert.equal(twice, once);
@@ -5197,6 +5245,31 @@ test('patchBetterSqlite3V8ExternalPointerTagSource adapts source for Electron 42
 });
 
 test('createInstallDiagnosticManifest includes release, runtime, native module, and patch state', () => {
+  const bundledPlugins = {
+    status: 'installed',
+    marketplacePath:
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/.agents/plugins/marketplace.json',
+    pluginsRoot:
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins',
+    marketplacePlugins: ['browser', 'chrome', 'computer-use', 'latex', 'sites'],
+    installedPlugins: [
+      {
+        name: 'browser',
+        version: '26.601.21317',
+        path: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/browser'
+      },
+      {
+        name: 'chrome',
+        version: '26.601.21317',
+        path: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/chrome'
+      },
+      {
+        name: 'sites',
+        version: '26.601.21317',
+        path: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/sites'
+      }
+    ]
+  };
   const manifest = createInstallDiagnosticManifest({
     installedAt: '2026-03-27T08:11:28.661Z',
     channel: CHANNELS.stable,
@@ -5251,6 +5324,7 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       hostExecutablePath:
         '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host'
     },
+    bundledPlugins,
     chromeExtensionHostCleanup: {
       status: 'terminated',
       terminatedPids: [1234],
@@ -5394,6 +5468,7 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       hostExecutablePath:
         '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host'
     },
+    bundledPlugins,
     chromeExtensionHostCleanup: {
       status: 'terminated',
       terminatedPids: [1234],
