@@ -376,6 +376,8 @@ export async function installDesktop(options, logger) {
   );
   const linuxBrowserCommentSubmitModePatch =
     await patchRendererLinuxBrowserCommentSubmitModeBundle(extractedAppDir, logger);
+  const linuxBrowserCommentSubmitCleanupPatch =
+    await patchRendererLinuxBrowserCommentSubmitCleanupBundle(extractedAppDir, logger);
   const backgroundSubagentsPanelPatch = await patchRendererBackgroundSubagentsPanelBundle(
     extractedAppDir,
     logger
@@ -449,6 +451,7 @@ export async function installDesktop(options, logger) {
     linuxRightPanelPaneTabs: linuxRightPanelPaneTabsPatch,
     linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
     linuxBrowserCommentSubmitMode: linuxBrowserCommentSubmitModePatch,
+    linuxBrowserCommentSubmitCleanup: linuxBrowserCommentSubmitCleanupPatch,
     backgroundSubagentsPanel: backgroundSubagentsPanelPatch,
     latestAgentTurnExpansion: latestAgentTurnExpansionPatch,
     compactSlashCommand: compactSlashCommandPatch
@@ -535,6 +538,7 @@ export async function installDesktop(options, logger) {
       linuxRightPanelPaneTabs: linuxRightPanelPaneTabsPatch,
       linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
       linuxBrowserCommentSubmitMode: linuxBrowserCommentSubmitModePatch,
+      linuxBrowserCommentSubmitCleanup: linuxBrowserCommentSubmitCleanupPatch,
       backgroundSubagentsPanel: backgroundSubagentsPanelPatch,
       latestAgentTurnExpansion: latestAgentTurnExpansionPatch,
       compactSlashCommand: compactSlashCommandPatch
@@ -1398,6 +1402,8 @@ const LINUX_RIGHT_PANEL_HEADER_PASSTHROUGH_PATCH_MARKER =
 const LINUX_RIGHT_PANEL_HEADER_OFFSET_PATCH_MARKER = 'codexLinuxRightPanelHeaderOffset';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
+const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_PATCH_MARKER =
+  'codexLinuxBrowserCommentSubmitCleanup';
 const LINUX_BROWSER_ADJUST_EDITOR_SURFACE_PATCH_MARKER =
   'codexLinuxBrowserAdjustEditorSurface';
 const LINUX_BROWSER_COMMENT_COMPOSER_LAYOUT_PATCH_MARKER =
@@ -1442,6 +1448,12 @@ const LINUX_BROWSER_COMMENT_SUBMIT_MODE_CANDIDATE_MARKERS = [
   'browser-sidebar-comment-overlay-submit',
   'defaultCreateSubmitMode'
 ];
+const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CANDIDATE_MARKERS = [
+  'browser-sidebar-comment-overlay-submit',
+  'commentAttachments:',
+  'browserConversationId:',
+  'onCommentsChange:'
+];
 const LINUX_BACKGROUND_SUBAGENTS_PANEL_CANDIDATE_MARKERS = [
   'composer.backgroundSubagents.summary',
   'isBackgroundSubagentsPanelVisible:'
@@ -1461,6 +1473,10 @@ const LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN =
   /(?<modeVar>[A-Za-z_$][\w$]*)=(?<propVar>[A-Za-z_$][\w$]*)===void 0\?`direct`:\k<propVar>/;
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_PATTERN =
   /(?<prop>defaultCreateSubmitMode):(?<condition>[A-Za-z_$][\w$]*)\?`saved`:`direct`/;
+const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_PATTERN =
+  /let (?<contextVar>[A-Za-z_$][\w$]*)=await (?<buildContextFn>[A-Za-z_$][\w$]*)\((?<promptVar>[A-Za-z_$][\w$]*),void 0,(?<conversationVar>[A-Za-z_$][\w$]*),(?<objectiveVar>[A-Za-z_$][\w$]*)\?\?void 0\);(?<analyticsFn>[A-Za-z_$][\w$]*)\((?<submitActionVar>[A-Za-z_$][\w$]*),(?<serviceTierVar>[A-Za-z_$][\w$]*)\),(?<pendingFn>[A-Za-z_$][\w$]*)\(!0\);let (?<submitFn>[A-Za-z_$][\w$]*)=async\(\)=>/;
+const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_STATE_PATTERN =
+  /(?<clearFn>[A-Za-z_$][\w$]*)\(\{browserConversationId:(?<browserConversationVar>[A-Za-z_$][\w$]*),browserTabId:(?<browserTabVar>[A-Za-z_$][\w$]*),fallbackBrowserConversationId:(?<fallbackConversationVar>[A-Za-z_$][\w$]*),comments:(?<commentsVar>[A-Za-z_$][\w$]*),onCommentsChange:(?<onCommentsChangeVar>[A-Za-z_$][\w$]*)\}\)\|\|\k<onCommentsChangeVar>\(\[\]\)/;
 const LINUX_BROWSER_VIEWPORT_SURFACE_PATTERN =
   /ref:(?<refVar>[A-Za-z_$][\w$]*),className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:\{backgroundColor:(?<backgroundVar>[A-Za-z_$][\w$]*)\},children:\[/;
 const LINUX_BROWSER_WEBVIEW_PANEL_HOST_SIGNATURE_PATTERN =
@@ -5487,6 +5503,153 @@ export function injectLinuxBrowserCommentSubmitModePatch(bundleSource, options =
   return updated;
 }
 
+export async function patchRendererLinuxBrowserCommentSubmitCleanupBundle(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate = LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CANDIDATE_MARKERS.every((marker) =>
+      original.includes(marker)
+    );
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer browser-comment submit cleanup bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxBrowserCommentSubmitCleanupPatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux browser-comment submit cleanup patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(`Patched browser-comment submit cleanup into renderer bundle ${assetName}`);
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux browser-comment submit cleanup patch because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux browser-comment submit cleanup patch because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxBrowserCommentSubmitCleanupPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxBrowserCommentSubmitCleanupPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxBrowserCommentSubmitCleanupPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  const stateMatch = LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_STATE_PATTERN.exec(bundleSource);
+  const filterFn = stateMatch
+    ? findLinuxBrowserCommentAttachmentFilter(bundleSource, {
+        commentsVar: stateMatch.groups.commentsVar,
+        onCommentsChangeVar: stateMatch.groups.onCommentsChangeVar
+      })
+    : null;
+  if (!stateMatch || !filterFn) {
+    throw new Error(
+      buildLinuxBrowserCommentSubmitCleanupPatchErrorMessage(bundleSource, options.sourceName)
+    );
+  }
+  const {
+    browserConversationVar,
+    browserTabVar,
+    clearFn,
+    commentsVar,
+    fallbackConversationVar,
+    onCommentsChangeVar
+  } = stateMatch.groups;
+
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_PATTERN,
+    ({
+      contextVar,
+      buildContextFn,
+      promptVar,
+      conversationVar,
+      objectiveVar,
+      analyticsFn,
+      submitActionVar,
+      serviceTierVar,
+      pendingFn,
+      submitFn
+    }) => {
+      const contextBuild = `let ${contextVar}=await ${buildContextFn}(${promptVar},void 0,${conversationVar},${objectiveVar}??void 0)`;
+      const clearBrowserSidebar = `${clearFn}({browserConversationId:${browserConversationVar},browserTabId:${browserTabVar},fallbackBrowserConversationId:${fallbackConversationVar},comments:${commentsVar},onCommentsChange:()=>{}})`;
+      const clearComposerPill =
+        `${onCommentsChangeVar}(${filterFn}(${commentsVar}))` +
+        `/* ${LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_PATCH_MARKER} */`;
+      return `${contextBuild};${clearBrowserSidebar},${clearComposerPill},${analyticsFn}(${submitActionVar},${serviceTierVar}),${pendingFn}(!0);let ${submitFn}=async()=>`;
+    },
+    buildLinuxBrowserCommentSubmitCleanupPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+function findLinuxBrowserCommentAttachmentFilter(bundleSource, { commentsVar, onCommentsChangeVar }) {
+  const escapedComments = escapeRegExp(commentsVar);
+  const escapedOnChange = escapeRegExp(onCommentsChangeVar);
+  const match = new RegExp(
+    `=\\(\\)=>\\{${escapedOnChange}\\((?<filterFn>[A-Za-z_$][\\w$]*)\\(${escapedComments}\\)\\)\\}`
+  ).exec(bundleSource);
+  return match?.groups?.filterFn ?? null;
+}
+
 export async function patchRendererBackgroundSubagentsPanelBundle(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
@@ -5726,6 +5889,14 @@ function buildLinuxBrowserCommentSubmitModePatchErrorMessage(bundleSource, sourc
   );
 }
 
+function buildLinuxBrowserCommentSubmitCleanupPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxBrowserCommentSubmitCleanupBundle(bundleSource)
+  );
+}
+
 function buildLinuxBackgroundSubagentsPanelPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     LINUX_BACKGROUND_SUBAGENTS_PANEL_PATCH_BASE_ERROR_MESSAGE,
@@ -5782,6 +5953,33 @@ function analyzeLinuxBrowserCommentSubmitModeBundle(bundleSource) {
       !detected.overlaySubmitMessage && 'overlay submit event marker',
       !detected.submitModeProp && 'default create submit mode prop',
       !detected.directSubmitMode && 'direct create submit mode value'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxBrowserCommentSubmitCleanupBundle(bundleSource) {
+  const stateMatch = LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_STATE_PATTERN.exec(bundleSource);
+  const detected = {
+    overlaySubmitMessage: bundleSource.includes('browser-sidebar-comment-overlay-submit'),
+    commentAttachments: bundleSource.includes('commentAttachments:'),
+    submitContext: LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_PATTERN.test(bundleSource),
+    cleanupState: stateMatch != null,
+    browserCommentFilter:
+      stateMatch != null &&
+      findLinuxBrowserCommentAttachmentFilter(bundleSource, {
+        commentsVar: stateMatch.groups.commentsVar,
+        onCommentsChangeVar: stateMatch.groups.onCommentsChangeVar
+      }) != null
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.overlaySubmitMessage && 'overlay submit event marker',
+      !detected.commentAttachments && 'comment attachments field',
+      !detected.submitContext && 'submit context creation block',
+      !detected.cleanupState && 'browser comment cleanup state',
+      !detected.browserCommentFilter && 'browser comment attachment filter'
     ].filter(Boolean)
   };
 }

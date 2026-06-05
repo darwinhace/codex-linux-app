@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {
   applyLinuxBrowserCommentPositionPatch,
+  applyLinuxBrowserCommentSubmitCleanupPatch,
   applyLinuxBrowserCommentSubmitModePatch,
   applyLinuxBrowserWebviewStackingPatch,
   applyLinuxBrowserViewportSurfacePatch,
@@ -44,6 +45,7 @@ import {
   installLinuxChromeBundledPluginHost,
   installLinuxChromeExtensionHost,
   injectLinuxBrowserCommentPositionPatch,
+  injectLinuxBrowserCommentSubmitCleanupPatch,
   injectLinuxBrowserCommentSubmitModePatch,
   injectLinuxBrowserWebviewStackingPatch,
   injectLinuxBrowserViewportSurfacePatch,
@@ -76,6 +78,7 @@ import {
   isLinuxChromeExtensionHostProcessCommandLine,
   patchRendererCompactSlashCommandBundle,
   patchRendererBackgroundSubagentsPanelBundle,
+  patchRendererLinuxBrowserCommentSubmitCleanupBundle,
   patchRendererLinuxBrowserCommentSubmitModeBundle,
   patchRendererLinuxBrowserWebviewStackingBundle,
   patchRendererLinuxBrowserViewportSurfaceBundle,
@@ -459,6 +462,8 @@ const LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_26_519 =
   'function yd(e){let t=(0,q.c)(97),{conversationId:n,defaultCreateSubmitMode:i,onActiveEditorDismissRequestChange:a,showAdjustEntry:o}=e,s=i===void 0?`direct`:i,c=o===void 0?!0:o;let A=(e,t,r)=>{Ae.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:e,body:t.body,attachedImages:t.attachedImages,...r?{submitDirectly:!0}:{}})};let be=s===`direct`,Ce=H.session.target.mode===`design`?`saved`:s;return null}';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_BUNDLE_26_519 =
   'function yd(e){let{conversationId:n,defaultCreateSubmitMode:i}=e,s=i===void 0?`saved`:i/* codexLinuxBrowserCommentSubmitMode */;let A=(e,t,r)=>{Ae.dispatchMessage(`browser-sidebar-comment-overlay-submit`,{conversationId:n,sessionId:e,body:t.body,attachedImages:t.attachedImages,...r?{submitDirectly:!0}:{}})};return null}function Ng(){return (0,Y.jsx)(yd,{conversationId:t,defaultCreateSubmitMode:vt?`saved`:`direct`,onActiveEditorDismissRequestChange:Un,showAdjustEntry:v})}';
+const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_BUNDLE_26_601 =
+  'import{r as Mc}from"./browser-sidebar-state.js";import{a as rc,o as cc}from"./above-composer-panel-row.js";const view={commentAttachments:pi};d(`browser-sidebar-comment-overlay-submit`,e=>{});mc=()=>{va(rc(pi))},hc=()=>{va(cc(pi))},_c=({discardFileAttachments:e=!1}={})=>{X.setText(``),Mc({browserConversationId:q,browserTabId:je,fallbackBrowserConversationId:U,comments:pi,onCommentsChange:va})||va([]),ba([])};let x=await bc(v,void 0,U,h??void 0);vc(p,u),xn(!0);let S=async()=>{return await A(x)};';
 const LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519 =
   'function Pf({bounds:e,conversationId:t,initialUrl:n,isVisible:r,scale:i,transferSourceConversationId:a,webviewRef:o,windowZoom:s}){let c=(0,J.useRef)(null);return(0,J.useLayoutEffect)(()=>{c.current?.sync({bounds:e,isVisible:r,scale:i,windowZoom:s},o)},[e,t,r,i,o,s]),null}function Yf(){let N=(0,J.useRef)(null),P=(0,J.useRef)(null),Qt=`var(--color-token-editor-background)`,Ae={dispatchMessage(){}};Ae.dispatchMessage(`browser-sidebar-sync`,{});return (0,Y.jsx)(`div`,{className:`relative min-h-0 min-w-0 flex-1`,children:(0,Y.jsxs)(`div`,{ref:N,className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:{backgroundColor:Qt},children:[(0,Y.jsx)(Pf,{bounds:Gt,conversationId:t,initialUrl:ct?at.url:`about:blank`,isVisible:p,scale:qt,transferSourceConversationId:b,webviewRef:P,windowZoom:T})]})})}';
 const LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_601 =
@@ -4657,6 +4662,84 @@ test('patchRendererLinuxBrowserCommentSubmitModeBundle patches the composer bund
       sourceName: 'composer.js'
     });
     assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /defaultCreateSubmitMode:`saved`/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('injectLinuxBrowserCommentSubmitCleanupPatch clears browser annotation pill immediately', () => {
+  const updated = injectLinuxBrowserCommentSubmitCleanupPatch(
+    LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_BUNDLE_26_601
+  );
+
+  assert.match(updated, /codexLinuxBrowserCommentSubmitCleanup/);
+  assert.match(updated, /onCommentsChange:\(\)=>\{\}\}\),va\(rc\(pi\)\)/);
+  assert.match(updated, /va\(rc\(pi\)\)\/\* codexLinuxBrowserCommentSubmitCleanup \*\/,vc\(p,u\)/);
+  assert.doesNotMatch(updated, /let x=await bc\(v,void 0,U,h\?\?void 0\);vc\(p,u\),xn\(!0\)/);
+});
+
+test('injectLinuxBrowserCommentSubmitCleanupPatch is idempotent', () => {
+  const once = injectLinuxBrowserCommentSubmitCleanupPatch(
+    LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_BUNDLE_26_601
+  );
+  const twice = injectLinuxBrowserCommentSubmitCleanupPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBrowserCommentSubmitCleanupPatch skips patching when disabled', () => {
+  const result = applyLinuxBrowserCommentSubmitCleanupPatch(
+    LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_BUNDLE_26_601,
+    { skip: true }
+  );
+
+  assert.equal(result.updated, LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_BUNDLE_26_601);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxBrowserCommentSubmitCleanupPatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () =>
+      injectLinuxBrowserCommentSubmitCleanupPatch('const noop = true;', {
+        sourceName: 'composer.js'
+      }),
+    {
+      message:
+        /Could not patch the renderer browser comment submit mode bundle for Linux\. Source: composer\.js\. Missing anchors: overlay submit event marker, comment attachments field, submit context creation block, browser comment cleanup state, browser comment attachment filter\. Detected anchors: overlaySubmitMessage=no, commentAttachments=no, submitContext=no, cleanupState=no, browserCommentFilter=no\./
+    }
+  );
+});
+
+test('patchRendererLinuxBrowserCommentSubmitCleanupBundle patches the composer bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-browser-comment-submit-cleanup-ok-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'composer.js');
+    await fs.promises.writeFile(
+      bundlePath,
+      LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_BUNDLE_26_601,
+      'utf8'
+    );
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererLinuxBrowserCommentSubmitCleanupBundle(extractedAppDir, logger);
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'composer.js'
+    });
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /codexLinuxBrowserCommentSubmitCleanup/
+    );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
