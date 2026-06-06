@@ -397,6 +397,8 @@ const TERMINAL_PANEL_BLOCK_26_415 =
   'let ee,te;t[33]!==n||t[34]!==i||t[35]!==r||t[36]!==o||t[37]!==a||t[38]!==d?(ee=()=>{let e=w.current,t=C.current;if(!e||!t)return;let s=a??Ye.create({conversationId:n,hostId:r??null,cwd:i??null});D.current=s,O.current=!1;let c=!1,l=new Jve.Terminal({allowTransparency:!0}),u=null,f=()=>{u??=requestAnimationFrame(()=>{u=null,l.scrollToBottom()})};T.current=l;let m=new Kve.FitAddon;E.current=m;l.open(e);let g=t=>{c||e.isConnected&&requestAnimationFrame(()=>{c||e.isConnected&&(O.current?k8(l,m,s):m.fit(),t?.())})};g();let _=Ye.register(s,{onInitLog:e=>{l.write(e),f()},onData:e=>{l.write(e),f()},onAttach:()=>{c||(O.current=!0,g())}}),v=l.onData(e=>{Ye.write(s,e)}),y=l.onTitleChange(e=>{Ye.setTitle(s,e)}),b=l.onKey(eye);a&&requestAnimationFrame(()=>{c||Ye.create({sessionId:a,conversationId:n,hostId:r??null,cwd:i??null,cols:l.cols,rows:l.rows})});let x=new ResizeObserver(()=>{g()});return x.observe(e),()=>{c=!0,u!=null&&(cancelAnimationFrame(u),u=null),x.disconnect(),v.dispose(),y.dispose(),b.dispose(),_(),E.current=null,D.current=null,O.current=!1,a||Ye.close(s),l.dispose(),T.current=null}},te=[n,i,r,o,a,d],t[33]=n,t[34]=i,t[35]=r,t[36]=o,t[37]=a,t[38]=d,t[39]=ee,t[40]=te):(ee=t[39],te=t[40]),(0,K.useEffect)(ee,te);return(0,q.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_26_513 =
   'let fe;t[32]!==n||t[33]!==a||t[34]!==A||t[35]!==i||t[36]!==s||t[37]!==c||t[38]!==o||t[39]!==u?(fe=()=>{let e=ee.current,t=C.current;if(!e||!t)return;let r=A(),l=o??H.create({conversationId:n,conversationTitle:r,hostId:i??null,cwd:a??null});T.current=l,E.current=!1;let d=!1,f=new LT.Terminal({allowTransparency:!0}),p=null,m=()=>{p??=requestAnimationFrame(()=>{p=null,f.scrollToBottom()})};w.current=f;let h=new PT.ClipboardAddon,g=new FT.FitAddon;te.current=g;let _=new IT.WebLinksAddon(UT);f.loadAddon(h),f.loadAddon(g),f.loadAddon(_),f.attachCustomKeyEventHandler(e=>ST({sendText:e=>{H.write(l,e)},term:f})),f.open(e);let v=t=>{d||e.isConnected&&requestAnimationFrame(()=>{d||e.isConnected&&(E.current?RT(f,g,l):g.fit(),t?.())})};v();let y=H.register(l,{onInitLog:e=>{f.write(e),m()},onData:e=>{f.write(e),m()},onAttach:()=>{d||(E.current=!0,v())}}),b=f.onData(e=>{H.write(l,e)}),x=f.onTitleChange(e=>{H.setTitle(l,e)}),S=f.onKey(HT);o&&requestAnimationFrame(()=>{d||H.create({sessionId:o,conversationId:n,conversationTitle:r,hostId:i??null,cwd:a??null,cols:f.cols,rows:f.rows})});let D=new ResizeObserver(()=>{v()});return D.observe(e),()=>{d=!0,p!=null&&(cancelAnimationFrame(p),p=null),D.disconnect(),b.dispose(),x.dispose(),S.dispose(),y(),te.current=null,T.current=null,E.current=!1,o||H.close(l),f.dispose(),w.current=null}},t[32]=n,t[33]=a,t[34]=A,t[35]=i,t[36]=s,t[37]=c,t[38]=o,t[39]=u,t[40]=fe):fe=t[40];let pe;t[41]!==n||t[42]!==a||t[43]!==i||t[44]!==s||t[45]!==c||t[46]!==o||t[47]!==u?(pe=[n,a,i,s,c,o,u],t[41]=n,t[42]=a,t[43]=i,t[44]=s,t[45]=c,t[46]=o,t[47]=u,t[48]=pe):pe=t[48],(0,L.useEffect)(fe,pe);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
+const TERMINAL_PANEL_BLOCK_26_602 =
+  'let G;t[29]!==n||t[30]!==s||t[31]!==ce||t[32]!==o||t[33]!==l||t[34]!==u||t[35]!==c||t[36]!==f?(G=()=>{let e=T.current,t=w.current;if(!e||!t)return;let r=ce(),a=c??i.create({conversationId:n,conversationTitle:r,hostId:o??null,cwd:s??null});O.current=a,k.current=!1;let d=!1,p=new ve.Terminal({allowTransparency:!0}),m=null,h=()=>{m??=requestAnimationFrame(()=>{m=null,p.scrollToBottom()})};E.current=p;let g=new he.ClipboardAddon,_=new ge.FitAddon;D.current=_;p.loadAddon(g),p.loadAddon(_),p.open(e);let y=()=>{d||e.isConnected&&requestAnimationFrame(()=>{d||e.isConnected&&(k.current?ye(p,_,a):_.fit())})};y();let b=i.register(a,{onInitLog:e=>{let t=te(p);p.reset(),p.write(e),t&&h()},onData:e=>{let t=te(p);p.write(e),t&&h()},onAttach:()=>{d||(k.current=!0,y())}}),x=p.onData(e=>{i.write(a,e)}),S=p.onTitleChange(e=>{i.setTitle(a,e)}),ee=p.onKey(Ce);c&&requestAnimationFrame(()=>{d||i.create({sessionId:c,conversationId:n,conversationTitle:r,hostId:o??null,cwd:s??null,cols:p.cols,rows:p.rows})});let C=new ResizeObserver(()=>{y()});return C.observe(e),()=>{d=!0,m!=null&&(cancelAnimationFrame(m),m=null),C.disconnect(),x.dispose(),S.dispose(),ee.dispose(),b(),D.current=null,O.current=null,k.current=!1,c||i.close(a),p.dispose(),E.current=null}},t[29]=n,t[30]=s,t[31]=ce,t[32]=o,t[33]=l,t[34]=u,t[35]=c,t[36]=f,t[37]=G):G=t[37];let K;t[38]!==n||t[39]!==s||t[40]!==o||t[41]!==l||t[42]!==u||t[43]!==c||t[44]!==f?(K=[n,s,o,l,u,c,f],t[38]=n,t[39]=s,t[40]=o,t[41]=l,t[42]=u,t[43]=c,t[44]=f,t[45]=K):K=t[45],(0,Z.useEffect)(G,K);return(0,H.jsx)(`div`,{"data-codex-terminal":!0})}';
 const NEW_THREAD_MODEL_SELECTOR_BLOCK_CURRENT =
   'function xf(e){let t=(0,Q.c)(30),n=e===void 0?null:e,{authMethod:r}=Ds(),i=Un(),a;t[0]===Symbol.for(`react.memo_cache_sentinel`)?(a={select:Tf},t[0]=a):a=t[0];let{data:o}=Le(`active-workspace-roots`,a),s=o??null,c;t[1]===s?c=t[2]:(c={hostId:De,cwd:s},t[1]=s,t[2]=c);let l=yf(c),u=_f(),d=Dn(n,wf),f=Dn(n,Cf),p;t[3]===f?p=t[4]:(p=f!=null&&f.trim().length>0?f:null,t[3]=f,t[4]=p);let m=p,h=Dn(n,Sf),g=r===`copilot`,_;t[5]!==i||t[6]!==n?(_=async(e,t)=>{n!=null&&await mf(i,n,e,t)},t[5]=i,t[6]=n,t[7]=_):_=t[7];let v=_,y;t[8]!==h||t[9]!==l||t[10]!==u||t[11]!==d||t[12]!==g||t[13]!==m?(y=d?{model:m??l.model,reasoningEffort:h,isLoading:!1}:g?u:l,t[8]=h,t[9]=l,t[10]=u,t[11]=d,t[12]=g,t[13]=m,t[14]=y):y=t[14];let{model:b,reasoningEffort:x,isLoading:S}=y,{setData:C}=Os(`copilot-default-model`),w=o??null,T;t[15]===w?T=t[16]:(T={hostId:De,cwd:w},t[15]=w,t[16]=T);let E=bf(T),D;t[17]!==i||t[18]!==v||t[19]!==g||t[20]!==E||t[21]!==C?(D=async(e,t)=>{if(await v(e,t),g){C(e);return}try{await i.setDefaultModelConfig(e,t)}catch(e){let t=e;O.error(`Failed to set default model and reasoning effort`,{safe:{},sensitive:{error:t}});return}await E()},t[17]=i,t[18]=v,t[19]=g,t[20]=E,t[21]=C,t[22]=D):D=t[22];let k=D,A;t[23]!==S||t[24]!==b||t[25]!==x?(A={model:b,reasoningEffort:x,isLoading:S},t[23]=S,t[24]=b,t[25]=x,t[26]=A):A=t[26];let j=A,M;return t[27]!==j||t[28]!==k?(M={setModelAndReasoningEffort:k,modelSettings:j},t[27]=j,t[28]=k,t[29]=M):M=t[29],M}';
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_CURRENT =
@@ -481,6 +483,8 @@ const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_527 =
   'function xr({children:e}){let o=T(F),s=D(ge),c=D(ve),u=D(be);return(0,Q.jsx)(B.aside,{"data-app-shell-focus-area":`right-panel`,children:(0,Q.jsx)(`div`,{children:(0,Q.jsx)(B.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [contain:layout_paint] [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,s]})})})})}function Zr(){let e=(0,$.c)(5),t=D(nt.activeTab$),n=D(J),r=D(Me),i=D(ue);if(t!=null){let t;return e[0]!==r||e[1]!==i?(t=(0,Q.jsx)(ln,{headerHeight:`pane`,afterList:r,afterListSticky:i,controller:nt}),e[0]=r,e[1]=i,e[2]=t):t=e[2],t}let a;return e[3]===n?a=e[4]:(a=n==null?null:(0,Q.jsx)(Q.Fragment,{children:n}),e[3]=n,e[4]=a),a}function $r(e){let{children:n}=e;return li(T(F),ge,n),null}var _i={RightPanelTabs:(0,Z.memo)(Zr),RightPanelOutlet:(0,Z.memo)($r)};';
 const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_601 =
   'function Sn(){let e=(0,$.c)(5),t=D(nt.activeTab$),n=D(J),r=D(Me),i=D(ue);if(t!=null)return(0,Q.jsx)(ln,{headerHeight:`pane`,afterList:r,afterListSticky:i,controller:nt});return null}function Tn(){let e=y(ue),t=y(Ce),n=y(Se),r=y(we),i=y(xe),a=y(Ze),{headerLeftWidth:o,headerRightWidth:s}=Je(),c=Jt`max(0px, calc(${s}px)`;return(0,Q.jsx)(fn,{headerHeight:`toolbar`,beforeList:(0,Q.jsxs)(Q.Fragment,{children:[i&&!a&&(0,Q.jsx)(U.div,{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:{width:o}}),n]}),afterListSticky:t,emptyState:r,afterList:(0,Q.jsxs)(Q.Fragment,{children:[e,(0,Q.jsx)(Cn,{}),(0,Q.jsx)(U.div,{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:{width:c}})]}),controller:rt})}function Or({children:e,isRightPanelOpen:t,mainContentWidth:n,rightPanelWidth:r,rightPanelWidthRatio:i,widthMode:a}){let o=v(I),s=y(de),l=y(We),u=y(_e),d=y(Fe),{rightPanelLayoutTick:f}=Je(),p=a===`full`,m=Jt`${r}px`;return(0,Q.jsx)(U.aside,{"data-app-shell-focus-area":`right-panel`,children:(0,Q.jsx)(`div`,{children:(0,Q.jsx)(U.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [contain:layout_paint] [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,s]})})})})}function Cn(){return D().formatMessage({id:`codex.rightPanel.expandFullWidth`})}function ri(e){return null}function ii(){return(0,Q.jsx)(Tn,{})}function oi(e){let{children:n}=e,o=v(I);return gi(o,de,n),null}var wi={RightPanelTabs:(0,Z.memo)(ii),RightPanelOutlet:(0,Z.memo)(oi)};';
+const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_602 =
+  LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_601.replace('s=y(de)', 's=y(ae)');
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
   'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513 =
@@ -3173,7 +3177,8 @@ for (const [label, fixture] of [
   ['current', TERMINAL_PANEL_BLOCK_CURRENT],
   ['26.406', TERMINAL_PANEL_BLOCK_26_406],
   ['26.415', TERMINAL_PANEL_BLOCK_26_415],
-  ['26.513', TERMINAL_PANEL_BLOCK_26_513]
+  ['26.513', TERMINAL_PANEL_BLOCK_26_513],
+  ['26.602', TERMINAL_PANEL_BLOCK_26_602]
 ]) {
   test(
     `injectLinuxTerminalLifecyclePatch adds a Linux terminal handoff guard to the ${label} renderer bundle`,
@@ -3202,6 +3207,10 @@ for (const [label, fixture] of [
       if (label === '26.513') {
         assert.match(updated, /conversationTitle:r/);
         assert.match(updated, /hostId:i\?\?null,cwd:a\?\?null/);
+      }
+      if (label === '26.602') {
+        assert.match(updated, /conversationTitle:r/);
+        assert.match(updated, /hostId:o\?\?null,cwd:s\?\?null/);
       }
     }
   );
@@ -3237,7 +3246,7 @@ test('injectLinuxTerminalLifecyclePatch reports diagnostics when the terminal bl
     () => injectLinuxTerminalLifecyclePatch('const noop = true;', { sourceName: 'index.js' }),
     {
       message:
-        /Could not patch the renderer terminal lifecycle bundle for Linux\. Source: index\.js\. Missing anchors: data-codex-terminal marker, terminal onInitLog handler, terminal session creation, terminal post-init state reset, terminal attach scheduling, terminal attach completion hook, terminal cleanup handoff\. Detected anchors: terminalComponent=no, initLogHandler=no, sessionCreate=no, postInit=no, attach=no, onAttach=no, cleanup=no\./
+        /Could not patch the renderer terminal lifecycle bundle for Linux\. Source: index\.js\. Missing anchors: data-codex-terminal marker, terminal onInitLog handler, terminal session creation, terminal attach scheduling, terminal attach completion hook, terminal cleanup handoff\. Detected anchors: terminalComponent=no, initLogHandler=no, sessionCreate=no, attach=no, onAttach=no, cleanup=no\./
     }
   );
 });
@@ -4315,6 +4324,15 @@ test('injectLinuxRightPanelPaneTabsPatch reorders 26.601 right panel tabs before
   assert.doesNotMatch(updated, /children:\[e,s\]/);
 });
 
+test('injectLinuxRightPanelPaneTabsPatch reorders 26.602 renamed right panel outlet signal', () => {
+  const updated = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_602);
+
+  assert.match(updated, /codexLinuxRightPanelPaneTabs/);
+  assert.match(updated, /codexLinuxRightPanelTabsFirst/);
+  assert.match(updated, /children:\[s,\/\* codexLinuxRightPanelTabsFirst \*\/e\]/);
+  assert.doesNotMatch(updated, /children:\[e,s\]/);
+});
+
 test('injectLinuxRightPanelPaneTabsPatch repairs old marked right panel slot order', () => {
   const desired = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519);
   const oldInstalled = desired.replace(
@@ -4357,6 +4375,13 @@ test('injectLinuxRightPanelPaneTabsPatch is idempotent for 26.527 upstream pane 
 
 test('injectLinuxRightPanelPaneTabsPatch is idempotent for 26.601 right panel order', () => {
   const once = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_601);
+  const twice = injectLinuxRightPanelPaneTabsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('injectLinuxRightPanelPaneTabsPatch is idempotent for 26.602 right panel order', () => {
+  const once = injectLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_602);
   const twice = injectLinuxRightPanelPaneTabsPatch(once);
 
   assert.equal(twice, once);

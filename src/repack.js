@@ -1225,13 +1225,6 @@ function buildLinuxBrowserUseHostFetchHelper({
 const TERMINAL_COMPONENT_FILE_MARKER = 'data-codex-terminal';
 const TERMINAL_SESSION_CREATE_PATTERN =
   /(?<createDeclaration>let (?:[A-Za-z_$][\w$]*=[^,;]+,)*)?(?<createdSessionVar>[A-Za-z_$][\w$]*)=(?<resumeSessionVar>[A-Za-z_$][\w$]*)\?\?(?<service>[A-Za-z_$][\w$]*)\.create\(\{conversationId:(?<conversationIdVar>[A-Za-z_$][\w$]*),(?:conversationTitle:(?<conversationTitleVar>[A-Za-z_$][\w$]*),)?hostId:(?<hostIdVar>[A-Za-z_$][\w$]*)\?\?null,cwd:(?<cwdVar>[A-Za-z_$][\w$]*)\?\?null\}\);(?<sessionRef>[A-Za-z_$][\w$]*)\.current=\k<createdSessionVar>,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1;/;
-const TERMINAL_POST_INIT_MARKERS = [
-  'p(),M.current=!1;',
-  'm(),A.current=!1;',
-  'g();let _=',
-  '_();let v=',
-  'v();let y='
-];
 const TERMINAL_ATTACH_WITH_ATTACH_PATTERN =
   /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:\k<resumeSessionVar>,conversationId:(?<conversationIdVar>[A-Za-z_$][\w$]*),(?:conversationTitle:(?<conversationTitleVar>[A-Za-z_$][\w$]*),)?hostId:(?<hostIdVar>[A-Za-z_$][\w$]*)\?\?null,cwd:(?<cwdVar>[A-Za-z_$][\w$]*)\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
 const TERMINAL_ATTACH_WITH_CREATE_PATTERN =
@@ -1521,7 +1514,7 @@ const LINUX_RIGHT_PANEL_CHILDREN_ORDER_PATTERN =
 const LINUX_RIGHT_PANEL_CHILDREN_ORDER_26_527_PATTERN =
   /(?<prefix>(?<registeredVar>[A-Za-z_$][\w$]*)=D\([A-Za-z_$][\w$]*\)[\s\S]{0,2500}?className:`h-full min-h-0 min-w-0 overflow-hidden \[contain:layout_paint\] \[--thread-content-top-inset:calc\(var\(--spacing\)\*8\)\]`,children:\[)(?<firstVar>[A-Za-z_$][\w$]*),(?:\/\* codexLinuxRightPanel(?:TabsFirst|OutletFirst) \*\/)?(?<secondVar>[A-Za-z_$][\w$]*)(?<suffix>\]\})/;
 const LINUX_RIGHT_PANEL_CHILDREN_ORDER_26_601_PATTERN =
-  /(?<prefix>function [A-Za-z_$][\w$]*\(\{children:(?<slotVar>[A-Za-z_$][\w$]*),isRightPanelOpen:[A-Za-z_$][\w$]*,mainContentWidth:[A-Za-z_$][\w$]*,rightPanelWidth:[A-Za-z_$][\w$]*,rightPanelWidthRatio:[A-Za-z_$][\w$]*,widthMode:[A-Za-z_$][\w$]*\}\)\{[\s\S]{0,1800}?(?<registeredVar>[A-Za-z_$][\w$]*)=y\(de\)[\s\S]{0,4200}?className:`h-full min-h-0 min-w-0 overflow-hidden \[contain:layout_paint\] \[--thread-content-top-inset:calc\(var\(--spacing\)\*8\)\]`,children:\[)(?<firstVar>[A-Za-z_$][\w$]*),(?:\/\* codexLinuxRightPanel(?:TabsFirst|OutletFirst) \*\/)?(?<secondVar>[A-Za-z_$][\w$]*)(?<suffix>\]\})/;
+  /(?<prefix>function [A-Za-z_$][\w$]*\(\{children:(?<slotVar>[A-Za-z_$][\w$]*),isRightPanelOpen:[A-Za-z_$][\w$]*,mainContentWidth:[A-Za-z_$][\w$]*,rightPanelWidth:[A-Za-z_$][\w$]*,rightPanelWidthRatio:[A-Za-z_$][\w$]*,widthMode:[A-Za-z_$][\w$]*\}\)\{[\s\S]{0,1800}?(?<registeredVar>[A-Za-z_$][\w$]*)=y\([A-Za-z_$][\w$]*\)[\s\S]{0,4200}?className:`h-full min-h-0 min-w-0 overflow-hidden \[contain:layout_paint\] \[--thread-content-top-inset:calc\(var\(--spacing\)\*8\)\]`,children:\[)(?<firstVar>[A-Za-z_$][\w$]*),(?:\/\* codexLinuxRightPanel(?:TabsFirst|OutletFirst) \*\/)?(?<secondVar>[A-Za-z_$][\w$]*)(?<suffix>\]\})/;
 const LINUX_RIGHT_PANEL_OUTLET_FALLBACK_PATTERN =
   /(?<tabsVar>[A-Za-z_$][\w$]*)=C\(G\)/;
 const LINUX_RIGHT_PANEL_PANE_TABS_UPSTREAM_PATTERN =
@@ -3003,36 +2996,7 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
       sessionRef,
       attachStateRef
     }) =>
-      `${buildLinuxTerminalLifecycleHelpers()}${createDeclaration ?? 'let '}${createdSessionVar}=${resumeSessionVar}??${service}.create({${buildTerminalConversationProps({ conversationIdVar, conversationTitleVar, hostIdVar, cwdVar })}}),codexLinuxTerminalMountKey=\`${'${' + hostIdVar + '??`local`}'}:${'${' + createdSessionVar + '}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);codexLinuxTraceTerminalCreate(codexLinuxTerminalMountKey);${sessionRef}.current=${createdSessionVar},${attachStateRef}.current=!1;`,
-    errorMessage
-  );
-  updated = replaceFirstMatchingSnippetOrThrow(
-    updated,
-    [
-      {
-        target: TERMINAL_POST_INIT_MARKERS[0],
-        replacement: `${TERMINAL_POST_INIT_MARKERS[0]}let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{};`
-      },
-      {
-        target: TERMINAL_POST_INIT_MARKERS[1],
-        replacement: `${TERMINAL_POST_INIT_MARKERS[1]}let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{};`
-      },
-      {
-        target: TERMINAL_POST_INIT_MARKERS[2],
-        replacement:
-          'g();let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{},_='
-      },
-      {
-        target: TERMINAL_POST_INIT_MARKERS[3],
-        replacement:
-          '_();let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{},v='
-      },
-      {
-        target: TERMINAL_POST_INIT_MARKERS[4],
-        replacement:
-          'v();let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{},y='
-      }
-    ],
+      `${buildLinuxTerminalLifecycleHelpers()}${createDeclaration ?? 'let '}${createdSessionVar}=${resumeSessionVar}??${service}.create({${buildTerminalConversationProps({ conversationIdVar, conversationTitleVar, hostIdVar, cwdVar })}}),codexLinuxTerminalMountKey=\`${'${' + hostIdVar + '??`local`}'}:${'${' + createdSessionVar + '}'}\`;codexLinuxResetTerminalMount(codexLinuxTerminalMountKey);codexLinuxTraceTerminalCreate(codexLinuxTerminalMountKey);${sessionRef}.current=${createdSessionVar},${attachStateRef}.current=!1;let codexLinuxAttachFrame=null,codexLinuxDisposeCurrentMount=()=>{};`,
     errorMessage
   );
   updated = replaceFirstMatchingRegexOrThrow(
@@ -6643,7 +6607,6 @@ function analyzeTerminalBundle(bundleSource) {
     terminalComponent: bundleSource.includes(TERMINAL_COMPONENT_FILE_MARKER),
     initLogHandler: bundleSource.includes('onInitLog'),
     sessionCreate: TERMINAL_SESSION_CREATE_PATTERN.test(bundleSource),
-    postInit: TERMINAL_POST_INIT_MARKERS.some((marker) => bundleSource.includes(marker)),
     attach:
       TERMINAL_ATTACH_WITH_ATTACH_PATTERN.test(bundleSource) ||
       TERMINAL_ATTACH_WITH_CREATE_PATTERN.test(bundleSource),
@@ -6661,7 +6624,6 @@ function analyzeTerminalBundle(bundleSource) {
       !detected.terminalComponent && 'data-codex-terminal marker',
       !detected.initLogHandler && 'terminal onInitLog handler',
       !detected.sessionCreate && 'terminal session creation',
-      !detected.postInit && 'terminal post-init state reset',
       !detected.attach && 'terminal attach scheduling',
       !detected.onAttach && 'terminal attach completion hook',
       !detected.cleanup && 'terminal cleanup handoff'
