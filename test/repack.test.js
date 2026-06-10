@@ -246,6 +246,9 @@ const BROWSER_USE_HOST_FETCH_BUNDLE_26_506 = BROWSER_USE_HOST_FETCH_BUNDLE_CURRE
   );
 const BROWSER_USE_HOST_FETCH_BUNDLE_26_527 =
   'let i=require(`electron`);i=e.Hi(i);async function ju({action:e,appServerClient:t,desktopOriginator:n,headers:r={},refreshToken:i=!1}){let a=await t.getAuthToken({refreshToken:i});if(!a)throw Error(`Sign in to ChatGPT in Codex Desktop to ${e}.`);return r}var Co=`Codex Desktop`,So=`dev`,xo=`prod`,$E={desktopOriginator:Co,devApiBaseUrl:So,prodApiBaseUrl:xo},wH=`about:blank`,TH=15e3,EH=2e4,DH=1500,AH=t.Fr(`browser-use-iab-api`),ke=[`e88baf79f1e54dcfa8069716ec625735541b4636`],jH=class{tabsById=new Map;constructor(e,t,n={}){this.getBrowserHost=e,this.options=n,this.disposeBrowserUseNavigationBlockedListener=t(e=>{this.emitBrowserUseNavigationBlockedEvent(e)})}ping(){return`pong`}requireBrowserUseSession(e){return e}emitBrowserUseNavigationBlockedEvent(e){}};var nU=class{backendState={apiImpl:null,server:null,starting:null};constructor(n={appSessionId:r.t,buildFlavor:t.C.Dev,errorReporter:{reportNonFatal:()=>void 0}}){this.options=n}ensureBackend(){this.backendState.starting=(async()=>{let e=null;e=new jH(e=>this.ensureSessionRoute(e)?this.getBrowserUseHost(e):null,e=>this.getDelegate().addBrowserUseNavigationBlockedListener(e),{appSessionId:this.options.appSessionId,buildFlavor:this.options.buildFlavor,ensureSessionRoute:e=>this.ensureSessionRoute(e)}),this.backendState.apiImpl=e})()}};class App{constructor(){this.browserSessionRegistry=new nU({appSessionId:r.t,buildFlavor:w,errorReporter:this.errorReporter})}getAppServerConnection(e){return null}}';
+const BROWSER_USE_HOST_FETCH_BUNDLE_26_608 = BROWSER_USE_HOST_FETCH_BUNDLE_26_527
+  .replaceAll('appSessionId:r.t', 'appSessionId:n.N')
+  .replace('buildFlavor:w,errorReporter:this.errorReporter', 'buildFlavor:C,errorReporter:this.errorReporter');
 const CHROME_EXTENSION_SETTINGS_BUNDLE_26_519 =
   'function aa(e){return`chrome://extensions/?id=${ua(e)}`}function oa({extensionId:e,homeDir:t=(0,r.homedir)(),localAppDataDir:n=process.env.LOCALAPPDATA,platform:a=process.platform}){let s=ua(e),c=da({homeDir:t,localAppDataDir:n,platform:a});return c==null||!(0,o.existsSync)(c)?!1:(0,o.readdirSync)(c,{withFileTypes:!0}).some(e=>e.isDirectory()&&(0,o.existsSync)((0,i.join)(c,e.name,`Extensions`,s)))}async function sa({extensionId:e,platform:t=process.platform,detectChromeCommand:n=ca,runCommand:r=zi}){if(t===`darwin`){await r(ra,[`-b`,na,aa(e)]);return}if(t===`win32`){let t=n();if(t==null)throw Error(`Google Chrome is not installed`);await r(t,[aa(e)]);return}throw Error(`Opening Chrome extension settings is only supported on macOS and Windows`)}function da({homeDir:e,localAppDataDir:t,platform:n}){return n===`darwin`?(0,i.join)(e,`Library`,`Application Support`,`Google`,`Chrome`):n===`win32`?(0,i.join)(t??(0,i.join)(e,`AppData`,`Local`),`Google`,`Chrome`,`User Data`):null}function ua(e){return e}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513 =
@@ -254,6 +257,8 @@ const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513_20950 =
   'var fe={ambientSuggestions:!1,artifactsPane:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,control:!1,deviceAttestation:!1,multiWindow:!1},pe=Object.keys(fe),me={...fe},he=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function ge(){return me}function _e(e){return pe.every(t=>typeof e[t]==`boolean`)}function ve(e){let t={...me,...e};return pe.every(e=>t[e]===me[e])?!1:(me=t,!0)}function ye(e,{buildFlavor:n=t.D.resolve(),env:r=d.default.env,platform:i=d.default.platform}={}){let a=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...e,computerUse:!0,computerUseNodeRepl:!0}:e,o=n===t.D.Dev?be(r):null;return o==null?a:{...a,...o}}function be(e){let t=e[he]?.trim();if(!t)return null;return JSON.parse(t)}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_601 =
   'var fe={ambientSuggestions:!1,artifactsPane:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,control:!1,deviceAttestation:!1,multiWindow:!1},pe=Object.keys(fe),me={...fe},he=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function ge(){return me}function _e(e){return pe.every(t=>typeof e[t]==`boolean`)}function ve(e){let t={...me,...e};return pe.every(e=>t[e]===me[e])?!1:(me=t,!0)}function ye(e,{buildFlavor:n=t.D.resolve(),env:r=d.default.env,platform:i=d.default.platform}={}){let a=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...e,computerUse:!0,computerUseNodeRepl:!0}:e,o=n===t.D.Dev?be(r):null;return o==null?{...a,deviceAttestation:xe({platform:i})}:{...a,...o,deviceAttestation:xe({platform:i})}}function be(e){let t=e[he]?.trim();if(!t)return null;return JSON.parse(t)}';
+const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_608 =
+  'var Ne={ambientSuggestions:!1,appshotsEnabled:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,sites:!1,control:!1,deviceAttestation:ve(),dil:!1,multiBrowserTabs:!1,multiWindow:!1,processManager:!1,visualize:!1},Pe=Object.keys(Ne),Fe={...Ne},Ie=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function Le(){return Fe}function Re(e){return Pe.every(t=>typeof e[t]==`boolean`)}function ze(e,t){return Pe.some(n=>e[n]!==t[n])}function Be(e){let t={...Fe,...e,deviceAttestation:ve()};return Pe.every(e=>t[e]===Fe[e])?!1:(Fe=t,!0)}function Ve(e,{buildFlavor:t=n.P.resolve(),env:r=p.default.env,platform:i=p.default.platform}={}){let a=i===`darwin`&&!n.P.isInternal(t)&&e.computerUseNodeRepl!=null?{...e,computerUseNodeRepl:!1}:e,o=i===`win32`&&e.computerUse===!0?{...a,computerUseNodeRepl:!0}:a,s=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...o,computerUse:!0,computerUseNodeRepl:!0}:o,c=t===n.P.Dev?He(r):null;return c==null?{...s,deviceAttestation:ve({platform:i})}:{...s,...c,deviceAttestation:ve({platform:i})}}function He(e){let t=e[Ie]?.trim();if(!t)return null;return JSON.parse(t)}';
 const REMOTE_CONTROL_VISIBILITY_BUNDLE_26_513 =
   'import{p as e,pt as t}from"./vscode-api-DH_DWhkY.js";import{r as n}from"./remote-connection-visibility-CMLPP7XS.js";var r=t();function i(){let t=(0,r.c)(3),[i]=e(`remote_control_connections_state`),o=n(),s;return t[0]!==i||t[1]!==o?(s=a({remoteControlConnectionsState:i,slingshotEnabled:o}),t[0]=i,t[1]=o,t[2]=s):s=t[2],s}function a({remoteControlConnectionsState:e,slingshotEnabled:t}){return t&&(e?.available??!0)&&e?.accessRequired!==!0}export{i as t};';
 const POWER_SAVE_BLOCKER_BUNDLE_26_513 =
@@ -283,6 +288,23 @@ const AVATAR_OVERLAY_RESOLUTION_KEY_DRAG_BUNDLE_26_519 =
   AVATAR_OVERLAY_BUNDLE_26_429_30905.replace(
     't.displayBounds=i,this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,i)',
     't.displayBounds=i,this.resolutionKey=WG(i),this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,i)'
+  );
+const AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_608 = AVATAR_OVERLAY_BUNDLE_26_429_30905
+  .replace(
+    'async open(e){let t=await this.ensureWindow(e);this.globalState.set(be,!0),this.positionWindow(t,e),this.rendererReady&&(this.showWindow(t),this.applyPointerInteractivityPolicy())}',
+    'async open(e){let t=await this.ensureWindow();this.globalState.set(be,!0),this.positionWindow(t,e),this.showWindowIfReady(t)}'
+  )
+  .replace(
+    'setWindowBounds(e,t){e.isDestroyed()||EO(e.getBounds(),t)||e.setBounds(t,!1)}',
+    'setWindowBounds(e,t,n,r){if(e.isDestroyed())return;let i=e.getContentBounds();if(EO(i,t))return;let a=i.width===t.width&&i.height===t.height;a&&!r&&this.compositionHost.prepareDragFollowForOverlayMove(t),e.setContentBounds(t,n),(r||!a)&&this.compositionHost.moveBackingCanvases()}'
+  )
+  .replace(
+    'showWindow(e){if(e.isDestroyed())return;let t=this.isOpen();e.moveTop(),e.showInactive(),!t&&this.isOpen()&&this.broadcastOpenState()}',
+    'showWindow(e){if(e.isDestroyed())return;let t=this.isOpen();this.windowStagedForNativePresentation&&=(e.setOpacity(1),!1),e.moveTop(),e.showInactive(),!t&&this.isOpen()&&this.broadcastOpenState()}showWindowIfReady(e){!this.rendererReady||this.initialPresentationState!==`ready`||(this.showWindow(e),this.applyPointerInteractivityPolicy())}'
+  )
+  .replace(
+    'moveDragToCurrentCursor(e){let t=this.dragState;if(t==null)return;let r=n.screen.getCursorScreenPoint(),i=SO(r,t.displayBounds);t.displayBounds=i,this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,i)}',
+    'moveDragToCurrentCursor(e){let t=this.dragState;if(t==null)return;let r=n.screen.getCursorScreenPoint(),i=SO(r,t.displayBounds),a=n.screen.getDisplayMatching(i);t.displayBounds=a.bounds,this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,a,!1,!1)}'
   );
 const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
   'function $e(){let P={current:null};let Y=e=>{let t=P.current;if(t==null||t.pointerId!==e.pointerId)return;let n=V(e);t.samples=U([...t.samples,n]);let r=n.screenX-t.screenX,i=n.screenY-t.screenY;Math.abs(r)<Ge&&Math.abs(i)<Ge||(t.hasMoved=!0,t.screenX=n.screenX,t.screenY=n.screenY,s(e=>ut({currentDragState:e,deltaX:r})),f.dispatchMessage(`avatar-overlay-drag-move`,{}))}}';
@@ -470,6 +492,8 @@ const LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519 =
   'function Pf({bounds:e,conversationId:t,initialUrl:n,isVisible:r,scale:i,transferSourceConversationId:a,webviewRef:o,windowZoom:s}){let c=(0,J.useRef)(null);return(0,J.useLayoutEffect)(()=>{c.current?.sync({bounds:e,isVisible:r,scale:i,windowZoom:s},o)},[e,t,r,i,o,s]),null}function Yf(){let N=(0,J.useRef)(null),P=(0,J.useRef)(null),Qt=`var(--color-token-editor-background)`,Ae={dispatchMessage(){}};Ae.dispatchMessage(`browser-sidebar-sync`,{});return (0,Y.jsx)(`div`,{className:`relative min-h-0 min-w-0 flex-1`,children:(0,Y.jsxs)(`div`,{ref:N,className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:{backgroundColor:Qt},children:[(0,Y.jsx)(Pf,{bounds:Gt,conversationId:t,initialUrl:ct?at.url:`about:blank`,isVisible:p,scale:qt,transferSourceConversationId:b,webviewRef:P,windowZoom:T})]})})}';
 const LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_601 =
   'import{t as ma}from"./browser-sidebar-webview-D1L6cqaW.js";import{t as ha}from"./browser-sidebar-retained-webview-DS1n6LTx.js";function Yf(){let j=(0,J.useRef)(null),M=(0,J.useRef)(null),An=`var(--color-token-editor-background)`,Ae={dispatchMessage(){}};Ae.dispatchMessage(`browser-sidebar-sync`,{});return(0,$.jsx)(`div`,{className:`relative min-h-0 min-w-0 flex-1`,children:(0,$.jsxs)(`div`,{ref:j,className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:{backgroundColor:An},children:[(0,$.jsx)(ma,{bounds:xn,browserTabId:n,conversationId:t,initialUrl:X.url.length===0?`about:blank`:X.url,isVisible:d,scale:Cn,webviewRef:M,windowZoom:x})]})})}';
+const LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_608 =
+  'function Tl({bounds:e,browserTabId:t,children:n,conversationId:r,hostKind:i,initialUrl:a,isVisible:o,scale:s,webviewRef:c,windowZoom:l}){let u=(0,J.useRef)(null),d={dispatchMessage(){}};return u.current??=Nt.getRetainedWebview({browserTabId:t,conversationId:r,hostKind:i,initialUrl:a}),d.dispatchMessage(`browser-sidebar-sync`,{}),(0,J.useLayoutEffect)(()=>{u.current?.sync({bounds:e,isVisible:o,scale:s,windowZoom:l},c)},[e,o,s,c,l]),(0,J.useEffect)(()=>()=>u.current?.detach(c),[c]),n}function Yf(){let N=(0,J.useRef)(null),P=(0,J.useRef)(null),Qt=`var(--color-token-editor-background)`;return(0,Y.jsx)(`div`,{className:`relative min-h-0 min-w-0 flex-1`,children:(0,Y.jsxs)(`div`,{ref:N,className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:{backgroundColor:Qt},children:[(0,Y.jsx)(Tl,{bounds:Gt,browserTabId:b,children:null,conversationId:t,hostKind:`side-panel`,initialUrl:X.url.length===0?`about:blank`:X.url,isVisible:p,scale:qt,webviewRef:P,windowZoom:T})]})})}';
 const LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_26_519 =
   'var k=`data-browser-sidebar-conversation-id`,A={zIndex:``},M=`2147483647`,N=`#fff`;class L{container=document.createElement(`div`);webview=document.createElement(`webview`);constructor(){this.webview.setAttribute(k,e),n.info(`IAB_LIFECYCLE renderer created hidden browser sidebar webview`)}sync(e,t){this.isAttached=!0,this.state=e,this.webview.style.backgroundColor=N,K(t,this.webview),this.syncContainerStyle()}detach(e){this.isAttached=!1,K(e,null,this.webview),this.syncContainerStyle()}syncContainerStyle(){B(this.container,this.webview,{x:1,y:2,width:300,height:200},1,1)}}function B(e,t,n,r,i){let a=r*i;Object.assign(e.style,{contain:``,height:`${Math.round(n.height*a)}px`,left:`${n.x*i}px`,opacity:`1`,overflow:`hidden`,pointerEvents:``,position:`fixed`,top:`${n.y*i}px`,transform:``,transformOrigin:``,visibility:`visible`,willChange:``,width:`${Math.round(n.width*a)}px`,zIndex:``}),Object.assign(t.style,{height:`${n.height}px`,transform:a===1?``:`scale(${a})`,transformOrigin:`top left`,willChange:a===1?``:`transform`,width:`${n.width}px`})}function H(e,t,n){Object.assign(e.style,{contain:`layout paint size style`,height:`${n.height}px`,left:`${P.x}px`,opacity:j,overflow:``,pointerEvents:`none`,position:`fixed`,top:`${P.y}px`,transform:`translate3d(0, 0, 0)`,transformOrigin:``,visibility:`visible`,willChange:`transform`,width:`${n.width}px`,zIndex:M})}';
 const LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519 =
@@ -485,6 +509,8 @@ const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_601 =
   'function Sn(){let e=(0,$.c)(5),t=D(nt.activeTab$),n=D(J),r=D(Me),i=D(ue);if(t!=null)return(0,Q.jsx)(ln,{headerHeight:`pane`,afterList:r,afterListSticky:i,controller:nt});return null}function Tn(){let e=y(ue),t=y(Ce),n=y(Se),r=y(we),i=y(xe),a=y(Ze),{headerLeftWidth:o,headerRightWidth:s}=Je(),c=Jt`max(0px, calc(${s}px)`;return(0,Q.jsx)(fn,{headerHeight:`toolbar`,beforeList:(0,Q.jsxs)(Q.Fragment,{children:[i&&!a&&(0,Q.jsx)(U.div,{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:{width:o}}),n]}),afterListSticky:t,emptyState:r,afterList:(0,Q.jsxs)(Q.Fragment,{children:[e,(0,Q.jsx)(Cn,{}),(0,Q.jsx)(U.div,{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:{width:c}})]}),controller:rt})}function Or({children:e,isRightPanelOpen:t,mainContentWidth:n,rightPanelWidth:r,rightPanelWidthRatio:i,widthMode:a}){let o=v(I),s=y(de),l=y(We),u=y(_e),d=y(Fe),{rightPanelLayoutTick:f}=Je(),p=a===`full`,m=Jt`${r}px`;return(0,Q.jsx)(U.aside,{"data-app-shell-focus-area":`right-panel`,children:(0,Q.jsx)(`div`,{children:(0,Q.jsx)(U.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [contain:layout_paint] [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,s]})})})})}function Cn(){return D().formatMessage({id:`codex.rightPanel.expandFullWidth`})}function ri(e){return null}function ii(){return(0,Q.jsx)(Tn,{})}function oi(e){let{children:n}=e,o=v(I);return gi(o,de,n),null}var wi={RightPanelTabs:(0,Z.memo)(ii),RightPanelOutlet:(0,Z.memo)(oi)};';
 const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_602 =
   LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_601.replace('s=y(de)', 's=y(ae)');
+const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_608 =
+  'function Cn(){let e=c(L),t=c(ee),n=c(Y),r=c(te),i=c(J),a=c(Oe),{headerLeftWidth:o,headerRightWidth:s}=Te(),l=Jt`max(0px, calc(${s}px)`;return(0,Q.jsx)(un,{headerHeight:`toolbar`,beforeList:(0,Q.jsxs)(Q.Fragment,{children:[i&&!a&&(0,Q.jsx)(w.div,{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:{width:o}}),n]}),afterListSticky:t,emptyState:r,afterList:(0,Q.jsxs)(Q.Fragment,{children:[e,(0,Q.jsx)(xn,{}),(0,Q.jsx)(w.div,{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:{width:l}})]}),controller:nt})}function Tn(){return(0,Q.jsx)(`div`,{"data-app-shell-tab-strip-controller":!0})}function xn(){return S().formatMessage({id:`codex.rightPanel.expandFullWidth`})}var Mr={RightPanelTabs:(0,Z.memo)(Cn)};';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_CURRENT =
   'function YR(e){let t=(0,Q.c)(39),{canStopAll:n,onOpenThread:r,onStopAll:i,rows:a}=e,o=ea();if(a.length===0)return null;let s;t[0]===a?s=t[1]:(s=a.reduce(XR,{linesAdded:0,linesRemoved:0}),t[0]=a,t[1]=s);let u,d;if(t[2]!==o||t[3]!==a.length){u=o.formatMessage({id:`composer.backgroundSubagents.summary`,defaultMessage:`{count, plural, one {# background agent} other {# background agents}}`,description:`Summary label for the background subagents panel header.`},{count:a.length});let e=o.formatMessage({id:`composer.backgroundSubagents.invokeAgents`,defaultMessage:`(@ to tag agents)`,description:`Hint shown after the background agent summary when the panel is expanded.`});d=o.formatMessage({id:`composer.backgroundSubagents.summary.expanded`,defaultMessage:`{summary} {hint}`,description:`Background agent summary label when the panel is expanded.`},{summary:u,hint:e}),t[2]=o,t[3]=a.length,t[4]=u,t[5]=d}else u=t[4],d=t[5];return d}let zn=Po(Ln,e=>Zl.getState(e.view.state)?.active===!0),Bn=Ye.length>0&&!$e&&!zn&&!it&&!tt,Vn=et||Ce||we||zn||tt;function mB({intl:e,followUpType:t,composerMode:n,cloudStartingState:r,isBackgroundSubagentsPanelVisible:i}){return e.formatMessage(hB(t,n,r,i))}let composer=(0,$.jsx)(Gc,{placeholder:p??mB({intl:yt,followUpType:R?.type,composerMode:Qn,cloudStartingState:si,isBackgroundSubagentsPanelVisible:Bn})});';
 const BACKGROUND_SUBAGENTS_PANEL_BUNDLE_26_513 =
@@ -2435,6 +2461,17 @@ test('injectLinuxBrowserUseHostFetchPatch supports 26.527 native pipe registry d
   assert.match(updated, /desktopOriginator:Co/);
 });
 
+test('injectLinuxBrowserUseHostFetchPatch supports 26.608 app session symbol drift', () => {
+  const updated = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_26_608);
+
+  assert.match(updated, /codexLinuxBrowserUseHostFetch/);
+  assert.match(updated, /async nodeReplFetch\(e\)/);
+  assert.match(
+    updated,
+    /this\.browserSessionRegistry=new nU\(\{appSessionId:n\.N,buildFlavor:C,errorReporter:this\.errorReporter,appServerConnection:\(\)=>this\.getAppServerConnection\(this\.hostId\)\}\)/
+  );
+});
+
 test('injectLinuxBrowserUseHostFetchPatch is idempotent', () => {
   const once = injectLinuxBrowserUseHostFetchPatch(BROWSER_USE_HOST_FETCH_BUNDLE_CURRENT);
   const twice = injectLinuxBrowserUseHostFetchPatch(once);
@@ -2535,6 +2572,27 @@ test('injectLinuxRemoteControlPatch supports 26.601 device attestation helper dr
   assert.match(
     updated,
     /return o==null\?\{\.\.\.a,deviceAttestation:xe\(\{platform:i\}\)\}:\{\.\.\.a,\.\.\.o,deviceAttestation:xe\(\{platform:i\}\)\}/
+  );
+});
+
+test('injectLinuxRemoteControlPatch supports 26.608 Mac node_repl guard drift', () => {
+  const updated = injectLinuxRemoteControlPatch(
+    REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_608
+  );
+
+  assert.match(updated, /codexLinuxRemoteControlFeatureAvailability/);
+  assert.match(updated, /codexLinuxRemoteControlFeatures=i===`linux`&&r\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0\}:e/);
+  assert.match(
+    updated,
+    /a=i===`darwin`&&!n\.P\.isInternal\(t\)&&codexLinuxRemoteControlFeatures\.computerUseNodeRepl!=null\?\{\.\.\.codexLinuxRemoteControlFeatures,computerUseNodeRepl:!1\}:codexLinuxRemoteControlFeatures/
+  );
+  assert.match(
+    updated,
+    /o=i===`win32`&&codexLinuxRemoteControlFeatures\.computerUse===!0\?\{\.\.\.a,computerUseNodeRepl:!0\}:a/
+  );
+  assert.match(
+    updated,
+    /return c==null\?\{\.\.\.s,deviceAttestation:ve\(\{platform:i\}\)\}:\{\.\.\.s,\.\.\.c,deviceAttestation:ve\(\{platform:i\}\)\}/
   );
 });
 
@@ -2738,7 +2796,11 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
   assert.match(updated, /moveDragToCurrentCursor\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayPoint\)/);
   assert.match(updated, /pointerWindowX:[A-Za-z_$][\w$]*,pointerWindowY:[A-Za-z_$][\w$]*,mascotLeft:[A-Za-z_$][\w$]*\.mascot\.left,mascotTop:[A-Za-z_$][\w$]*\.mascot\.top/);
   assert.match(updated, /codexLinuxAvatarOverlayNext=\{x:Math\.round\([A-Za-z_$][\w$]*\.x-[A-Za-z_$][\w$]*\.pointerWindowX\),y:Math\.round\([A-Za-z_$][\w$]*\.y-[A-Za-z_$][\w$]*\.pointerWindowY\)/);
-  assert.match(updated, /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\)\{this\.dragState\?\.hasMoved&&this\.moveDragToCurrentCursor\([A-Za-z_$][\w$]*\),this\.dragState=null,this\.persistWindowBounds\([A-Za-z_$][\w$]*\);return\}/);
+  assert.match(updated, /[A-Za-z_$][\w$]*\.lastScreenPoint=[A-Za-z_$][\w$]*/);
+  assert.match(updated, /getDisplayNearestPoint\(\{x:this\.anchor\.x,y:this\.anchor\.y\}\)/);
+  assert.match(updated, /this\.displayId=codexLinuxAvatarOverlayDisplay\.id,this\.displayBounds=codexLinuxAvatarOverlayDisplay\.bounds,[A-Za-z_$][\w$]*\.display=codexLinuxAvatarOverlayDisplay/);
+  assert.match(updated, /this\.moveDragToCurrentCursor\([A-Za-z_$][\w$]*,this\.dragState\.lastScreenPoint\)/);
+  assert.match(updated, /this\.persistWindowBounds\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayDisplay\?\?this\.getCurrentDisplay\(\)\);return/);
   assert.match(updated, /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\)\{this\.persistWindowBounds\([A-Za-z_$][\w$]*\);return\}/);
 });
 
@@ -2760,6 +2822,34 @@ test('injectLinuxAvatarOverlayPatch supports 26.519 resolution-key drag drift', 
   assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
   assert.match(updated, /codexLinuxRegisterAvatarOverlayAutoClose\([A-Za-z_$][\w$]*\)/);
   assert.match(updated, /moveDragToCurrentCursor\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayPoint\)/);
+});
+
+test('injectLinuxAvatarOverlayPatch supports 26.608 native composition staging drift', () => {
+  const updated = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_608);
+
+  assert.match(updated, /codexLinuxAvatarOverlay/);
+  assert.doesNotThrow(() => new Function(updated));
+  assert.match(updated, /codexLinuxAvatarOverlayVisibilityRecovery/);
+  assert.match(
+    updated,
+    /this\.showWindowIfReady\([A-Za-z_$][\w$]*\),this\.codexLinuxScheduleAvatarOverlayVisibilityRecovery\([A-Za-z_$][\w$]*\)/
+  );
+  assert.match(
+    updated,
+    /this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*,!0\),this\.windowStagedForNativePresentation&&=\([A-Za-z_$][\w$]*\.setOpacity\(1\),!1\),[A-Za-z_$][\w$]*\.showInactive\(\)/
+  );
+  assert.match(
+    updated,
+    /setContentBounds\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\),\([A-Za-z_$][\w$]*\|\|![A-Za-z_$][\w$]*\)&&this\.compositionHost\.moveBackingCanvases\(\),this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*\)/
+  );
+  assert.match(updated, /codexLinuxAvatarOverlayBounds=[A-Za-z_$][\w$]*\.getContentBounds\(\)/);
+  assert.match(updated, /lastScreenPoint/);
+  assert.match(updated, /getDisplayNearestPoint\(\{x:this\.anchor\.x,y:this\.anchor\.y\}\)/);
+  assert.match(updated, /this\.persistWindowBounds\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayDisplay\?\?this\.getCurrentDisplay\(\)\)/);
+  assert.match(
+    updated,
+    /this\.setWindowBounds\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayNext,!1,!1\),this\.sendLayoutToRenderer\([A-Za-z_$][\w$]*\)/
+  );
 });
 
 test('injectLinuxAvatarOverlayRendererPatch sends pointer screen coordinates with drag moves', () => {
@@ -2820,7 +2910,7 @@ test('injectLinuxAvatarOverlayPatch reports diagnostics when avatar overlay anch
     () => injectLinuxAvatarOverlayPatch('const noop = true;', { sourceName: 'main.js' }),
     {
       message:
-        /Could not patch Linux avatar overlay window behavior into the Electron main bundle\. Source: main\.js\. Missing anchors: avatar overlay route, avatar overlay window appearance, avatar overlay creation frontmost policy, avatar overlay createWindow method boundary, avatar overlay showWindow method, avatar overlay setWindowBounds method, avatar overlay pointer passthrough policy, avatar overlay drag move IPC handler, avatar overlay moveDrag method, avatar overlay startDrag method, avatar overlay cursor-based drag movement, avatar overlay endDrag method, avatar overlay drag-release momentum method\. Detected anchors: avatarOverlayRoute=no, avatarOverlayWindow=no, createFrontmostPolicy=no, createWindowEnd=no, showWindow=no, setWindowBounds=no, pointerPassthroughPolicy=no, windowOptions=no, dragMoveIpc=no, moveDragMethod=no, startDrag=no, moveDragCursor=no, endDrag=no, throwWithVelocity=no\./
+        /Could not patch Linux avatar overlay window behavior into the Electron main bundle\. Source: main\.js\. Missing anchors: avatar overlay route, avatar overlay window appearance, avatar overlay creation frontmost policy, avatar overlay createWindow method boundary, avatar overlay showWindow method, avatar overlay setWindowBounds method, avatar overlay pointer passthrough policy, avatar overlay drag move IPC handler, avatar overlay moveDrag method, avatar overlay startDrag method, avatar overlay cursor-based drag movement, avatar overlay endDrag method, avatar overlay drag-release momentum method\. Detected anchors: avatarOverlayRoute=no, avatarOverlayWindow=no, createFrontmostPolicy=no, createWindowEnd=no, showWindow=no, setWindowBounds=no, setWindowBoundsNativeComposition=no, pointerPassthroughPolicy=no, windowOptions=no, dragMoveIpc=no, moveDragMethod=no, startDrag=no, moveDragCursor=no, endDrag=no, throwWithVelocity=no\./
     }
   );
 });
@@ -4122,6 +4212,19 @@ test('injectLinuxBrowserViewportSurfacePatch supports 26.601 imported webview co
   assert.doesNotMatch(updated, /codexLinuxBrowserWebviewPanelHost/);
 });
 
+test('injectLinuxBrowserViewportSurfacePatch supports 26.608 retained webview manager', () => {
+  const updated = injectLinuxBrowserViewportSurfacePatch(
+    LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_608
+  );
+
+  assert.match(updated, /codexLinuxBrowserViewportSurface/);
+  assert.match(updated, /"data-codex-linux-browser-viewport":!0/);
+  assert.match(updated, /codex-linux-browser-viewport-surface/);
+  assert.match(updated, /isVisible:p\|\|X\.url\.length>0\/\* codexLinuxBrowserWebviewVisibleWhenUrl \*\//);
+  assert.match(updated, /\.getRetainedWebview\(/);
+  assert.doesNotMatch(updated, /codexLinuxBrowserWebviewPanelHost/);
+});
+
 test('injectLinuxBrowserViewportSurfacePatch is idempotent', () => {
   const once = injectLinuxBrowserViewportSurfacePatch(LINUX_BROWSER_VIEWPORT_SURFACE_BUNDLE_26_519);
   const twice = injectLinuxBrowserViewportSurfacePatch(once);
@@ -4331,6 +4434,13 @@ test('injectLinuxRightPanelPaneTabsPatch reorders 26.602 renamed right panel out
   assert.match(updated, /codexLinuxRightPanelTabsFirst/);
   assert.match(updated, /children:\[s,\/\* codexLinuxRightPanelTabsFirst \*\/e\]/);
   assert.doesNotMatch(updated, /children:\[e,s\]/);
+});
+
+test('injectLinuxRightPanelPaneTabsPatch accepts 26.608 upstream toolbar tab strip', () => {
+  const result = applyLinuxRightPanelPaneTabsPatch(LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_608);
+
+  assert.equal(result.status, 'already-applied');
+  assert.equal(result.updated, LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_608);
 });
 
 test('injectLinuxRightPanelPaneTabsPatch repairs old marked right panel slot order', () => {
