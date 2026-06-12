@@ -15,6 +15,9 @@ import {
   applyLinuxRightPanelPaneTabsPatch,
   applyLinuxBackgroundSubagentsPanelPatch,
   applyLinuxBrowserUseHostFetchPatch,
+  applyLinuxBrowserUseRuntimePathsPatch,
+  applyLinuxBundledBrowserChromePluginsPatch,
+  applyLinuxChromeNativeHostRuntimePathsPatch,
   applyLinuxChromeExtensionSettingsPatch,
   applyLinuxRemoteControlPatch,
   applyLinuxRemoteControlVisibilityPatch,
@@ -42,8 +45,10 @@ import {
   createInstallDiagnosticManifest,
   findExecutableInPath,
   installBrowserUseRuntime,
+  installBrowserUseMcpConfig,
   installLinuxChromeBundledPluginHost,
   installLinuxChromeExtensionHost,
+  repairLinuxChromeNativeHostRuntimeRegistries,
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBrowserCommentSubmitCleanupPatch,
   injectLinuxBrowserCommentSubmitModePatch,
@@ -52,6 +57,9 @@ import {
   injectLinuxRightPanelPaneTabsPatch,
   injectLinuxBackgroundSubagentsPanelPatch,
   injectLinuxBrowserUseHostFetchPatch,
+  injectLinuxBrowserUseRuntimePathsPatch,
+  injectLinuxBundledBrowserChromePluginsPatch,
+  injectLinuxChromeNativeHostRuntimePathsPatch,
   injectLinuxChromeExtensionSettingsPatch,
   injectLinuxRemoteControlPatch,
   injectLinuxRemoteControlVisibilityPatch,
@@ -215,6 +223,8 @@ const OPEN_TARGETS_BLOCK_26_422 =
   'var Cd=[td,rd,$u,au,Il,Uu,_d,od,Pl,_u,Ku,lu,Rl,mu,ru,cd,yu,pu,ad,fd,Tu,Eu,Du,Ou,ku,Au,ju,Mu,Yu],wd=t.Or(`open-in-targets`);function Td(e){return Cd.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var Ed=Td(process.platform),Dd=Id(Ed),Od=new Set(Ed.filter(e=>e.kind===`editor`).map(e=>e.id)),kd=null,Ad=null;';
 const LINUX_MENU_BAR_BUNDLE_CURRENT =
   'new n.BrowserWindow({width:_,height:v,title:i??n.app.getName(),backgroundColor:T,show:l,...process.platform===`win32`?{autoHideMenuBar:!0}:{},...m,minWidth:w.width,minHeight:w.height,webPreferences:{contextIsolation:!0}});';
+const LINUX_MENU_BAR_BUNDLE_26_609 =
+  'new r.BrowserWindow({width:b,height:x,...S===void 0||C===void 0?{}:{x:S,y:C},title:i??r.app.getName(),backgroundColor:A,show:u,...p==null?{}:{parent:p},...m==null?{}:{focusable:m},...process.platform===`win32`||process.platform===`linux`?{autoHideMenuBar:!0}:{},...j==null?{}:{backgroundMaterial:j},...D,...T==null?{}:{minWidth:T.width,minHeight:T.height},webPreferences:k});';
 const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_422 =
@@ -249,6 +259,14 @@ const BROWSER_USE_HOST_FETCH_BUNDLE_26_527 =
 const BROWSER_USE_HOST_FETCH_BUNDLE_26_608 = BROWSER_USE_HOST_FETCH_BUNDLE_26_527
   .replaceAll('appSessionId:r.t', 'appSessionId:n.N')
   .replace('buildFlavor:w,errorReporter:this.errorReporter', 'buildFlavor:C,errorReporter:this.errorReporter');
+const BROWSER_USE_RUNTIME_PATHS_BUNDLE_26_608 =
+  'function Fn({env:e=process.env,isPackaged:n=!0,platform:r=process.platform,repoRoot:i=process.cwd(),resolveCodexPath:a=t.Hn,resolveNodePath:o=t.Un,resolveNodeReplPath:s=t.Wn,resolvePrimaryRuntimeNodePath:c=zn,resourcesPath:l}){let u=l??Xe({env:e,resourcesPath:process.resourcesPath}),d=c(r),f=Rn({platform:r,rawValue:e.CODEX_CLI_PATH,resolveWindowsAppsPath:a})??Ln({devRelativePathSegments:[`extension`,`bin`,`codex`],isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:a,resourcesPath:u}),p=Ln({devRelativePathSegments:null,isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:o,resourcesPath:u}),m=Rn({platform:r,rawValue:e.CODEX_BROWSER_USE_NODE_PATH,resolveWindowsAppsPath:o})??(p.path==null&&d!=null?{path:d,source:`primary-runtime`}:p),h=Rn({platform:r,rawValue:e.CODEX_NODE_REPL_PATH,resolveWindowsAppsPath:s})??Ln({devRelativePathSegments:null,isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:s,resourcesPath:u});return{codexCliPath:f.path,codexCliPathSource:f.source,nodeModuleDirs:t.zn(u),nodePath:m.path,nodePathSource:m.source,nodeReplPath:h.path,nodeReplPathSource:h.source,platform:r}}';
+const BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608 =
+  'var Mt=`chrome`,ro=[{name:`browser`,isAvailable:({features:e})=>e.inAppBrowserUseAllowed},{name:Mt,isAvailable:({features:e})=>e.externalBrowserUseAllowed},{name:`latex`,isAvailable:()=>!0}],t={Ur:()=>()=>({info(){}}),ho:()=>`openai-bundled`},n={P:{Dev:`dev`}},Ri=`managed`;function sc({env:e}){return e.CODEX_ELECTRON_BUNDLED_PLUGINS_RESOURCES_PATH}function cc(e){return `/tmp/bundled-marketplaces/${e.marketplaceName}`}function lc(){return new Set}function Re(){return!0}var uc=t.Ur(`bundled-plugins`),dc=`CODEX_ENABLE_DEV_BUNDLED_PLUGINS`;function fc(e){let r=e.env??process.env,i=e.resourcesPath??sc({env:r}),a=t.ho(e.buildFlavor),o=e.runtimeMarketplaceRoot??cc({codexHome:e.codexHome,marketplaceName:a}),s=r.NODE_ENV===`development`?e.repoRoot:void 0,c=lc({env:r}),l={getManagedPluginIds:()=>new Set(e.globalState?.get?.(`electron-chrome-extension-sync-managed-plugin-ids`)??[]),setManagedPluginId:(t,n)=>{}},u=e.platform??process.platform;if(e.buildFlavor===n.P.Dev&&r[dc]?.trim()!==`1`)return{setDesktopFeatureAvailability:()=>[]};let d=null,f=null,p=null,m=null,h=Promise.resolve(),g=!1,_,v=t=>ro.filter(n=>n.isAvailable({buildFlavor:e.buildFlavor,env:r,features:t,platform:u})),y=({force:e,reason:t})=>{let n=d,r=v(n),i=r.map(e=>e.name);return i};return{setDesktopFeatureAvailability:e=>{d=e;return y({force:!1,reason:`startup`})}}}';
+const BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_609 =
+  'var cs={source:`bundled-plugins`,warning(){}};async function ys(e){return e.resourcesPath}async function vs(e){let n=await ys({marketplaceName:e.marketplaceName,resourcesPath:e.resourcesPath});if(n==null)return null;let r=await xs({browserSkillVariant:e.browserSkillVariant,computerUseSkillVariant:e.computerUseSkillVariant,marketplacePluginNames:e.marketplacePluginNames,marketplaceName:e.marketplaceName,sourceMarketplaceRoot:n,targetMarketplaceRoot:e.runtimeMarketplaceRoot}),i=await Os(r.marketplaceRoot);return{localMarketplaceRoot:i,marketplace:r.marketplace,marketplaceRoot:t.ir({localPath:i,platformFamily:e.platformFamily})}}async function xs(e){let t={...ks({marketplacePluginNames:e.marketplacePluginNames,marketplace:await Es(e.sourceMarketplaceRoot)}),name:e.marketplaceName},n=`${e.targetMarketplaceRoot}.staging`;return{marketplace:t,marketplaceRoot:n}}function ks(e){let t=new Set(e.marketplacePluginNames);return{...e.marketplace,plugins:e.marketplace.plugins.filter(e=>t.has(e.name))}}async function Es(e){return globalThis.codexLinuxTestReadMarketplace(e)}async function Os(e){return e}var t={ir:({localPath:e})=>e};';
+const CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_608 =
+  'var nL=`chrome-native-hosts-v2.json`;async function TL(e){let t=WL(),n=QL({devRuntimeRepoRoot:e.devRuntimeRepoRoot,nativeHostName:e.nativeHostName,resourcesPath:e.resourcesPath}),i=await UL({pluginRoot:e.pluginRoot,target:t}),a=e.channel??RL(e.nativeHostName),o=new Date().toISOString(),s={browserClientPath:(0,r.join)(e.pluginRoot,`scripts`,`browser-client.mjs`),codexCliPath:n.codexCliPath,codexHome:e.codexHome,extensionHostPath:i,nodePath:n.nodePath,...n.nodeModuleDirs.length===0?{}:{nodeModuleDirs:n.nodeModuleDirs},nodeReplPath:n.nodeReplPath,resourcesPath:e.resourcesPath},c={schemaVersion:iL,paths:s,updatedAt:o};await Promise.all([DL({codexHome:e.codexHome,resource:c}),HL({extensionHostPath:i,extensionId:e.extensionId,nativeHostName:e.nativeHostName})])}';
 const CHROME_EXTENSION_SETTINGS_BUNDLE_26_519 =
   'function aa(e){return`chrome://extensions/?id=${ua(e)}`}function oa({extensionId:e,homeDir:t=(0,r.homedir)(),localAppDataDir:n=process.env.LOCALAPPDATA,platform:a=process.platform}){let s=ua(e),c=da({homeDir:t,localAppDataDir:n,platform:a});return c==null||!(0,o.existsSync)(c)?!1:(0,o.readdirSync)(c,{withFileTypes:!0}).some(e=>e.isDirectory()&&(0,o.existsSync)((0,i.join)(c,e.name,`Extensions`,s)))}async function sa({extensionId:e,platform:t=process.platform,detectChromeCommand:n=ca,runCommand:r=zi}){if(t===`darwin`){await r(ra,[`-b`,na,aa(e)]);return}if(t===`win32`){let t=n();if(t==null)throw Error(`Google Chrome is not installed`);await r(t,[aa(e)]);return}throw Error(`Opening Chrome extension settings is only supported on macOS and Windows`)}function da({homeDir:e,localAppDataDir:t,platform:n}){return n===`darwin`?(0,i.join)(e,`Library`,`Application Support`,`Google`,`Chrome`):n===`win32`?(0,i.join)(t??(0,i.join)(e,`AppData`,`Local`),`Google`,`Chrome`,`User Data`):null}function ua(e){return e}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513 =
@@ -271,6 +289,8 @@ const PET_YAPPING_USAGE_MAIN_BUNDLE_26_513 =
   'var WD=class{constructor(){this.handlers={"fast-mode-rollout-metrics":async n=>e.zt(this.hostConfig)?null:t.sn({codexHome:t.Rr({preferWsl:MD,hostConfig:this.hostConfig}),params:n}),"refresh-remote-connections":async()=>this.remoteConnectionsHandler.refreshRemoteConnections()}}handleVSCodeRequest(n,r,i,a,o){let s=r,c=this.handlers[s];if(typeof c!=`function`)throw Error(`${r} not implemented`);return c({...a,origin:n,windowHostId:i})}};';
 const PET_YAPPING_USAGE_MAIN_BUNDLE_26_527 =
   'var WD=class{constructor(){this.handlers={"app-connect-oauth-callback-url":async()=>({callbackUrl:`codex://connector/oauth_callback`}),"fast-mode-rollout-metrics":async e=>t.Tt({codexHome:t.Sr({preferWsl:qA,hostConfig:zl}),params:e}),"refresh-remote-connections":async()=>this.remoteConnectionsHandler.refreshRemoteConnections()}}handleVSCodeRequest(n,r,i,a,o){let s=r,c=this.handlers[s];if(typeof c!=`function`)throw Error(`${r} not implemented`);return c({...a,origin:n,windowHostId:i})}};';
+const PET_YAPPING_USAGE_MAIN_BUNDLE_26_609 =
+  'var WD=class{handlers={"app-connect-oauth-callback-url":async()=>({callbackUrl:`codex://connector/oauth_callback`}),"fast-mode-rollout-metrics":async e=>t.Ot({codexHome:t.Or({preferWsl:WM}),params:e}),"refresh-remote-connections":async()=>this.remoteConnectionsHandler.refreshRemoteConnections()}handleVSCodeRequest(n,r,i,a,o){let s=r,c=this.handlers[s];if(typeof c!=`function`)throw Error(`${r} not implemented`);return c({...a,origin:n,windowHostId:i})}};';
 const AVATAR_OVERLAY_BUNDLE_26_429_30905 = fs.readFileSync(
   new URL('./fixtures/upstream/26.429.30905/.vite/build/main-SLemWUtC.js', import.meta.url),
   'utf8'
@@ -322,6 +342,8 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_513 =
   'import{n as g,t as _}from"./jsx-runtime-Bj4hVTj7.js";import{y as P}from"./codex-api-BlFw_ca9.js";import{B as y,H as b,pt as x,v as S,y as ee}from"./vscode-api-DH_DWhkY.js";var I=x(),L=e(g(),1),ve=1600,R=100,z=320;function ct(e){let g=(0,Q.jsx)(M,{}),_=null;return(0,Q.jsxs)(k.button,{children:[g,_]})}var Q=_(),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:n}=e;return(0,Q.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:`absolute`,style:{width:112},children:(0,Q.jsx)(me,{ariaLabel:`Pet`,assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:n,resizeHandle:void 0,state:t.mascotState,style:{},transientState:null})})}function on(e){if(e==null)return null;let t=_t(e.querySelector($e)),n=vt(e.querySelector(et));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_519 =
   'import{Cr as t,aa as l}from"./app-server-manager-signals-Csopz8aM.js";import{n as g,t as _}from"./jsx-runtime-CiQ1k8xo.js";import{t as v}from"./clsx-DDuZWq6Y.js";import{B as y,J as b,W as ee,X as x,b as te,xt as S,y as C,z as ne}from"./setting-storage-EK1Te68s.js";import{b as ie}from"./codex-api-5vE1HRY8.js";var Z=_(),R=e(g(),1),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:k}=e,o={height:121,left:244,top:191,width:112};return(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:v(`absolute`),style:{height:o.height,left:o.left,top:o.top,width:o.width},children:(0,Z.jsx)(I,{ariaLabel:ne.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:k,resizeHandle:l,state:T.mascotState,style:s,transientState:b})})}var an=`.codex-avatar-root`,on=`[data-avatar-overlay-size="notification-tray"]`;function kn(e){if(e==null)return null;let t=jn(e.querySelector(an)),n=Mn(e.querySelector(on));return t==null?null:{mascot:t,tray:n}}';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_609 =
+  'import{Cr as t,aa as l}from"./app-server-manager-signals-Csopz8aM.js";import{n as g,t as _}from"./jsx-runtime-CiQ1k8xo.js";import{t as v}from"./clsx-DDuZWq6Y.js";import{B as y,J as b,W as ee,X as x,b as te,xt as S,y as C,z as ne}from"./setting-storage-EK1Te68s.js";import{b as ie}from"./codex-api-5vE1HRY8.js";var Z=_(),R=e(g(),1),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:k}=e,o={height:121,left:244,top:191,width:112};return(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:v(`absolute`),style:{height:o.height,left:o.left,top:o.top,width:o.width},children:[(0,Z.jsx)(I,{ariaLabel:ne.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:k,resizeHandle:l,state:T.mascotState,style:s,transientState:b}),I||n?(0,Z.jsx)(M,{children:(0,Z.jsx)(`button`,{type:`button`})}):null]})}var an=`.codex-avatar-root`,on=`[data-avatar-overlay-size="notification-tray"]`;function kn(e){if(e==null)return null;let t=jn(e.querySelector(an)),n=Mn(e.querySelector(on));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -1242,6 +1264,69 @@ test('generated node_repl exposes process env for the Chrome browser client', as
   }
 });
 
+test('generated node_repl exposes Chrome browser-client bridge config and write output', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-bridge-'));
+  const previousCodexHome = process.env.CODEX_HOME;
+  try {
+    const codexHome = path.join(rootDir, 'codex-home');
+    await fs.promises.mkdir(path.join(codexHome, 'browser'), { recursive: true });
+    await fs.promises.writeFile(
+      path.join(codexHome, 'browser', 'config.toml'),
+      [
+        'approval_mode = "never_ask"',
+        'history_approval_mode = "never_ask"',
+        '',
+        '[origins]',
+        'denied = ["https://blocked.example"]',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    process.env.CODEX_HOME = codexHome;
+
+    const installedNodeRepl = await installGeneratedNodeReplFixture(rootDir);
+    const input = `${JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'js',
+        arguments: {
+          code: `
+            console.log(typeof globalThis.nodeRepl.write);
+            console.log(typeof globalThis.nodeRepl.config?.read);
+            const config = await globalThis.nodeRepl.config.read({ cwd: null, includeLayers: false });
+            console.log(config.approval_mode);
+            globalThis.nodeRepl.write("docs-ok");
+            await globalThis.nodeRepl.config.writeToml("browser/sessions/session-1.toml", {
+              origins: {
+                allowed: ["https://example.com"],
+                denied: []
+              }
+            });
+            const sessionConfig = await globalThis.nodeRepl.config.readToml("browser/sessions/session-1.toml");
+            console.log(sessionConfig.origins.allowed[0]);
+          `
+        }
+      }
+    })}\n`;
+
+    const responses = parseJsonLines(await runJsonLineProcess(installedNodeRepl, input));
+    assert.equal(responses[0].result.isError, false);
+    assert.equal(
+      responses[0].result.content[0].text,
+      'function\nfunction\nnever_ask\ndocs-ok\nhttps://example.com'
+    );
+  } finally {
+    if (previousCodexHome == null) {
+      delete process.env.CODEX_HOME;
+    } else {
+      process.env.CODEX_HOME = previousCodexHome;
+    }
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('generated node_repl js_reset clears the persistent context', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-runtime-reset-'));
   try {
@@ -2015,6 +2100,183 @@ test('installBrowserUseRuntime installs executable Linux runtime files', async (
   }
 });
 
+test('installBrowserUseMcpConfig rewrites node_repl MCP config to the Linux runtime', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-mcp-config-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    const codexConfigPath = path.join(rootDir, '.codex', 'config.toml');
+    const primaryNode = path.join(rootDir, 'primary-runtime', 'node', 'bin', 'node');
+    const primaryNodeModules = path.join(rootDir, 'primary-runtime', 'node', 'node_modules');
+    await writeTestExecutable(path.join(resourcesDir, 'node_repl'), '#!/usr/bin/env bash\nexit 0\n');
+    await writeTestExecutable(path.join(resourcesDir, 'node'), '#!/usr/bin/env bash\nexit 0\n');
+    await writeTestExecutable(primaryNode, '#!/usr/bin/env bash\nexit 0\n');
+    await fs.promises.mkdir(primaryNodeModules, { recursive: true });
+    await fs.promises.mkdir(path.dirname(codexConfigPath), { recursive: true });
+    const chromeBrowserClientPath = path.join(
+      resourcesDir,
+      'plugins',
+      'openai-bundled',
+      'plugins',
+      'chrome',
+      'scripts',
+      'browser-client.mjs'
+    );
+    await fs.promises.mkdir(path.dirname(chromeBrowserClientPath), { recursive: true });
+    await fs.promises.writeFile(
+      chromeBrowserClientPath,
+      'export const chrome = true;\n',
+      'utf8'
+    );
+    await fs.promises.writeFile(
+      codexConfigPath,
+      [
+        '[plugins."chrome@openai-bundled"]',
+        'enabled = true',
+        '',
+        '[mcp_servers.openaiDeveloperDocs]',
+        'url = "https://developers.openai.com/mcp"',
+        '',
+        '[mcp_servers.node_repl]',
+        'args = []',
+        `command = "${path.join(resourcesDir, 'cua_node', 'bin', 'node_repl')}"`,
+        'startup_timeout_sec = 120',
+        '',
+        '[mcp_servers.node_repl.env]',
+        `NODE_REPL_NODE_PATH = "${path.join(resourcesDir, 'cua_node', 'bin', 'node')}"`,
+        `NODE_REPL_NODE_MODULE_DIRS = "${path.join(resourcesDir, 'cua_node', 'lib', 'node_modules')}"`,
+        'BROWSER_USE_AVAILABLE_BACKENDS = "iab"',
+        'SOME_CUSTOM_ENV = "keep-me"',
+        '',
+        '[projects."/tmp/project"]',
+        'trust_level = "trusted"',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const result = await installBrowserUseMcpConfig({
+      resourcesDir,
+      homeDir: rootDir,
+      browserUseNode: {
+        sourcePath: primaryNode
+      },
+      appVersion: '26.608.12217',
+      appBuildFlavor: 'prod'
+    });
+    const updated = await fs.promises.readFile(codexConfigPath, 'utf8');
+
+    assert.equal(result.status, 'installed');
+    assert.equal(result.commandPath, path.join(resourcesDir, 'node_repl'));
+    assert.match(updated, /\[plugins\."chrome@openai-bundled"\]/);
+    assert.match(updated, /\[mcp_servers\.openaiDeveloperDocs\]/);
+    assert.match(updated, /\[projects\."\/tmp\/project"\]/);
+    assert.match(updated, new RegExp(`command = "${escapeRegExp(path.join(resourcesDir, 'node_repl'))}"`));
+    assert.match(updated, new RegExp(`NODE_REPL_NODE_PATH = "${escapeRegExp(path.join(resourcesDir, 'node'))}"`));
+    assert.match(updated, new RegExp(escapeRegExp(`NODE_REPL_NODE_MODULE_DIRS = "${primaryNodeModules}"`)));
+    assert.match(updated, /BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"/);
+    assert.match(updated, /BROWSER_USE_CODEX_APP_VERSION = "26\.608\.12217"/);
+    assert.match(updated, /SOME_CUSTOM_ENV = "keep-me"/);
+    assert.doesNotMatch(updated, /cua_node\/bin\/node_repl/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('installBrowserUseMcpConfig creates node_repl MCP config when missing', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-browser-mcp-fresh-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    await writeTestExecutable(path.join(resourcesDir, 'node_repl'), '#!/usr/bin/env bash\nexit 0\n');
+    await writeTestExecutable(path.join(resourcesDir, 'node'), '#!/usr/bin/env bash\nexit 0\n');
+
+    const result = await installBrowserUseMcpConfig({
+      resourcesDir,
+      homeDir: rootDir,
+      appVersion: '26.608.12217'
+    });
+    const config = await fs.promises.readFile(result.configPath, 'utf8');
+
+    assert.match(config, /\[mcp_servers\.node_repl\]/);
+    assert.match(config, /\[mcp_servers\.node_repl\.env\]/);
+    assert.match(config, new RegExp(`command = "${escapeRegExp(path.join(resourcesDir, 'node_repl'))}"`));
+    assert.match(config, /BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('repairLinuxChromeNativeHostRuntimeRegistries rewrites stale cua_node runtime paths', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-chrome-registry-repair-'));
+  try {
+    const homeDir = path.join(rootDir, 'home');
+    const stateHome = path.join(rootDir, 'state');
+    const resourcesDir = path.join(rootDir, 'stable', 'app', 'resources');
+    const registryPath = path.join(homeDir, '.codex', 'chrome-native-hosts-v2.json');
+    await writeTestExecutable(path.join(resourcesDir, 'node'), '#!/usr/bin/env bash\nexit 0\n');
+    await writeTestExecutable(path.join(resourcesDir, 'node_repl'), '#!/usr/bin/env bash\nexit 0\n');
+    await fs.promises.mkdir(path.dirname(registryPath), { recursive: true });
+    await fs.promises.writeFile(
+      registryPath,
+      `${JSON.stringify(
+        {
+          schemaVersion: 2,
+          entries: [
+            {
+              schemaVersion: 2,
+              appServerProtocolVersion: 2,
+              appVersion: '26.608.12217',
+              channel: 'prod',
+              cliVersion: '26.608.12217',
+              entryId: 'codex-runtime-stale',
+              extensionBuildChannels: ['prod'],
+              extensionIds: ['extension-id'],
+              installId: 'codex-install-stale',
+              nativeHostNames: ['com.openai.codexextension'],
+              nativeHostProtocolVersion: 2,
+              nativeHostVersion: '26.608.12217',
+              paths: {
+                browserClientPath: path.join(rootDir, 'chrome', 'scripts', 'browser-client.mjs'),
+                codexCliPath: path.join(resourcesDir, 'codex'),
+                codexHome: path.join(homeDir, '.codex'),
+                extensionHostPath: path.join(resourcesDir, 'chrome-extension-host'),
+                nodePath: path.join(resourcesDir, 'cua_node', 'bin', 'node'),
+                nodeModuleDirs: [path.join(resourcesDir, 'cua_node', 'lib', 'node_modules')],
+                nodeReplPath: path.join(resourcesDir, 'cua_node', 'bin', 'node_repl'),
+                resourcesPath: resourcesDir
+              },
+              proxyHost: '127.0.0.1',
+              proxyPort: 0,
+              updatedAt: '2026-06-10T09:16:09.090Z'
+            }
+          ]
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+
+    const result = await repairLinuxChromeNativeHostRuntimeRegistries({
+      resourcesDir,
+      homeDir,
+      stateHome
+    });
+    const registry = JSON.parse(await fs.promises.readFile(registryPath, 'utf8'));
+    const paths = registry.entries[0].paths;
+
+    assert.equal(result.status, 'installed');
+    assert.deepEqual(result.repairedPaths, [registryPath]);
+    assert.equal(paths.nodePath, path.join(resourcesDir, 'node'));
+    assert.equal(paths.nodeReplPath, path.join(resourcesDir, 'node_repl'));
+    assert.deepEqual(paths.nodeModuleDirs, [
+      path.join(resourcesDir, 'cua_node', 'lib', 'node_modules')
+    ]);
+    assert.doesNotMatch(JSON.stringify(registry), /cua_node\/bin\/node_repl/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('installLinuxChromeExtensionHost installs executable host and Chrome manifest', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-chrome-host-install-'));
   try {
@@ -2079,9 +2341,19 @@ test('installLinuxChromeBundledPluginHost installs Linux host wrappers for bundl
       'chrome',
       '0.1.7'
     );
+    const staleCachePluginRoot = path.join(
+      homeDir,
+      '.codex',
+      'plugins',
+      'cache',
+      'openai-bundled',
+      'chrome',
+      '0.1.6'
+    );
     await writeTestExecutable(hostExecutablePath, '#!/usr/bin/env bash\necho host\n');
     await fs.promises.mkdir(path.join(resourcePluginRoot, '.codex-plugin'), { recursive: true });
     await fs.promises.mkdir(path.join(cachePluginRoot, '.codex-plugin'), { recursive: true });
+    await fs.promises.mkdir(path.join(staleCachePluginRoot, '.codex-plugin'), { recursive: true });
     await fs.promises.writeFile(
       path.join(resourcePluginRoot, '.codex-plugin', 'plugin.json'),
       '{}',
@@ -2092,12 +2364,18 @@ test('installLinuxChromeBundledPluginHost installs Linux host wrappers for bundl
       '{}',
       'utf8'
     );
+    await fs.promises.writeFile(
+      path.join(staleCachePluginRoot, '.codex-plugin', 'plugin.json'),
+      '{}',
+      'utf8'
+    );
     await fs.promises.symlink(cachePluginRoot, path.join(path.dirname(cachePluginRoot), 'latest'));
 
     const result = await installLinuxChromeBundledPluginHost({
       resourcesDir,
       homeDir,
-      hostExecutablePath
+      hostExecutablePath,
+      releaseVersion: '0.1.7'
     });
 
     const expectedTargets = [
@@ -2119,6 +2397,12 @@ test('installLinuxChromeBundledPluginHost installs Linux host wrappers for bundl
     ];
     assert.equal(result.status, 'installed');
     assert.deepEqual(result.targetPaths.sort(), expectedTargets.sort());
+    assert.equal(
+      await pathExists(
+        path.join(staleCachePluginRoot, 'extension-host', 'linux', os.arch(), 'extension-host')
+      ),
+      false
+    );
     for (const targetPath of expectedTargets) {
       assert.equal(await isExecutable(targetPath), true);
       assert.match(await fs.promises.readFile(targetPath, 'utf8'), new RegExp(escapeRegExp(hostExecutablePath)));
@@ -2223,6 +2507,17 @@ test('injectLinuxMenuBarPatch enables Linux native menu-bar auto-hide with env e
   assert.match(updated, /autoHideMenuBar:!0/);
 });
 
+test('injectLinuxMenuBarPatch preserves escape hatch when upstream already includes Linux', () => {
+  const updated = injectLinuxMenuBarPatch(LINUX_MENU_BAR_BUNDLE_26_609);
+
+  assert.match(updated, /codexLinuxMenuBarAutoHide/);
+  assert.match(
+    updated,
+    /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`/
+  );
+  assert.doesNotMatch(updated, /process\.platform===`win32`\|\|process\.platform===`linux`/);
+});
+
 test('injectLinuxMenuBarPatch is idempotent', () => {
   const once = injectLinuxMenuBarPatch(LINUX_MENU_BAR_BUNDLE_CURRENT);
   const twice = injectLinuxMenuBarPatch(once);
@@ -2240,7 +2535,7 @@ test('applyLinuxMenuBarPatch skips patching when disabled', () => {
 test('injectLinuxMenuBarPatch reports diagnostics when menu-bar anchors are missing', () => {
   assert.throws(() => injectLinuxMenuBarPatch('const noop = true;', { sourceName: 'main.js' }), {
     message:
-      /Could not patch Linux native menu-bar auto-hide behavior in the Electron main bundle\. Source: main\.js\. Missing anchors: BrowserWindow constructor, autoHideMenuBar option, win32-only autoHideMenuBar ternary\. Detected anchors: browserWindowConstructor=no, autoHideMenuBarOption=no, win32AutoHideMenuBarTernary=no\./
+      /Could not patch Linux native menu-bar auto-hide behavior in the Electron main bundle\. Source: main\.js\. Missing anchors: BrowserWindow constructor, autoHideMenuBar option, supported autoHideMenuBar platform ternary\. Detected anchors: browserWindowConstructor=no, autoHideMenuBarOption=no, win32AutoHideMenuBarTernary=no, win32OrLinuxAutoHideMenuBarTernary=no\./
   });
 });
 
@@ -2477,6 +2772,211 @@ test('injectLinuxBrowserUseHostFetchPatch is idempotent', () => {
   const twice = injectLinuxBrowserUseHostFetchPatch(once);
 
   assert.equal(twice, once);
+});
+
+test('injectLinuxBrowserUseRuntimePathsPatch forces Linux Browser Use wrapper paths', () => {
+  const updated = injectLinuxBrowserUseRuntimePathsPatch(BROWSER_USE_RUNTIME_PATHS_BUNDLE_26_608);
+
+  assert.match(updated, /codexLinuxBrowserUseRuntimePaths/);
+  assert.match(updated, /nodePath:r/);
+  assert.match(updated, /nodeReplPath:i/);
+  assert.match(updated, /nodePathSource:`codex-linux-wrapper`/);
+  assert.match(updated, /nodeReplPathSource:`codex-linux-wrapper`/);
+  assert.doesNotThrow(() => new Function(updated));
+  assert.match(
+    updated,
+    /resourcesPath:u,platform:r,nodeModuleDirs:t\.zn\(u\),nodePath:m\.path/
+  );
+  assert.match(updated, /nodePath:codexLinuxBrowserUseSelectedRuntimePaths\.nodePath/);
+  assert.match(updated, /nodeReplPath:codexLinuxBrowserUseSelectedRuntimePaths\.nodeReplPath/);
+});
+
+test('injectLinuxBrowserUseRuntimePathsPatch is idempotent', () => {
+  const once = injectLinuxBrowserUseRuntimePathsPatch(BROWSER_USE_RUNTIME_PATHS_BUNDLE_26_608);
+  const twice = injectLinuxBrowserUseRuntimePathsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBrowserUseRuntimePathsPatch skips patching when disabled', () => {
+  const result = applyLinuxBrowserUseRuntimePathsPatch(BROWSER_USE_RUNTIME_PATHS_BUNDLE_26_608, {
+    skip: true
+  });
+
+  assert.equal(result.updated, BROWSER_USE_RUNTIME_PATHS_BUNDLE_26_608);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxBundledBrowserChromePluginsPatch keeps Browser and Chrome in Linux bundled marketplace', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-bundled-browser-chrome-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    for (const pluginName of ['browser', 'chrome']) {
+      await fs.promises.mkdir(
+        path.join(
+          resourcesDir,
+          'plugins',
+          'openai-bundled',
+          'plugins',
+          pluginName,
+          '.codex-plugin'
+        ),
+        { recursive: true }
+      );
+      await fs.promises.writeFile(
+        path.join(
+          resourcesDir,
+          'plugins',
+          'openai-bundled',
+          'plugins',
+          pluginName,
+          '.codex-plugin',
+          'plugin.json'
+        ),
+        '{}',
+        'utf8'
+      );
+    }
+
+    const updated = injectLinuxBundledBrowserChromePluginsPatch(
+      BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608
+    );
+    const fc = new Function(`${updated}; return fc;`)();
+    const result = fc({
+      buildFlavor: 'prod',
+      env: {},
+      platform: 'linux',
+      resourcesPath: resourcesDir
+    }).setDesktopFeatureAvailability({});
+
+    assert.match(updated, /codexLinuxBundledBrowserChromePlugins/);
+    assert.doesNotThrow(() => new Function(updated));
+    assert.deepEqual(result, ['latex', 'browser', 'chrome']);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('injectLinuxBundledBrowserChromePluginsPatch leaves selector unchanged without Linux plugin resources', () => {
+  const updated = injectLinuxBundledBrowserChromePluginsPatch(
+    BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608
+  );
+  const fc = new Function(`${updated}; return fc;`)();
+  const result = fc({
+    buildFlavor: 'prod',
+    env: {},
+    platform: 'linux',
+    resourcesPath: '/tmp/codex-missing-bundled-browser-chrome'
+  }).setDesktopFeatureAvailability({});
+
+  assert.deepEqual(result, ['latex']);
+});
+
+test('injectLinuxBundledBrowserChromePluginsPatch supports the 26.609 materialized marketplace flow', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-bundled-260609-'));
+  const previousReader = globalThis.codexLinuxTestReadMarketplace;
+  try {
+    const marketplaceRoot = path.join(rootDir, 'openai-bundled');
+    for (const pluginName of ['browser', 'chrome']) {
+      await fs.promises.mkdir(
+        path.join(marketplaceRoot, 'plugins', pluginName, '.codex-plugin'),
+        { recursive: true }
+      );
+      await fs.promises.writeFile(
+        path.join(marketplaceRoot, 'plugins', pluginName, '.codex-plugin', 'plugin.json'),
+        '{}',
+        'utf8'
+      );
+    }
+    globalThis.codexLinuxTestReadMarketplace = async () => ({
+      name: 'openai-bundled',
+      plugins: [
+        { name: 'browser', source: { path: 'plugins/browser' } },
+        { name: 'chrome', source: { path: 'plugins/chrome' } },
+        { name: 'latex', source: { path: 'plugins/latex' } }
+      ]
+    });
+
+    const updated = injectLinuxBundledBrowserChromePluginsPatch(
+      BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_609
+    );
+    const twice = injectLinuxBundledBrowserChromePluginsPatch(updated);
+    const vs = new Function(`${updated}; return vs;`)();
+    const result = await vs({
+      marketplaceName: 'openai-bundled',
+      marketplacePluginNames: ['latex'],
+      resourcesPath: marketplaceRoot,
+      runtimeMarketplaceRoot: path.join(rootDir, 'runtime'),
+      platformFamily: 'linux'
+    });
+
+    assert.match(updated, /codexLinuxBundledBrowserChromePlugins/);
+    assert.equal(twice, updated);
+    assert.deepEqual(
+      result.marketplace.plugins.map((plugin) => plugin.name),
+      ['latex', 'browser', 'chrome']
+    );
+  } finally {
+    if (previousReader === undefined) {
+      delete globalThis.codexLinuxTestReadMarketplace;
+    } else {
+      globalThis.codexLinuxTestReadMarketplace = previousReader;
+    }
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('injectLinuxBundledBrowserChromePluginsPatch is idempotent', () => {
+  const once = injectLinuxBundledBrowserChromePluginsPatch(
+    BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608
+  );
+  const twice = injectLinuxBundledBrowserChromePluginsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBundledBrowserChromePluginsPatch skips patching when disabled', () => {
+  const result = applyLinuxBundledBrowserChromePluginsPatch(
+    BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608,
+    { skip: true }
+  );
+
+  assert.equal(result.updated, BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxChromeNativeHostRuntimePathsPatch forces Linux Chrome registry wrapper paths', () => {
+  const updated = injectLinuxChromeNativeHostRuntimePathsPatch(
+    CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_608
+  );
+
+  assert.match(updated, /codexLinuxChromeNativeHostRuntimePaths/);
+  assert.doesNotThrow(() => new Function(updated));
+  assert.match(updated, /nodePath:i/);
+  assert.match(updated, /nodeReplPath:a/);
+  assert.match(
+    updated,
+    /n=codexLinuxChromeNativeHostRuntimePaths\(\{runtimePaths:QL\(\{devRuntimeRepoRoot:e\.devRuntimeRepoRoot,nativeHostName:e\.nativeHostName,resourcesPath:e\.resourcesPath\}\),resourcesPath:e\.resourcesPath\}\)/
+  );
+});
+
+test('injectLinuxChromeNativeHostRuntimePathsPatch is idempotent', () => {
+  const once = injectLinuxChromeNativeHostRuntimePathsPatch(
+    CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_608
+  );
+  const twice = injectLinuxChromeNativeHostRuntimePathsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxChromeNativeHostRuntimePathsPatch skips patching when disabled', () => {
+  const result = applyLinuxChromeNativeHostRuntimePathsPatch(
+    CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_608,
+    { skip: true }
+  );
+
+  assert.equal(result.updated, CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_608);
+  assert.equal(result.status, 'skipped');
 });
 
 test('applyLinuxBrowserUseHostFetchPatch skips patching when disabled', () => {
@@ -2925,11 +3425,17 @@ test('injectLinuxAvatarOverlayRendererPatch reports diagnostics when drag anchor
   );
 });
 
-test('injectLinuxPetYappingUsageMainPatch adds session-backed usage provider to main bundle', () => {
+test('injectLinuxPetYappingUsageMainPatch adds live usage provider with session fallback', () => {
   const updated = injectLinuxPetYappingUsageMainPatch(PET_YAPPING_USAGE_MAIN_BUNDLE_26_513);
 
   assert.match(updated, /codexLinuxPetYappingUsageProvider/);
   assert.match(updated, /"codex-linux-pet-usage":async\(\)=>/);
+  assert.match(updated, /\/wham\/usage/);
+  assert.match(updated, /CODEX_API_BASE_URL/);
+  assert.match(updated, /ChatGPT-Account-Id/);
+  assert.match(updated, /refreshToken:!0/);
+  assert.match(updated, /primary_window:i\(e\.primary_window\?\?e\.primary\)/);
+  assert.match(updated, /secondary_window:i\(e\.secondary_window\?\?e\.secondary\)/);
   assert.match(updated, /\.codex/);
   assert.match(updated, /sessions/);
   assert.match(updated, /rate_limits/);
@@ -2944,6 +3450,15 @@ test('injectLinuxPetYappingUsageMainPatch supports 26.527 fast-mode handler drif
   assert.match(updated, /codexLinuxPetYappingUsageProvider/);
   assert.match(updated, /"codex-linux-pet-usage":async\(\)=>/);
   assert.match(updated, /"fast-mode-rollout-metrics":async e=>t\.Tt/);
+});
+
+test('injectLinuxPetYappingUsageMainPatch supports 26.609 fast-mode handler drift', () => {
+  const updated = injectLinuxPetYappingUsageMainPatch(PET_YAPPING_USAGE_MAIN_BUNDLE_26_609);
+
+  assert.match(updated, /codexLinuxPetYappingUsageProvider/);
+  assert.match(updated, /"codex-linux-pet-usage":async\(\)=>/);
+  assert.match(updated, /"fast-mode-rollout-metrics":async e=>t\.Ot/);
+  assert.match(updated, /codexHome:t\.Or\(\{preferWsl:WM\}\)/);
 });
 
 test('injectLinuxPetYappingUsageMainPatch is idempotent', () => {
@@ -3057,6 +3572,18 @@ test('injectLinuxPetYappingUsagePatch supports 26.519 setting-storage bridge imp
     updated,
     /let t=jn\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?jn\(e\.querySelector\(an\)\),n=Mn\(e\.querySelector\(on\)\)/
   );
+});
+
+test('injectLinuxPetYappingUsagePatch supports 26.609 mascot children with voice controls', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_609);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /R\.useState\(null\)/);
+  assert.match(
+    updated,
+    /children:\[\(0,Z\.jsxs\)\(Z\.Fragment,\{children:\[\(0,Z\.jsx\)\(I,\{ariaLabel:ne\.formatMessage\(Q\.mascotLabel,\{petName:e\.displayName\}\),assetRef:t\.assetRef,spritesheetUrl:t\.spritesheetUrl,notificationBadge:k,resizeHandle:l,state:T\.mascotState,style:s,transientState:b\}\),\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]\}\)/
+  );
+  assert.match(updated, /I\|\|n\?\(0,Z\.jsx\)\(M/);
 });
 
 test('injectLinuxPetYappingUsageCssPatch adds pixel yapping styles', () => {
@@ -5522,6 +6049,15 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       sourcePath: '/usr/bin/node',
       targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node'
     },
+    browserUseMcpConfig: {
+      status: 'installed',
+      configPath: '/home/user/.codex/config.toml',
+      serverName: 'node_repl',
+      commandPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node_repl',
+      nodePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
+      nodeModuleDirs: ['/home/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'],
+      browserClientSha256s: ['abc123']
+    },
     chromeExtensionHost: {
       status: 'installed',
       targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host',
@@ -5541,6 +6077,16 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       ],
       hostExecutablePath:
         '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host'
+    },
+    chromeNativeHostRuntimeRegistryRepair: {
+      status: 'installed',
+      registryPaths: ['/home/user/.codex/chrome-native-hosts-v2.json'],
+      repairedPaths: ['/home/user/.codex/chrome-native-hosts-v2.json'],
+      missingPaths: [],
+      errors: [],
+      nodePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
+      nodeReplPath:
+        '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node_repl'
     },
     bundledPlugins,
     chromeExtensionHostCleanup: {
@@ -5576,6 +6122,18 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       linuxWorktreeEnvironmentWorker: {
         status: 'applied',
         sourceName: 'worker.js'
+      },
+      linuxBrowserUseRuntimePaths: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxBundledBrowserChromePlugins: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxChromeNativeHostRuntimePaths: {
+        status: 'applied',
+        sourceName: 'main.js'
       },
       linuxAvatarOverlay: {
         status: 'applied',
@@ -5666,6 +6224,15 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       sourcePath: '/usr/bin/node',
       targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node'
     },
+    browserUseMcpConfig: {
+      status: 'installed',
+      configPath: '/home/user/.codex/config.toml',
+      serverName: 'node_repl',
+      commandPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node_repl',
+      nodePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
+      nodeModuleDirs: ['/home/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'],
+      browserClientSha256s: ['abc123']
+    },
     chromeExtensionHost: {
       status: 'installed',
       targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host',
@@ -5685,6 +6252,16 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       ],
       hostExecutablePath:
         '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host'
+    },
+    chromeNativeHostRuntimeRegistryRepair: {
+      status: 'installed',
+      registryPaths: ['/home/user/.codex/chrome-native-hosts-v2.json'],
+      repairedPaths: ['/home/user/.codex/chrome-native-hosts-v2.json'],
+      missingPaths: [],
+      errors: [],
+      nodePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
+      nodeReplPath:
+        '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node_repl'
     },
     bundledPlugins,
     chromeExtensionHostCleanup: {
@@ -5720,6 +6297,18 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       linuxWorktreeEnvironmentWorker: {
         status: 'applied',
         sourceName: 'worker.js'
+      },
+      linuxBrowserUseRuntimePaths: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxBundledBrowserChromePlugins: {
+        status: 'applied',
+        sourceName: 'main.js'
+      },
+      linuxChromeNativeHostRuntimePaths: {
+        status: 'applied',
+        sourceName: 'main.js'
       },
       linuxAvatarOverlay: {
         status: 'applied',

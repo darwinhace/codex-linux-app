@@ -44,6 +44,15 @@
 
 Both installed files must be executable Linux ELF binaries or executable scripts. macOS Mach-O binaries are rejected.
 
+The installer also rewrites `~/.codex/config.toml` so `[mcp_servers.node_repl]` points
+at the installed Linux `resources/node_repl` wrapper, not the upstream macOS
+`resources/cua_node/bin/node_repl` binary. This is required for Chrome and
+Browser Use skills to expose the `node_repl` `js` tool on Linux.
+
+The generated Linux wrapper exposes the browser-client bridge expected by Chrome:
+`nodeRepl.env`, `nodeRepl.config`, `nodeRepl.fetch`, `nodeRepl.createElicitation`,
+`nodeRepl.nativePipe`, and `nodeRepl.write`.
+
 ## Recovery Flags
 
 These flags remain available for install recovery and A/B checks, but are hidden from normal help:
