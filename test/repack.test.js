@@ -263,6 +263,12 @@ const BROWSER_USE_RUNTIME_PATHS_BUNDLE_26_608 =
   'function Fn({env:e=process.env,isPackaged:n=!0,platform:r=process.platform,repoRoot:i=process.cwd(),resolveCodexPath:a=t.Hn,resolveNodePath:o=t.Un,resolveNodeReplPath:s=t.Wn,resolvePrimaryRuntimeNodePath:c=zn,resourcesPath:l}){let u=l??Xe({env:e,resourcesPath:process.resourcesPath}),d=c(r),f=Rn({platform:r,rawValue:e.CODEX_CLI_PATH,resolveWindowsAppsPath:a})??Ln({devRelativePathSegments:[`extension`,`bin`,`codex`],isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:a,resourcesPath:u}),p=Ln({devRelativePathSegments:null,isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:o,resourcesPath:u}),m=Rn({platform:r,rawValue:e.CODEX_BROWSER_USE_NODE_PATH,resolveWindowsAppsPath:o})??(p.path==null&&d!=null?{path:d,source:`primary-runtime`}:p),h=Rn({platform:r,rawValue:e.CODEX_NODE_REPL_PATH,resolveWindowsAppsPath:s})??Ln({devRelativePathSegments:null,isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:s,resourcesPath:u});return{codexCliPath:f.path,codexCliPathSource:f.source,nodeModuleDirs:t.zn(u),nodePath:m.path,nodePathSource:m.source,nodeReplPath:h.path,nodeReplPathSource:h.source,platform:r}}';
 const BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608 =
   'var Mt=`chrome`,ro=[{name:`browser`,isAvailable:({features:e})=>e.inAppBrowserUseAllowed},{name:Mt,isAvailable:({features:e})=>e.externalBrowserUseAllowed},{name:`latex`,isAvailable:()=>!0}],t={Ur:()=>()=>({info(){}}),ho:()=>`openai-bundled`},n={P:{Dev:`dev`}},Ri=`managed`;function sc({env:e}){return e.CODEX_ELECTRON_BUNDLED_PLUGINS_RESOURCES_PATH}function cc(e){return `/tmp/bundled-marketplaces/${e.marketplaceName}`}function lc(){return new Set}function Re(){return!0}var uc=t.Ur(`bundled-plugins`),dc=`CODEX_ENABLE_DEV_BUNDLED_PLUGINS`;function fc(e){let r=e.env??process.env,i=e.resourcesPath??sc({env:r}),a=t.ho(e.buildFlavor),o=e.runtimeMarketplaceRoot??cc({codexHome:e.codexHome,marketplaceName:a}),s=r.NODE_ENV===`development`?e.repoRoot:void 0,c=lc({env:r}),l={getManagedPluginIds:()=>new Set(e.globalState?.get?.(`electron-chrome-extension-sync-managed-plugin-ids`)??[]),setManagedPluginId:(t,n)=>{}},u=e.platform??process.platform;if(e.buildFlavor===n.P.Dev&&r[dc]?.trim()!==`1`)return{setDesktopFeatureAvailability:()=>[]};let d=null,f=null,p=null,m=null,h=Promise.resolve(),g=!1,_,v=t=>ro.filter(n=>n.isAvailable({buildFlavor:e.buildFlavor,env:r,features:t,platform:u})),y=({force:e,reason:t})=>{let n=d,r=v(n),i=r.map(e=>e.name);return i};return{setDesktopFeatureAvailability:e=>{d=e;return y({force:!1,reason:`startup`})}}}';
+const BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_611 =
+  BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608
+    .replace('t={Ur:()=>()=>({info(){}}),ho:', 't={Gr:()=>()=>({info(){}}),ho:')
+    .replace('function sc({env:e})', 'function bc({env:e})')
+    .replace('var uc=t.Ur(`bundled-plugins`)', 'var uc=t.Gr(`bundled-plugins`)')
+    .replace('i=e.resourcesPath??sc({env:r})', 'i=e.resourcesPath??bc({env:r})');
 const BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_609 =
   'var cs={source:`bundled-plugins`,warning(){}};async function ys(e){return e.resourcesPath}async function vs(e){let n=await ys({marketplaceName:e.marketplaceName,resourcesPath:e.resourcesPath});if(n==null)return null;let r=await xs({browserSkillVariant:e.browserSkillVariant,computerUseSkillVariant:e.computerUseSkillVariant,marketplacePluginNames:e.marketplacePluginNames,marketplaceName:e.marketplaceName,sourceMarketplaceRoot:n,targetMarketplaceRoot:e.runtimeMarketplaceRoot}),i=await Os(r.marketplaceRoot);return{localMarketplaceRoot:i,marketplace:r.marketplace,marketplaceRoot:t.ir({localPath:i,platformFamily:e.platformFamily})}}async function xs(e){let t={...ks({marketplacePluginNames:e.marketplacePluginNames,marketplace:await Es(e.sourceMarketplaceRoot)}),name:e.marketplaceName},n=`${e.targetMarketplaceRoot}.staging`;return{marketplace:t,marketplaceRoot:n}}function ks(e){let t=new Set(e.marketplacePluginNames);return{...e.marketplace,plugins:e.marketplace.plugins.filter(e=>t.has(e.name))}}async function Es(e){return globalThis.codexLinuxTestReadMarketplace(e)}async function Os(e){return e}var t={ir:({localPath:e})=>e};';
 const CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_608 =
@@ -326,8 +332,34 @@ const AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_608 = AVATAR_OVERLAY_BUNDLE_26
     'moveDragToCurrentCursor(e){let t=this.dragState;if(t==null)return;let r=n.screen.getCursorScreenPoint(),i=SO(r,t.displayBounds);t.displayBounds=i,this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,i)}',
     'moveDragToCurrentCursor(e){let t=this.dragState;if(t==null)return;let r=n.screen.getCursorScreenPoint(),i=SO(r,t.displayBounds),a=n.screen.getDisplayMatching(i);t.displayBounds=a.bounds,this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,a,!1,!1)}'
   );
+const AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_611 =
+  AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_608
+    .replace(
+      'case`avatar-overlay-drag-move`:this.avatarOverlayManager.moveDrag(r.id);break;',
+      'case`avatar-overlay-drag-move`:{let a=DP(i);a?this.avatarOverlayManager.moveDrag(r.id,a):this.avatarOverlayManager.moveDrag(r.id);return}'
+    )
+    .replace(
+      'startDrag(e,{pointerWindowX:t,pointerWindowY:r}){let i=this.window;if(i==null||i.isDestroyed()||i.webContents.id!==e)return;this.cancelMomentum();let a=this.getLayout(i);this.dragState={pointerAnchorX:t-a.mascot.left,pointerAnchorY:r-a.mascot.top,hasMoved:!1,displayBounds:n.screen.getDisplayNearestPoint(n.screen.getCursorScreenPoint()).bounds}}moveDrag(e){let t=this.window;t==null||t.isDestroyed()||t.webContents.id!==e||this.dragState==null||(this.cancelMomentum(),this.dragState.hasMoved=!0,this.moveDragToCurrentCursor(t))}endDrag(e){let t=this.window;t==null||t.isDestroyed()||t.webContents.id!==e||(this.dragState?.hasMoved&&this.moveDragToCurrentCursor(t),this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0}))}',
+      'startDrag(e,t){let r=this.window;if(r==null||r.isDestroyed()||r.webContents.id!==e)return;this.cancelMomentum(),this.suppressNextRendererThrow=!1,this.clearDetachedDisplayRestore();let i=this.getLayout(r);this.nativePositionController.clear();let a=V2(this.compositionHost.getCursorPosition()),o=t.pointerScreenX!=null&&t.pointerScreenY!=null?{x:t.pointerScreenX,y:t.pointerScreenY}:n.screen.getCursorScreenPoint(),s=a??o,c=t.pointerWindowX-i.mascot.left,l=t.pointerWindowY-i.mascot.top;this.dragState=new h2(a==null?`renderer`:`native`,c,l,n.screen.getDisplayNearestPoint(s).bounds)}moveDrag(e,t){let r=this.window;if(r==null||r.isDestroyed()||r.webContents.id!==e||this.dragState==null)return;this.cancelMomentum();let i=this.dragState;i.recordMovementIntent();let a=n.screen.getCursorScreenPoint(),o=i.getCursorPointForSource({native:i.cursorSource===`native`?V2(this.compositionHost.getCursorPosition()):null,renderer:{x:t?.pointerScreenX??a.x,y:t?.pointerScreenY??a.y}});o!=null&&this.moveDragToPointer(r,o)}endDrag(e,t){let r=this.window;if(r==null||r.isDestroyed()||r.webContents.id!==e)return;let i=this.dragState;if(i?.hasMovementIntent){let e=n.screen.getCursorScreenPoint(),a=i.getCursorPointForSource({native:i.cursorSource===`native`?V2(this.compositionHost.getCursorPosition()):null,renderer:{x:t?.pointerScreenX??e.x,y:t?.pointerScreenY??e.y}});a!=null&&this.moveDragToPointer(r,a)}this.suppressNextRendererThrow=i?.shouldSuppressRendererThrow()??!1,this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0})}'
+    )
+    .replace(
+      'moveDragToCurrentCursor(e){let t=this.dragState;if(t==null)return;let r=n.screen.getCursorScreenPoint(),i=SO(r,t.displayBounds),a=n.screen.getDisplayMatching(i);t.displayBounds=a.bounds,this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,a,!1,!1)}',
+      'moveDragToPointer(e,t){let r=this.dragState;if(r==null)return;let i=SO(t,r.displayBounds),a=n.screen.getDisplayMatching(i);r.recordMove(a.bounds),this.anchor={...this.anchor,x:t.x-r.pointerAnchorX,y:t.y-r.pointerAnchorY},this.applyLayout(e,a,!1,!1)}'
+    )
+    .replace(
+      'setWindowBounds(e,t,n,r){if(e.isDestroyed())return;let i=e.getContentBounds();if(EO(i,t))return;let a=i.width===t.width&&i.height===t.height;a&&!r&&this.compositionHost.prepareDragFollowForOverlayMove(t),e.setContentBounds(t,n),(r||!a)&&this.compositionHost.moveBackingCanvases()}',
+      'setWindowBounds(e,t,n,r){if(e.isDestroyed())return;let i=e.getContentBounds();if(EO(i,t)){this.nativePositionController.position(e,t);return}let a=i.width===t.width&&i.height===t.height;a&&!r&&this.compositionHost.prepareDragFollowForOverlayMove(t),e.setContentBounds(t,n&&!this.nativeCompositionSupported),this.nativePositionController.position(e,t),(r||!a)&&this.compositionHost.moveBackingCanvases()}'
+    )
+    .replace(
+      'showWindow(e){if(e.isDestroyed())return;let t=this.isOpen();this.windowStagedForNativePresentation&&=(e.setOpacity(1),!1),e.moveTop(),e.showInactive(),!t&&this.isOpen()&&this.broadcastOpenState()}',
+      'showWindow(e){if(e.isDestroyed())return;let t=this.isOpen();this.windowStagedForNativePresentation&&=(e.setOpacity(1),!1),e.moveTop(),e.showInactive(),!t&&this.isOpen()&&(this.finishPendingPresentation(),this.broadcastOpenState())}'
+    );
 const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
   'function $e(){let P={current:null};let Y=e=>{let t=P.current;if(t==null||t.pointerId!==e.pointerId)return;let n=V(e);t.samples=U([...t.samples,n]);let r=n.screenX-t.screenX,i=n.screenY-t.screenY;Math.abs(r)<Ge&&Math.abs(i)<Ge||(t.hasMoved=!0,t.screenX=n.screenX,t.screenY=n.screenY,s(e=>ut({currentDragState:e,deltaX:r})),f.dispatchMessage(`avatar-overlay-drag-move`,{}))}}';
+const AVATAR_OVERLAY_RENDERER_BUNDLE_26_611 = AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT.replace(
+  'f.dispatchMessage(`avatar-overlay-drag-move`,{})',
+  'f.dispatchMessage(`avatar-overlay-drag-move`,{pointerScreenX:n.screenX,pointerScreenY:n.screenY})'
+);
 const AVATAR_OVERLAY_RENDERER_BUNDLE_26_506 = AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT.replace(
   'let n=V(e);',
   'let n=W(e);'
@@ -344,6 +376,8 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_519 =
   'import{Cr as t,aa as l}from"./app-server-manager-signals-Csopz8aM.js";import{n as g,t as _}from"./jsx-runtime-CiQ1k8xo.js";import{t as v}from"./clsx-DDuZWq6Y.js";import{B as y,J as b,W as ee,X as x,b as te,xt as S,y as C,z as ne}from"./setting-storage-EK1Te68s.js";import{b as ie}from"./codex-api-5vE1HRY8.js";var Z=_(),R=e(g(),1),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:k}=e,o={height:121,left:244,top:191,width:112};return(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:v(`absolute`),style:{height:o.height,left:o.left,top:o.top,width:o.width},children:(0,Z.jsx)(I,{ariaLabel:ne.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:k,resizeHandle:l,state:T.mascotState,style:s,transientState:b})})}var an=`.codex-avatar-root`,on=`[data-avatar-overlay-size="notification-tray"]`;function kn(e){if(e==null)return null;let t=jn(e.querySelector(an)),n=Mn(e.querySelector(on));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_609 =
   'import{Cr as t,aa as l}from"./app-server-manager-signals-Csopz8aM.js";import{n as g,t as _}from"./jsx-runtime-CiQ1k8xo.js";import{t as v}from"./clsx-DDuZWq6Y.js";import{B as y,J as b,W as ee,X as x,b as te,xt as S,y as C,z as ne}from"./setting-storage-EK1Te68s.js";import{b as ie}from"./codex-api-5vE1HRY8.js";var Z=_(),R=e(g(),1),$=w({mascotLabel:{id:`petOverlay.mascotLabel`}});function it(e){let{avatar:t,notificationBadge:k}=e,o={height:121,left:244,top:191,width:112};return(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,className:v(`absolute`),style:{height:o.height,left:o.left,top:o.top,width:o.width},children:[(0,Z.jsx)(I,{ariaLabel:ne.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:t.assetRef,spritesheetUrl:t.spritesheetUrl,notificationBadge:k,resizeHandle:l,state:T.mascotState,style:s,transientState:b}),I||n?(0,Z.jsx)(M,{children:(0,Z.jsx)(`button`,{type:`button`})}):null]})}var an=`.codex-avatar-root`,on=`[data-avatar-overlay-size="notification-tray"]`;function kn(e){if(e==null)return null;let t=jn(e.querySelector(an)),n=Mn(e.querySelector(on));return t==null?null:{mascot:t,tray:n}}';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_611 =
+  'import{Cr as t,aa as l}from"./setting-storage-EK1Te68s.js";import{n as g,t as _}from"./jsx-runtime-CiQ1k8xo.js";var Z=_(),R=e(g(),1);function it(e){return(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":`mascot`,children:[F?(0,Z.jsx)(Pe,{audioStream:a,phase:u,voiceActivity:i}):(0,Z.jsx)(ee,{ariaLabel:se.formatMessage(J.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:z,resizeHandle:h==null?void 0:{ariaLabel:se.formatMessage(J.resizeMascot),...h},state:M.mascotState,style:p,transientState:m}),(0,Z.jsx)(fe,{canStart:n,isRealtimeVoiceSurfaceVisible:F,phase:u,waveformCanvasRef:o,onStart:A,onStop:oe})]})}var an=`.codex-avatar-root`,on=`[data-avatar-overlay-size="notification-tray"]`;function kn(e){if(e==null)return null;let t=jn(e.querySelector(an)),n=Mn(e.querySelector(on));return t==null?null:{mascot:t,tray:n}}';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -431,6 +465,19 @@ const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_527 = WORKTREE_ENVIRONMENT_WORKER_BU
     'let y=await cX(h,v,(e,t)=>{c?.(e,t)},o,{[UL]:t,[WL]:g},a);',
     'let y=await cX(h,v,(e,t)=>{c?.(e,t)},s,{[UL]:t,[WL]:g},o);'
   );
+const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_611 = WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_527
+  .replace(
+    'appServerClient:o,signal:s,onLog:c,onWorktreePathAllocated:l',
+    'host:o,signal:s,onLog:c,onWorktreePathAllocated:l,onSetupStart:u'
+  )
+  .replace(
+    'scriptType:`cleanup`,appServerClient:i,onLog:n,signal:r',
+    'scriptType:`cleanup`,host:i,onLog:n,signal:r'
+  )
+  .replace(
+    'c?.(`info`,ce.Buffer.from(`Running setup script',
+    'u?.(),c?.(`info`,ce.Buffer.from(`Running setup script'
+  );
 const TERMINAL_PANEL_BLOCK_LEGACY =
   'function vDe(e){let ee,te;t[29]!==n||t[30]!==i||t[31]!==r||t[32]!==o||t[33]!==m?(ee=()=>{let e=T.current;if(!e)return;let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;let a=!1,s=new nDe.Terminal({allowTransparency:!0,cursorStyle:`bar`,fontSize:j.current,allowProposedApi:!0,cursorBlink:!0,fontFamily:A.current,letterSpacing:0,lineHeight:1.2,theme:RQ()}),c=null,l=()=>{c??=requestAnimationFrame(()=>{c=null,s.scrollToBottom()})};E.current=s;let u=new aDe.ClipboardAddon,d=new iDe.FitAddon;D.current=d;let f=new rDe.WebLinksAddon(bDe);s.loadAddon(u),s.loadAddon(d),s.loadAddon(f),s.attachCustomKeyEventHandler(e=>lDe({clipboard:typeof navigator<`u`&&navigator.clipboard!=null&&m?navigator.clipboard:void 0,event:e,sendText:e=>{St.write(t,e)},term:s})),s.open(e);let p=n=>{a||e.isConnected&&requestAnimationFrame(()=>{a||e.isConnected&&(k.current?IQ(s,d,t):LQ(d),n?.())})};p(),M.current=!1;let h=St.register(t,{onInitLog:e=>{s.write(e),l()},onData:e=>{M.current||(M.current=!0,P(`Running`),I(null)),s.write(e),l()},onExit:()=>{a||P(`Exited`)},onError:e=>{a||(P(`Error`),I(e))},onAttach:(e,t)=>{a||(k.current=!0,P(`Running`),I(null),R(t??null),p())}}),g=s.onData(e=>{St.write(t,e)}),_=s.onKey(yDe);o&&requestAnimationFrame(()=>{a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});let v=new ResizeObserver(()=>{p()});return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||St.close(t),s.dispose(),E.current=null}},te=[n,i,r,o,m],t[29]=n,t[30]=i,t[31]=r,t[32]=o,t[33]=m,t[34]=ee,t[35]=te):(ee=t[34],te=t[35]),(0,Z.useEffect)(ee,te);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_CURRENT =
@@ -443,6 +490,10 @@ const TERMINAL_PANEL_BLOCK_26_513 =
   'let fe;t[32]!==n||t[33]!==a||t[34]!==A||t[35]!==i||t[36]!==s||t[37]!==c||t[38]!==o||t[39]!==u?(fe=()=>{let e=ee.current,t=C.current;if(!e||!t)return;let r=A(),l=o??H.create({conversationId:n,conversationTitle:r,hostId:i??null,cwd:a??null});T.current=l,E.current=!1;let d=!1,f=new LT.Terminal({allowTransparency:!0}),p=null,m=()=>{p??=requestAnimationFrame(()=>{p=null,f.scrollToBottom()})};w.current=f;let h=new PT.ClipboardAddon,g=new FT.FitAddon;te.current=g;let _=new IT.WebLinksAddon(UT);f.loadAddon(h),f.loadAddon(g),f.loadAddon(_),f.attachCustomKeyEventHandler(e=>ST({sendText:e=>{H.write(l,e)},term:f})),f.open(e);let v=t=>{d||e.isConnected&&requestAnimationFrame(()=>{d||e.isConnected&&(E.current?RT(f,g,l):g.fit(),t?.())})};v();let y=H.register(l,{onInitLog:e=>{f.write(e),m()},onData:e=>{f.write(e),m()},onAttach:()=>{d||(E.current=!0,v())}}),b=f.onData(e=>{H.write(l,e)}),x=f.onTitleChange(e=>{H.setTitle(l,e)}),S=f.onKey(HT);o&&requestAnimationFrame(()=>{d||H.create({sessionId:o,conversationId:n,conversationTitle:r,hostId:i??null,cwd:a??null,cols:f.cols,rows:f.rows})});let D=new ResizeObserver(()=>{v()});return D.observe(e),()=>{d=!0,p!=null&&(cancelAnimationFrame(p),p=null),D.disconnect(),b.dispose(),x.dispose(),S.dispose(),y(),te.current=null,T.current=null,E.current=!1,o||H.close(l),f.dispose(),w.current=null}},t[32]=n,t[33]=a,t[34]=A,t[35]=i,t[36]=s,t[37]=c,t[38]=o,t[39]=u,t[40]=fe):fe=t[40];let pe;t[41]!==n||t[42]!==a||t[43]!==i||t[44]!==s||t[45]!==c||t[46]!==o||t[47]!==u?(pe=[n,a,i,s,c,o,u],t[41]=n,t[42]=a,t[43]=i,t[44]=s,t[45]=c,t[46]=o,t[47]=u,t[48]=pe):pe=t[48],(0,L.useEffect)(fe,pe);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_26_602 =
   'let G;t[29]!==n||t[30]!==s||t[31]!==ce||t[32]!==o||t[33]!==l||t[34]!==u||t[35]!==c||t[36]!==f?(G=()=>{let e=T.current,t=w.current;if(!e||!t)return;let r=ce(),a=c??i.create({conversationId:n,conversationTitle:r,hostId:o??null,cwd:s??null});O.current=a,k.current=!1;let d=!1,p=new ve.Terminal({allowTransparency:!0}),m=null,h=()=>{m??=requestAnimationFrame(()=>{m=null,p.scrollToBottom()})};E.current=p;let g=new he.ClipboardAddon,_=new ge.FitAddon;D.current=_;p.loadAddon(g),p.loadAddon(_),p.open(e);let y=()=>{d||e.isConnected&&requestAnimationFrame(()=>{d||e.isConnected&&(k.current?ye(p,_,a):_.fit())})};y();let b=i.register(a,{onInitLog:e=>{let t=te(p);p.reset(),p.write(e),t&&h()},onData:e=>{let t=te(p);p.write(e),t&&h()},onAttach:()=>{d||(k.current=!0,y())}}),x=p.onData(e=>{i.write(a,e)}),S=p.onTitleChange(e=>{i.setTitle(a,e)}),ee=p.onKey(Ce);c&&requestAnimationFrame(()=>{d||i.create({sessionId:c,conversationId:n,conversationTitle:r,hostId:o??null,cwd:s??null,cols:p.cols,rows:p.rows})});let C=new ResizeObserver(()=>{y()});return C.observe(e),()=>{d=!0,m!=null&&(cancelAnimationFrame(m),m=null),C.disconnect(),x.dispose(),S.dispose(),ee.dispose(),b(),D.current=null,O.current=null,k.current=!1,c||i.close(a),p.dispose(),E.current=null}},t[29]=n,t[30]=s,t[31]=ce,t[32]=o,t[33]=l,t[34]=u,t[35]=c,t[36]=f,t[37]=G):G=t[37];let K;t[38]!==n||t[39]!==s||t[40]!==o||t[41]!==l||t[42]!==u||t[43]!==c||t[44]!==f?(K=[n,s,o,l,u,c,f],t[38]=n,t[39]=s,t[40]=o,t[41]=l,t[42]=u,t[43]=c,t[44]=f,t[45]=K):K=t[45],(0,Z.useEffect)(G,K);return(0,H.jsx)(`div`,{"data-codex-terminal":!0})}';
+const TERMINAL_PANEL_BLOCK_26_611 = TERMINAL_PANEL_BLOCK_26_602.replace(
+  'c||i.close(a),p.dispose(),E.current=null',
+  'c||i.close(a),codexLinuxLinkDispose(),p.dispose(),E.current=null'
+);
 const NEW_THREAD_MODEL_SELECTOR_BLOCK_CURRENT =
   'function xf(e){let t=(0,Q.c)(30),n=e===void 0?null:e,{authMethod:r}=Ds(),i=Un(),a;t[0]===Symbol.for(`react.memo_cache_sentinel`)?(a={select:Tf},t[0]=a):a=t[0];let{data:o}=Le(`active-workspace-roots`,a),s=o??null,c;t[1]===s?c=t[2]:(c={hostId:De,cwd:s},t[1]=s,t[2]=c);let l=yf(c),u=_f(),d=Dn(n,wf),f=Dn(n,Cf),p;t[3]===f?p=t[4]:(p=f!=null&&f.trim().length>0?f:null,t[3]=f,t[4]=p);let m=p,h=Dn(n,Sf),g=r===`copilot`,_;t[5]!==i||t[6]!==n?(_=async(e,t)=>{n!=null&&await mf(i,n,e,t)},t[5]=i,t[6]=n,t[7]=_):_=t[7];let v=_,y;t[8]!==h||t[9]!==l||t[10]!==u||t[11]!==d||t[12]!==g||t[13]!==m?(y=d?{model:m??l.model,reasoningEffort:h,isLoading:!1}:g?u:l,t[8]=h,t[9]=l,t[10]=u,t[11]=d,t[12]=g,t[13]=m,t[14]=y):y=t[14];let{model:b,reasoningEffort:x,isLoading:S}=y,{setData:C}=Os(`copilot-default-model`),w=o??null,T;t[15]===w?T=t[16]:(T={hostId:De,cwd:w},t[15]=w,t[16]=T);let E=bf(T),D;t[17]!==i||t[18]!==v||t[19]!==g||t[20]!==E||t[21]!==C?(D=async(e,t)=>{if(await v(e,t),g){C(e);return}try{await i.setDefaultModelConfig(e,t)}catch(e){let t=e;O.error(`Failed to set default model and reasoning effort`,{safe:{},sensitive:{error:t}});return}await E()},t[17]=i,t[18]=v,t[19]=g,t[20]=E,t[21]=C,t[22]=D):D=t[22];let k=D,A;t[23]!==S||t[24]!==b||t[25]!==x?(A={model:b,reasoningEffort:x,isLoading:S},t[23]=S,t[24]=b,t[25]=x,t[26]=A):A=t[26];let j=A,M;return t[27]!==j||t[28]!==k?(M={setModelAndReasoningEffort:k,modelSettings:j},t[27]=j,t[28]=k,t[29]=M):M=t[29],M}';
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_CURRENT =
@@ -589,6 +640,10 @@ const TODO_PROGRESS_BUNDLE_26_506_EXPANDED_ITEM_CACHE =
   'function PC(e){let t=(0,Z.c)(48),{item:n,isComplete:r}=e,i=r===void 0?!1:r,a=Ci(),d;t[0]===n.plan?d=t[1]:(d=n.plan.reduce(LC,0),t[0]=n.plan,t[1]=d);let f=d,p=n.plan.length,m;t[2]===n.plan?m=t[3]:(m=n.plan.findIndex(IC),t[2]=n.plan,t[3]=m);let h=m,k;t[17]!==h||t[18]!==a||t[19]!==i||t[20]!==n.plan?(k=n.plan.map((e,t)=>(0,$.jsx)(`span`,{className:Y(`text-size-chat`,e.status===`completed`&&`line-through`),children:e.step},t)),t[17]=h,t[18]=a,t[19]=i,t[20]=n.plan,t[21]=k):k=t[21];let L;t[38]!==f||t[39]!==p?(L=(0,$.jsx)(X,{id:`localConversationPage.planItemsCompleted`,defaultMessage:`{completedItems} out of {totalItems, plural, one {# task completed} other {# tasks completed}}`,values:{completedItems:f,totalItems:p}}),t[38]=f,t[39]=p,t[40]=L):L=t[40];return L}function IC(e){return e.status===`in_progress`}function LC(e,t){return e+(t.status===`completed`?1:0)}function hw(e){let t=(0,Z.c)(37),{item:n}=e,r=n.plan.length,i=n.plan.reduce(_w,0),l=Ci(),u=i===0?l.formatMessage({id:`codex.plan.todoListCreated`,defaultMessage:`To do list created with {total} tasks`},{total:r}):l.formatMessage({id:`codex.plan.tasksCompletedSummary`,defaultMessage:`{completed} out of {total} tasks completed`},{completed:i,total:r}),T;if(t[19]!==l||t[20]!==n.plan){let e;t[22]===l?e=t[23]:(e=(e,t)=>(0,$.jsx)(`span`,{className:Y(`text-size-chat`,e.status===`completed`&&`line-through`),children:e.step},t),t[22]=l,t[23]=e),T=n.plan.map(e),t[19]=l,t[20]=n.plan,t[21]=T}else T=t[21];return u}function _w(e,t){return e+(t.status===`completed`?1:0)}function dw(e){let t=(0,Z.c)(205),{item:n}=e;switch(n.type){case`todo-list`:{let e;return t[154]===n?e=t[155]:(e=(0,$.jsx)(PC,{item:n}),t[154]=n,t[155]=e),e}}}function Jw(e){let t=(0,Z.c)(61),{unit:n}=e,F;{let e=n.entry.item;if(e.type===`todo-list`){let n;t[34]===e?n=t[35]:(n=(0,$.jsx)(hw,{item:e}),t[34]=e,t[35]=n),F=n}}return F}';
 const TODO_PROGRESS_BUNDLE_26_513_31313 =
   TODO_PROGRESS_BUNDLE_26_506_EXPANDED_ITEM_CACHE.replaceAll('(0,$.jsx)', '(0,Q.jsx)');
+const TODO_PROGRESS_BUNDLE_26_611_PORTAL_EXTRA_PROPS =
+  'case`todo-list`:return null;function dT(e){let t=(0,X.c)(48),{item:n,isComplete:r}=e,i=r===void 0?!1:r,a=an(),d;t[0]===n.plan?d=t[1]:(d=n.plan.reduce(xT,0),t[0]=n.plan,t[1]=d);let f=d,p=n.plan.length,m;t[2]===n.plan?m=t[3]:(m=n.plan.findIndex(bT),t[2]=n.plan,t[3]=m);let h=m,O;t[17]!==h||t[18]!==a||t[19]!==i||t[20]!==n.plan?(O=n.plan.map((e,t)=>(0,Q.jsx)(`span`,{className:Y(`text-size-chat`,e.status===`completed`&&`line-through`),children:e.step},t)),t[17]=h,t[18]=a,t[19]=i,t[20]=n.plan,t[21]=O):O=t[21];let I;t[38]!==d||t[39]!==f?(I=(0,Q.jsx)(J,{id:`localConversationPage.planItemsCompleted`,defaultMessage:`{completedItems} out of {totalItems, plural, one {# task completed} other {# tasks completed}}`,values:{completedItems:d,totalItems:f}}),t[38]=d,t[39]=f,t[40]=I):I=t[40];return I}function gE(e){let t=(0,X.c)(37),{item:n}=e,r=n.plan.length,i=n.plan.reduce(vE,0),l=an(),u=i===0?l.formatMessage({id:`codex.plan.todoListCreated`,defaultMessage:`To do list created with {total} tasks`},{total:r}):l.formatMessage({id:`codex.plan.tasksCompletedSummary`,defaultMessage:`{completed} out of {total} tasks completed`},{completed:i,total:r}),T;if(t[19]!==l||t[20]!==n.plan){let e;t[22]===l?e=t[23]:(e=(e,t)=>(0,Q.jsx)(`span`,{className:Y(`text-size-chat`,e.status===`completed`&&`line-through`),children:e.step},t),t[22]=l,t[23]=e),T=n.plan.map(e),t[19]=l,t[20]=n.plan,t[21]=T}else T=t[21];return u}function zE(e){let t=(0,X.c)(91),{unit:n}=e,H;{let e=n.entry.item;if(e.type===`todo-list`){let n;t[53]===e?n=t[54]:(n=(0,Q.jsx)(gE,{item:e}),t[53]=e,t[54]=n),H=n}}return H}function hD(e){let t=(0,X.c)(19),{todoListItem:o}=e,d=vc(),v=o!=null,S;t[10]!==v||t[14]!==o?(S=v?(0,Q.jsx)(sn.div,{children:(0,Q.jsx)(dT,{donutAnimateOnMountDelayMs:fD*1e3,item:o,tooltipPortalContainer:d})}):null,t[10]=v,t[14]=o,t[15]=S):S=t[15];return S}';
+const TODO_PROGRESS_BUNDLE_26_611_WRAPPER_EXTRA_PROPS =
+  'case`todo-list`:return null;function dT(e){let t=(0,X.c)(8),{donutAnimateOnMountDelayMs:n,item:r,isComplete:i,tooltipPortalContainer:a}=e,o=n===void 0?0:n,s=i===void 0?!1:i;let c;return t[5]!==s||t[6]!==r?(c=(0,Q.jsx)(vT,{item:r,isComplete:s}),t[5]=s,t[6]=r,t[7]=c):c=t[7],c}function vT(e){let t=(0,X.c)(48),{item:n,isComplete:r}=e,i=r===void 0?!1:r,a=an(),d;t[0]===n.plan?d=t[1]:(d=n.plan.reduce(xT,0),t[0]=n.plan,t[1]=d);let f=d,p=n.plan.length,m;t[2]===n.plan?m=t[3]:(m=n.plan.findIndex(bT),t[2]=n.plan,t[3]=m);let h=m,O;t[17]!==h||t[18]!==a||t[19]!==i||t[20]!==n.plan?(O=n.plan.map((e,t)=>(0,Q.jsx)(`span`,{className:Y(`text-size-chat`,e.status===`completed`&&`line-through`),children:e.step},t)),t[17]=h,t[18]=a,t[19]=i,t[20]=n.plan,t[21]=O):O=t[21];let I;t[38]!==d||t[39]!==f?(I=(0,Q.jsx)(J,{id:`localConversationPage.planItemsCompleted`,defaultMessage:`{completedItems} out of {totalItems, plural, one {# task completed} other {# tasks completed}}`,values:{completedItems:d,totalItems:f}}),t[38]=d,t[39]=f,t[40]=I):I=t[40];return I}function gE(e){let t=(0,X.c)(37),{item:n}=e,r=n.plan.length,i=n.plan.reduce(vE,0),l=an(),u=i===0?l.formatMessage({id:`codex.plan.todoListCreated`,defaultMessage:`To do list created with {total} tasks`},{total:r}):l.formatMessage({id:`codex.plan.tasksCompletedSummary`,defaultMessage:`{completed} out of {total} tasks completed`},{completed:i,total:r}),T;if(t[19]!==l||t[20]!==n.plan){let e;t[22]===l?e=t[23]:(e=(e,t)=>(0,Q.jsx)(`span`,{className:Y(`text-size-chat`,e.status===`completed`&&`line-through`),children:e.step},t),t[22]=l,t[23]=e),T=n.plan.map(e),t[19]=l,t[20]=n.plan,t[21]=T}else T=t[21];return u}function zE(e){let t=(0,X.c)(91),{unit:n}=e,H;{let e=n.entry.item;if(e.type===`todo-list`){let n;t[53]===e?n=t[54]:(n=(0,Q.jsx)(gE,{item:e}),t[53]=e,t[54]=n),H=n}}return H}function hD(e){let t=(0,X.c)(19),{todoListItem:o}=e,d=vc(),v=o!=null,S;t[10]!==v||t[14]!==o?(S=v?(0,Q.jsx)(sn.div,{children:(0,Q.jsx)(dT,{donutAnimateOnMountDelayMs:fD*1e3,item:o,tooltipPortalContainer:d})}):null,t[10]=v,t[14]=o,t[15]=S):S=t[15];return S}';
 
 test('parseArgs accepts dev, diagnostic, and patch skip flags', () => {
   assert.deepEqual(parseArgs([]), {
@@ -2857,6 +2912,56 @@ test('injectLinuxBundledBrowserChromePluginsPatch keeps Browser and Chrome in Li
   }
 });
 
+test('injectLinuxBundledBrowserChromePluginsPatch supports 26.611 descriptor reconciler drift', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-bundled-260611-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    for (const pluginName of ['browser', 'chrome']) {
+      await fs.promises.mkdir(
+        path.join(
+          resourcesDir,
+          'plugins',
+          'openai-bundled',
+          'plugins',
+          pluginName,
+          '.codex-plugin'
+        ),
+        { recursive: true }
+      );
+      await fs.promises.writeFile(
+        path.join(
+          resourcesDir,
+          'plugins',
+          'openai-bundled',
+          'plugins',
+          pluginName,
+          '.codex-plugin',
+          'plugin.json'
+        ),
+        '{}',
+        'utf8'
+      );
+    }
+
+    const updated = injectLinuxBundledBrowserChromePluginsPatch(
+      BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_611
+    );
+    const fc = new Function(`${updated}; return fc;`)();
+    const result = fc({
+      buildFlavor: 'prod',
+      env: {},
+      platform: 'linux',
+      resourcesPath: resourcesDir
+    }).setDesktopFeatureAvailability({});
+
+    assert.match(updated, /codexLinuxBundledBrowserChromePlugins/);
+    assert.match(updated, /var uc=t\.Gr\(`bundled-plugins`\)/);
+    assert.deepEqual(result, ['latex', 'browser', 'chrome']);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('injectLinuxBundledBrowserChromePluginsPatch leaves selector unchanged without Linux plugin resources', () => {
   const updated = injectLinuxBundledBrowserChromePluginsPatch(
     BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608
@@ -3352,6 +3457,34 @@ test('injectLinuxAvatarOverlayPatch supports 26.608 native composition staging d
   );
 });
 
+test('injectLinuxAvatarOverlayPatch supports 26.611 native pointer drag drift', () => {
+  const updated = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_611);
+
+  assert.match(updated, /codexLinuxAvatarOverlay/);
+  assert.doesNotThrow(() => new Function(updated));
+  assert.match(updated, /this\.finishPendingPresentation\(\),this\.broadcastOpenState\(\)/);
+  assert.match(
+    updated,
+    /nativePositionController\.position\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\),this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*\);return/
+  );
+  assert.match(updated, /setContentBounds\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*&&!this\.nativeCompositionSupported\)/);
+  assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
+  assert.match(
+    updated,
+    /case`avatar-overlay-drag-move`:\{let [A-Za-z_$][\w$]*=DP\([A-Za-z_$][\w$]*\);\/\* codexLinuxAvatarOverlayScreenPointDrag \*\//
+  );
+  assert.match(updated, /codexLinuxAvatarOverlayScreenPoint\(e\)\{return e!=null&&Number\.isFinite\(e\.pointerScreenX\)/);
+  assert.match(updated, /moveDragToPointer\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\)\{[\s\S]*?getContentBounds\(\)/);
+  assert.match(
+    updated,
+    /this\.setWindowBounds\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayNext,!1,!1\),this\.sendLayoutToRenderer\([A-Za-z_$][\w$]*\)/
+  );
+  assert.match(
+    updated,
+    /this\.persistWindowBounds\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayDisplay\?\?this\.getCurrentDisplay\(\)\);return/
+  );
+});
+
 test('injectLinuxAvatarOverlayRendererPatch sends pointer screen coordinates with drag moves', () => {
   const updated = injectLinuxAvatarOverlayRendererPatch(AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT);
 
@@ -3371,6 +3504,17 @@ test('injectLinuxAvatarOverlayRendererPatch supports renamed pointer sample help
     /f\.dispatchMessage\(`avatar-overlay-drag-move`,\{cursorScreenX:n\.screenX,cursorScreenY:n\.screenY\}\)/
   );
   assert.match(updated, /let n=W\(e\);/);
+});
+
+test('injectLinuxAvatarOverlayRendererPatch accepts 26.611 pointer screen coordinates', () => {
+  const updated = injectLinuxAvatarOverlayRendererPatch(AVATAR_OVERLAY_RENDERER_BUNDLE_26_611);
+
+  assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
+  assert.match(
+    updated,
+    /f\.dispatchMessage\(`avatar-overlay-drag-move`,\{pointerScreenX:n\.screenX,pointerScreenY:n\.screenY\}\)/
+  );
+  assert.doesNotMatch(updated, /cursorScreenX/);
 });
 
 test('injectLinuxAvatarOverlayRendererPatch is idempotent', () => {
@@ -3586,6 +3730,22 @@ test('injectLinuxPetYappingUsagePatch supports 26.609 mascot children with voice
   assert.match(updated, /I\|\|n\?\(0,Z\.jsx\)\(M/);
 });
 
+test('injectLinuxPetYappingUsagePatch supports 26.611 conditional mascot children', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_611);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /R\.useState\(null\)/);
+  assert.match(updated, /l as codexLinuxFetchUsage/);
+  assert.match(
+    updated,
+    /F\?\(0,Z\.jsx\)\(Pe,\{audioStream:a,phase:u,voiceActivity:i\}\):\(0,Z\.jsx\)\(ee,\{ariaLabel:se\.formatMessage\(J\.mascotLabel,\{petName:e\.displayName\}\),assetRef:e\.assetRef,spritesheetUrl:e\.spritesheetUrl,notificationBadge:z,resizeHandle:h==null\?void 0:\{ariaLabel:se\.formatMessage\(J\.resizeMascot\),\.\.\.h\},state:M\.mascotState,style:p,transientState:m\}\),\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\),\(0,Z\.jsx\)\(fe,\{canStart:n/
+  );
+  assert.match(
+    updated,
+    /let t=jn\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?jn\(e\.querySelector\(an\)\),n=Mn\(e\.querySelector\(on\)\)/
+  );
+});
+
 test('injectLinuxPetYappingUsageCssPatch adds pixel yapping styles', () => {
   const updated = injectLinuxPetYappingUsageCssPatch(PET_YAPPING_USAGE_CSS_CURRENT);
 
@@ -3761,6 +3921,20 @@ test('injectLinuxWorktreeEnvironmentWorkerPatch preserves 26.527 setup failure h
   assert.match(updated, /setupError:v\.error/);
 });
 
+test('injectLinuxWorktreeEnvironmentWorkerPatch supports 26.611 host worker shape', () => {
+  const updated = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_611);
+
+  assert.match(updated, /codexLinuxWorktreeEnvironmentWorker/);
+  assert.match(
+    updated,
+    /allowSetupFailure:i=!1,setUpSyncedBranch:a=!0,host:o,signal:s,onLog:c,onWorktreePathAllocated:l,onSetupStart:u/
+  );
+  assert.match(updated, /typeof t\?\.readDirectory===`function`\?await t\.readDirectory\(r\)/);
+  assert.match(updated, /scriptType:`cleanup`,host:a,injectedEnvironment:i,onLog:n,signal:r/);
+  assert.match(updated, /u\?\.\(\),c\?\.\(`info`,ce\.Buffer\.from\(`Running setup script/);
+  assert.match(updated, /await vZ\(g,codexLinuxLocalEnvironmentConfigPath\?\?`__none__`,o,`worktree`,s\)/);
+});
+
 test('injectLinuxWorktreeEnvironmentWorkerPatch is idempotent', () => {
   const once = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT);
   const twice = injectLinuxWorktreeEnvironmentWorkerPatch(once);
@@ -3795,7 +3969,8 @@ for (const [label, fixture] of [
   ['26.406', TERMINAL_PANEL_BLOCK_26_406],
   ['26.415', TERMINAL_PANEL_BLOCK_26_415],
   ['26.513', TERMINAL_PANEL_BLOCK_26_513],
-  ['26.602', TERMINAL_PANEL_BLOCK_26_602]
+  ['26.602', TERMINAL_PANEL_BLOCK_26_602],
+  ['26.611', TERMINAL_PANEL_BLOCK_26_611]
 ]) {
   test(
     `injectLinuxTerminalLifecyclePatch adds a Linux terminal handoff guard to the ${label} renderer bundle`,
@@ -3828,6 +4003,9 @@ for (const [label, fixture] of [
       if (label === '26.602') {
         assert.match(updated, /conversationTitle:r/);
         assert.match(updated, /hostId:o\?\?null,cwd:s\?\?null/);
+      }
+      if (label === '26.611') {
+        assert.match(updated, /codexLinuxLinkDispose\(\),p\.dispose\(\)/);
       }
     }
   );
@@ -4394,7 +4572,9 @@ for (const [label, fixture] of [
   ['26.406', TODO_PROGRESS_BUNDLE_26_406],
   ['26.406-renamed', TODO_PROGRESS_BUNDLE_26_406_RENAMED],
   ['26.409-direct-compact', TODO_PROGRESS_BUNDLE_26_409_DIRECT_COMPACT],
-  ['26.513.31313-jsx-runtime', TODO_PROGRESS_BUNDLE_26_513_31313]
+  ['26.513.31313-jsx-runtime', TODO_PROGRESS_BUNDLE_26_513_31313],
+  ['26.611-portal-extra-props', TODO_PROGRESS_BUNDLE_26_611_PORTAL_EXTRA_PROPS],
+  ['26.611-wrapper-extra-props', TODO_PROGRESS_BUNDLE_26_611_WRAPPER_EXTRA_PROPS]
 ]) {
   test(`injectLinuxTodoProgressPatch updates todo render cache keys in the ${label} renderer bundle`, () => {
     const updated = injectLinuxTodoProgressPatch(fixture);
@@ -4404,6 +4584,18 @@ for (const [label, fixture] of [
     assert.match(updated, /map\(\(e,t\)=>String\(t\)\+`:`\+e\.status\+`:`\+e\.step\)\.join\(`\|`\)/);
     assert.doesNotMatch(updated, /t\[0\]===n\.plan|t\[0\]===r\.plan/);
     assert.doesNotMatch(updated, /t\[20\]!==n\.plan|t\[20\]!==r\.plan/);
+    if (label === '26.611-portal-extra-props') {
+      assert.match(updated, /donutAnimateOnMountDelayMs:fD\*1e3,item:o,tooltipPortalContainer:d/);
+      assert.doesNotMatch(updated, /t\[14\]!==o/);
+      assert.doesNotMatch(updated, /t\[14\]=o/);
+    }
+    if (label === '26.611-wrapper-extra-props') {
+      assert.match(updated, /donutAnimateOnMountDelayMs:fD\*1e3,item:o,tooltipPortalContainer:d/);
+      assert.doesNotMatch(updated, /t\[6\]!==r/);
+      assert.doesNotMatch(updated, /t\[6\]=r/);
+      assert.doesNotMatch(updated, /t\[14\]!==o/);
+      assert.doesNotMatch(updated, /t\[14\]=o/);
+    }
   });
 }
 
@@ -4468,7 +4660,7 @@ test('patchRendererTodoProgressBundle skips when todo render-cache anchors are i
 
     const incompatibleBundle = TODO_PROGRESS_BUNDLE_26_406_RENAMED.replace(
       '(0,$.jsx)(IAe,{item:e})',
-      '(0,$.jsx)(IAe,{item:e,highlight:!0})'
+      '(0,$.jsx)(IAe,{todo:e})'
     );
     const bundlePath = path.join(assetsDir, 'index.js');
     await fs.promises.writeFile(bundlePath, incompatibleBundle, 'utf8');
@@ -4552,7 +4744,7 @@ for (const [label, fixture] of [
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] \[role=tablist\]/);
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] \[data-app-shell-tab-controller\]/);
     assert.match(updated, /\[data-app-shell-tab-strip-controller\] \[role=tab\]/);
-    assert.match(updated, /\[data-app-shell-tab-strip-controller\] div:has\(>button:not\(\[role=tab\]\)\)/);
+    assert.match(updated, /\[data-app-shell-tab-strip-controller\]>div:has\(>button:not\(\[role=tab\]\)\)/);
     assert.match(
       updated,
       /\[data-app-shell-focus-area=right-panel\] div:has\(>\[data-app-shell-tab-strip-controller\]\)>\[role=presentation\]/
@@ -4563,7 +4755,7 @@ for (const [label, fixture] of [
     assert.match(updated, /z-index:45!important/);
     assert.match(updated, /z-index:46!important/);
     assert.match(updated, /flex:0 1 auto!important/);
-    assert.match(updated, /max-width:calc\(100% - 104px\)!important/);
+    assert.match(updated, /max-width:100%!important/);
     assert.match(updated, /flex:0 1 max-content!important/);
     assert.match(updated, /max-width:none!important/);
     assert.match(updated, /overflow:hidden!important/);
@@ -4574,10 +4766,9 @@ for (const [label, fixture] of [
     assert.match(updated, /background-color:transparent!important/);
     assert.match(updated, /background-image:none!important/);
     assert.match(updated, /pointer-events:auto!important/);
-    assert.match(updated, /flex:0 0 max-content!important/);
-    assert.match(updated, /min-width:max-content!important/);
+    assert.match(updated, /min-width:min\(6rem,100%\)!important/);
     assert.match(updated, /width:max-content!important/);
-    assert.match(updated, /max-width:14rem!important/);
+    assert.match(updated, /max-width:min\(14rem,100%\)!important/);
     assert.match(updated, /width:auto!important/);
     assert.match(updated, /max-width:100%!important/);
     assert.match(updated, /flex:0 0 28px!important/);
@@ -4593,6 +4784,12 @@ for (const [label, fixture] of [
       /color:var\(--color-token-text-primary,var\(--color-token-foreground\)\)!important/
     );
     assert.doesNotMatch(updated, /position:sticky!important/);
+    assert.doesNotMatch(
+      updated,
+      /\[data-app-shell-tab-strip-controller\] div:has\(>button:not\(\[role=tab\]\)\)/
+    );
+    assert.doesNotMatch(updated, /max-width:calc\(100% - 104px\)!important/);
+    assert.doesNotMatch(updated, /min-width:max-content!important/);
     assert.doesNotMatch(updated, /min-width:min\(10rem,calc\(100% - 40px\)\)!important/);
     assert.doesNotMatch(updated, /max-width:min\(14rem,calc\(100% - 40px\)\)!important/);
     assert.match(
@@ -4644,6 +4841,13 @@ test('injectLinuxVisualCompatJsPatch supports the 26.519 opaque window effect sh
   assert.match(updated, /getBoundingClientRect\(\)\.width/);
   assert.match(updated, /style\.setProperty\(`width`/);
   assert.match(updated, /style\.setProperty\(`flex`/);
+  assert.match(updated, /parentElement/);
+  assert.match(updated, /\[\.\.\.e\.children\]\.find/);
+  assert.match(updated, /matches\?\.\(`div:has\(>button:not\(\[role=tab\]\)\)`\)/);
+  assert.match(updated, /children\]\.filter/);
+  assert.match(updated, /a\.length===1\?96:56/);
+  assert.doesNotMatch(updated, /querySelector\(`div:has\(>button:not\(\[role=tab\]\)\)`\)/);
+  assert.doesNotMatch(updated, /clientWidth\|\|innerWidth\)-104/);
   assert.match(updated, /\(g\.opaqueWindows\|\|i\|\|r\)&&!pc\(\)/);
 });
 

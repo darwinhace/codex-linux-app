@@ -959,9 +959,9 @@ const LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_PATTERN =
 const LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_REPLACEMENT_CURRENT =
   'hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_PATTERN =
-  /async function (?<createWorktreeFn>[A-Za-z_$][\w$]*)\(\{gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,(?<allowSetupFailureParam>allowSetupFailure:[A-Za-z_$][\w$]*=!1,)?setUpSyncedBranch:(?<setUpSyncedBranchVar>[A-Za-z_$][\w$]*)=!0,appServerClient:(?<appServerClientVar>[A-Za-z_$][\w$]*),signal:(?<signalVar>[A-Za-z_$][\w$]*),onLog:(?<onLogVar>[A-Za-z_$][\w$]*),onWorktreePathAllocated:(?<onWorktreePathAllocatedVar>[A-Za-z_$][\w$]*)\}\)\{/;
+  /async function (?<createWorktreeFn>[A-Za-z_$][\w$]*)\(\{gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,(?<allowSetupFailureParam>allowSetupFailure:[A-Za-z_$][\w$]*=!1,)?setUpSyncedBranch:(?<setUpSyncedBranchVar>[A-Za-z_$][\w$]*)=!0,(?<clientParamName>appServerClient|host):(?<appServerClientVar>[A-Za-z_$][\w$]*),signal:(?<signalVar>[A-Za-z_$][\w$]*),onLog:(?<onLogVar>[A-Za-z_$][\w$]*),onWorktreePathAllocated:(?<onWorktreePathAllocatedVar>[A-Za-z_$][\w$]*)(?<onSetupStartParam>,onSetupStart:[A-Za-z_$][\w$]*)?\}\)\{/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_HELPER_PATTERN =
-  /async function (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,t,n,r,i\)\{return\(await (?<environmentRunnerFn>[A-Za-z_$][\w$]*)\(\{workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,appServerClient:i,onLog:n,signal:r\}\)\)\?\.setupResult\?\?null\}/;
+  /async function (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,t,n,r,i\)\{return\(await (?<environmentRunnerFn>[A-Za-z_$][\w$]*)\(\{workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,(?<clientParamName>appServerClient|host):i,onLog:n,signal:r\}\)\)\?\.setupResult\?\?null\}/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_PATTERN =
   /if\((?<onLogVar>[A-Za-z_$][\w$]*)\?\.\(`info`,(?<bufferVar>[A-Za-z_$][\w$]*)\.Buffer\.from\(`Worktree created at \$\{(?<worktreeWorkspaceRootVar>[A-Za-z_$][\w$]*)\}(?:\\n|\n)`,`utf8`\)\),await (?<storeEnvFn>[A-Za-z_$][\w$]*)\(\k<worktreeWorkspaceRootVar>,(?<selectedVar>[A-Za-z_$][\w$]*)\?\?`__none__`,(?<appServerClientVar>[A-Za-z_$][\w$]*),`worktree`,(?<signalVar>[A-Za-z_$][\w$]*)\)\|\|\k<onLogVar>\?\.\(`stderr`,\k<bufferVar>\.Buffer\.from\(`Failed to store selected environment in git config(?:\\n|\n)`,`utf8`\)\),\k<selectedVar>==null\)return \k<onLogVar>\?\.\(`info`,\k<bufferVar>\.Buffer\.from\(`No local environment selected(?:\\n|\n)`,`utf8`\)\),\{success:!0,worktreeGitRoot:(?<worktreeGitRootVar>[A-Za-z_$][\w$]*),worktreeWorkspaceRoot:\k<worktreeWorkspaceRootVar>,setupResult:null(?<emptySetupError>,setupError:null)?\};let (?<environmentVar>[A-Za-z_$][\w$]*)=await (?<readEnvironmentFn>[A-Za-z_$][\w$]*)\(\k<selectedVar>,\k<appServerClientVar>\);/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_PATTERN =
@@ -997,9 +997,9 @@ const BROWSER_USE_RUNTIME_PATHS_FUNCTION_PATTERN =
 const BROWSER_USE_RUNTIME_PATHS_RETURN_PATTERN =
   /return\{codexCliPath:(?<codexCliPath>[^,]+),codexCliPathSource:(?<codexCliPathSource>[^,]+),nodeModuleDirs:(?<nodeModuleDirs>[^,]+),nodePath:(?<nodePath>[^,]+),nodePathSource:(?<nodePathSource>[^,]+),nodeReplPath:(?<nodeReplPath>[^,]+),nodeReplPathSource:(?<nodeReplPathSource>[^,]+),platform:(?<platform>[^}]+)\}\}/;
 const BUNDLED_PLUGIN_RECONCILER_ANCHOR_PATTERN =
-  /var (?<loggerVar>[A-Za-z_$][\w$]*)=t\.Ur\(`bundled-plugins`\),(?<devFlagVar>[A-Za-z_$][\w$]*)=`CODEX_ENABLE_DEV_BUNDLED_PLUGINS`;function (?<fn>[A-Za-z_$][\w$]*)\(e\)\{/;
+  /var (?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`bundled-plugins`\),(?<devFlagVar>[A-Za-z_$][\w$]*)=`CODEX_ENABLE_DEV_BUNDLED_PLUGINS`;function (?<fn>[A-Za-z_$][\w$]*)\(e\)\{/;
 const BUNDLED_PLUGIN_RECONCILER_CONTEXT_PATTERN =
-  /function [A-Za-z_$][\w$]*\(e\)\{let (?<envVar>[A-Za-z_$][\w$]*)=e\.env\?\?process\.env,(?<resourcesVar>[A-Za-z_$][\w$]*)=e\.resourcesPath\?\?sc\(\{env:\k<envVar>\}\)[\s\S]{0,2500}?,(?<platformVar>[A-Za-z_$][\w$]*)=e\.platform\?\?process\.platform;/;
+  /function [A-Za-z_$][\w$]*\(e\)\{let (?<envVar>[A-Za-z_$][\w$]*)=e\.env\?\?process\.env,(?<resourcesVar>[A-Za-z_$][\w$]*)=e\.resourcesPath\?\?[A-Za-z_$][\w$]*\(\{env:\k<envVar>\}\)[\s\S]{0,3000}?,(?<platformVar>[A-Za-z_$][\w$]*)=e\.platform\?\?process\.platform;/;
 const BUNDLED_PLUGIN_DESCRIPTOR_SELECTOR_PATTERN =
   /(?<selectorVar>[A-Za-z_$][\w$]*)=(?<featuresVar>[A-Za-z_$][\w$]*)=>(?<descriptorsVar>[A-Za-z_$][\w$]*)\.filter\((?<itemVar>[A-Za-z_$][\w$]*)=>\k<itemVar>\.isAvailable\(\{buildFlavor:e\.buildFlavor,env:(?<envVar>[A-Za-z_$][\w$]*),features:\k<featuresVar>,platform:(?<platformVar>[A-Za-z_$][\w$]*)\}\)\)/;
 const BUNDLED_PLUGIN_MARKETPLACE_FILTER_26_609_PATTERN =
@@ -1027,7 +1027,7 @@ const LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN =
 const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
   /\}\),(?<windowVar>[A-Za-z_$][\w$]*)\}positionWindow\((?<positionArgs>[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*)\)\{/;
 const LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN =
-  /showWindow\((?<windowVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<wasOpenVar>[A-Za-z_$][\w$]*)=this\.isOpen\(\);(?<revealExpr>this\.[A-Za-z_$][\w$]*&&=\(\k<windowVar>\.setOpacity\(1\),!1\),)?\k<windowVar>\.moveTop\(\),\k<windowVar>\.showInactive\(\),!\k<wasOpenVar>&&this\.isOpen\(\)&&this\.broadcastOpenState\(\)\}/;
+  /showWindow\((?<windowVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<wasOpenVar>[A-Za-z_$][\w$]*)=this\.isOpen\(\);(?<revealExpr>this\.[A-Za-z_$][\w$]*&&=\(\k<windowVar>\.setOpacity\(1\),!1\),)?\k<windowVar>\.moveTop\(\),\k<windowVar>\.showInactive\(\),!\k<wasOpenVar>&&this\.isOpen\(\)&&(?<openStateExpr>(?:\(this\.finishPendingPresentation\(\),this\.broadcastOpenState\(\)\)|this\.broadcastOpenState\(\)))\}/;
 const LINUX_AVATAR_OVERLAY_OPEN_METHOD_PATTERN =
   /async open\((?<openerVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);this\.globalState\.set\((?<openStateVar>[A-Za-z_$][\w$]*),!0\),this\.positionWindow\(\k<windowVar>,\k<openerVar>\),this\.rendererReady&&\(this\.showWindow\(\k<windowVar>\),this\.applyPointerInteractivityPolicy\(\)\)\}/;
 const LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_608_PATTERN =
@@ -1036,6 +1036,8 @@ const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN =
   /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*)(?:,(?<animateVar>[A-Za-z_$][\w$]*))?\)\{\k<windowVar>\.isDestroyed\(\)\|\|(?<equalFn>[A-Za-z_$][\w$]*)\(\k<windowVar>\.(?<getBoundsMethod>get(?:Content)?Bounds)\(\),\k<boundsVar>\)\|\|\k<windowVar>\.(?<setBoundsMethod>set(?:Content)?Bounds)\(\k<boundsVar>,(?<animateArg>!1|\k<animateVar>)\)\}/;
 const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_PATTERN =
   /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*),(?<animateVar>[A-Za-z_$][\w$]*),(?<nativeMoveVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<currentBoundsVar>[A-Za-z_$][\w$]*)=\k<windowVar>\.getContentBounds\(\);if\((?<equalFn>[A-Za-z_$][\w$]*)\(\k<currentBoundsVar>,\k<boundsVar>\)\)return;let (?<sameSizeVar>[A-Za-z_$][\w$]*)=\k<currentBoundsVar>\.width===\k<boundsVar>\.width&&\k<currentBoundsVar>\.height===\k<boundsVar>\.height;\k<sameSizeVar>&&!\k<nativeMoveVar>&&this\.compositionHost\.prepareDragFollowForOverlayMove\(\k<boundsVar>\),\k<windowVar>\.setContentBounds\(\k<boundsVar>,\k<animateVar>\),\(\k<nativeMoveVar>\|\|!\k<sameSizeVar>\)&&this\.compositionHost\.moveBackingCanvases\(\)\}/;
+const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_611_PATTERN =
+  /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*),(?<animateVar>[A-Za-z_$][\w$]*),(?<nativeMoveVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<currentBoundsVar>[A-Za-z_$][\w$]*)=\k<windowVar>\.getContentBounds\(\);if\((?<equalFn>[A-Za-z_$][\w$]*)\(\k<currentBoundsVar>,\k<boundsVar>\)\)\{this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.position\(\k<windowVar>,\k<boundsVar>\);return\}let (?<sameSizeVar>[A-Za-z_$][\w$]*)=\k<currentBoundsVar>\.width===\k<boundsVar>\.width&&\k<currentBoundsVar>\.height===\k<boundsVar>\.height;\k<sameSizeVar>&&!\k<nativeMoveVar>&&this\.compositionHost\.prepareDragFollowForOverlayMove\(\k<boundsVar>\),\k<windowVar>\.setContentBounds\(\k<boundsVar>,\k<animateVar>&&!this\.nativeCompositionSupported\),this\.\k<positionControllerVar>\.position\(\k<windowVar>,\k<boundsVar>\),\(\k<nativeMoveVar>\|\|!\k<sameSizeVar>\)&&this\.compositionHost\.moveBackingCanvases\(\)\}/;
 const LINUX_AVATAR_OVERLAY_POINTER_POLICY_PATTERN =
   /applyPointerInteractivityPolicy\(\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\)\{this\.mousePassthroughEnabled=!1;return\}let (?<passthroughVar>[A-Za-z_$][\w$]*)=!this\.pointerInteractive;if\(this\.mousePassthroughEnabled!==\k<passthroughVar>\)\{if\(this\.mousePassthroughEnabled=\k<passthroughVar>,\k<passthroughVar>\)\{\k<windowVar>\.setIgnoreMouseEvents\(!0,\{forward:!0\}\);return\}\k<windowVar>\.setIgnoreMouseEvents\(!1\),this\.refreshCursorAtCurrentMousePosition\(\k<windowVar>\)\}\}/;
 const LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN =
@@ -1044,22 +1046,34 @@ const LINUX_AVATAR_OVERLAY_DOCK_WINDOW_OPTIONS_PATTERN =
   /case`avatarOverlay`:return\{\.\.\.(?<optionsFn>[A-Za-z_$][\w$]*)\(\{alwaysOnTop:!0,platform:(?<platformVar>[A-Za-z_$][\w$]*),resizable:!1,thickFrame:!1\}\),hasShadow:!1,\.\.\.\k<platformVar>===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?\{type:`dock`,focusable:!0\}:\{\}\}/;
 const LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_PATTERN =
   /case`avatar-overlay-drag-move`:this\.avatarOverlayManager\.moveDrag\((?<webContentsId>[A-Za-z_$][\w$]*\.id)\);break;/;
+const LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_26_611_PATTERN =
+  /case`avatar-overlay-drag-move`:\{let (?<pointVar>[A-Za-z_$][\w$]*)=(?<pointFn>[A-Za-z_$][\w$]*)\((?<messageVar>[A-Za-z_$][\w$]*)\);\k<pointVar>\?(?<managerExpr>(?:this\.)?[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?)\.moveDrag\((?<webContentsId>[A-Za-z_$][\w$]*\.id),\k<pointVar>\):\k<managerExpr>\.moveDrag\(\k<webContentsId>\);return\}/;
 const LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN =
   /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),\{pointerWindowX:(?<pointerXVar>[A-Za-z_$][\w$]*),pointerWindowY:(?<pointerYVar>[A-Za-z_$][\w$]*)\}\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\)(?<clearDetachedCall>,this\.clearDetachedDisplayRestore\(\))?;let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.dragState=\{pointerAnchorX:\k<pointerXVar>-\k<layoutVar>\.mascot\.left,pointerAnchorY:\k<pointerYVar>-\k<layoutVar>\.mascot\.top,hasMoved:!1,displayBounds:(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getDisplayNearestPoint\(\k<electronVar>\.screen\.getCursorScreenPoint\(\)\)\.bounds\}\}/;
+const LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN =
+  /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<eventVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\),this\.(?<suppressVar>[A-Za-z_$][\w$]*)=!1,this\.clearDetachedDisplayRestore\(\);let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.clear\(\);let (?<nativePointVar>[A-Za-z_$][\w$]*)=(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\),(?<rendererPointVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerScreenX!=null&&\k<eventVar>\.pointerScreenY!=null\?\{x:\k<eventVar>\.pointerScreenX,y:\k<eventVar>\.pointerScreenY\}:(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<sourcePointVar>[A-Za-z_$][\w$]*)=\k<nativePointVar>\?\?\k<rendererPointVar>,(?<pointerAnchorXVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowX-\k<layoutVar>\.mascot\.left,(?<pointerAnchorYVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowY-\k<layoutVar>\.mascot\.top;this\.dragState=new (?<dragStateCtor>[A-Za-z_$][\w$]*)\(\k<nativePointVar>==null\?`renderer`:`native`,\k<pointerAnchorXVar>,\k<pointerAnchorYVar>,\k<electronVar>\.screen\.getDisplayNearestPoint\(\k<sourcePointVar>\)\.bounds\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN =
   /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\|\|\(this\.cancelMomentum\(\),this\.dragState\.hasMoved=!0,this\.moveDragToCurrentCursor\(\k<windowVar>\)\)\}endDrag/;
+const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_611_PATTERN =
+  /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\)return;this\.cancelMomentum\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;\k<dragStateVar>\.recordMovementIntent\(\);let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN =
   /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=n\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\);\k<dragStateVar>\.displayBounds=\k<displayBoundsVar>(?:,this\.resolutionKey=[^,}]+)?,this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayBoundsVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_527_PATTERN =
   /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=\k<electronVar>\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.displayBounds=\k<displayVar>\.bounds(?:,this\.resolutionKey=[^,}]+)?[,;]this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_608_PATTERN =
   /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=\k<electronVar>\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.displayBounds=\k<displayVar>\.bounds,this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayVar>,!1,!1\)\}/;
+const LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN =
+  /moveDragToPointer\((?<windowVar>[A-Za-z_$][\w$]*),(?<cursorVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.recordMove\(\k<displayVar>\.bounds\),this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayVar>,!1,!1\)\}/;
 const LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN =
   /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|\(this\.dragState\?\.hasMoved&&this\.moveDragToCurrentCursor\(\k<windowVar>\),this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\)\)\}/;
+const LINUX_AVATAR_OVERLAY_END_DRAG_26_611_PATTERN =
+  /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>\?\.hasMovementIntent\)\{let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}this\.(?<suppressVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\?\.shouldSuppressRendererThrow\(\)\?\?!1,this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\)\}/;
 const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN =
   /throwWithVelocity\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<velocityXVar>[A-Za-z_$][\w$]*),(?<velocityYVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|!Number\.isFinite\(\k<velocityXVar>\)\|\|!Number\.isFinite\(\k<velocityYVar>\)\|\|\k<velocityXVar>===0&&\k<velocityYVar>===0\)return;/;
 const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN =
   /let (?<sampleVar>[A-Za-z_$][\w$]*)=(?<sampleFn>[A-Za-z_$][\w$]*)\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{\}\)/;
+const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_POINTER_PATTERN =
+  /let (?<sampleVar>[A-Za-z_$][\w$]*)=(?<sampleFn>[A-Za-z_$][\w$]*)\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{pointerScreenX:\k<sampleVar>\.screenX,pointerScreenY:\k<sampleVar>\.screenY\}\)/;
 const LINUX_PET_YAPPING_USAGE_MAIN_HANDLER_PATTERN =
   /(?<anchor>"fast-mode-rollout-metrics":async (?<paramsVar>[A-Za-z_$][\w$]*)=>(?:[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.hostConfig\)\?null:)?[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\{codexHome:[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\{preferWsl:[A-Za-z_$][\w$]*(?:,hostConfig:(?:this\.hostConfig|[A-Za-z_$][\w$]*))?\}\),params:\k<paramsVar>\}\),)/;
 const LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN =
@@ -1072,6 +1086,8 @@ const LINUX_PET_YAPPING_USAGE_JSX_RUNTIME_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"\.\/jsx-runtime-[^"]+\.js";/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN =
   /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:\[?)(?<mascotCall>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{ariaLabel:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\))/;
+const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN =
+  /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:\[)(?<mascotContent>[\s\S]*?notificationBadge:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\)),(?<realtimeButton>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{canStart:[\s\S]*?onStop:[A-Za-z_$][\w$]*\}\))\]\}/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN =
   /children:\[(?<avatar>[A-Za-z_$][\w$]*),(?<badge>[A-Za-z_$][\w$]*)\]\}/;
 const LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN =
@@ -1130,21 +1146,24 @@ function buildLinuxWorktreeEnvironmentWorkerHelperReplacement(
     createWorktreeFn,
     allowSetupFailureParam,
     setUpSyncedBranchVar,
+    clientParamName = 'appServerClient',
     appServerClientVar,
     signalVar,
     onLogVar,
-    onWorktreePathAllocatedVar
+    onWorktreePathAllocatedVar,
+    onSetupStartParam = ''
   },
   { fsApiVar }
 ) {
-  return `var codexLinuxWorktreeEnvironmentWorkerBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};async function codexLinuxListEnvironmentConfigPaths(e,t){let n=await t.platformPath(),r=n.join(e,\`.codex\`,\`environments\`),i;try{i=await ${fsApiVar}.readdir(r,t)}catch{return[]}return i.filter(e=>typeof e===\`string\`&&e.endsWith(\`.toml\`)).map(e=>n.join(r,e)).sort()}async function codexLinuxResolveWorktreeEnvironmentConfigPath(e,t,n){if(t===\`__none__\`)return{configPath:t,source:\`explicit-none\`};if(t!=null)return{configPath:t,source:\`explicit-selection\`};let r=await codexLinuxListEnvironmentConfigPaths(e,n);return r.length===1?{configPath:r[0],source:\`single-environment-fallback\`}:{configPath:null,source:\`missing\`}}function codexLinuxResolveWorktreeSourceWorkspaceRoot(e){let t=codexLinuxWorktreeEnvironmentWorkerBuiltins.fs,n=codexLinuxWorktreeEnvironmentWorkerBuiltins.path;if(!e||!t||!n)return null;let r=n.join(e,\`.git\`),i;try{i=t.readFileSync(r,\`utf8\`)}catch{return null}let a=i.match(/^gitdir:\\s*(.+)$/m)?.[1]?.trim();if(!a)return null;let o=n.normalize(n.isAbsolute(a)?a:n.resolve(e,a)),s=n.dirname(o),c=n.dirname(s);return n.basename(s)!==\`worktrees\`||n.basename(c)!==\`.git\`?null:n.dirname(c)}/* ${LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER} */async function ${createWorktreeFn}({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,${allowSetupFailureParam ?? ''}setUpSyncedBranch:${setUpSyncedBranchVar}=!0,appServerClient:${appServerClientVar},signal:${signalVar},onLog:${onLogVar},onWorktreePathAllocated:${onWorktreePathAllocatedVar}}){`;
+  return `var codexLinuxWorktreeEnvironmentWorkerBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};async function codexLinuxListEnvironmentConfigPaths(e,t){let n=await t.platformPath(),r=n.join(e,\`.codex\`,\`environments\`),i;try{i=typeof t?.readDirectory===\`function\`?await t.readDirectory(r):typeof ${fsApiVar}!==\`undefined\`&&${fsApiVar}?.readdir?await ${fsApiVar}.readdir(r,t):[]}catch{return[]}return i.filter(e=>typeof e===\`string\`&&e.endsWith(\`.toml\`)).map(e=>n.join(r,e)).sort()}async function codexLinuxResolveWorktreeEnvironmentConfigPath(e,t,n){if(t===\`__none__\`)return{configPath:t,source:\`explicit-none\`};if(t!=null)return{configPath:t,source:\`explicit-selection\`};let r=await codexLinuxListEnvironmentConfigPaths(e,n);return r.length===1?{configPath:r[0],source:\`single-environment-fallback\`}:{configPath:null,source:\`missing\`}}function codexLinuxResolveWorktreeSourceWorkspaceRoot(e){let t=codexLinuxWorktreeEnvironmentWorkerBuiltins.fs,n=codexLinuxWorktreeEnvironmentWorkerBuiltins.path;if(!e||!t||!n)return null;let r=n.join(e,\`.git\`),i;try{i=t.readFileSync(r,\`utf8\`)}catch{return null}let a=i.match(/^gitdir:\\s*(.+)$/m)?.[1]?.trim();if(!a)return null;let o=n.normalize(n.isAbsolute(a)?a:n.resolve(e,a)),s=n.dirname(o),c=n.dirname(s);return n.basename(s)!==\`worktrees\`||n.basename(c)!==\`.git\`?null:n.dirname(c)}/* ${LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER} */async function ${createWorktreeFn}({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,${allowSetupFailureParam ?? ''}setUpSyncedBranch:${setUpSyncedBranchVar}=!0,${clientParamName}:${appServerClientVar},signal:${signalVar},onLog:${onLogVar},onWorktreePathAllocated:${onWorktreePathAllocatedVar}${onSetupStartParam}}){`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerCleanupHelperReplacement({
   cleanupFn,
-  environmentRunnerFn
+  environmentRunnerFn,
+  clientParamName = 'appServerClient'
 }) {
-  return `async function ${cleanupFn}(e,t,n,r,i,a){return(await ${environmentRunnerFn}({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r}))?.setupResult??null}`;
+  return `async function ${cleanupFn}(e,t,n,r,i,a){return(await ${environmentRunnerFn}({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,${clientParamName}:a,injectedEnvironment:i,onLog:n,signal:r}))?.setupResult??null}`;
 }
 
 function buildLinuxSystemSleepInhibitorMethods() {
@@ -1201,8 +1220,13 @@ function buildLinuxAvatarOverlayFrontmostMethod({ electronVar = 'n' } = {}) {
   return `codexLinuxKeepAvatarOverlayFrontmost(e,t=!1){/* ${LINUX_AVATAR_OVERLAY_PATCH_MARKER} */if(e.isDestroyed())return;if(process.platform===\`darwin\`){e.setVisibleOnAllWorkspaces(!0,{visibleOnFullScreen:!0,skipTransformProcessType:!0}),e.setAlwaysOnTop(!0,\`floating\`),t&&e.moveTop();return}e.setVisibleOnAllWorkspaces(!0),e.setAlwaysOnTop(!0,process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`?\`screen-saver\`:\`floating\`),t&&e.moveTop()}codexLinuxRecoverAvatarOverlayVisibility(e){/* ${LINUX_AVATAR_OVERLAY_VISIBILITY_PATCH_MARKER} */if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH===\`1\`||e.isDestroyed())return;let t=()=>{e.isDestroyed()||(this.codexLinuxKeepAvatarOverlayFrontmost(e,!0),e.isVisible?.()!==!0&&e.showInactive(),this.codexLinuxKeepAvatarOverlayFrontmost(e,!0))};t(),setTimeout(t,50),setTimeout(t,250)}codexLinuxScheduleAvatarOverlayVisibilityRecovery(e){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH===\`1\`||e.isDestroyed())return;let t=()=>{e.isDestroyed()||(this.rendererReady||(this.rendererReady=this.windowManager.isWebContentsReady(e.webContents.id)),this.rendererReady&&this.sendLayoutToRenderer(e),this.showWindow(e),this.applyPointerInteractivityPolicy())};setTimeout(t,50),setTimeout(t,250)}codexLinuxRegisterAvatarOverlayAutoClose(e){/* ${LINUX_AVATAR_OVERLAY_AUTO_CLOSE_PATCH_MARKER} */if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_AUTO_CLOSE===\`1\`)return;let t=new WeakSet,r=()=>this.codexLinuxCloseAvatarOverlayIfOnlyWindow(e),i=n=>{n!==e&&!n.isDestroyed?.()&&!t.has(n)&&(t.add(n),n.once(\`closed\`,()=>{setTimeout(r,0)}))};for(let e of ${electronVar}.BrowserWindow.getAllWindows())i(e);let a=(e,t)=>{i(t)};${electronVar}.app.on(\`browser-window-created\`,a),${electronVar}.app.once(\`before-quit\`,()=>{e.isDestroyed()||e.close()}),e.once(\`closed\`,()=>{${electronVar}.app.off(\`browser-window-created\`,a)})}codexLinuxCloseAvatarOverlayIfOnlyWindow(e){if(e.isDestroyed())return;let t=${electronVar}.BrowserWindow.getAllWindows().filter(t=>t!==e&&!t.isDestroyed()&&t.isVisible?.()!==!1);t.length===0&&e.close()}`;
 }
 
-function buildLinuxAvatarOverlayShowWindowMethod({ windowVar, wasOpenVar, revealExpr = '' }) {
-  return `showWindow(${windowVar}){if(${windowVar}.isDestroyed())return;let ${wasOpenVar}=this.isOpen();this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),${revealExpr}${windowVar}.showInactive(),this.codexLinuxRecoverAvatarOverlayVisibility(${windowVar}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),!${wasOpenVar}&&this.isOpen()&&this.broadcastOpenState()}`;
+function buildLinuxAvatarOverlayShowWindowMethod({
+  windowVar,
+  wasOpenVar,
+  revealExpr = '',
+  openStateExpr = 'this.broadcastOpenState()'
+}) {
+  return `showWindow(${windowVar}){if(${windowVar}.isDestroyed())return;let ${wasOpenVar}=this.isOpen();this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),${revealExpr}${windowVar}.showInactive(),this.codexLinuxRecoverAvatarOverlayVisibility(${windowVar}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),!${wasOpenVar}&&this.isOpen()&&(${openStateExpr})}`;
 }
 
 function appendNamedImportAlias(imports, importedName, aliasName) {
@@ -1319,6 +1343,8 @@ const TERMINAL_CLEANUP_PATTERN_LEGACY =
   /return (?<observerVar>[A-Za-z_$][\w$]*)\.observe\(e\),\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)=!0,(?<frameVar>[A-Za-z_$][\w$]*)!=null&&\(cancelAnimationFrame\(\k<frameVar>\),\k<frameVar>=null\),\k<observerVar>\.disconnect\(\),(?<dataDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<keyDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<registerDisposeVar>[A-Za-z_$][\w$]*)\(\),(?<fitRef>[A-Za-z_$][\w$]*)\.current=null,(?<sessionRef>[A-Za-z_$][\w$]*)\.current=null,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1,(?<resumeSessionVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.close\((?<createdSessionVar>[A-Za-z_$][\w$]*)\),(?<terminalVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<terminalRef>[A-Za-z_$][\w$]*)\.current=null\}/;
 const TERMINAL_CLEANUP_PATTERN_26_415 =
   /return (?<observerVar>[A-Za-z_$][\w$]*)\.observe\(e\),\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)=!0,(?<frameVar>[A-Za-z_$][\w$]*)!=null&&\(cancelAnimationFrame\(\k<frameVar>\),\k<frameVar>=null\),\k<observerVar>\.disconnect\(\),(?<dataDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<titleDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<keyDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<registerDisposeVar>[A-Za-z_$][\w$]*)\(\),(?<fitRef>[A-Za-z_$][\w$]*)\.current=null,(?<sessionRef>[A-Za-z_$][\w$]*)\.current=null,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1,(?<resumeSessionVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.close\((?<createdSessionVar>[A-Za-z_$][\w$]*)\),(?<terminalVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<terminalRef>[A-Za-z_$][\w$]*)\.current=null\}/;
+const TERMINAL_CLEANUP_PATTERN_26_611 =
+  /return (?<observerVar>[A-Za-z_$][\w$]*)\.observe\(e\),\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)=!0,(?<frameVar>[A-Za-z_$][\w$]*)!=null&&\(cancelAnimationFrame\(\k<frameVar>\),\k<frameVar>=null\),\k<observerVar>\.disconnect\(\),(?<dataDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<titleDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<keyDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<registerDisposeVar>[A-Za-z_$][\w$]*)\(\),(?<fitRef>[A-Za-z_$][\w$]*)\.current=null,(?<sessionRef>[A-Za-z_$][\w$]*)\.current=null,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1,(?<resumeSessionVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.close\((?<createdSessionVar>[A-Za-z_$][\w$]*)\),(?<extraCleanupVar>[A-Za-z_$][\w$]*)\(\),(?<terminalVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<terminalRef>[A-Za-z_$][\w$]*)\.current=null\}/;
 const INVALID_TERMINAL_HELPER_ESCAPE_PATTERN = '${"${"}';
 const LINUX_NEW_THREAD_MODEL_PATCH_MARKER = 'codexLinuxPendingModelSettings';
 const NEW_THREAD_MODEL_STATE_MARKERS = [
@@ -2450,8 +2476,8 @@ export function injectLinuxBundledBrowserChromePluginsPatch(bundleSource, option
     let updated = replaceRegexOrThrow(
       bundleSource,
       BUNDLED_PLUGIN_RECONCILER_ANCHOR_PATTERN,
-      ({ loggerVar, devFlagVar, fn }) =>
-        `var ${loggerVar}=t.Ur(\`bundled-plugins\`),${devFlagVar}=\`CODEX_ENABLE_DEV_BUNDLED_PLUGINS\`;${buildLinuxBundledBrowserChromePluginsHelper()}function ${fn}(e){`,
+      ({ loggerVar, loggerObject, loggerFactory, devFlagVar, fn }) =>
+        `var ${loggerVar}=${loggerObject}.${loggerFactory}(\`bundled-plugins\`),${devFlagVar}=\`CODEX_ENABLE_DEV_BUNDLED_PLUGINS\`;${buildLinuxBundledBrowserChromePluginsHelper()}function ${fn}(e){`,
       errorMessage
     );
     updated = replaceRegexOrThrow(
@@ -2836,17 +2862,32 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
     updated = replaceRegexOrThrow(
       updated,
       LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN,
-      ({ windowVar, wasOpenVar, revealExpr }) =>
+      ({ windowVar, wasOpenVar, revealExpr, openStateExpr }) =>
         buildLinuxAvatarOverlayShowWindowMethod({
           windowVar,
           wasOpenVar,
-          revealExpr: revealExpr ?? ''
+          revealExpr: revealExpr ?? '',
+          openStateExpr
         }),
       errorMessage
     );
     updated = replaceFirstMatchingRegexOrThrow(
       updated,
       [
+        {
+          pattern: LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_611_PATTERN,
+          replacement: ({
+            windowVar,
+            boundsVar,
+            animateVar,
+            nativeMoveVar,
+            currentBoundsVar,
+            equalFn,
+            positionControllerVar,
+            sameSizeVar
+          }) =>
+            `setWindowBounds(${windowVar},${boundsVar},${animateVar},${nativeMoveVar}){if(${windowVar}.isDestroyed())return;let ${currentBoundsVar}=${windowVar}.getContentBounds();if(${equalFn}(${currentBoundsVar},${boundsVar})){this.${positionControllerVar}.position(${windowVar},${boundsVar}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar});return}let ${sameSizeVar}=${currentBoundsVar}.width===${boundsVar}.width&&${currentBoundsVar}.height===${boundsVar}.height;${sameSizeVar}&&!${nativeMoveVar}&&this.compositionHost.prepareDragFollowForOverlayMove(${boundsVar}),${windowVar}.setContentBounds(${boundsVar},${animateVar}&&!this.nativeCompositionSupported),this.${positionControllerVar}.position(${windowVar},${boundsVar}),(${nativeMoveVar}||!${sameSizeVar})&&this.compositionHost.moveBackingCanvases(),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar})}`
+        },
         {
           pattern: LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN,
           replacement: ({ windowVar, boundsVar, animateVar, equalFn, getBoundsMethod, setBoundsMethod }) => {
@@ -2890,33 +2931,68 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
 }
 
 function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
-  let updated = replaceRegexOrThrow(
+  let updated = replaceFirstMatchingRegexOrThrow(
     bundleSource,
-    LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_PATTERN,
-    ({ webContentsId }) =>
-      `case\`avatar-overlay-drag-move\`:/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */this.avatarOverlayManager.moveDrag(${webContentsId},i);break;`,
+    [
+      {
+        pattern: LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_PATTERN,
+        replacement: ({ webContentsId }) =>
+          `case\`avatar-overlay-drag-move\`:/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */this.avatarOverlayManager.moveDrag(${webContentsId},i);break;`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_26_611_PATTERN,
+        replacement: ({ pointVar, pointFn, messageVar, managerExpr, webContentsId }) =>
+          `case\`avatar-overlay-drag-move\`:{let ${pointVar}=${pointFn}(${messageVar});/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */${pointVar}?${managerExpr}.moveDrag(${webContentsId},${pointVar}):${managerExpr}.moveDrag(${webContentsId},${messageVar});return}`
+      }
+    ],
     errorMessage
   );
-  updated = replaceRegexOrThrow(
+  updated = replaceFirstMatchingRegexOrThrow(
     updated,
-    LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN,
-    ({
-      webContentsIdVar,
-      pointerXVar,
-      pointerYVar,
-      windowVar,
-      clearDetachedCall,
-      layoutVar,
-      electronVar
-    }) =>
-      `startDrag(${webContentsIdVar},{pointerWindowX:${pointerXVar},pointerWindowY:${pointerYVar}}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;this.cancelMomentum()${clearDetachedCall ?? ''};let ${layoutVar}=this.getLayout(${windowVar});this.dragState={pointerAnchorX:${pointerXVar}-${layoutVar}.mascot.left,pointerAnchorY:${pointerYVar}-${layoutVar}.mascot.top,pointerWindowX:${pointerXVar},pointerWindowY:${pointerYVar},mascotLeft:${layoutVar}.mascot.left,mascotTop:${layoutVar}.mascot.top,hasMoved:!1,displayBounds:${electronVar}.screen.getDisplayNearestPoint(${electronVar}.screen.getCursorScreenPoint()).bounds}}`,
+    [
+      {
+        pattern: LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN,
+        replacement: ({
+          webContentsIdVar,
+          pointerXVar,
+          pointerYVar,
+          windowVar,
+          clearDetachedCall,
+          layoutVar,
+          electronVar
+        }) =>
+          `startDrag(${webContentsIdVar},{pointerWindowX:${pointerXVar},pointerWindowY:${pointerYVar}}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;this.cancelMomentum()${clearDetachedCall ?? ''};let ${layoutVar}=this.getLayout(${windowVar});this.dragState={pointerAnchorX:${pointerXVar}-${layoutVar}.mascot.left,pointerAnchorY:${pointerYVar}-${layoutVar}.mascot.top,pointerWindowX:${pointerXVar},pointerWindowY:${pointerYVar},mascotLeft:${layoutVar}.mascot.left,mascotTop:${layoutVar}.mascot.top,hasMoved:!1,displayBounds:${electronVar}.screen.getDisplayNearestPoint(${electronVar}.screen.getCursorScreenPoint()).bounds}}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN,
+        replacement: (_groups, match) => match[0]
+      }
+    ],
     errorMessage
   );
-  updated = replaceRegexOrThrow(
+  updated = replaceFirstMatchingRegexOrThrow(
     updated,
-    LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN,
-    ({ webContentsIdVar, windowVar }) =>
-      `moveDrag(${webContentsIdVar},codexLinuxAvatarOverlayPoint){let ${windowVar}=this.window;${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||this.dragState==null||(this.cancelMomentum(),this.dragState.hasMoved=!0,this.moveDragToCurrentCursor(${windowVar},this.codexLinuxAvatarOverlayScreenPoint(codexLinuxAvatarOverlayPoint)))}codexLinuxAvatarOverlayScreenPoint(e){return e!=null&&Number.isFinite(e.cursorScreenX)&&Number.isFinite(e.cursorScreenY)?{x:e.cursorScreenX,y:e.cursorScreenY}:null}endDrag`,
+    [
+      {
+        pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN,
+        replacement: ({ webContentsIdVar, windowVar }) =>
+          `moveDrag(${webContentsIdVar},codexLinuxAvatarOverlayPoint){let ${windowVar}=this.window;${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||this.dragState==null||(this.cancelMomentum(),this.dragState.hasMoved=!0,this.moveDragToCurrentCursor(${windowVar},this.codexLinuxAvatarOverlayScreenPoint(codexLinuxAvatarOverlayPoint)))}codexLinuxAvatarOverlayScreenPoint(e){return e!=null&&Number.isFinite(e.cursorScreenX)&&Number.isFinite(e.cursorScreenY)?{x:e.cursorScreenX,y:e.cursorScreenY}:null}endDrag`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_611_PATTERN,
+        replacement: ({
+          webContentsIdVar,
+          pointVar,
+          windowVar,
+          dragStateVar,
+          cursorVar,
+          electronVar,
+          nextPointVar,
+          coercePointFn
+        }) =>
+          `moveDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||this.dragState==null)return;this.cancelMomentum();let ${dragStateVar}=this.dragState;${dragStateVar}.recordMovementIntent();let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&this.moveDragToPointer(${windowVar},${nextPointVar})}codexLinuxAvatarOverlayScreenPoint(e){return e!=null&&Number.isFinite(e.pointerScreenX)&&Number.isFinite(e.pointerScreenY)?{x:e.pointerScreenX,y:e.pointerScreenY}:e!=null&&Number.isFinite(e.cursorScreenX)&&Number.isFinite(e.cursorScreenY)?{x:e.cursorScreenX,y:e.cursorScreenY}:null}`
+      }
+    ],
     errorMessage
   );
   updated = replaceFirstMatchingRegexOrThrow(
@@ -2936,15 +3012,39 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
         pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_608_PATTERN,
         replacement: ({ windowVar, dragStateVar, cursorVar, electronVar }) =>
           `moveDragToCurrentCursor(${windowVar},codexLinuxAvatarOverlayPoint){let ${dragStateVar}=this.dragState;if(${dragStateVar}==null)return;let ${cursorVar}=codexLinuxAvatarOverlayPoint??${electronVar}.screen.getCursorScreenPoint(),codexLinuxAvatarOverlayBounds=${windowVar}.getContentBounds(),codexLinuxAvatarOverlayNext={x:Math.round(${cursorVar}.x-${dragStateVar}.pointerWindowX),y:Math.round(${cursorVar}.y-${dragStateVar}.pointerWindowY),width:codexLinuxAvatarOverlayBounds.width,height:codexLinuxAvatarOverlayBounds.height};${dragStateVar}.lastScreenPoint=${cursorVar},this.anchor={...this.anchor,x:codexLinuxAvatarOverlayNext.x+${dragStateVar}.mascotLeft,y:codexLinuxAvatarOverlayNext.y+${dragStateVar}.mascotTop,width:this.mascotSize.width,height:this.mascotSize.height};let codexLinuxAvatarOverlayDisplay=${electronVar}.screen.getDisplayNearestPoint({x:this.anchor.x,y:this.anchor.y});this.displayId=codexLinuxAvatarOverlayDisplay.id,this.displayBounds=codexLinuxAvatarOverlayDisplay.bounds,${dragStateVar}.display=codexLinuxAvatarOverlayDisplay,${dragStateVar}.displayBounds=codexLinuxAvatarOverlayDisplay.bounds,this.layout={...this.getLayout(${windowVar}),windowBounds:codexLinuxAvatarOverlayNext,mascot:{...this.getLayout(${windowVar}).mascot,left:${dragStateVar}.mascotLeft,top:${dragStateVar}.mascotTop},viewport:{width:codexLinuxAvatarOverlayNext.width,height:codexLinuxAvatarOverlayNext.height}},this.setWindowBounds(${windowVar},codexLinuxAvatarOverlayNext,!1,!1),this.sendLayoutToRenderer(${windowVar})}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN,
+        replacement: ({ windowVar, cursorVar, dragStateVar, displayBoundsVar, displayFn, displayVar, electronVar }) =>
+          `moveDragToPointer(${windowVar},${cursorVar}){let ${dragStateVar}=this.dragState;if(${dragStateVar}==null)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayLayout=this.getLayout(${windowVar}),codexLinuxAvatarOverlayBounds=${windowVar}.getContentBounds(),codexLinuxAvatarOverlayNext={x:Math.round(${cursorVar}.x-${dragStateVar}.pointerAnchorX-codexLinuxAvatarOverlayLayout.mascot.left),y:Math.round(${cursorVar}.y-${dragStateVar}.pointerAnchorY-codexLinuxAvatarOverlayLayout.mascot.top),width:codexLinuxAvatarOverlayBounds.width,height:codexLinuxAvatarOverlayBounds.height};this.anchor={...this.anchor,x:codexLinuxAvatarOverlayNext.x+codexLinuxAvatarOverlayLayout.mascot.left,y:codexLinuxAvatarOverlayNext.y+codexLinuxAvatarOverlayLayout.mascot.top,width:this.mascotSize.width,height:this.mascotSize.height};let codexLinuxAvatarOverlayDisplay=${electronVar}.screen.getDisplayNearestPoint({x:this.anchor.x,y:this.anchor.y});${dragStateVar}.recordMove(codexLinuxAvatarOverlayDisplay.bounds),${dragStateVar}.lastScreenPoint=${cursorVar},${dragStateVar}.display=codexLinuxAvatarOverlayDisplay,this.displayId=codexLinuxAvatarOverlayDisplay.id,this.displayBounds=codexLinuxAvatarOverlayDisplay.bounds,this.layout={...codexLinuxAvatarOverlayLayout,windowBounds:codexLinuxAvatarOverlayNext,mascot:{...codexLinuxAvatarOverlayLayout.mascot,left:codexLinuxAvatarOverlayLayout.mascot.left,top:codexLinuxAvatarOverlayLayout.mascot.top},viewport:{width:codexLinuxAvatarOverlayNext.width,height:codexLinuxAvatarOverlayNext.height}},this.setWindowBounds(${windowVar},codexLinuxAvatarOverlayNext,!1,!1),this.sendLayoutToRenderer(${windowVar});return}let ${displayBoundsVar}=${displayFn}(${cursorVar},${dragStateVar}.displayBounds),${displayVar}=${electronVar}.screen.getDisplayMatching(${displayBoundsVar});${dragStateVar}.recordMove(${displayVar}.bounds),this.anchor={...this.anchor,x:${cursorVar}.x-${dragStateVar}.pointerAnchorX,y:${cursorVar}.y-${dragStateVar}.pointerAnchorY},this.applyLayout(${windowVar},${displayVar},!1,!1)}`
       }
     ],
     errorMessage
   );
-  updated = replaceRegexOrThrow(
+  updated = replaceFirstMatchingRegexOrThrow(
     updated,
-    LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN,
-    ({ webContentsIdVar, windowVar }) =>
-      `endDrag(${webContentsIdVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayDisplay=this.dragState?.display;this.dragState?.hasMoved&&(this.moveDragToCurrentCursor(${windowVar},this.dragState.lastScreenPoint),codexLinuxAvatarOverlayDisplay=this.dragState?.display??codexLinuxAvatarOverlayDisplay),this.dragState=null,this.persistWindowBounds(${windowVar},codexLinuxAvatarOverlayDisplay??this.getCurrentDisplay());return}this.dragState?.hasMoved&&this.moveDragToCurrentCursor(${windowVar}),this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0})}`,
+    [
+      {
+        pattern: LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN,
+        replacement: ({ webContentsIdVar, windowVar }) =>
+          `endDrag(${webContentsIdVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayDisplay=this.dragState?.display;this.dragState?.hasMoved&&(this.moveDragToCurrentCursor(${windowVar},this.dragState.lastScreenPoint),codexLinuxAvatarOverlayDisplay=this.dragState?.display??codexLinuxAvatarOverlayDisplay),this.dragState=null,this.persistWindowBounds(${windowVar},codexLinuxAvatarOverlayDisplay??this.getCurrentDisplay());return}this.dragState?.hasMoved&&this.moveDragToCurrentCursor(${windowVar}),this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0})}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_END_DRAG_26_611_PATTERN,
+        replacement: ({
+          webContentsIdVar,
+          pointVar,
+          windowVar,
+          dragStateVar,
+          cursorVar,
+          electronVar,
+          nextPointVar,
+          coercePointFn,
+          suppressVar
+        }) =>
+          `endDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;let ${dragStateVar}=this.dragState;if(${dragStateVar}?.hasMovementIntent){let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&this.moveDragToPointer(${windowVar},${nextPointVar})}this.${suppressVar}=${dragStateVar}?.shouldSuppressRendererThrow()??!1;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayDisplay=${dragStateVar}?.display;this.dragState=null,this.persistWindowBounds(${windowVar},codexLinuxAvatarOverlayDisplay??this.getCurrentDisplay());return}this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0})}`
+      }
+    ],
     errorMessage
   );
   updated = replaceRegexOrThrow(
@@ -2979,11 +3079,20 @@ export function injectLinuxAvatarOverlayRendererPatch(bundleSource, options = {}
     bundleSource,
     options.sourceName
   );
-  return replaceRegexOrThrow(
+  return replaceFirstMatchingRegexOrThrow(
     bundleSource,
-    LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN,
-    ({ sampleVar, sampleFn, eventVar, body }) =>
-      `let ${sampleVar}=${sampleFn}(${eventVar});${body}{cursorScreenX:${sampleVar}.screenX,cursorScreenY:${sampleVar}.screenY})/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */`,
+    [
+      {
+        pattern: LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN,
+        replacement: ({ sampleVar, sampleFn, eventVar, body }) =>
+          `let ${sampleVar}=${sampleFn}(${eventVar});${body}{cursorScreenX:${sampleVar}.screenX,cursorScreenY:${sampleVar}.screenY})/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_POINTER_PATTERN,
+        replacement: ({ sampleVar, sampleFn, eventVar, body }) =>
+          `let ${sampleVar}=${sampleFn}(${eventVar});${body}{pointerScreenX:${sampleVar}.screenX,pointerScreenY:${sampleVar}.screenY})/* ${LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER} */`
+      }
+    ],
     errorMessage
   );
 }
@@ -3054,12 +3163,24 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
       })}${varTail ? `var ${varTail.slice(1)};` : ''}`,
     errorMessage
   );
-  if (LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(updated)) {
-    updated = replaceRegexOrThrow(
+  if (
+    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(updated) ||
+    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN.test(updated)
+  ) {
+    updated = replaceFirstMatchingRegexOrThrow(
       updated,
-      LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN,
-      ({ prefix, mascotCall, jsxVar }) =>
-        `${prefix}(0,${jsxVar}.jsxs)(${jsxVar}.Fragment,{children:[${mascotCall},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{})]})/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`,
+      [
+        {
+          pattern: LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN,
+          replacement: ({ prefix, mascotCall, jsxVar }) =>
+            `${prefix}(0,${jsxVar}.jsxs)(${jsxVar}.Fragment,{children:[${mascotCall},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{})]})/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`
+        },
+        {
+          pattern: LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN,
+          replacement: ({ prefix, mascotContent, realtimeButton }) =>
+            `${prefix}${mascotContent},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{}),${realtimeButton}]}/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`
+        }
+      ],
       errorMessage
     );
   } else if (!updated.includes('"data-avatar-overlay-hit-region":`mascot`')) {
@@ -3435,6 +3556,10 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
       {
         pattern: TERMINAL_CLEANUP_PATTERN_26_415,
         replacement: (groups) => buildTerminalCleanupReplacement(groups)
+      },
+      {
+        pattern: TERMINAL_CLEANUP_PATTERN_26_611,
+        replacement: (groups) => buildTerminalCleanupReplacement(groups)
       }
     ],
     errorMessage
@@ -3462,10 +3587,11 @@ function buildTerminalCleanupReplacement({
   resumeSessionVar,
   service,
   createdSessionVar,
+  extraCleanupVar,
   terminalVar,
   terminalRef
 }) {
-  return `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(${guardVar})return;${guardVar}=!0,${frameVar}!=null&&(cancelAnimationFrame(${frameVar}),${frameVar}=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),${observerVar}.disconnect(),${dataDisposeVar}.dispose(),${titleDisposeVar ? `${titleDisposeVar}.dispose(),` : ''}${keyDisposeVar}.dispose(),${registerDisposeVar}(),${fitRef}.current=null,${sessionRef}.current=null,${attachStateRef}.current=!1,codexLinuxPreserveSession||${resumeSessionVar}||${service}.close(${createdSessionVar}),${terminalVar}.dispose(),${terminalRef}.current=null,codexLinuxTraceTerminalCleanup(codexLinuxTerminalMountKey),codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),${observerVar}.observe(e),codexLinuxDisposeCurrentMount`;
+  return `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(${guardVar})return;${guardVar}=!0,${frameVar}!=null&&(cancelAnimationFrame(${frameVar}),${frameVar}=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),${observerVar}.disconnect(),${dataDisposeVar}.dispose(),${titleDisposeVar ? `${titleDisposeVar}.dispose(),` : ''}${keyDisposeVar}.dispose(),${registerDisposeVar}(),${fitRef}.current=null,${sessionRef}.current=null,${attachStateRef}.current=!1,codexLinuxPreserveSession||${resumeSessionVar}||${service}.close(${createdSessionVar}),${extraCleanupVar ? `${extraCleanupVar}(),` : ''}${terminalVar}.dispose(),${terminalRef}.current=null,codexLinuxTraceTerminalCleanup(codexLinuxTerminalMountKey),codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),${observerVar}.observe(e),codexLinuxDisposeCurrentMount`;
 }
 
 function buildLinuxTerminalLifecycleHelpers() {
@@ -5191,7 +5317,7 @@ function buildLinuxVisualCompatCssOverride() {
   position:relative!important;
   z-index:45!important;
   width:max-content!important;
-  max-width:calc(100% - 104px)!important;
+  max-width:100%!important;
   min-width:0!important;
   pointer-events:auto!important;
   background:var(--color-token-main-surface-primary)!important
@@ -5215,21 +5341,23 @@ function buildLinuxVisualCompatCssOverride() {
   overflow:hidden!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [data-app-shell-tab-controller]{
-  flex:0 0 max-content!important;
-  min-width:max-content!important;
+  flex:0 1 max-content!important;
+  min-width:min(6rem,100%)!important;
   width:max-content!important;
-  max-width:14rem!important
+  max-width:min(14rem,100%)!important
 }
 [data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] [role=tab]{
   display:flex!important;
   align-items:center!important;
+  min-width:0!important;
   width:auto!important;
   max-width:100%!important;
   height:28px!important;
+  overflow:hidden!important;
   visibility:visible!important;
   pointer-events:auto!important
 }
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] div:has(>button:not([role=tab])){
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]>div:has(>button:not([role=tab])){
   display:flex!important;
   align-items:center!important;
   width:auto!important;
@@ -5243,7 +5371,7 @@ function buildLinuxVisualCompatCssOverride() {
   pointer-events:auto!important;
   z-index:30!important
 }
-[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller] div:has(>button:not([role=tab]))>button:not([role=tab]){
+[data-codex-window-type=electron][data-codex-os=linux].codex-linux-visual-compat [data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]>div:has(>button:not([role=tab]))>button:not([role=tab]){
   display:flex!important;
   visibility:visible!important;
   opacity:1!important;
@@ -5356,7 +5484,7 @@ function buildLinuxRightPanelPaneTabsPatchErrorMessage(bundleSource, sourceName)
 }
 
 function buildLinuxRightPanelTabMetricsJs() {
-  return `if(r&&!globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}){globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}=1;setTimeout(()=>{let e=0,t=()=>{cancelAnimationFrame(e),e=requestAnimationFrame(()=>{for(let e of document.querySelectorAll(\`[data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]\`)){let t=e.querySelector(\`[role=tablist]\`),n=e.querySelector(\`div:has(>button:not([role=tab]))\`),r=e.closest(\`[data-app-shell-focus-area=right-panel]\`);if(!t)continue;let i=[...t.querySelectorAll(\`[data-app-shell-tab-controller]\`)];if(i.length===0)continue;let a=getComputedStyle(t),o=parseFloat(a.columnGap||a.gap)||0,s=i.reduce((e,t)=>e+t.getBoundingClientRect().width,0)+Math.max(0,i.length-1)*o,c=n?.getBoundingClientRect().width||28,l=Math.max(0,(r?.clientWidth||innerWidth)-104),u=Math.max(0,Math.min(l,s+c)),d=Math.max(0,u-c);u>0&&(t.style.setProperty(\`width\`,d+\`px\`,\`important\`),t.style.setProperty(\`flex\`,\`0 0 \${d}px\`,\`important\`),e.style.setProperty(\`width\`,u+\`px\`,\`important\`),e.style.setProperty(\`flex\`,\`0 0 \${u}px\`,\`important\`))}})};t();setTimeout(t,80);setTimeout(t,300);new MutationObserver(t).observe(document.documentElement,{childList:!0,subtree:!0});globalThis.ResizeObserver&&new ResizeObserver(t).observe(document.documentElement)},500)}`;
+  return `if(r&&!globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}){globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}=1;setTimeout(()=>{let e=0,t=()=>{cancelAnimationFrame(e),e=requestAnimationFrame(()=>{for(let e of document.querySelectorAll(\`[data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]\`)){let t=e.querySelector(\`[role=tablist]\`),n=[...e.children].find(e=>e.matches?.(\`div:has(>button:not([role=tab]))\`)),r=e.parentElement,i=e.closest(\`[data-app-shell-focus-area=right-panel]\`);if(!t||!r)continue;let a=[...t.querySelectorAll(\`[data-app-shell-tab-controller]\`)];if(a.length===0)continue;let o=getComputedStyle(t),s=parseFloat(o.columnGap||o.gap)||0,c=a.reduce((e,t)=>e+t.getBoundingClientRect().width,0)+Math.max(0,a.length-1)*s,l=n?.getBoundingClientRect().width||28,u=[...r.children].filter(t=>t!==e&&getComputedStyle(t).display!==\`none\`).reduce((e,t)=>e+t.getBoundingClientRect().width,0),d=r.getBoundingClientRect().width||i?.clientWidth||innerWidth,f=Math.max(0,d-u),p=Math.max(0,f-l),m=Math.min(p,a.length===1?96:56),h=Math.max(0,Math.min(p,Math.max(m,c))),g=h+l;g>0&&(t.style.setProperty(\`width\`,h+\`px\`,\`important\`),t.style.setProperty(\`flex\`,\`0 0 \${h}px\`,\`important\`),e.style.setProperty(\`width\`,g+\`px\`,\`important\`),e.style.setProperty(\`flex\`,\`0 0 \${g}px\`,\`important\`))}})};t();setTimeout(t,80);setTimeout(t,300);new MutationObserver(t).observe(document.documentElement,{childList:!0,subtree:!0});globalThis.ResizeObserver&&new ResizeObserver(t).observe(document.documentElement)},500)}`;
 }
 
 function analyzeLinuxVisualCompatCssBundle(bundleSource) {
@@ -6946,26 +7074,31 @@ function analyzeLinuxAvatarOverlayBundle(bundleSource) {
     showWindow: LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN.test(bundleSource),
     setWindowBounds: LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN.test(bundleSource),
     setWindowBoundsNativeComposition:
-      LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_611_PATTERN.test(bundleSource),
     pointerPassthroughPolicy: LINUX_AVATAR_OVERLAY_POINTER_POLICY_PATTERN.test(bundleSource),
     windowOptions:
       LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN.test(bundleSource) ||
       LINUX_AVATAR_OVERLAY_DOCK_WINDOW_OPTIONS_PATTERN.test(bundleSource),
     dragMoveIpc:
       bundleSource.includes(LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER) ||
-      LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_DRAG_MOVE_IPC_26_611_PATTERN.test(bundleSource),
     moveDragMethod:
       bundleSource.includes('codexLinuxAvatarOverlayScreenPoint') ||
-      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_611_PATTERN.test(bundleSource),
     startDrag:
       bundleSource.includes('pointerWindowX:') ||
-      LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN.test(bundleSource),
     moveDragCursor:
-      bundleSource.includes('moveDragToCurrentCursor') &&
-      (bundleSource.includes('codexLinuxAvatarOverlayPoint??') ||
-        LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN.test(bundleSource) ||
-        LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_527_PATTERN.test(bundleSource) ||
-        LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_608_PATTERN.test(bundleSource)),
+      (bundleSource.includes('moveDragToCurrentCursor') &&
+        (bundleSource.includes('codexLinuxAvatarOverlayPoint??') ||
+          LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN.test(bundleSource) ||
+          LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_527_PATTERN.test(bundleSource) ||
+          LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_608_PATTERN.test(bundleSource))) ||
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN.test(bundleSource),
     endDrag:
       bundleSource.includes('this.persistWindowBounds') ||
       LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN.test(bundleSource),
@@ -7006,7 +7139,8 @@ function analyzeLinuxAvatarOverlayRendererBundle(bundleSource) {
   const detected = {
     dragMoveDispatch:
       bundleSource.includes(LINUX_AVATAR_OVERLAY_DRAG_COORDS_PATCH_MARKER) ||
-      LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_POINTER_PATTERN.test(bundleSource),
     pointerSample: /let [A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\);[\s\S]*?`avatar-overlay-drag-move`/.test(
       bundleSource
     ),
@@ -7028,6 +7162,9 @@ function analyzeLinuxPetYappingUsageBundle(bundleSource) {
   const hasLegacyMascotChildren = LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN.test(
     bundleSource
   );
+  const hasMascotHitRegionChildren =
+    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource) ||
+    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN.test(bundleSource);
   const hasUsageBridgeImport =
     LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN.test(bundleSource) ||
     LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN.test(bundleSource);
@@ -7035,10 +7172,8 @@ function analyzeLinuxPetYappingUsageBundle(bundleSource) {
     reactRuntime: LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN.test(bundleSource),
     jsxRuntime: findLinuxPetYappingUsageJsxRuntime(bundleSource) != null,
     vscodeApiImport: hasUsageBridgeImport,
-    mascotHitRegion: LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource),
-    mascotChildren: hasMascotHitRegion
-      ? LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource)
-      : hasLegacyMascotChildren,
+    mascotHitRegion: hasMascotHitRegionChildren,
+    mascotChildren: hasMascotHitRegion ? hasMascotHitRegionChildren : hasLegacyMascotChildren,
     layoutQuery: LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN.test(bundleSource)
   };
 
@@ -7116,7 +7251,8 @@ function analyzeTerminalBundle(bundleSource) {
       TERMINAL_ON_ATTACH_NO_ARGS_PREFIX_PATTERN.test(bundleSource),
     cleanup:
       TERMINAL_CLEANUP_PATTERN_LEGACY.test(bundleSource) ||
-      TERMINAL_CLEANUP_PATTERN_26_415.test(bundleSource)
+      TERMINAL_CLEANUP_PATTERN_26_415.test(bundleSource) ||
+      TERMINAL_CLEANUP_PATTERN_26_611.test(bundleSource)
   };
 
   return {
@@ -7373,20 +7509,43 @@ function patchTodoExpandedItemRenderCache({
   includeMarker,
   expandedComponentName
 }) {
+  let updated = source;
+  let itemRenderError = null;
+  let patchedItemRender = false;
+
   try {
-    return patchTodoItemRenderCache({
-      source,
+    const next = patchTodoItemRenderCache({
+      source: updated,
       errorMessage,
       includeMarker,
       componentName: expandedComponentName
     });
+    patchedItemRender = next !== updated;
+    updated = next;
   } catch {
+    itemRenderError = true;
+  }
+
+  try {
     return patchTodoPortalRenderCache({
-      source,
+      source: updated,
       errorMessage,
       includeMarker,
       expandedComponentName
     });
+  } catch {
+    if (patchedItemRender) {
+      return updated;
+    }
+    if (itemRenderError) {
+      return patchTodoPortalRenderCache({
+        source,
+        errorMessage,
+        includeMarker,
+        expandedComponentName
+      });
+    }
+    throw new Error(errorMessage);
   }
 }
 
@@ -7427,6 +7586,21 @@ function patchTodoItemRenderCache({
     if (directRenderPattern.test(block)) {
       return source;
     }
+    const renderCallMatch = block.match(
+      new RegExp(
+        `\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${componentPattern},\\{[^}]*\\bitem:(?<itemVar>[A-Za-z_$][\\w$]*)`
+      )
+    );
+    const renderItemVar = renderCallMatch?.groups?.itemVar;
+    if (renderItemVar) {
+      const updatedBlock = patchTodoRenderBlockItemCacheReferences({
+        block,
+        errorMessage,
+        includeMarker,
+        itemVar: renderItemVar
+      });
+      return `${before}${updatedBlock}${after}`;
+    }
     throw new Error(errorMessage);
   }
   const { depIdx, itemVar, outVar, cacheIdx, suffix } = match.groups;
@@ -7440,16 +7614,48 @@ function patchTodoItemRenderCache({
   return `${before}${updated}${after}`;
 }
 
+function patchTodoRenderBlockItemCacheReferences({
+  block,
+  errorMessage,
+  includeMarker,
+  itemVar
+}) {
+  const itemVarPattern = escapeRegExp(itemVar);
+  let replacedCount = 0;
+  let todoItemKey = null;
+  const getTodoItemKey = () => {
+    todoItemKey ??= buildTodoItemCacheKeyExpression(itemVar, {
+      includeMarker: includeMarker()
+    });
+    return todoItemKey;
+  };
+  let updated = block;
+  updated = updated.replace(new RegExp(`t\\[(\\d+)\\]!==${itemVarPattern}`, 'g'), (_, idx) => {
+    replacedCount += 1;
+    return `t[${idx}]!==${getTodoItemKey()}`;
+  });
+  updated = updated.replace(new RegExp(`t\\[(\\d+)\\]===${itemVarPattern}`, 'g'), (_, idx) => {
+    replacedCount += 1;
+    return `t[${idx}]===${getTodoItemKey()}`;
+  });
+  updated = updated.replace(new RegExp(`t\\[(\\d+)\\]=${itemVarPattern}`, 'g'), (_, idx) => {
+    replacedCount += 1;
+    return `t[${idx}]=${getTodoItemKey()}`;
+  });
+  if (replacedCount === 0) {
+    throw new Error(errorMessage);
+  }
+  return updated;
+}
+
 function patchTodoPortalRenderCache({
   source,
   errorMessage,
   includeMarker,
   expandedComponentName
 }) {
-  const patchBlock = (block) => {
-    const expandedRenderPattern = new RegExp(
-      `\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${escapeRegExp(expandedComponentName)},\\{item:`
-    );
+  const expandedComponentNames = collectTodoRenderComponentCandidates(source, expandedComponentName);
+  const patchBlock = (block, expandedRenderPattern) => {
     if (!expandedRenderPattern.test(block)) {
       throw new Error(errorMessage);
     }
@@ -7486,16 +7692,56 @@ function patchTodoPortalRenderCache({
     return updated;
   };
 
-  if (source.includes('function lBe(') && source.includes('var uBe=')) {
-    return replaceFunctionBlockOrThrow(source, 'function lBe(', 'var uBe=', patchBlock, errorMessage);
+  for (const componentName of expandedComponentNames) {
+    const expandedRenderPatternSource = buildTodoComponentRenderPatternSource(componentName);
+    const expandedRenderPattern = new RegExp(expandedRenderPatternSource);
+    const expandedRenderSearchPattern = new RegExp(expandedRenderPatternSource, 'g');
+    for (const renderMatch of source.matchAll(expandedRenderSearchPattern)) {
+      const renderIndex = renderMatch.index ?? -1;
+      const start = source.lastIndexOf('function ', renderIndex);
+      const nextFunctionIndex = source.indexOf('function ', renderIndex + renderMatch[0].length);
+      const end = nextFunctionIndex === -1 ? source.length : nextFunctionIndex;
+      if (start === -1 || end <= start) {
+        continue;
+      }
+      const block = source.slice(start, end);
+      if (!/todoListItem:[A-Za-z_$][\w$]*/.test(block)) {
+        continue;
+      }
+      const before = source.slice(0, start);
+      const after = source.slice(end);
+      return `${before}${patchBlock(block, expandedRenderPattern)}${after}`;
+    }
   }
 
-  return replaceFunctionBlockContainingAnchorOrThrow(
-    source,
-    'todoListItem:',
-    patchBlock,
-    errorMessage
-  );
+  throw new Error(errorMessage);
+}
+
+function buildTodoComponentRenderPatternSource(componentName) {
+  return `\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${escapeRegExp(componentName)},\\{[^}]*\\bitem:`;
+}
+
+function collectTodoRenderComponentCandidates(source, componentName) {
+  const candidates = [componentName];
+  const directRenderPattern = new RegExp(buildTodoComponentRenderPatternSource(componentName));
+  const functionPattern = /function (?<functionName>[A-Za-z_$][\w$]*)\(/g;
+  for (const match of source.matchAll(functionPattern)) {
+    const wrapperName = match.groups?.functionName;
+    if (!wrapperName || wrapperName === componentName || candidates.includes(wrapperName)) {
+      continue;
+    }
+    const start = match.index ?? -1;
+    const nextFunctionIndex = source.indexOf('function ', start + match[0].length);
+    const end = nextFunctionIndex === -1 ? source.length : nextFunctionIndex;
+    if (start === -1 || end <= start) {
+      continue;
+    }
+    const block = source.slice(start, end);
+    if (directRenderPattern.test(block)) {
+      candidates.push(wrapperName);
+    }
+  }
+  return candidates;
 }
 
 function buildTodoPlanCacheKeyExpression(planExpr, options = {}) {
@@ -7573,7 +7819,7 @@ function analyzeTodoProgressBundle(bundleSource) {
     : null;
   const portalRenderCachePattern = componentNames.expanded
     ? new RegExp(
-        `\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${escapeRegExp(componentNames.expanded)},\\{item:[A-Za-z_$][\\w$]*\\}\\)`
+        `\\(0,[A-Za-z_$][\\w$]*\\.jsx\\)\\(${escapeRegExp(componentNames.expanded)},\\{[^}]*\\bitem:[A-Za-z_$][\\w$]*[^}]*\\}\\)`
       )
     : null;
 
