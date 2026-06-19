@@ -82,6 +82,8 @@ const LINUX_CHROME_EXTENSION_SETTINGS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux Chrome extension settings detection into the Electron main bundle.';
 const LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux Chrome native host runtime paths into the Electron bundle.';
+const LINUX_OWL_FEATURE_BINDING_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux Owl feature binding fallback into the Electron bundle.';
 const LINUX_REMOTE_CONTROL_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux remote-control feature availability into the Electron main bundle.';
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_BASE_ERROR_MESSAGE =
@@ -302,6 +304,11 @@ export async function installDesktop(options, logger) {
     logger
   );
   assertRequiredPatchApplied('worktree environment worker', linuxWorktreeEnvironmentWorkerPatch);
+  const linuxOwlFeatureBindingPatch = await patchElectronLinuxOwlFeatureBinding(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux Owl feature binding fallback', linuxOwlFeatureBindingPatch);
   const linuxBrowserUseHostFetchPatch = await patchMainProcessLinuxBrowserUseHostFetch(
     extractedAppDir,
     logger
@@ -456,6 +463,7 @@ export async function installDesktop(options, logger) {
     linuxNotificationSound: linuxNotificationSoundPatch,
     linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
     linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
+    linuxOwlFeatureBinding: linuxOwlFeatureBindingPatch,
     linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
     linuxBrowserUseRuntimePaths: linuxBrowserUseRuntimePathsPatch,
     linuxBundledBrowserChromePlugins: linuxBundledBrowserChromePluginsPatch,
@@ -552,6 +560,7 @@ export async function installDesktop(options, logger) {
       linuxNotificationSound: linuxNotificationSoundPatch,
       linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
       linuxWorktreeEnvironmentWorker: linuxWorktreeEnvironmentWorkerPatch,
+      linuxOwlFeatureBinding: linuxOwlFeatureBindingPatch,
       linuxBrowserUseHostFetch: linuxBrowserUseHostFetchPatch,
       linuxBrowserUseRuntimePaths: linuxBrowserUseRuntimePathsPatch,
       linuxBundledBrowserChromePlugins: linuxBundledBrowserChromePluginsPatch,
@@ -889,6 +898,7 @@ async function patchBootstrap(extractedAppDir) {
 
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
 const LINUX_MENU_BAR_PATCH_MARKER = 'codexLinuxMenuBarAutoHide';
+const LINUX_ABOUT_DIALOG_PATCH_MARKER = 'codexLinuxAboutDialogFallback';
 const LINUX_CLOSE_CANCEL_PATCH_MARKER = 'codexLinuxCloseCancel';
 const LINUX_NOTIFICATION_SOUND_PATCH_MARKER = 'codexLinuxNotificationSound';
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
@@ -900,6 +910,7 @@ const LINUX_BUNDLED_BROWSER_CHROME_PLUGINS_PATCH_MARKER =
 const LINUX_CHROME_EXTENSION_SETTINGS_PATCH_MARKER = 'codexLinuxChromeExtensionSettings';
 const LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_MARKER =
   'codexLinuxChromeNativeHostRuntimePaths';
+const LINUX_OWL_FEATURE_BINDING_PATCH_MARKER = 'codexLinuxOwlFeatureBindingFallback';
 const LINUX_REMOTE_CONTROL_PATCH_MARKER = 'codexLinuxRemoteControlFeatureAvailability';
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_MARKER =
   'codexLinuxRemoteControlSettingsVisibility';
@@ -915,17 +926,23 @@ const LINUX_PET_YAPPING_USAGE_MAIN_PATCH_MARKER = 'codexLinuxPetYappingUsageProv
 const LINUX_PET_YAPPING_USAGE_PATCH_MARKER = 'codexLinuxPetYappingUsage';
 const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
+const OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN =
+  /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<stateVar1>[A-Za-z_$][\w$]*)=new WeakMap,(?<stateVar2>[A-Za-z_$][\w$]*)=new WeakMap,(?<shortcutReaderVar>[A-Za-z_$][\w$]*)=async e=>(?<shortcutReaderObject>[A-Za-z_$][\w$]*)\.shell\.readShortcutLink\(e\);/;
 const LINUX_CHROME_EXTENSION_PROFILE_DIR_PATTERN =
   /function (?<fn>[A-Za-z_$][\w$]*)\(\{homeDir:(?<homeDirVar>[A-Za-z_$][\w$]*),localAppDataDir:(?<localAppDataVar>[A-Za-z_$][\w$]*),platform:(?<platformVar>[A-Za-z_$][\w$]*)\}\)\{return \k<platformVar>===`darwin`\?(?<joinCall>(?:\(0,[A-Za-z_$][\w$]*\.join\)|join))\(\k<homeDirVar>,`Library`,`Application Support`,`Google`,`Chrome`\):\k<platformVar>===`win32`\?\k<joinCall>\(\k<localAppDataVar>\?\?\k<joinCall>\(\k<homeDirVar>,`AppData`,`Local`\),`Google`,`Chrome`,`User Data`\):null\}/;
 const LINUX_CHROME_EXTENSION_URL_HELPER_PATTERN =
   /function (?<urlFn>[A-Za-z_$][\w$]*)\(e\)\{return`(?:chrome:\/\/extensions\/\?id=\$\{[A-Za-z_$][\w$]*\(e\)\}|https:\/\/chromewebstore\.google\.com\/detail\/\$\{e\})`\}/;
 const LINUX_CHROME_EXTENSION_OPEN_SETTINGS_PATTERN =
   /async function (?<fn>[A-Za-z_$][\w$]*)\(\{extensionId:(?<extensionIdVar>[A-Za-z_$][\w$]*),platform:(?<platformVar>[A-Za-z_$][\w$]*)=process\.platform,detectChromeCommand:(?<detectVar>[A-Za-z_$][\w$]*)=(?<defaultDetectVar>[A-Za-z_$][\w$]*),runCommand:(?<runVar>[A-Za-z_$][\w$]*)=(?<defaultRunVar>[A-Za-z_$][\w$]*)\}\)\{(?<body>if\(\k<platformVar>===`darwin`\)\{.*?\}if\(\k<platformVar>===`win32`\)\{.*?\})throw Error\(`Opening Chrome extension settings is only supported on macOS and Windows`\)\}/;
+const LINUX_OWL_FEATURE_BINDING_PATTERN =
+  /function (?<helperFn>[A-Za-z_$][\w$]*)\(\)\{let (?<bindingVar>[A-Za-z_$][\w$]*)=process\._linkedBinding;if\(typeof \k<bindingVar>!=`function`\)throw Error\(`Owl feature binding is unavailable`\);return (?<schemaVar>[A-Za-z_$][\w$]*)\.parse\(\k<bindingVar>\.call\(process,`electron_common_owl_features`\)\)\}/;
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_26_609 =
   'process.platform===`win32`||process.platform===`linux`?{autoHideMenuBar:!0}:{}';
 const LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT =
   'process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{}';
+const LINUX_ABOUT_DIALOG_CLICK_PATTERN =
+  /click:\((?<menuItemVar>[A-Za-z_$][\w$]*),(?<windowVar>[A-Za-z_$][\w$]*)\)=>\{(?<aboutFn>[A-Za-z_$][\w$]*)\(\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*),parent:\k<windowVar> instanceof (?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow&&!\k<windowVar>\.isDestroyed\(\)\?\k<windowVar>:null\}\)\}/;
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT =
   't.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT =
@@ -977,7 +994,7 @@ const BROWSER_USE_HOST_FETCH_HELPER_ANCHOR_PATTERN =
 const BROWSER_USE_HOST_FETCH_INLINE_STATE_PATTERN =
   /backendState=\{apiImpl:null,server:null,starting:null\}/;
 const BROWSER_USE_AUTH_HEADER_HELPER_PATTERN =
-  /(?:async )?function (?<authHeaderFn>[A-Za-z_$][\w$]*)\(\{action:e,appServerClient:t,desktopOriginator:n,headers:r=\{\},refreshToken:i=!1\}\)\{(?=[\s\S]*?getAuthToken)[\s\S]*?\}(?=function|var)/;
+  /(?:async )?function (?<authHeaderFn>[A-Za-z_$][\w$]*)\(\{action:e,appServerClient:t,desktopOriginator:n,headers:[A-Za-z_$][\w$]*=\{\},refreshToken:[A-Za-z_$][\w$]*=!1\}\)\{(?=[\s\S]*?getAuthToken)[\s\S]*?\}(?=function|var)/;
 const BROWSER_USE_ELECTRON_REQUIRE_PATTERN =
   /let (?<electronVar>[A-Za-z_$][\w$]*)=require\(`electron`\);/;
 const BROWSER_USE_DESKTOP_ORIGINATOR_OPTIONS_PATTERN =
@@ -990,6 +1007,8 @@ const BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN =
   /new (?<className>[A-Za-z_$][\w$]*)\((?<getHostArg>t=>this\.canServeTurnForBrowserRoute\(t,e\)\?this\.getBrowserUseHost\(t\):null),(?<blockedArg>e=>this\.getDelegate\(\)\.addBrowserUseNavigationBlockedListener\(e\)),\{(?<options>appSessionId:this\.options\.appSessionId,browserRoute:e,buildFlavor:this\.options\.buildFlavor,canServeRoute:t=>this\.canServeTurnForBrowserRoute\(t,e\))\}\)/;
 const BROWSER_USE_IAB_REGISTRY_OPTIONS_26_527_PATTERN =
   /new (?<className>[A-Za-z_$][\w$]*)\((?<getHostArg>e=>this\.ensureSessionRoute\(e\)\?this\.getBrowserUseHost\(e\):null),(?<blockedArg>e=>this\.getDelegate\(\)\.addBrowserUseNavigationBlockedListener\(e\)),\{(?<options>appSessionId:this\.options\.appSessionId,buildFlavor:this\.options\.buildFlavor,ensureSessionRoute:e=>this\.ensureSessionRoute\(e\)(?:,getTabMode:e=>this\.getRouteTabMode\(this\.resolveBrowserRoute\(e\)\))?)\}\)/;
+const BROWSER_USE_IAB_REGISTRY_OPTIONS_26_616_PATTERN =
+  /new (?<className>[A-Za-z_$][\w$]*)\((?<getHostArg>(?<routeVar>[A-Za-z_$][\w$]*)=>this\.canServeSession\(\k<routeVar>,(?<sessionVar>[A-Za-z_$][\w$]*),(?<stateVar>[A-Za-z_$][\w$]*)\)\?this\.getBrowserUseHost\(\k<routeVar>\):null),(?<blockedArg>[A-Za-z_$][\w$]*=>this\.getDelegate\(\)\.addBrowserUseNavigationBlockedListener\([A-Za-z_$][\w$]*\)),\{(?<options>appSessionId:this\.options\.appSessionId,buildFlavor:this\.options\.buildFlavor,ensureSessionRoute:[A-Za-z_$][\w$]*=>this\.canServeSession\([A-Za-z_$][\w$]*,\k<sessionVar>,\k<stateVar>\),getTabMode:[A-Za-z_$][\w$]*=>this\.tabModesByRouteKey\.get\([A-Za-z_$][\w$]*\)\?\?`singleTab`)\}\)/;
 const BROWSER_SESSION_REGISTRY_INSTANTIATION_PATTERN =
   /this\.browserSessionRegistry=new (?<registryClass>[A-Za-z_$][\w$]*)\(\{appSessionId:(?<appSessionId>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?),buildFlavor:(?<buildFlavor>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?),errorReporter:this\.errorReporter\}\)/;
 const BROWSER_USE_RUNTIME_PATHS_FUNCTION_PATTERN =
@@ -1006,6 +1025,8 @@ const BUNDLED_PLUGIN_MARKETPLACE_FILTER_26_609_PATTERN =
   /async function (?<fn>[A-Za-z_$][\w$]*)\(e\)\{let (?<marketplaceVar>[A-Za-z_$][\w$]*)=\{\.\.\.(?<filterFn>[A-Za-z_$][\w$]*)\(\{marketplacePluginNames:e\.marketplacePluginNames,marketplace:await (?<readMarketplaceFn>[A-Za-z_$][\w$]*)\(e\.sourceMarketplaceRoot\)\}\),name:e\.marketplaceName\},(?<stagingVar>[A-Za-z_$][\w$]*)=/;
 const CHROME_NATIVE_HOST_RUNTIME_PATHS_REGISTRATION_PATTERN =
   /async function (?<fn>[A-Za-z_$][\w$]*)\((?<arg>[A-Za-z_$][\w$]*)\)\{let (?<targetVar>[A-Za-z_$][\w$]*)=(?<targetFn>[A-Za-z_$][\w$]*)\(\),(?<runtimeVar>[A-Za-z_$][\w$]*)=(?<runtimeFn>[A-Za-z_$][\w$]*)\(\{devRuntimeRepoRoot:\k<arg>\.devRuntimeRepoRoot,nativeHostName:\k<arg>\.nativeHostName,resourcesPath:\k<arg>\.resourcesPath\}\),(?<hostVar>[A-Za-z_$][\w$]*)=await (?<installFn>[A-Za-z_$][\w$]*)\(/;
+const CHROME_NATIVE_HOST_RUNTIME_PATHS_RETURN_26_616_PATTERN =
+  /return\{codexCliPath:await (?<copyCliFn>[A-Za-z_$][\w$]*)\(\{codexCliPath:(?<codexCliVar>[A-Za-z_$][\w$]*),codexHome:(?<arg>[A-Za-z_$][\w$]*)\.codexHome,nativeHostName:\k<arg>\.nativeHostName\}\),nodePath:(?<nodeVar>[A-Za-z_$][\w$]*),nodeModuleDirs:(?<nodeModuleDirsFn>[A-Za-z_$][\w$]*)\(\k<arg>\.resourcesPath\),nodeReplPath:(?<nodeReplVar>[A-Za-z_$][\w$]*)\}/;
 const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\((?<featuresVar>[A-Za-z_$][\w$]*),\{env:(?<envVar>[A-Za-z_$][\w$]*)=process\.env,platform:(?<platformVar>[A-Za-z_$][\w$]*)=process\.platform\}=\{\}\)\{return \k<platformVar>!==`win32`\|\|\k<envVar>\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE!==`1`\?\k<featuresVar>:\{\.\.\.\k<featuresVar>,computerUse:!0,computerUseNodeRepl:!0\}\}/;
 const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_OVERRIDES_PATTERN =
@@ -1032,6 +1053,8 @@ const LINUX_AVATAR_OVERLAY_OPEN_METHOD_PATTERN =
   /async open\((?<openerVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);this\.globalState\.set\((?<openStateVar>[A-Za-z_$][\w$]*),!0\),this\.positionWindow\(\k<windowVar>,\k<openerVar>\),this\.rendererReady&&\(this\.showWindow\(\k<windowVar>\),this\.applyPointerInteractivityPolicy\(\)\)\}/;
 const LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_608_PATTERN =
   /async open\((?<openerVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);this\.globalState\.set\((?<openStateVar>[A-Za-z_$][\w$]*),!0\),this\.positionWindow\(\k<windowVar>,\k<openerVar>\),this\.showWindowIfReady\(\k<windowVar>\)\}/;
+const LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_616_PATTERN =
+  /async open\((?<openerVar>[A-Za-z_$][\w$]*),\{forcePetView:(?<forcePetViewVar>[A-Za-z_$][\w$]*)=!1\}=\{\}\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);this\.globalState\.set\((?<openStateExpr>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?),!0\),this\.windowOpenIntent=!0,this\.positionWindow\(\k<windowVar>,\k<openerVar>\),(?<nativePresentationExpr>this\.nativeCompositionSupported&&this\.compositionHost\.isEnabled\(\)&&\(this\.initialPresentationState=`waiting-for-native`\),this\.stageWindowForNativePresentation\(\k<windowVar>\),this\.compositionHost\.wake\(\),)this\.showWindowIfReady\(\k<windowVar>\),\k<forcePetViewVar>&&this\.windowManager\.sendMessageToWebContents\(\k<windowVar>\.webContents,\{type:`avatar-overlay-explicit-pet-opened`\}\)\}/;
 const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN =
   /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*)(?:,(?<animateVar>[A-Za-z_$][\w$]*))?\)\{\k<windowVar>\.isDestroyed\(\)\|\|(?<equalFn>[A-Za-z_$][\w$]*)\(\k<windowVar>\.(?<getBoundsMethod>get(?:Content)?Bounds)\(\),\k<boundsVar>\)\|\|\k<windowVar>\.(?<setBoundsMethod>set(?:Content)?Bounds)\(\k<boundsVar>,(?<animateArg>!1|\k<animateVar>)\)\}/;
 const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_PATTERN =
@@ -1087,7 +1110,7 @@ const LINUX_PET_YAPPING_USAGE_JSX_RUNTIME_IMPORT_PATTERN =
 const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN =
   /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:\[?)(?<mascotCall>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{ariaLabel:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\))/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN =
-  /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:\[)(?<mascotContent>[\s\S]*?notificationBadge:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\)),(?<realtimeButton>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{canStart:[\s\S]*?onStop:[A-Za-z_$][\w$]*\}\))\]\}/;
+  /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:\[)(?<mascotContent>[\s\S]*?notificationBadge:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\)),(?<realtimeButton>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{[\s\S]*?canStart:[\s\S]*?onStop:[A-Za-z_$][\w$]*[\s\S]*?\}\))\]\}/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN =
   /children:\[(?<avatar>[A-Za-z_$][\w$]*),(?<badge>[A-Za-z_$][\w$]*)\]\}/;
 const LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN =
@@ -1578,6 +1601,10 @@ const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_PATTERN =
   /let (?<contextVar>[A-Za-z_$][\w$]*)=await (?<buildContextFn>[A-Za-z_$][\w$]*)\((?<promptVar>[A-Za-z_$][\w$]*),void 0,(?<conversationVar>[A-Za-z_$][\w$]*),(?<objectiveVar>[A-Za-z_$][\w$]*)\?\?void 0\);(?<analyticsFn>[A-Za-z_$][\w$]*)\((?<submitActionVar>[A-Za-z_$][\w$]*),(?<serviceTierVar>[A-Za-z_$][\w$]*)\),(?<pendingFn>[A-Za-z_$][\w$]*)\(!0\);let (?<submitFn>[A-Za-z_$][\w$]*)=async\(\)=>/;
 const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_STATE_PATTERN =
   /(?<clearFn>[A-Za-z_$][\w$]*)\(\{browserConversationId:(?<browserConversationVar>[A-Za-z_$][\w$]*),browserTabId:(?<browserTabVar>[A-Za-z_$][\w$]*),fallbackBrowserConversationId:(?<fallbackConversationVar>[A-Za-z_$][\w$]*),comments:(?<commentsVar>[A-Za-z_$][\w$]*),onCommentsChange:(?<onCommentsChangeVar>[A-Za-z_$][\w$]*)\}\)\|\|\k<onCommentsChangeVar>\(\[\]\)/;
+const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_REMOVE_BROWSER_COMMENTS_PATTERN =
+  /(?<removeBrowserCommentsFn>[A-Za-z_$][\w$]*)=\(\)=>\{(?<onCommentsChangeVar>[A-Za-z_$][\w$]*)\((?<browserCommentFilterFn>[A-Za-z_$][\w$]*)\((?<commentsVar>[A-Za-z_$][\w$]*)\)\)\},(?<removeDiffCommentsFn>[A-Za-z_$][\w$]*)=\(\)=>\{\k<onCommentsChangeVar>\([A-Za-z_$][\w$]*\(\k<commentsVar>\)\)\}/;
+const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_26_616_PATTERN =
+  /(?<prefix>await [A-Za-z_$][\w$]*\(\{appendPromptToHistory:[A-Za-z_$][\w$]*,buildLocalContextForPrompt:)(?<buildContextFn>[A-Za-z_$][\w$]*)(?<suffix>,clearComposerUi:)/;
 const LINUX_BROWSER_VIEWPORT_SURFACE_PATTERN =
   /ref:(?<refVar>[A-Za-z_$][\w$]*),className:`relative h-full min-h-0 min-w-0 overflow-hidden`,style:\{backgroundColor:(?<backgroundVar>[A-Za-z_$][\w$]*)\},children:\[/;
 const LINUX_BROWSER_WEBVIEW_PANEL_HOST_SIGNATURE_PATTERN =
@@ -1892,6 +1919,39 @@ async function patchElectronLinuxChromeNativeHostRuntimePaths(extractedAppDir, l
   );
 }
 
+export async function patchElectronLinuxOwlFeatureBinding(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = (await fs.promises.readdir(buildDir)).filter((name) => /\.js$/.test(name));
+
+  for (const bundleFile of files) {
+    const bundlePath = path.join(buildDir, bundleFile);
+    const original = await fs.promises.readFile(bundlePath, 'utf8');
+    if (
+      !original.includes('electron_common_owl_features') &&
+      !original.includes(LINUX_OWL_FEATURE_BINDING_PATCH_MARKER)
+    ) {
+      continue;
+    }
+
+    logger.info(`Resolved Electron bundle ${bundleFile} for Owl feature binding fallback`);
+    const result = applyLinuxOwlFeatureBindingPatch(original, { sourceName: bundleFile });
+    if (result.updated !== original) {
+      await fs.promises.writeFile(bundlePath, result.updated, 'utf8');
+      logger.info('Patched Linux Owl feature binding fallback into Electron bundle');
+    }
+    return {
+      status: result.status,
+      sourceName: bundleFile
+    };
+  }
+
+  logger.info('No Electron Owl feature binding helper detected; Linux fallback is not needed');
+  return {
+    status: 'already-applied',
+    reason: 'bundle-not-needed'
+  };
+}
+
 async function patchMainProcessLinuxRemoteControl(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
   const files = await fs.promises.readdir(buildDir);
@@ -2165,13 +2225,23 @@ export function injectLinuxOpenTargetsPatch(bundleSource, options = {}) {
     return bundleSource;
   }
 
-  const match = bundleSource.match(OPEN_TARGETS_BLOCK_PATTERN);
-  if (!match?.groups?.targetList || !match.groups.targetVar) {
-    throw new Error(buildOpenTargetsPatchErrorMessage(bundleSource, options.sourceName));
+  const legacyMatch = bundleSource.match(OPEN_TARGETS_BLOCK_PATTERN);
+  if (legacyMatch?.groups?.targetList && legacyMatch.groups.targetVar) {
+    return bundleSource.replace(
+      OPEN_TARGETS_BLOCK_PATTERN,
+      buildLinuxOpenTargetsBlock(legacyMatch.groups)
+    );
   }
 
-  const replacement = buildLinuxOpenTargetsBlock(match.groups);
-  return bundleSource.replace(OPEN_TARGETS_BLOCK_PATTERN, replacement);
+  const weakMapMatch = bundleSource.match(OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN);
+  if (weakMapMatch?.groups?.targetList && weakMapMatch.groups.targetVar) {
+    return bundleSource.replace(
+      OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN,
+      buildLinuxOpenTargetsWeakMapBlock(weakMapMatch.groups)
+    );
+  }
+
+  throw new Error(buildOpenTargetsPatchErrorMessage(bundleSource, options.sourceName));
 }
 
 export function applyLinuxMenuBarPatch(bundleSource, options = {}) {
@@ -2189,18 +2259,55 @@ export function applyLinuxMenuBarPatch(bundleSource, options = {}) {
 }
 
 export function injectLinuxMenuBarPatch(bundleSource, options = {}) {
-  if (bundleSource.includes(LINUX_MENU_BAR_PATCH_MARKER)) {
-    return bundleSource;
-  }
-  for (const snippet of [
-    LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT,
-    LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_26_609
-  ]) {
-    if (bundleSource.includes(snippet)) {
-      return bundleSource.replace(snippet, LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT);
+  let updated = bundleSource;
+  if (!updated.includes(LINUX_MENU_BAR_PATCH_MARKER)) {
+    let patchedAutoHide = false;
+    for (const snippet of [
+      LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT,
+      LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_26_609
+    ]) {
+      if (updated.includes(snippet)) {
+        updated = updated.replace(snippet, LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT);
+        patchedAutoHide = true;
+        break;
+      }
+    }
+    if (!patchedAutoHide) {
+      throw new Error(buildLinuxMenuBarPatchErrorMessage(bundleSource, options.sourceName));
     }
   }
-  throw new Error(buildLinuxMenuBarPatchErrorMessage(bundleSource, options.sourceName));
+  return injectLinuxAboutDialogFallbackPatch(updated, options);
+}
+
+function injectLinuxAboutDialogFallbackPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_ABOUT_DIALOG_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  if (
+    !bundleSource.includes('codex.aboutDialog.title') &&
+    !bundleSource.includes('About {appName}')
+  ) {
+    return bundleSource;
+  }
+  const match = bundleSource.match(LINUX_ABOUT_DIALOG_CLICK_PATTERN);
+  if (!match?.groups) {
+    throw new Error(buildLinuxAboutDialogPatchErrorMessage(bundleSource, options.sourceName));
+  }
+  return bundleSource.replace(
+    LINUX_ABOUT_DIALOG_CLICK_PATTERN,
+    buildLinuxAboutDialogFallbackClick(match.groups)
+  );
+}
+
+function buildLinuxAboutDialogFallbackClick({
+  aboutFn,
+  buildFlavorVar,
+  electronVar,
+  menuItemVar,
+  windowVar
+}) {
+  const parentExpr = `${windowVar} instanceof ${electronVar}.BrowserWindow&&!${windowVar}.isDestroyed()?${windowVar}:null`;
+  return `click:(${menuItemVar},${windowVar})=>{if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_ABOUT_DIALOG_FALLBACK!==\`1\`){let codexLinuxAboutParent=${parentExpr},codexLinuxAboutName=${electronVar}.app.getName(),codexLinuxAboutOptions={type:\`info\`,buttons:[\`OK\`],defaultId:0,cancelId:0,noLink:!0,title:\`About \${codexLinuxAboutName}\`,message:codexLinuxAboutName,detail:\`Version \${${electronVar}.app.getVersion()}\\n\\nOpenAI\`};codexLinuxAboutParent?${electronVar}.dialog.showMessageBox(codexLinuxAboutParent,codexLinuxAboutOptions):${electronVar}.dialog.showMessageBox(codexLinuxAboutOptions);return}${aboutFn}({buildFlavor:${buildFlavorVar},parent:${parentExpr}})/* ${LINUX_ABOUT_DIALOG_PATCH_MARKER} */}`;
 }
 
 export function applyLinuxCloseCancelPatch(bundleSource, options = {}) {
@@ -2361,6 +2468,11 @@ export function injectLinuxBrowserUseHostFetchPatch(bundleSource, options = {}) 
       },
       {
         pattern: BROWSER_USE_IAB_REGISTRY_OPTIONS_26_527_PATTERN,
+        replacement: ({ className, getHostArg, blockedArg, options: iabOptions }) =>
+          `new ${className}(${getHostArg},${blockedArg},{${iabOptions},hostFetch:e=>codexLinuxBrowserUseHostFetch(e,this.options.appServerConnection)})`
+      },
+      {
+        pattern: BROWSER_USE_IAB_REGISTRY_OPTIONS_26_616_PATTERN,
         replacement: ({ className, getHostArg, blockedArg, options: iabOptions }) =>
           `new ${className}(${getHostArg},${blockedArg},{${iabOptions},hostFetch:e=>codexLinuxBrowserUseHostFetch(e,this.options.appServerConnection)})`
       }
@@ -2529,12 +2641,50 @@ export function injectLinuxChromeNativeHostRuntimePathsPatch(bundleSource, optio
     bundleSource,
     options.sourceName
   );
+  const returnMatch = bundleSource.match(CHROME_NATIVE_HOST_RUNTIME_PATHS_RETURN_26_616_PATTERN);
+  if (returnMatch?.groups) {
+    const updated = replaceRegexOrThrow(
+      bundleSource,
+      CHROME_NATIVE_HOST_RUNTIME_PATHS_RETURN_26_616_PATTERN,
+      ({ copyCliFn, codexCliVar, arg, nodeVar, nodeModuleDirsFn, nodeReplVar }) =>
+        `return codexLinuxChromeNativeHostRuntimePaths({runtimePaths:{codexCliPath:await ${copyCliFn}({codexCliPath:${codexCliVar},codexHome:${arg}.codexHome,nativeHostName:${arg}.nativeHostName}),nodePath:${nodeVar},nodeModuleDirs:${nodeModuleDirsFn}(${arg}.resourcesPath),nodeReplPath:${nodeReplVar}},resourcesPath:${arg}.resourcesPath})`,
+      errorMessage
+    );
+    return `${buildLinuxChromeNativeHostRuntimePathsHelper()}${updated}`;
+  }
   return replaceRegexOrThrow(
     bundleSource,
     CHROME_NATIVE_HOST_RUNTIME_PATHS_REGISTRATION_PATTERN,
     ({ fn, arg, targetVar, targetFn, runtimeVar, runtimeFn, hostVar, installFn }) =>
       `${buildLinuxChromeNativeHostRuntimePathsHelper()}async function ${fn}(${arg}){let ${targetVar}=${targetFn}(),${runtimeVar}=codexLinuxChromeNativeHostRuntimePaths({runtimePaths:${runtimeFn}({devRuntimeRepoRoot:${arg}.devRuntimeRepoRoot,nativeHostName:${arg}.nativeHostName,resourcesPath:${arg}.resourcesPath}),resourcesPath:${arg}.resourcesPath}),${hostVar}=await ${installFn}(`,
     errorMessage
+  );
+}
+
+export function applyLinuxOwlFeatureBindingPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxOwlFeatureBindingPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxOwlFeatureBindingPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_OWL_FEATURE_BINDING_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_OWL_FEATURE_BINDING_PATTERN,
+    ({ helperFn, bindingVar, schemaVar }) =>
+      `function ${helperFn}(){/* ${LINUX_OWL_FEATURE_BINDING_PATCH_MARKER} */let ${bindingVar}=process._linkedBinding;if(typeof ${bindingVar}==\`function\`){try{return ${schemaVar}.parse(${bindingVar}.call(process,\`electron_common_owl_features\`))}catch{}}return{isOwlFeatureEnabled:${bindingVar}=>{let t=nt(rt(\`enable-features\`)),n=nt(rt(\`disable-features\`));return t.includes(${bindingVar})&&!n.includes(${bindingVar})}}}`,
+    buildLinuxOwlFeatureBindingPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
 
@@ -2855,6 +3005,18 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
           pattern: LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_608_PATTERN,
           replacement: ({ openerVar, windowVar, ensureWindowArg = '', openStateVar }) =>
             `async open(${openerVar}){let ${windowVar}=await this.ensureWindow(${ensureWindowArg});this.globalState.set(${openStateVar},!0),this.positionWindow(${windowVar},${openerVar}),this.showWindowIfReady(${windowVar}),this.codexLinuxScheduleAvatarOverlayVisibilityRecovery(${windowVar})}`
+        },
+        {
+          pattern: LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_616_PATTERN,
+          replacement: ({
+            openerVar,
+            forcePetViewVar,
+            windowVar,
+            ensureWindowArg = '',
+            openStateExpr,
+            nativePresentationExpr
+          }) =>
+            `async open(${openerVar},{forcePetView:${forcePetViewVar}=!1}={}){let ${windowVar}=await this.ensureWindow(${ensureWindowArg});this.globalState.set(${openStateExpr},!0),this.windowOpenIntent=!0,this.positionWindow(${windowVar},${openerVar}),${nativePresentationExpr}this.showWindowIfReady(${windowVar}),this.codexLinuxScheduleAvatarOverlayVisibilityRecovery(${windowVar}),${forcePetViewVar}&&this.windowManager.sendMessageToWebContents(${windowVar}.webContents,{type:\`avatar-overlay-explicit-pet-opened\`})}`
         }
       ],
       errorMessage
@@ -3416,6 +3578,30 @@ function buildLinuxOpenTargetsBlock({
   return `var codexLinuxBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),os:process.getBuiltinModule(\`node:os\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,os:null,path:null},codexLinuxDesktopExecCache=null;function codexLinuxPathEntries(){let e=codexLinuxBuiltins.path;if(!e)return[];let t=process.env.PATH??\`\`;return t.split(e.delimiter).map(e=>e.trim()).filter(e=>e.length>0)}function codexLinuxIsExecutable(e){let t=codexLinuxBuiltins.fs;if(!t)return!1;try{return t.accessSync(e,t.constants.X_OK),!0}catch{return!1}}function codexLinuxDetectCommand(e){let t=codexLinuxBuiltins.path;if(!t)return null;for(let n of codexLinuxPathEntries()){let r=t.join(n,e);if(codexLinuxIsExecutable(r))return r}return null}function codexLinuxStripDesktopExec(e){if(typeof e!==\`string\`)return null;let t=e.replace(/%[fFuUdDnNickvm]/g,\` \`).trim();if(t.length===0)return null;let n=t.match(/^"([^"]+)"/);if(n?.[1])return n[1];let[r]=t.split(/\\s+/);return r??null}function codexLinuxDesktopExecs(){let e=codexLinuxBuiltins.fs,t=codexLinuxBuiltins.os,n=codexLinuxBuiltins.path;if(codexLinuxDesktopExecCache||!e||!n)return codexLinuxDesktopExecCache??new Map;let r=t?.homedir?.()??process.env.HOME??\`~\`,i=process.env.XDG_DATA_HOME??n.join(r,\`.local\`,\`share\`),a=new Map,o=[n.join(i,\`applications\`),\`/usr/share/applications\`];for(let t of o){let r;try{r=e.readdirSync(t)}catch{continue}for(let i of r){if(!i.endsWith(\`.desktop\`))continue;let r=n.join(t,i),o;try{o=e.readFileSync(r,\`utf8\`)}catch{continue}let s=o.match(/^Exec=(.+)$/m),c=codexLinuxStripDesktopExec(s?.[1]??\`\`);if(!c)continue;let l=n.basename(c).toLowerCase().replace(/\\.(sh|bin|appimage)$/,\`\`);a.has(l)||a.set(l,c)}}return codexLinuxDesktopExecCache=a,a}function codexLinuxDetectDesktopExec(e){let t=codexLinuxBuiltins.fs,n=codexLinuxBuiltins.path,r=codexLinuxDesktopExecs().get(e.toLowerCase());return!r?null:n&&t&&n.isAbsolute(r)&&t.existsSync(r)?r:codexLinuxDetectCommand(r)}function codexLinuxDetectAny(e){for(let t of e){let n=codexLinuxDetectCommand(t)??codexLinuxDetectDesktopExec(t);if(n)return n}return null}function codexLinuxJetBrainsScript(e){let t=codexLinuxBuiltins.fs,n=codexLinuxBuiltins.os,r=codexLinuxBuiltins.path;if(!t||!r)return null;let i=n?.homedir?.()??process.env.HOME;if(!i)return null;let a=r.join(i,\`.local\`,\`share\`,\`JetBrains\`,\`Toolbox\`,\`scripts\`,e);return t.existsSync(a)?a:null}function codexLinuxDetectJetBrains(e){return codexLinuxDetectAny([e])??codexLinuxJetBrainsScript(e)}function codexLinuxVscodeArgs(e,t){return t?[\`--goto\`,\`${"${"}e}:${"${"}t.line}:${"${"}t.column}\`]:[\`--goto\`,e]}function codexLinuxZedArgs(e,t){return t?[\`${"${"}e}:${"${"}t.line}:${"${"}t.column}\`]:[e]}function codexLinuxJetBrainsArgs(e,t){return t?[\`--line\`,t.line.toString(),\`--column\`,t.column.toString(),e]:[e]}var codexLinuxTargets=[{id:\`vscode\`,platforms:{linux:{label:\`VS Code\`,icon:\`apps/vscode.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`code\`,\`code-url-handler\`]),args:codexLinuxVscodeArgs}}},{id:\`vscodeInsiders\`,platforms:{linux:{label:\`VS Code Insiders\`,icon:\`apps/vscode-insiders.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`code-insiders\`]),args:codexLinuxVscodeArgs}}},{id:\`cursor\`,platforms:{linux:{label:\`Cursor\`,icon:\`apps/cursor.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`cursor\`]),args:codexLinuxVscodeArgs}}},{id:\`windsurf\`,platforms:{linux:{label:\`Windsurf\`,icon:\`apps/windsurf.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`windsurf\`]),args:codexLinuxVscodeArgs}}},{id:\`zed\`,platforms:{linux:{label:\`Zed\`,icon:\`apps/zed.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`zed\`]),args:codexLinuxZedArgs}}},{id:\`androidStudio\`,platforms:{linux:{label:\`Android Studio\`,icon:\`apps/android-studio.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`studio\`),args:codexLinuxJetBrainsArgs}}},{id:\`intellij\`,platforms:{linux:{label:\`IntelliJ IDEA\`,icon:\`apps/intellij.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`idea\`),args:codexLinuxJetBrainsArgs}}},{id:\`rider\`,platforms:{linux:{label:\`Rider\`,icon:\`apps/rider.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`rider\`),args:codexLinuxJetBrainsArgs}}},{id:\`goland\`,platforms:{linux:{label:\`GoLand\`,icon:\`apps/goland.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`goland\`),args:codexLinuxJetBrainsArgs}}},{id:\`rustrover\`,platforms:{linux:{label:\`RustRover\`,icon:\`apps/rustrover.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`rustrover\`),args:codexLinuxJetBrainsArgs}}},{id:\`pycharm\`,platforms:{linux:{label:\`PyCharm\`,icon:\`apps/pycharm.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`pycharm\`),args:codexLinuxJetBrainsArgs}}},{id:\`webstorm\`,platforms:{linux:{label:\`WebStorm\`,icon:\`apps/webstorm.svg\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`webstorm\`),args:codexLinuxJetBrainsArgs}}},{id:\`phpstorm\`,platforms:{linux:{label:\`PhpStorm\`,icon:\`apps/phpstorm.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`phpstorm\`),args:codexLinuxJetBrainsArgs}}}];var ${targetVar}=[${targetList}],codexLinuxExistingTargetIds=new Set(${targetVar}.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&${targetVar}.push(...codexLinuxTargets.filter(e=>!codexLinuxExistingTargetIds.has(e.id))),${loggerVar}=${loggerObject}.${loggerFactory}(\`open-in-targets\`);function ${platformFn}(e){return ${targetVar}.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var ${platformTargetsVar}=${platformFn}(process.platform),${normalizedTargetsVar}=${normalizeFn}(${platformTargetsVar}),${editorTargetIdsVar}=new Set(${platformTargetsVar}.filter(e=>e.kind===\`editor\`).map(e=>e.id)),${stateVar1}=null,${stateVar2}=null;`;
 }
 
+function buildLinuxOpenTargetsWeakMapBlock({
+  shortcutReaderObject,
+  shortcutReaderVar,
+  stateVar1,
+  stateVar2,
+  ...groups
+}) {
+  const editorTargetIdsVar = 'codexLinuxUnusedEditorTargetIds';
+  const legacyStateVar1 = 'codexLinuxUnusedOpenTargetsState1';
+  const legacyStateVar2 = 'codexLinuxUnusedOpenTargetsState2';
+  const legacyBlock = buildLinuxOpenTargetsBlock({
+    ...groups,
+    editorTargetIdsVar,
+    stateVar1: legacyStateVar1,
+    stateVar2: legacyStateVar2
+  });
+  const legacySuffix = `var ${groups.platformTargetsVar}=${groups.platformFn}(process.platform),${groups.normalizedTargetsVar}=${groups.normalizeFn}(${groups.platformTargetsVar}),${editorTargetIdsVar}=new Set(${groups.platformTargetsVar}.filter(e=>e.kind===\`editor\`).map(e=>e.id)),${legacyStateVar1}=null,${legacyStateVar2}=null;`;
+  if (!legacyBlock.endsWith(legacySuffix)) {
+    throw new Error('Could not adapt Linux open-in-targets patch to WeakMap state shape.');
+  }
+  const weakMapSuffix = `var ${groups.platformTargetsVar}=${groups.platformFn}(process.platform),${groups.normalizedTargetsVar}=${groups.normalizeFn}(${groups.platformTargetsVar}),${stateVar1}=new WeakMap,${stateVar2}=new WeakMap,${shortcutReaderVar}=async e=>${shortcutReaderObject}.shell.readShortcutLink(e);`;
+  return `${legacyBlock.slice(0, -legacySuffix.length)}${weakMapSuffix}`;
+}
+
 async function patchRendererTerminalBundle(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
@@ -3847,13 +4033,21 @@ function hasUpstreamNewThreadModelCollaborationMode(bundleSource) {
 }
 
 function hasUpstreamNewThreadModelStartParams(bundleSource) {
-  return (
+  const hasStartParamsFunction =
     /function [A-Za-z_$][\w$]*\(\{[^}]*collaborationMode:(?<modeVar>[A-Za-z_$][\w$]*)[^}]*\}\)\{/.test(
       bundleSource
-    ) &&
+    );
+  const hasLegacyPayload =
     /return\{[^}]*input:[A-Za-z_$][\w$]*,[^}]*workspaceRoots:[A-Za-z_$][\w$]*,[^}]*collaborationMode:[A-Za-z_$][\w$]*/.test(
       bundleSource
-    ) &&
+    );
+  const hasCurrentPayload =
+    /\{input:[A-Za-z_$][\w$]*,[^}]*workspaceRoots:[A-Za-z_$][\w$]*,[^}]*collaborationMode:[A-Za-z_$][\w$]*/.test(
+      bundleSource
+    );
+  return (
+    hasStartParamsFunction &&
+    (hasLegacyPayload || hasCurrentPayload) &&
     bundleSource.includes('approvalsReviewer') &&
     bundleSource.includes('workspaceKind:')
   );
@@ -4665,10 +4859,23 @@ export function injectLinuxBrowserViewportSurfacePatch(bundleSource, options = {
   );
   const hasManagedWebviewHost = hasLinuxBrowserManagedWebviewHost(bundleSource);
   const hasImportedManagedWebviewHost = hasLinuxBrowserImportedManagedWebviewHost(bundleSource);
+  const hasVisibleWhenUrl =
+    LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATTERN.test(bundleSource) ||
+    LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_26_527_PATTERN.test(bundleSource) ||
+    LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_DIRECT_PATTERN.test(bundleSource) ||
+    hasVisibleWhenUrlMarker;
   if (
     hasViewportMarker &&
     (hasPanelHostMarker || hasManagedWebviewHost || hasImportedManagedWebviewHost) &&
-    hasVisibleWhenUrlMarker
+    hasVisibleWhenUrl
+  ) {
+    return bundleSource;
+  }
+  if (
+    !hasViewportMarker &&
+    (hasManagedWebviewHost || hasImportedManagedWebviewHost) &&
+    hasVisibleWhenUrl &&
+    !LINUX_BROWSER_VIEWPORT_SURFACE_PATTERN.test(bundleSource)
   ) {
     return bundleSource;
   }
@@ -5484,7 +5691,7 @@ function buildLinuxRightPanelPaneTabsPatchErrorMessage(bundleSource, sourceName)
 }
 
 function buildLinuxRightPanelTabMetricsJs() {
-  return `if(r&&!globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}){globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}=1;setTimeout(()=>{let e=0,t=()=>{cancelAnimationFrame(e),e=requestAnimationFrame(()=>{for(let e of document.querySelectorAll(\`[data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]\`)){let t=e.querySelector(\`[role=tablist]\`),n=[...e.children].find(e=>e.matches?.(\`div:has(>button:not([role=tab]))\`)),r=e.parentElement,i=e.closest(\`[data-app-shell-focus-area=right-panel]\`);if(!t||!r)continue;let a=[...t.querySelectorAll(\`[data-app-shell-tab-controller]\`)];if(a.length===0)continue;let o=getComputedStyle(t),s=parseFloat(o.columnGap||o.gap)||0,c=a.reduce((e,t)=>e+t.getBoundingClientRect().width,0)+Math.max(0,a.length-1)*s,l=n?.getBoundingClientRect().width||28,u=[...r.children].filter(t=>t!==e&&getComputedStyle(t).display!==\`none\`).reduce((e,t)=>e+t.getBoundingClientRect().width,0),d=r.getBoundingClientRect().width||i?.clientWidth||innerWidth,f=Math.max(0,d-u),p=Math.max(0,f-l),m=Math.min(p,a.length===1?96:56),h=Math.max(0,Math.min(p,Math.max(m,c))),g=h+l;g>0&&(t.style.setProperty(\`width\`,h+\`px\`,\`important\`),t.style.setProperty(\`flex\`,\`0 0 \${h}px\`,\`important\`),e.style.setProperty(\`width\`,g+\`px\`,\`important\`),e.style.setProperty(\`flex\`,\`0 0 \${g}px\`,\`important\`))}})};t();setTimeout(t,80);setTimeout(t,300);new MutationObserver(t).observe(document.documentElement,{childList:!0,subtree:!0});globalThis.ResizeObserver&&new ResizeObserver(t).observe(document.documentElement)},500)}`;
+  return `if(r&&!globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}){globalThis.${LINUX_RIGHT_PANEL_TAB_METRICS_PATCH_MARKER}=1;setTimeout(()=>{let e=0,t=e=>{let t=e.querySelector?.(\`[role=tab]\`),n=Math.max(e.getBoundingClientRect().width,e.scrollWidth||0,t?.getBoundingClientRect().width||0,t?.scrollWidth||0),r=e.style.cssText;e.style.setProperty(\`width\`,\`max-content\`,\`important\`),e.style.setProperty(\`max-width\`,\`none\`,\`important\`),e.style.setProperty(\`min-width\`,\`0\`,\`important\`),e.style.setProperty(\`flex\`,\`0 0 auto\`,\`important\`);try{n=Math.max(n,e.getBoundingClientRect().width,e.scrollWidth||0,t?.getBoundingClientRect().width||0,t?.scrollWidth||0)}finally{e.style.cssText=r}return Math.ceil(n)},n=()=>{cancelAnimationFrame(e),e=requestAnimationFrame(()=>{for(let e of document.querySelectorAll(\`[data-app-shell-focus-area=right-panel] [data-app-shell-tab-strip-controller]\`)){let n=e.querySelector(\`[role=tablist]\`),r=[...e.children].find(e=>e.matches?.(\`div:has(>button:not([role=tab]))\`)),i=e.parentElement,a=e.closest(\`[data-app-shell-focus-area=right-panel]\`);if(!n||!i)continue;let o=[...n.querySelectorAll(\`[data-app-shell-tab-controller]\`)];if(o.length===0)continue;let s=getComputedStyle(n),c=parseFloat(s.columnGap||s.gap)||0,l=o.reduce((e,n)=>e+t(n),0)+Math.max(0,o.length-1)*c,u=r?.getBoundingClientRect().width||28,d=[...i.children].filter(t=>t!==e&&getComputedStyle(t).display!==\`none\`).reduce((e,t)=>e+t.getBoundingClientRect().width,0),f=i.getBoundingClientRect().width||a?.clientWidth||innerWidth,p=Math.max(0,f-d),m=Math.max(0,p-u),h=Math.min(m,o.length===1?96:56),g=Math.max(0,Math.min(m,Math.max(h,l))),_=g+u;_>0&&(n.style.setProperty(\`width\`,g+\`px\`,\`important\`),n.style.setProperty(\`flex\`,\`0 0 \${g}px\`,\`important\`),e.style.setProperty(\`width\`,_+\`px\`,\`important\`),e.style.setProperty(\`flex\`,\`0 0 \${_}px\`,\`important\`))}})};n();setTimeout(n,80);setTimeout(n,300);new MutationObserver(n).observe(document.documentElement,{childList:!0,subtree:!0});globalThis.ResizeObserver&&new ResizeObserver(n).observe(document.documentElement)},500)}`;
 }
 
 function analyzeLinuxVisualCompatCssBundle(bundleSource) {
@@ -5534,10 +5741,18 @@ function analyzeLinuxVisualCompatJsBundle(bundleSource) {
 function analyzeLinuxBrowserViewportSurfaceBundle(bundleSource) {
   const hasManagedWebviewHost = hasLinuxBrowserManagedWebviewHost(bundleSource);
   const hasImportedManagedWebviewHost = hasLinuxBrowserImportedManagedWebviewHost(bundleSource);
+  const hasVisibleWhenUrl =
+    LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATTERN.test(bundleSource) ||
+    LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_26_527_PATTERN.test(bundleSource) ||
+    LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_DIRECT_PATTERN.test(bundleSource) ||
+    bundleSource.includes(LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATCH_MARKER);
   const detected = {
     browserSyncMessage: bundleSource.includes('browser-sidebar-sync'),
     webviewRefProp: bundleSource.includes('webviewRef:'),
-    viewportSurface: LINUX_BROWSER_VIEWPORT_SURFACE_PATTERN.test(bundleSource),
+    viewportSurface:
+      LINUX_BROWSER_VIEWPORT_SURFACE_PATTERN.test(bundleSource) ||
+      hasManagedWebviewHost ||
+      hasImportedManagedWebviewHost,
     webviewPanelHostSignature:
       hasManagedWebviewHost ||
       hasImportedManagedWebviewHost ||
@@ -5551,10 +5766,7 @@ function analyzeLinuxBrowserViewportSurfaceBundle(bundleSource) {
       hasImportedManagedWebviewHost ||
       LINUX_BROWSER_WEBVIEW_PANEL_HOST_CALL_PATTERN.test(bundleSource),
     webviewVisibleWhenUrl:
-      LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATTERN.test(bundleSource) ||
-      LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_26_527_PATTERN.test(bundleSource) ||
-      LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_DIRECT_PATTERN.test(bundleSource) ||
-      bundleSource.includes(LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATCH_MARKER)
+      hasVisibleWhenUrl
   };
 
   return {
@@ -6084,6 +6296,20 @@ export function injectLinuxBrowserCommentSubmitCleanupPatch(bundleSource, option
     return bundleSource;
   }
 
+  const currentStateMatch =
+    LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_REMOVE_BROWSER_COMMENTS_PATTERN.exec(bundleSource);
+  const hasCurrentContext =
+    LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_26_616_PATTERN.test(bundleSource);
+  if (currentStateMatch && hasCurrentContext) {
+    return replaceRegexOrThrow(
+      bundleSource,
+      LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_26_616_PATTERN,
+      ({ prefix, buildContextFn, suffix }) =>
+        `${prefix}async(...codexLinuxBrowserCommentSubmitCleanupArgs)=>{let codexLinuxBrowserCommentSubmitCleanupContext=await ${buildContextFn}(...codexLinuxBrowserCommentSubmitCleanupArgs);${currentStateMatch.groups.removeBrowserCommentsFn}();return codexLinuxBrowserCommentSubmitCleanupContext}/* ${LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_PATCH_MARKER} */${suffix}`,
+      buildLinuxBrowserCommentSubmitCleanupPatchErrorMessage(bundleSource, options.sourceName)
+    );
+  }
+
   const stateMatch = LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_STATE_PATTERN.exec(bundleSource);
   const filterFn = stateMatch
     ? findLinuxBrowserCommentAttachmentFilter(bundleSource, {
@@ -6449,17 +6675,24 @@ function analyzeLinuxBrowserCommentSubmitModeBundle(bundleSource) {
 
 function analyzeLinuxBrowserCommentSubmitCleanupBundle(bundleSource) {
   const stateMatch = LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_STATE_PATTERN.exec(bundleSource);
+  const currentStateMatch =
+    LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_REMOVE_BROWSER_COMMENTS_PATTERN.exec(bundleSource);
+  const hasCurrentContext =
+    LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_26_616_PATTERN.test(bundleSource);
   const detected = {
     overlaySubmitMessage: bundleSource.includes('browser-sidebar-comment-overlay-submit'),
     commentAttachments: bundleSource.includes('commentAttachments:'),
-    submitContext: LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_PATTERN.test(bundleSource),
-    cleanupState: stateMatch != null,
+    submitContext:
+      LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_CONTEXT_PATTERN.test(bundleSource) ||
+      hasCurrentContext,
+    cleanupState: stateMatch != null || (currentStateMatch != null && hasCurrentContext),
     browserCommentFilter:
-      stateMatch != null &&
-      findLinuxBrowserCommentAttachmentFilter(bundleSource, {
-        commentsVar: stateMatch.groups.commentsVar,
-        onCommentsChangeVar: stateMatch.groups.onCommentsChangeVar
-      }) != null
+      (stateMatch != null &&
+        findLinuxBrowserCommentAttachmentFilter(bundleSource, {
+          commentsVar: stateMatch.groups.commentsVar,
+          onCommentsChangeVar: stateMatch.groups.onCommentsChangeVar
+        }) != null) ||
+      (currentStateMatch != null && hasCurrentContext)
   };
 
   return {
@@ -6641,15 +6874,20 @@ function buildOpenTargetsPatchErrorMessage(bundleSource, sourceName) {
 }
 
 function analyzeOpenTargetsBundle(bundleSource) {
+  const weakMapPatternDetected = OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN.test(bundleSource);
   const detected = {
     openInTargets: bundleSource.includes('`open-in-targets`'),
-    targetRegistryDeclaration: OPEN_TARGETS_BLOCK_PATTERN.test(bundleSource),
+    targetRegistryDeclaration: OPEN_TARGETS_BLOCK_PATTERN.test(bundleSource) || weakMapPatternDetected,
     platformFlatten: /function [A-Za-z_$][\w$]*\(e\)\{return [A-Za-z_$][\w$]*\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}/.test(
       bundleSource
     ),
-    editorTargetIdSet: /new Set\([A-Za-z_$][\w$]*\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\)/.test(
-      bundleSource
-    )
+    editorTargetIdSet:
+      /new Set\([A-Za-z_$][\w$]*\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\)/.test(
+        bundleSource
+      ) ||
+      /function [A-Za-z_$][\w$]*\(e,t=[A-Za-z_$][\w$]*\)\{return t\.some\(t=>t\.id===e&&t\.kind===`editor`\)\}/.test(
+        bundleSource
+      )
   };
 
   return {
@@ -6668,6 +6906,14 @@ function buildLinuxMenuBarPatchErrorMessage(bundleSource, sourceName) {
     'Could not patch Linux native menu-bar auto-hide behavior in the Electron main bundle.',
     sourceName,
     analyzeLinuxMenuBarBundle(bundleSource)
+  );
+}
+
+function buildLinuxAboutDialogPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    'Could not patch Linux About dialog fallback in the Electron main bundle.',
+    sourceName,
+    analyzeLinuxAboutDialogBundle(bundleSource)
   );
 }
 
@@ -6724,6 +6970,14 @@ function buildLinuxChromeNativeHostRuntimePathsPatchErrorMessage(bundleSource, s
     LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_BASE_ERROR_MESSAGE,
     sourceName,
     analyzeLinuxChromeNativeHostRuntimePathsBundle(bundleSource)
+  );
+}
+
+function buildLinuxOwlFeatureBindingPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_OWL_FEATURE_BINDING_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxOwlFeatureBindingBundle(bundleSource)
   );
 }
 
@@ -6817,6 +7071,27 @@ function analyzeLinuxMenuBarBundle(bundleSource) {
   };
 }
 
+function analyzeLinuxAboutDialogBundle(bundleSource) {
+  const detected = {
+    aboutDialogIntlId: bundleSource.includes('codex.aboutDialog.title'),
+    aboutDialogDefaultTitle: bundleSource.includes('About {appName}'),
+    aboutDialogMenuClick: LINUX_ABOUT_DIALOG_CLICK_PATTERN.test(bundleSource),
+    browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
+    dialogShowMessageBox: /[A-Za-z_$][\w$]*\.dialog\.showMessageBox/.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.aboutDialogIntlId && 'About dialog intl id',
+      !detected.aboutDialogDefaultTitle && 'About dialog default title',
+      !detected.aboutDialogMenuClick && 'About menu click handler',
+      !detected.browserWindowConstructor && 'BrowserWindow constructor',
+      !detected.dialogShowMessageBox && 'dialog showMessageBox support'
+    ].filter(Boolean)
+  };
+}
+
 function analyzeLinuxCloseCancelBundle(bundleSource) {
   const detected = {
     beforeQuitHandler: /[A-Za-z_$][\w$]*\.app\.on\(`before-quit`/.test(bundleSource),
@@ -6868,11 +7143,13 @@ function analyzeLinuxBrowserUseHostFetchBundle(bundleSource) {
       BROWSER_USE_DESKTOP_ORIGINATOR_LEGACY_PATTERN.test(bundleSource),
     nativePipeRegistry:
       BROWSER_USE_HOST_FETCH_HELPER_ANCHOR_PATTERN.test(bundleSource) ||
-      BROWSER_USE_HOST_FETCH_INLINE_STATE_PATTERN.test(bundleSource),
+      BROWSER_USE_HOST_FETCH_INLINE_STATE_PATTERN.test(bundleSource) ||
+      BROWSER_USE_IAB_REGISTRY_OPTIONS_26_616_PATTERN.test(bundleSource),
     iabApiClass: BROWSER_USE_IAB_API_PING_ANCHOR_PATTERN.test(bundleSource),
     iabRegistryOptions:
       BROWSER_USE_IAB_REGISTRY_OPTIONS_PATTERN.test(bundleSource) ||
-      BROWSER_USE_IAB_REGISTRY_OPTIONS_26_527_PATTERN.test(bundleSource),
+      BROWSER_USE_IAB_REGISTRY_OPTIONS_26_527_PATTERN.test(bundleSource) ||
+      BROWSER_USE_IAB_REGISTRY_OPTIONS_26_616_PATTERN.test(bundleSource),
     registryInstantiation: BROWSER_SESSION_REGISTRY_INSTANTIATION_PATTERN.test(bundleSource)
   };
 
@@ -6953,7 +7230,9 @@ function analyzeLinuxChromeExtensionSettingsBundle(bundleSource) {
 function analyzeLinuxChromeNativeHostRuntimePathsBundle(bundleSource) {
   const detected = {
     nativeHostRegistry: bundleSource.includes('chrome-native-hosts-v2.json'),
-    registrationFunction: CHROME_NATIVE_HOST_RUNTIME_PATHS_REGISTRATION_PATTERN.test(bundleSource),
+    registrationFunction:
+      CHROME_NATIVE_HOST_RUNTIME_PATHS_REGISTRATION_PATTERN.test(bundleSource) ||
+      CHROME_NATIVE_HOST_RUNTIME_PATHS_RETURN_26_616_PATTERN.test(bundleSource),
     nodeReplPath: bundleSource.includes('nodeReplPath'),
     resourcesPath: bundleSource.includes('resourcesPath')
   };
@@ -6965,6 +7244,26 @@ function analyzeLinuxChromeNativeHostRuntimePathsBundle(bundleSource) {
       !detected.registrationFunction && 'Chrome native host registration function',
       !detected.nodeReplPath && 'nodeReplPath field',
       !detected.resourcesPath && 'resourcesPath field'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxOwlFeatureBindingBundle(bundleSource) {
+  const detected = {
+    owlFeatureBinding: bundleSource.includes('electron_common_owl_features'),
+    linkedBindingHelper: LINUX_OWL_FEATURE_BINDING_PATTERN.test(bundleSource),
+    featureSwitchReader:
+      bundleSource.includes('enable-features') && bundleSource.includes('disable-features'),
+    featurePredicate: bundleSource.includes('isOwlFeatureEnabled')
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.owlFeatureBinding && 'Owl native feature binding name',
+      !detected.linkedBindingHelper && 'Owl linkedBinding helper',
+      !detected.featureSwitchReader && 'Electron feature switch readers',
+      !detected.featurePredicate && 'isOwlFeatureEnabled predicate'
     ].filter(Boolean)
   };
 }
@@ -10267,16 +10566,20 @@ function sendToClient(client, message) {
 
 function handleChromeMessage(message) {
   if (message && typeof message === 'object' && 'method' in message) {
-    if ('id' in message) {
-      if (message.method === 'ping') {
+    if (message.method === 'ping') {
+      if ('id' in message) {
         sendToChrome({ jsonrpc: '2.0', id: message.id, result: 'pong' });
       } else {
-        sendToChrome({
-          jsonrpc: '2.0',
-          id: message.id,
-          error: { code: -32601, message: 'No handler registered for method: ' + message.method }
-        });
+        sendToChrome({ jsonrpc: '2.0', method: 'pong' });
       }
+      return;
+    }
+    if ('id' in message) {
+      sendToChrome({
+        jsonrpc: '2.0',
+        id: message.id,
+        error: { code: -32601, message: 'No handler registered for method: ' + message.method }
+      });
       return;
     }
     for (const client of clients) sendToClient(client, message);
