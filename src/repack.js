@@ -37,6 +37,10 @@ const CHROME_EXTENSION_HOST_NAME = 'com.openai.codexextension';
 const CHROME_EXTENSION_HOST_FILE_NAME = 'chrome-extension-host';
 const CHROME_EXTENSION_HOST_MODULE_FILE_NAME = 'chrome-extension-host.mjs';
 const NODE_REPL_MCP_SERVER_NAME = 'node_repl';
+const COMPUTER_USE_PLUGIN_NAME = 'computer-use';
+const COMPUTER_USE_MCP_SERVER_NAME = 'computer-use';
+const COMPUTER_USE_BACKEND_FILE_NAME = 'codex-computer-use-linux';
+const COMPUTER_USE_BACKEND_MODULE_FILE_NAME = 'codex-computer-use-linux.mjs';
 const BROWSER_USE_PRIMARY_RUNTIME_RELATIVE_PATH = path.join(
   'codex-runtimes',
   'codex-primary-runtime',
@@ -77,7 +81,7 @@ const LINUX_BROWSER_USE_HOST_FETCH_PATCH_BASE_ERROR_MESSAGE =
 const LINUX_BROWSER_USE_RUNTIME_PATHS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux Browser Use runtime paths into the Electron main bundle.';
 const LINUX_BUNDLED_BROWSER_CHROME_PLUGINS_PATCH_BASE_ERROR_MESSAGE =
-  'Could not patch bundled Browser/Chrome plugin reconciliation for Linux.';
+  'Could not patch bundled Browser/Chrome/Computer Use plugin reconciliation for Linux.';
 const LINUX_CHROME_EXTENSION_SETTINGS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux Chrome extension settings detection into the Electron main bundle.';
 const LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_BASE_ERROR_MESSAGE =
@@ -88,6 +92,8 @@ const LINUX_REMOTE_CONTROL_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux remote-control feature availability into the Electron main bundle.';
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux remote-control settings visibility into the renderer bundle.';
+const LINUX_COMPUTER_USE_UI_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux Computer Use UI availability into the renderer bundle.';
 const LINUX_POWER_SAVE_BLOCKER_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux system sleep inhibition into the Electron main bundle.';
 const LINUX_REMOTE_CONTROL_KEEP_AWAKE_PATCH_BASE_ERROR_MESSAGE =
@@ -349,6 +355,11 @@ export async function installDesktop(options, logger) {
     'Linux remote control settings visibility',
     linuxRemoteControlVisibilityPatch
   );
+  const linuxComputerUseUiPatch = await patchRendererLinuxComputerUseUi(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux Computer Use UI availability', linuxComputerUseUiPatch);
   const linuxPowerSaveBlockerPatch = await patchMainProcessLinuxPowerSaveBlocker(
     extractedAppDir,
     logger
@@ -471,6 +482,7 @@ export async function installDesktop(options, logger) {
     linuxChromeNativeHostRuntimePaths: linuxChromeNativeHostRuntimePathsPatch,
     linuxRemoteControl: linuxRemoteControlPatch,
     linuxRemoteControlVisibility: linuxRemoteControlVisibilityPatch,
+    linuxComputerUseUi: linuxComputerUseUiPatch,
     linuxPowerSaveBlocker: linuxPowerSaveBlockerPatch,
     linuxRemoteControlKeepAwake: linuxRemoteControlKeepAwakePatch,
     linuxAvatarOverlay: linuxAvatarOverlayPatch,
@@ -517,6 +529,7 @@ export async function installDesktop(options, logger) {
     browserUseNodeRepl,
     browserUseNode,
     browserUseMcpConfig,
+    linuxComputerUse,
     chromeExtensionHost,
     chromeNativeMessagingHost,
     chromeBundledPluginHost,
@@ -546,6 +559,7 @@ export async function installDesktop(options, logger) {
     browserUseNodeRepl,
     browserUseNode,
     browserUseMcpConfig,
+    linuxComputerUse,
     chromeExtensionHost,
     chromeNativeMessagingHost,
     chromeBundledPluginHost,
@@ -568,6 +582,7 @@ export async function installDesktop(options, logger) {
       linuxChromeNativeHostRuntimePaths: linuxChromeNativeHostRuntimePathsPatch,
       linuxRemoteControl: linuxRemoteControlPatch,
       linuxRemoteControlVisibility: linuxRemoteControlVisibilityPatch,
+      linuxComputerUseUi: linuxComputerUseUiPatch,
       linuxPowerSaveBlocker: linuxPowerSaveBlockerPatch,
       linuxRemoteControlKeepAwake: linuxRemoteControlKeepAwakePatch,
       linuxAvatarOverlay: linuxAvatarOverlayPatch,
@@ -914,6 +929,7 @@ const LINUX_OWL_FEATURE_BINDING_PATCH_MARKER = 'codexLinuxOwlFeatureBindingFallb
 const LINUX_REMOTE_CONTROL_PATCH_MARKER = 'codexLinuxRemoteControlFeatureAvailability';
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_MARKER =
   'codexLinuxRemoteControlSettingsVisibility';
+const LINUX_COMPUTER_USE_UI_PATCH_MARKER = 'codexLinuxComputerUseUiAvailability';
 const LINUX_POWER_SAVE_BLOCKER_PATCH_MARKER = 'codexLinuxSystemSleepInhibitor';
 const LINUX_REMOTE_CONTROL_KEEP_AWAKE_PATCH_MARKER = 'codexLinuxRemoteControlKeepAwakeSetting';
 const LINUX_AVATAR_OVERLAY_PATCH_MARKER = 'codexLinuxAvatarOverlay';
@@ -1043,6 +1059,10 @@ const LINUX_REMOTE_CONTROL_KEEP_AWAKE_DISPATCH_PATTERN =
   /(?<prefix>\{data:(?<preventVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.PREVENT_SLEEP_WHILE_RUNNING\),\{data:(?<keepVar>[A-Za-z_$][\w$]*)\}=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.KEEP_REMOTE_CONTROL_AWAKE_WHILE_PLUGGED_IN\)[\s\S]*?keepRemoteControlAwakeWhilePluggedIn:)!!\k<keepVar>&&(?<enabledVar>[A-Za-z_$][\w$]*)/;
 const LINUX_REMOTE_CONTROL_KEEP_AWAKE_CURRENT_DISPATCH_PATTERN =
   /power-save-blocker-set`[\s\S]*?shouldBlock:!![A-Za-z_$][\w$]*&&[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\)[\s\S]*?keepRemoteControlAwakeWhilePluggedIn:!![A-Za-z_$][\w$]*&&[A-Za-z_$][\w$]*/;
+const LINUX_COMPUTER_USE_UI_HOST_PLATFORM_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\((?<platformVar>[A-Za-z_$][\w$]*)\)\{return \k<platformVar>===`macOS`\|\|\k<platformVar>===`windows`\}/;
+const LINUX_COMPUTER_USE_UI_AVAILABILITY_CALL_PATTERN =
+  /(?<assignmentVar>[A-Za-z_$][\w$]*)=(?<availabilityFn>[A-Za-z_$][\w$]*)\(\{areRequiredFeaturesEnabled:(?<requiredVar>[A-Za-z_$][\w$]*),enabled:(?<enabledVar>[A-Za-z_$][\w$]*),isAnyFeatureLoading:(?<loadingVar>[A-Za-z_$][\w$]*),isComputerUseGateEnabled:(?<gateVar>[A-Za-z_$][\w$]*),isHostCompatiblePlatform:(?<platformFn>[A-Za-z_$][\w$]*)\((?<platformVar>[A-Za-z_$][\w$]*)\),isPlatformLoading:(?<platformLoadingVar>[A-Za-z_$][\w$]*),windowType:`electron`\}\)/;
 const LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN =
   /process\.platform===`darwin`\?(?<windowVar>[A-Za-z_$][\w$]*)\.setVisibleOnAllWorkspaces\(!0,\{visibleOnFullScreen:!0,skipTransformProcessType:!0\}\):\k<windowVar>\.setVisibleOnAllWorkspaces\(!0\),\k<windowVar>\.setAlwaysOnTop\(!0,`floating`\),\k<windowVar>\.setMenuBarVisibility\(!1\)/;
 const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
@@ -2069,6 +2089,55 @@ async function patchRendererLinuxRemoteControlVisibility(extractedAppDir, logger
   );
 }
 
+async function patchRendererLinuxComputerUseUi(extractedAppDir, logger) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let lastError = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    const isCandidate =
+      original.includes('featureName:`computer_use`') ||
+      original.includes('windows_computer_use') ||
+      original.includes('isComputerUseGateEnabled');
+
+    if (!isCandidate) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer Computer Use availability bundle ${assetName}`);
+
+    try {
+      const result = applyLinuxComputerUseUiPatch(original, { sourceName: assetName });
+      if (result.updated !== original) {
+        await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+        logger.info(`Patched Linux Computer Use UI availability into ${assetName}`);
+      }
+      return {
+        status: result.status,
+        sourceName: assetName
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!sawCandidate) {
+    throw new Error(
+      'Could not locate the renderer Computer Use availability bundle inside the extracted app.'
+    );
+  }
+
+  throw (
+    lastError ??
+    new Error('Could not patch the renderer Computer Use availability bundle for Linux.')
+  );
+}
+
 async function patchRendererLinuxRemoteControlKeepAwake(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
@@ -2596,7 +2665,7 @@ export function injectLinuxBundledBrowserChromePluginsPatch(bundleSource, option
       updated,
       BUNDLED_PLUGIN_DESCRIPTOR_SELECTOR_PATTERN,
       ({ selectorVar, featuresVar, descriptorsVar, itemVar, envVar, platformVar }) =>
-        `${selectorVar}=${featuresVar}=>codexLinuxBundledBrowserChromePlugins({availableDescriptors:${descriptorsVar}.filter(${itemVar}=>${itemVar}.isAvailable({buildFlavor:e.buildFlavor,env:${envVar},features:${featuresVar},platform:${platformVar}})),allDescriptors:${descriptorsVar},resourcesPath:${contextMatch.groups.resourcesVar},platform:${platformVar},targetPluginNames:[\`browser\`,\`chrome\`]})/* ${LINUX_BUNDLED_BROWSER_CHROME_PLUGINS_PATCH_MARKER} */`,
+        `${selectorVar}=${featuresVar}=>codexLinuxBundledBrowserChromePlugins({availableDescriptors:${descriptorsVar}.filter(${itemVar}=>${itemVar}.isAvailable({buildFlavor:e.buildFlavor,env:${envVar},features:${featuresVar},platform:${platformVar}})),allDescriptors:${descriptorsVar},resourcesPath:${contextMatch.groups.resourcesVar},platform:${platformVar},targetPluginNames:[\`browser\`,\`chrome\`,\`computer-use\`]})/* ${LINUX_BUNDLED_BROWSER_CHROME_PLUGINS_PATCH_MARKER} */`,
       errorMessage
     );
     return updated;
@@ -2611,7 +2680,7 @@ export function injectLinuxBundledBrowserChromePluginsPatch(bundleSource, option
     bundleSource,
     BUNDLED_PLUGIN_MARKETPLACE_FILTER_26_609_PATTERN,
     ({ fn, marketplaceVar, filterFn, readMarketplaceFn, stagingVar }) =>
-      `async function ${fn}(e){${buildLinuxBundledBrowserChromeMarketplaceHelper()}let codexLinuxBundledBrowserChromeAllMarketplace=await ${readMarketplaceFn}(e.sourceMarketplaceRoot),${marketplaceVar}={...codexLinuxBundledBrowserChromeMarketplace({availableMarketplace:${filterFn}({marketplacePluginNames:e.marketplacePluginNames,marketplace:codexLinuxBundledBrowserChromeAllMarketplace}),allMarketplace:codexLinuxBundledBrowserChromeAllMarketplace,sourceMarketplaceRoot:e.sourceMarketplaceRoot,targetPluginNames:[\`browser\`,\`chrome\`]}),name:e.marketplaceName},${stagingVar}=`,
+      `async function ${fn}(e){${buildLinuxBundledBrowserChromeMarketplaceHelper()}let codexLinuxBundledBrowserChromeAllMarketplace=await ${readMarketplaceFn}(e.sourceMarketplaceRoot),${marketplaceVar}={...codexLinuxBundledBrowserChromeMarketplace({availableMarketplace:${filterFn}({marketplacePluginNames:e.marketplacePluginNames,marketplace:codexLinuxBundledBrowserChromeAllMarketplace}),allMarketplace:codexLinuxBundledBrowserChromeAllMarketplace,sourceMarketplaceRoot:e.sourceMarketplaceRoot,targetPluginNames:[\`browser\`,\`chrome\`,\`computer-use\`]}),name:e.marketplaceName},${stagingVar}=`,
     errorMessage
   );
 
@@ -2756,7 +2825,7 @@ export function injectLinuxRemoteControlPatch(bundleSource, options = {}) {
       {
         pattern: LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_PATTERN,
         replacement: ({ fnName, featuresVar, envVar, platformVar }) =>
-          `function ${fnName}(${featuresVar},{env:${envVar}=process.env,platform:${platformVar}=process.platform}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0}:${featuresVar};return ${platformVar}!==\`win32\`||${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE!==\`1\`?codexLinuxRemoteControlFeatures:{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
+          `function ${fnName}(${featuresVar},{env:${envVar}=process.env,platform:${platformVar}=process.platform}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0,computerUse:!0,computerUseNodeRepl:!0}:${featuresVar};return ${platformVar}!==\`win32\`||${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE!==\`1\`?codexLinuxRemoteControlFeatures:{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
       },
       {
         pattern: LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_OVERRIDES_PATTERN,
@@ -2773,7 +2842,7 @@ export function injectLinuxRemoteControlPatch(bundleSource, options = {}) {
           overridesVar,
           overrideExpr
         }) =>
-          `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0}:${featuresVar},${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}:codexLinuxRemoteControlFeatures,${overridesVar}=${overrideExpr};return ${overridesVar}==null?${computedVar}:{...${computedVar},...${overridesVar}}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
+          `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0,computerUse:!0,computerUseNodeRepl:!0}:${featuresVar},${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}:codexLinuxRemoteControlFeatures,${overridesVar}=${overrideExpr};return ${overridesVar}==null?${computedVar}:{...${computedVar},...${overridesVar}}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
       },
       {
         pattern: LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_DEVICE_ATTESTATION_PATTERN,
@@ -2791,7 +2860,7 @@ export function injectLinuxRemoteControlPatch(bundleSource, options = {}) {
           overrideExpr,
           deviceFn
         }) =>
-          `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0}:${featuresVar},${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}:codexLinuxRemoteControlFeatures,${overridesVar}=${overrideExpr};return ${overridesVar}==null?{...${computedVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}:{...${computedVar},...${overridesVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
+          `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0,computerUse:!0,computerUseNodeRepl:!0}:${featuresVar},${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}:codexLinuxRemoteControlFeatures,${overridesVar}=${overrideExpr};return ${overridesVar}==null?{...${computedVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}:{...${computedVar},...${overridesVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
       },
       {
         pattern: LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_MAC_NODE_REPL_PATTERN,
@@ -2812,7 +2881,7 @@ export function injectLinuxRemoteControlPatch(bundleSource, options = {}) {
           overrideExpr,
           deviceFn
         }) =>
-          `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0}:${featuresVar},${macVar}=${platformVar}===\`darwin\`&&!${internalFn}(${buildFlavorVar})&&codexLinuxRemoteControlFeatures.computerUseNodeRepl!=null?{...codexLinuxRemoteControlFeatures,computerUseNodeRepl:!1}:codexLinuxRemoteControlFeatures,${windowsNodeReplVar}=${platformVar}===\`win32\`&&codexLinuxRemoteControlFeatures.computerUse===!0?{...${macVar},computerUseNodeRepl:!0}:${macVar},${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...${windowsNodeReplVar},computerUse:!0,computerUseNodeRepl:!0}:${windowsNodeReplVar},${overridesVar}=${overrideExpr};return ${overridesVar}==null?{...${computedVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}:{...${computedVar},...${overridesVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
+          `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0,computerUse:!0,computerUseNodeRepl:!0}:${featuresVar},${macVar}=${platformVar}===\`darwin\`&&!${internalFn}(${buildFlavorVar})&&codexLinuxRemoteControlFeatures.computerUseNodeRepl!=null?{...codexLinuxRemoteControlFeatures,computerUseNodeRepl:!1}:codexLinuxRemoteControlFeatures,${windowsNodeReplVar}=${platformVar}===\`win32\`&&codexLinuxRemoteControlFeatures.computerUse===!0?{...${macVar},computerUseNodeRepl:!0}:${macVar},${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...${windowsNodeReplVar},computerUse:!0,computerUseNodeRepl:!0}:${windowsNodeReplVar},${overridesVar}=${overrideExpr};return ${overridesVar}==null?{...${computedVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}:{...${computedVar},...${overridesVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
       }
     ],
     errorMessage
@@ -2848,6 +2917,80 @@ export function injectLinuxRemoteControlVisibilityPatch(bundleSource, options = 
       `function codexLinuxRemoteControlSettingsVisible(){try{return document?.documentElement?.dataset?.codexOs===\`linux\`&&(typeof process===\`undefined\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_VISIBILITY_PATCH!==\`1\`)}catch{return!1}}function ${fnName}({remoteControlConnectionsState:${stateVar},slingshotEnabled:${flagVar}}){return codexLinuxRemoteControlSettingsVisible()||${flagVar}&&(${stateVar}?.available??!0)&&${stateVar}?.accessRequired!==!0}/* ${LINUX_REMOTE_CONTROL_VISIBILITY_PATCH_MARKER} */`,
     errorMessage
   );
+}
+
+export function applyLinuxComputerUseUiPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxComputerUseUiPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxComputerUseUiPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_COMPUTER_USE_UI_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  if (
+    !bundleSource.includes('featureName:`computer_use`') &&
+    !bundleSource.includes('windows_computer_use') &&
+    !bundleSource.includes('isComputerUseGateEnabled')
+  ) {
+    throw new Error(buildLinuxComputerUseUiPatchErrorMessage(bundleSource, options.sourceName));
+  }
+
+  const availabilityMatch = bundleSource.match(LINUX_COMPUTER_USE_UI_AVAILABILITY_CALL_PATTERN);
+  if (!availabilityMatch?.groups) {
+    throw new Error(buildLinuxComputerUseUiPatchErrorMessage(bundleSource, options.sourceName));
+  }
+
+  let patchedPlatformPredicate = false;
+  let updated = bundleSource.replace(
+    LINUX_COMPUTER_USE_UI_HOST_PLATFORM_PATTERN,
+    (match, fnName, platformVar, offset) => {
+      const before = bundleSource.slice(Math.max(0, offset - 1600), offset);
+      const after = bundleSource.slice(offset, Math.min(bundleSource.length, offset + 2400));
+      if (
+        !before.includes('featureName:`computer_use`') &&
+        !after.includes('isComputerUseGateEnabled') &&
+        !after.includes('featureName:`computer_use`')
+      ) {
+        return match;
+      }
+      patchedPlatformPredicate = true;
+      return `function ${fnName}(${platformVar}){return ${platformVar}===\`macOS\`||${platformVar}===\`windows\`||${platformVar}===\`linux\`}`;
+    }
+  );
+
+  updated = replaceRegexOrThrow(
+    updated,
+    LINUX_COMPUTER_USE_UI_AVAILABILITY_CALL_PATTERN,
+    ({
+      assignmentVar,
+      availabilityFn,
+      requiredVar,
+      enabledVar,
+      loadingVar,
+      gateVar,
+      platformFn,
+      platformVar,
+      platformLoadingVar
+    }) =>
+      `${assignmentVar}=${availabilityFn}({areRequiredFeaturesEnabled:${platformVar}===\`linux\`||${requiredVar},enabled:${enabledVar},isAnyFeatureLoading:${platformVar}===\`linux\`?!1:${loadingVar},isComputerUseGateEnabled:${platformVar}===\`linux\`||${gateVar},isHostCompatiblePlatform:${platformVar}===\`linux\`||${platformFn}(${platformVar}),isPlatformLoading:${platformLoadingVar},windowType:\`electron\`})/* ${LINUX_COMPUTER_USE_UI_PATCH_MARKER} */`,
+    buildLinuxComputerUseUiPatchErrorMessage(bundleSource, options.sourceName)
+  );
+
+  if (!patchedPlatformPredicate && !updated.includes('===`linux`||')) {
+    throw new Error(buildLinuxComputerUseUiPatchErrorMessage(bundleSource, options.sourceName));
+  }
+
+  return updated;
 }
 
 export function applyLinuxPowerSaveBlockerPatch(bundleSource, options = {}) {
@@ -6997,6 +7140,14 @@ function buildLinuxRemoteControlVisibilityPatchErrorMessage(bundleSource, source
   );
 }
 
+function buildLinuxComputerUseUiPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_COMPUTER_USE_UI_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxComputerUseUiBundle(bundleSource)
+  );
+}
+
 function buildLinuxPowerSaveBlockerPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     LINUX_POWER_SAVE_BLOCKER_PATCH_BASE_ERROR_MESSAGE,
@@ -7304,6 +7455,29 @@ function analyzeLinuxRemoteControlVisibilityBundle(bundleSource) {
       !detected.slingshotVisibilityGate && 'slingshot visibility gate',
       !detected.remoteControlVisibilityHelper && 'remote-control visibility helper',
       !detected.accessRequiredGate && 'remote-control access-required gate'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxComputerUseUiBundle(bundleSource) {
+  const detected = {
+    computerUseFeatureQuery: bundleSource.includes('featureName:`computer_use`'),
+    windowsComputerUseGate: bundleSource.includes('windows_computer_use'),
+    gateAvailabilityCall: LINUX_COMPUTER_USE_UI_AVAILABILITY_CALL_PATTERN.test(bundleSource),
+    hostPlatformPredicate: LINUX_COMPUTER_USE_UI_HOST_PLATFORM_PATTERN.test(bundleSource),
+    installedPatchMarker: bundleSource.includes(LINUX_COMPUTER_USE_UI_PATCH_MARKER)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.computerUseFeatureQuery &&
+        !detected.windowsComputerUseGate &&
+        'Computer Use feature gate',
+      !detected.gateAvailabilityCall && 'Computer Use availability helper call',
+      !detected.hostPlatformPredicate &&
+        !detected.installedPatchMarker &&
+        'host platform compatibility predicate'
     ].filter(Boolean)
   };
 }
@@ -8271,7 +8445,6 @@ async function installChannelRuntime({
     upstreamResourcesDir,
     resourcesDir
   });
-  const bundledPlugins = await collectBundledPluginDiagnostics(resourcesDir);
   const browserUseRuntime = await installBrowserUseRuntime({
     resourcesDir,
     homeDir,
@@ -8285,6 +8458,13 @@ async function installChannelRuntime({
     appBuildFlavor,
     logger
   });
+  const linuxComputerUse = await installLinuxComputerUseBackend({
+    resourcesDir,
+    homeDir,
+    appVersion: releaseVersion,
+    logger
+  });
+  const bundledPlugins = await collectBundledPluginDiagnostics(resourcesDir);
   const chromeExtensionHost = await installLinuxChromeExtensionHost({
     resourcesDir,
     homeDir,
@@ -8339,6 +8519,7 @@ async function installChannelRuntime({
     bundledPlugins,
     ...browserUseRuntime,
     browserUseMcpConfig,
+    linuxComputerUse,
     ...chromeExtensionHost,
     chromeBundledPluginHost,
     chromeNativeHostRuntimeRegistryRepair,
@@ -10196,6 +10377,313 @@ export async function installBrowserUseMcpConfig({
   };
 }
 
+export async function installLinuxComputerUseBackend({
+  resourcesDir,
+  homeDir = getPaths().home,
+  appVersion = null,
+  logger = null,
+  runSetupDoctor = true
+}) {
+  const pluginRoot = path.join(
+    resourcesDir,
+    'plugins',
+    'openai-bundled',
+    'plugins',
+    COMPUTER_USE_PLUGIN_NAME
+  );
+  const pluginJsonPath = path.join(pluginRoot, '.codex-plugin', 'plugin.json');
+  const mcpConfigPath = path.join(pluginRoot, '.mcp.json');
+  const binDir = path.join(pluginRoot, 'bin');
+  const backendPath = path.join(binDir, COMPUTER_USE_BACKEND_FILE_NAME);
+  const backendModulePath = path.join(binDir, COMPUTER_USE_BACKEND_MODULE_FILE_NAME);
+  const backendSourcePath = path.join(PROJECT_ROOT, 'src', 'linux-computer-use-backend.mjs');
+
+  if (!(await fileExists(pluginJsonPath))) {
+    throw new Error(`Could not locate bundled Computer Use plugin metadata at ${pluginJsonPath}`);
+  }
+  if (!(await fileExists(backendSourcePath))) {
+    throw new Error(`Could not locate Linux Computer Use backend source at ${backendSourcePath}`);
+  }
+
+  await ensureDir(binDir);
+  await copyFile(backendSourcePath, backendModulePath);
+  await fs.promises.chmod(backendModulePath, 0o755);
+  await writeExecutable(
+    backendPath,
+    buildLinuxComputerUseBackendWrapper({
+      backendModuleFileName: COMPUTER_USE_BACKEND_MODULE_FILE_NAME,
+      bundledNodePath: path.join(resourcesDir, 'node')
+    })
+  );
+
+  const plugin = await rewriteLinuxComputerUsePluginMetadata({
+    pluginJsonPath,
+    appVersion
+  });
+  await writeLinuxComputerUseMcpConfig({
+    mcpConfigPath,
+    backendCommand: `./bin/${COMPUTER_USE_BACKEND_FILE_NAME}`
+  });
+
+  const cache = await syncLinuxComputerUsePluginCache({
+    resourcesDir,
+    homeDir,
+    pluginRoot,
+    plugin,
+    logger
+  });
+
+  const setupDoctor = runSetupDoctor
+    ? await runLinuxComputerUseBackendSetupDoctor({ backendPath, pluginRoot, logger })
+    : {
+        setup: { status: 'skipped', reason: 'disabled' },
+        doctor: { status: 'skipped', reason: 'disabled' }
+      };
+
+  logger?.info?.(`Installed Linux Computer Use backend ${backendPath}`);
+
+  return {
+    status: 'installed',
+    pluginName: COMPUTER_USE_PLUGIN_NAME,
+    pluginVersion: plugin.version,
+    pluginRoot,
+    pluginJsonPath,
+    mcpConfigPath,
+    mcpServerName: COMPUTER_USE_MCP_SERVER_NAME,
+    backendPath,
+    backendModulePath,
+    backendSourcePath,
+    cache,
+    setupDoctor
+  };
+}
+
+function buildLinuxComputerUseBackendWrapper({ backendModuleFileName, bundledNodePath }) {
+  return `#!/usr/bin/env bash
+set -euo pipefail
+self_dir="$(cd "$(dirname "$0")" && pwd)"
+node_bin="${bundledNodePath}"
+if [[ ! -x "$node_bin" ]]; then
+  resources_dir="$(cd "$self_dir/../../../../.." 2>/dev/null && pwd || true)"
+  if [[ -n "$resources_dir" && -x "$resources_dir/node" ]]; then
+    node_bin="$resources_dir/node"
+  elif command -v node >/dev/null 2>&1; then
+    node_bin="$(command -v node)"
+  else
+    echo "Linux Computer Use backend requires the bundled Codex node runtime or node on PATH." >&2
+    exit 127
+  fi
+fi
+exec "$node_bin" "$self_dir/${backendModuleFileName}" "$@"
+`;
+}
+
+async function rewriteLinuxComputerUsePluginMetadata({ pluginJsonPath, appVersion }) {
+  const plugin = await parseJsonFile(pluginJsonPath);
+  const keywords = new Set(
+    (Array.isArray(plugin.keywords) ? plugin.keywords : []).filter(
+      (keyword) => typeof keyword === 'string'
+    )
+  );
+  keywords.delete('macos');
+  for (const keyword of ['linux', 'computer-use', 'desktop-control', 'automation', 'accessibility']) {
+    keywords.add(keyword);
+  }
+
+  const interfaceConfig = {
+    ...(plugin.interface ?? {}),
+    displayName: plugin.interface?.displayName ?? 'Computer Use',
+    shortDescription: 'Control Linux desktop apps from Codex',
+    longDescription:
+      'Linux Computer Use lets Codex inspect and operate desktop apps through local Linux screenshot, accessibility, window, and input backends. You stay in control: risky UI actions still require confirmation policy handling, and OS setup requiring sudo is reported as explicit commands.',
+    defaultPrompt: [
+      'Check whether Linux Computer Use is ready',
+      'List my open desktop windows',
+      'Take a screenshot of my desktop'
+    ]
+  };
+
+  const updated = {
+    ...plugin,
+    version: typeof plugin.version === 'string' ? plugin.version : appVersion ?? '0.0.0',
+    description: 'Control desktop apps on Linux from Codex through Computer Use.',
+    keywords: [...keywords],
+    mcpServers: './.mcp.json',
+    skills: plugin.skills ?? './skills/',
+    interface: interfaceConfig
+  };
+  await fs.promises.writeFile(pluginJsonPath, `${JSON.stringify(updated, null, 2)}\n`, 'utf8');
+  return updated;
+}
+
+async function writeLinuxComputerUseMcpConfig({ mcpConfigPath, backendCommand }) {
+  const config = {
+    mcpServers: {
+      [COMPUTER_USE_MCP_SERVER_NAME]: {
+        command: backendCommand,
+        args: ['mcp'],
+        cwd: '.'
+      }
+    }
+  };
+  await fs.promises.writeFile(mcpConfigPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+}
+
+async function syncLinuxComputerUsePluginCache({
+  resourcesDir,
+  homeDir,
+  pluginRoot,
+  plugin,
+  logger
+}) {
+  const version = plugin.version ?? '0.0.0';
+  const cacheRoot = path.join(
+    homeDir,
+    '.codex',
+    'plugins',
+    'cache',
+    'openai-bundled',
+    COMPUTER_USE_PLUGIN_NAME
+  );
+  const cacheVersionPath = path.join(cacheRoot, version);
+  const cacheLatestPath = path.join(cacheRoot, 'latest');
+  await ensureDir(cacheRoot);
+  await removeIfExists(cacheVersionPath);
+  await copyDir(pluginRoot, cacheVersionPath);
+  await removeIfExists(cacheLatestPath);
+  try {
+    await fs.promises.symlink(cacheVersionPath, cacheLatestPath, 'dir');
+  } catch {
+    await copyDir(cacheVersionPath, cacheLatestPath);
+  }
+
+  const runtimeMarketplaceRoot = path.join(
+    homeDir,
+    '.codex',
+    '.tmp',
+    'bundled-marketplaces',
+    'openai-bundled'
+  );
+  const runtimeMarketplaceAgentsRoot = path.join(
+    runtimeMarketplaceRoot,
+    '.agents',
+    'plugins'
+  );
+  const runtimeMarketplacePath = path.join(runtimeMarketplaceAgentsRoot, 'marketplace.json');
+  const sourceMarketplacePath = path.join(
+    resourcesDir,
+    'plugins',
+    'openai-bundled',
+    '.agents',
+    'plugins',
+    'marketplace.json'
+  );
+  const runtimePluginsRoot = path.join(runtimeMarketplaceRoot, 'plugins');
+  const runtimePluginPath = path.join(runtimePluginsRoot, COMPUTER_USE_PLUGIN_NAME);
+  await ensureDir(runtimeMarketplaceAgentsRoot);
+  await ensureDir(runtimePluginsRoot);
+
+  const sourceMarketplace = (await fileExists(sourceMarketplacePath))
+    ? await parseJsonFile(sourceMarketplacePath)
+    : { name: 'openai-bundled', plugins: [] };
+  const existingMarketplace = (await fileExists(runtimeMarketplacePath))
+    ? await parseJsonFile(runtimeMarketplacePath).catch(() => null)
+    : null;
+  const computerUseMarketplacePlugin =
+    sourceMarketplace.plugins?.find((entry) => entry?.name === COMPUTER_USE_PLUGIN_NAME) ?? {
+      name: COMPUTER_USE_PLUGIN_NAME,
+      version
+    };
+  const pluginsByName = new Map(
+    [
+      ...(Array.isArray(existingMarketplace?.plugins) ? existingMarketplace.plugins : []),
+      ...(Array.isArray(sourceMarketplace.plugins)
+        ? sourceMarketplace.plugins.filter((entry) =>
+            ['browser', 'chrome', 'latex', COMPUTER_USE_PLUGIN_NAME].includes(entry?.name)
+          )
+        : []),
+      computerUseMarketplacePlugin
+    ]
+      .filter((entry) => typeof entry?.name === 'string')
+      .map((entry) => [entry.name, entry])
+  );
+  const runtimeMarketplace = {
+    ...(existingMarketplace ?? sourceMarketplace),
+    name: existingMarketplace?.name ?? sourceMarketplace.name ?? 'openai-bundled',
+    plugins: [...pluginsByName.values()]
+  };
+  await fs.promises.writeFile(
+    runtimeMarketplacePath,
+    `${JSON.stringify(runtimeMarketplace, null, 2)}\n`,
+    'utf8'
+  );
+  await removeIfExists(runtimePluginPath);
+  try {
+    await fs.promises.symlink(cacheVersionPath, runtimePluginPath, 'dir');
+  } catch {
+    await copyDir(cacheVersionPath, runtimePluginPath);
+  }
+
+  logger?.info?.(`Synced Computer Use plugin cache ${cacheVersionPath}`);
+
+  return {
+    cacheRoot,
+    cacheVersionPath,
+    cacheLatestPath,
+    runtimeMarketplacePath,
+    runtimePluginPath,
+    marketplacePlugins: runtimeMarketplace.plugins
+      .map((entry) => entry.name)
+      .filter(Boolean)
+      .sort()
+  };
+}
+
+async function runLinuxComputerUseBackendSetupDoctor({ backendPath, pluginRoot, logger }) {
+  const setup = await runLinuxComputerUseBackendCommand({
+    backendPath,
+    pluginRoot,
+    args: ['setup', '--json']
+  });
+  const doctor = await runLinuxComputerUseBackendCommand({
+    backendPath,
+    pluginRoot,
+    args: ['doctor', '--json']
+  });
+  logger?.info?.(
+    `Linux Computer Use setup=${setup.status} doctor=${doctor.status} readiness=${doctor.report?.status ?? 'unknown'}`
+  );
+  return { setup, doctor };
+}
+
+async function runLinuxComputerUseBackendCommand({ backendPath, pluginRoot, args }) {
+  try {
+    const result = await runCommand(backendPath, args, { cwd: pluginRoot });
+    return {
+      status: 'ok',
+      command: backendPath,
+      args,
+      report: parseJsonCommandOutput(result.stdout),
+      stderr: result.stderr
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      command: backendPath,
+      args,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+function parseJsonCommandOutput(stdout) {
+  try {
+    return JSON.parse(stdout);
+  } catch {
+    return null;
+  }
+}
+
 function getChromeNativeHostV2RegistryPaths({ homeDir, stateHome = process.env.XDG_STATE_HOME }) {
   const codexHome = path.join(homeDir, '.codex');
   const linuxStateHome =
@@ -11073,6 +11561,7 @@ export function createInstallDiagnosticManifest({
   browserUseNodeRepl = null,
   browserUseNode = null,
   browserUseMcpConfig = null,
+  linuxComputerUse = null,
   chromeExtensionHost = null,
   chromeNativeMessagingHost = null,
   chromeBundledPluginHost = null,
@@ -11102,6 +11591,7 @@ export function createInstallDiagnosticManifest({
     browserUseNodeRepl,
     browserUseNode,
     browserUseMcpConfig,
+    linuxComputerUse,
     chromeExtensionHost,
     chromeNativeMessagingHost,
     chromeBundledPluginHost,

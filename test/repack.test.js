@@ -19,6 +19,7 @@ import {
   applyLinuxBundledBrowserChromePluginsPatch,
   applyLinuxChromeNativeHostRuntimePathsPatch,
   applyLinuxChromeExtensionSettingsPatch,
+  applyLinuxComputerUseUiPatch,
   applyLinuxOwlFeatureBindingPatch,
   applyLinuxRemoteControlPatch,
   applyLinuxRemoteControlVisibilityPatch,
@@ -49,6 +50,7 @@ import {
   installBrowserUseMcpConfig,
   installLinuxChromeBundledPluginHost,
   installLinuxChromeExtensionHost,
+  installLinuxComputerUseBackend,
   repairLinuxChromeNativeHostRuntimeRegistries,
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBrowserCommentSubmitCleanupPatch,
@@ -62,6 +64,7 @@ import {
   injectLinuxBundledBrowserChromePluginsPatch,
   injectLinuxChromeNativeHostRuntimePathsPatch,
   injectLinuxChromeExtensionSettingsPatch,
+  injectLinuxComputerUseUiPatch,
   injectLinuxOwlFeatureBindingPatch,
   injectLinuxRemoteControlPatch,
   injectLinuxRemoteControlVisibilityPatch,
@@ -144,6 +147,80 @@ async function writeTestExecutable(filePath, contents = '#!/usr/bin/env bash\nex
   await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
   await fs.promises.writeFile(filePath, contents, 'utf8');
   await fs.promises.chmod(filePath, 0o755);
+}
+
+async function runJsonProcess(command, args = [], options = {}) {
+  const child = spawn(command, args, {
+    cwd: options.cwd,
+    env: options.env ?? process.env,
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk;
+  });
+  const code = await new Promise((resolve, reject) => {
+    child.on('error', reject);
+    child.on('close', resolve);
+  });
+  if (code !== 0) {
+    throw new Error(`${command} ${args.join(' ')} exited with ${code}: ${stderr || stdout}`);
+  }
+  return JSON.parse(stdout);
+}
+
+async function runMcpTool(command, name, toolArgs = {}, options = {}) {
+  const child = spawn(command, ['mcp'], {
+    cwd: options.cwd,
+    env: options.env ?? process.env,
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk;
+  });
+  child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })}\n`);
+  child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized', params: {} })}\n`);
+  child.stdin.write(
+    `${JSON.stringify({
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/call',
+      params: { name, arguments: toolArgs }
+    })}\n`
+  );
+  child.stdin.end();
+  const code = await new Promise((resolve, reject) => {
+    child.on('error', reject);
+    child.on('close', resolve);
+  });
+  if (code !== 0) {
+    throw new Error(`${command} mcp exited with ${code}: ${stderr || stdout}`);
+  }
+  const response = stdout
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .find((message) => message.id === 2);
+  if (!response) {
+    throw new Error(`MCP response for ${name} was missing: ${stdout || stderr}`);
+  }
+  return response.result;
+}
+
+function mcpTextJson(result) {
+  const text = result.content?.find((entry) => entry.type === 'text')?.text;
+  assert.equal(typeof text, 'string');
+  return JSON.parse(text);
 }
 
 function escapeRegExp(value) {
@@ -272,7 +349,7 @@ const BROWSER_USE_HOST_FETCH_BUNDLE_26_616 =
 const BROWSER_USE_RUNTIME_PATHS_BUNDLE_26_608 =
   'function Fn({env:e=process.env,isPackaged:n=!0,platform:r=process.platform,repoRoot:i=process.cwd(),resolveCodexPath:a=t.Hn,resolveNodePath:o=t.Un,resolveNodeReplPath:s=t.Wn,resolvePrimaryRuntimeNodePath:c=zn,resourcesPath:l}){let u=l??Xe({env:e,resourcesPath:process.resourcesPath}),d=c(r),f=Rn({platform:r,rawValue:e.CODEX_CLI_PATH,resolveWindowsAppsPath:a})??Ln({devRelativePathSegments:[`extension`,`bin`,`codex`],isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:a,resourcesPath:u}),p=Ln({devRelativePathSegments:null,isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:o,resourcesPath:u}),m=Rn({platform:r,rawValue:e.CODEX_BROWSER_USE_NODE_PATH,resolveWindowsAppsPath:o})??(p.path==null&&d!=null?{path:d,source:`primary-runtime`}:p),h=Rn({platform:r,rawValue:e.CODEX_NODE_REPL_PATH,resolveWindowsAppsPath:s})??Ln({devRelativePathSegments:null,isPackaged:n,platform:r,repoRoot:i,resolveBundledPath:s,resourcesPath:u});return{codexCliPath:f.path,codexCliPathSource:f.source,nodeModuleDirs:t.zn(u),nodePath:m.path,nodePathSource:m.source,nodeReplPath:h.path,nodeReplPathSource:h.source,platform:r}}';
 const BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608 =
-  'var Mt=`chrome`,ro=[{name:`browser`,isAvailable:({features:e})=>e.inAppBrowserUseAllowed},{name:Mt,isAvailable:({features:e})=>e.externalBrowserUseAllowed},{name:`latex`,isAvailable:()=>!0}],t={Ur:()=>()=>({info(){}}),ho:()=>`openai-bundled`},n={P:{Dev:`dev`}},Ri=`managed`;function sc({env:e}){return e.CODEX_ELECTRON_BUNDLED_PLUGINS_RESOURCES_PATH}function cc(e){return `/tmp/bundled-marketplaces/${e.marketplaceName}`}function lc(){return new Set}function Re(){return!0}var uc=t.Ur(`bundled-plugins`),dc=`CODEX_ENABLE_DEV_BUNDLED_PLUGINS`;function fc(e){let r=e.env??process.env,i=e.resourcesPath??sc({env:r}),a=t.ho(e.buildFlavor),o=e.runtimeMarketplaceRoot??cc({codexHome:e.codexHome,marketplaceName:a}),s=r.NODE_ENV===`development`?e.repoRoot:void 0,c=lc({env:r}),l={getManagedPluginIds:()=>new Set(e.globalState?.get?.(`electron-chrome-extension-sync-managed-plugin-ids`)??[]),setManagedPluginId:(t,n)=>{}},u=e.platform??process.platform;if(e.buildFlavor===n.P.Dev&&r[dc]?.trim()!==`1`)return{setDesktopFeatureAvailability:()=>[]};let d=null,f=null,p=null,m=null,h=Promise.resolve(),g=!1,_,v=t=>ro.filter(n=>n.isAvailable({buildFlavor:e.buildFlavor,env:r,features:t,platform:u})),y=({force:e,reason:t})=>{let n=d,r=v(n),i=r.map(e=>e.name);return i};return{setDesktopFeatureAvailability:e=>{d=e;return y({force:!1,reason:`startup`})}}}';
+  'var Mt=`chrome`,ro=[{name:`browser`,isAvailable:({features:e})=>e.inAppBrowserUseAllowed},{name:Mt,isAvailable:({features:e})=>e.externalBrowserUseAllowed},{name:`computer-use`,isAvailable:({features:e,platform:t})=>t===`darwin`&&e.computerUse},{name:`latex`,isAvailable:()=>!0}],t={Ur:()=>()=>({info(){}}),ho:()=>`openai-bundled`},n={P:{Dev:`dev`}},Ri=`managed`;function sc({env:e}){return e.CODEX_ELECTRON_BUNDLED_PLUGINS_RESOURCES_PATH}function cc(e){return `/tmp/bundled-marketplaces/${e.marketplaceName}`}function lc(){return new Set}function Re(){return!0}var uc=t.Ur(`bundled-plugins`),dc=`CODEX_ENABLE_DEV_BUNDLED_PLUGINS`;function fc(e){let r=e.env??process.env,i=e.resourcesPath??sc({env:r}),a=t.ho(e.buildFlavor),o=e.runtimeMarketplaceRoot??cc({codexHome:e.codexHome,marketplaceName:a}),s=r.NODE_ENV===`development`?e.repoRoot:void 0,c=lc({env:r}),l={getManagedPluginIds:()=>new Set(e.globalState?.get?.(`electron-chrome-extension-sync-managed-plugin-ids`)??[]),setManagedPluginId:(t,n)=>{}},u=e.platform??process.platform;if(e.buildFlavor===n.P.Dev&&r[dc]?.trim()!==`1`)return{setDesktopFeatureAvailability:()=>[]};let d=null,f=null,p=null,m=null,h=Promise.resolve(),g=!1,_,v=t=>ro.filter(n=>n.isAvailable({buildFlavor:e.buildFlavor,env:r,features:t,platform:u})),y=({force:e,reason:t})=>{let n=d,r=v(n),i=r.map(e=>e.name);return i};return{setDesktopFeatureAvailability:e=>{d=e;return y({force:!1,reason:`startup`})}}}';
 const BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_611 =
   BUNDLED_BROWSER_CHROME_PLUGINS_BUNDLE_26_608
     .replace('t={Ur:()=>()=>({info(){}}),ho:', 't={Gr:()=>()=>({info(){}}),ho:')
@@ -299,6 +376,8 @@ const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_608 =
   'var Ne={ambientSuggestions:!1,appshotsEnabled:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,sites:!1,control:!1,deviceAttestation:ve(),dil:!1,multiBrowserTabs:!1,multiWindow:!1,processManager:!1,visualize:!1},Pe=Object.keys(Ne),Fe={...Ne},Ie=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function Le(){return Fe}function Re(e){return Pe.every(t=>typeof e[t]==`boolean`)}function ze(e,t){return Pe.some(n=>e[n]!==t[n])}function Be(e){let t={...Fe,...e,deviceAttestation:ve()};return Pe.every(e=>t[e]===Fe[e])?!1:(Fe=t,!0)}function Ve(e,{buildFlavor:t=n.P.resolve(),env:r=p.default.env,platform:i=p.default.platform}={}){let a=i===`darwin`&&!n.P.isInternal(t)&&e.computerUseNodeRepl!=null?{...e,computerUseNodeRepl:!1}:e,o=i===`win32`&&e.computerUse===!0?{...a,computerUseNodeRepl:!0}:a,s=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...o,computerUse:!0,computerUseNodeRepl:!0}:o,c=t===n.P.Dev?He(r):null;return c==null?{...s,deviceAttestation:ve({platform:i})}:{...s,...c,deviceAttestation:ve({platform:i})}}function He(e){let t=e[Ie]?.trim();if(!t)return null;return JSON.parse(t)}';
 const REMOTE_CONTROL_VISIBILITY_BUNDLE_26_513 =
   'import{p as e,pt as t}from"./vscode-api-DH_DWhkY.js";import{r as n}from"./remote-connection-visibility-CMLPP7XS.js";var r=t();function i(){let t=(0,r.c)(3),[i]=e(`remote_control_connections_state`),o=n(),s;return t[0]!==i||t[1]!==o?(s=a({remoteControlConnectionsState:i,slingshotEnabled:o}),t[0]=i,t[1]=o,t[2]=s):s=t[2],s}function a({remoteControlConnectionsState:e,slingshotEnabled:t}){return t&&(e?.available??!0)&&e?.accessRequired!==!0}export{i as t};';
+const COMPUTER_USE_UI_AVAILABILITY_BUNDLE_26_616 =
+  'function b(e){return e===`macOS`||e===`windows`}function w(e){return e}function x(e){let t=(0,_.c)(16),{enabled:n,hostId:r}=e,i=n===void 0?!0:n,{isLoading:a,platform:o}=m(),s=u(`1506311413`),c;t[0]===r?c=t[1]:(c={featureName:`computer_use`,hostId:r},t[0]=r,t[1]=c);let l=v(c),d=o===`windows`&&!a,f=i&&d,p;let h=S(p),g=l.isLoading||d&&h.isLoading,y=l.enabled&&(!d||h.enabled),x;x=w({areRequiredFeaturesEnabled:y,enabled:i,isAnyFeatureLoading:g,isComputerUseGateEnabled:s,isHostCompatiblePlatform:b(o),isPlatformLoading:a,windowType:`electron`});return x}';
 const POWER_SAVE_BLOCKER_BUNDLE_26_513 =
   'var Zz=class{powerSaveBlockerId=null;powerSaveBlockingWebContentsIds=new Set;pluggedInRemoteControlPowerSaveWebContentsIds=new Set;powerSaveTrackedWebContentsIds=new Set;constructor(){n.powerMonitor.on(`on-ac`,()=>{this.syncPowerSaveBlocker()}),n.powerMonitor.on(`on-battery`,()=>{this.syncPowerSaveBlocker()})}updatePowerSaveBlocker(e,t,n){let r=e.id;this.powerSaveTrackedWebContentsIds.has(r)||(this.powerSaveTrackedWebContentsIds.add(r),e.once(`destroyed`,()=>{this.powerSaveTrackedWebContentsIds.delete(r),this.powerSaveBlockingWebContentsIds.delete(r),this.pluggedInRemoteControlPowerSaveWebContentsIds.delete(r),this.syncPowerSaveBlocker()})),t?this.powerSaveBlockingWebContentsIds.add(r):this.powerSaveBlockingWebContentsIds.delete(r),n?this.pluggedInRemoteControlPowerSaveWebContentsIds.add(r):this.pluggedInRemoteControlPowerSaveWebContentsIds.delete(r),this.syncPowerSaveBlocker()}syncPowerSaveBlocker(){let e=this.powerSaveBlockingWebContentsIds.size>0||!n.powerMonitor.isOnBatteryPower()&&this.pluggedInRemoteControlPowerSaveWebContentsIds.size>0;if(e&&this.powerSaveBlockerId==null){this.powerSaveBlockerId=n.powerSaveBlocker.start(`prevent-app-suspension`);return}!e&&this.powerSaveBlockerId!=null&&(n.powerSaveBlocker.stop(this.powerSaveBlockerId),this.powerSaveBlockerId=null)}async sendCustomPrompts(e){return null}};';
 const REMOTE_CONTROL_KEEP_AWAKE_BUNDLE_26_513 =
@@ -2492,6 +2571,364 @@ test('installLinuxChromeBundledPluginHost installs Linux host wrappers for bundl
   }
 });
 
+test('installLinuxComputerUseBackend stages Linux backend, rewrites MCP config, and syncs plugin cache', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-computer-use-install-'));
+  try {
+    const resourcesDir = path.join(rootDir, 'resources');
+    const homeDir = path.join(rootDir, 'home');
+    const pluginRoot = path.join(
+      resourcesDir,
+      'plugins',
+      'openai-bundled',
+      'plugins',
+      'computer-use'
+    );
+    await writeTestExecutable(
+      path.join(resourcesDir, 'node'),
+      `#!/usr/bin/env bash\nexec "${process.execPath}" "$@"\n`
+    );
+    await fs.promises.mkdir(path.join(pluginRoot, '.codex-plugin'), { recursive: true });
+    await fs.promises.writeFile(
+      path.join(pluginRoot, '.codex-plugin', 'plugin.json'),
+      JSON.stringify(
+        {
+          name: 'computer-use',
+          version: '1.0.829',
+          description: 'Control desktop apps on macOS from Codex through Computer Use.',
+          keywords: ['computer-use', 'macos'],
+          mcpServers: './.mcp.json',
+          skills: './skills/',
+          interface: {
+            displayName: 'Computer Use',
+            shortDescription: 'Control Mac apps from Codex',
+            longDescription: 'Mac Computer Use lets Codex use any app on your computer.'
+          }
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+    await fs.promises.writeFile(
+      path.join(pluginRoot, '.mcp.json'),
+      JSON.stringify({
+        mcpServers: {
+          'computer-use': {
+            command:
+              './Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient',
+            args: ['mcp'],
+            cwd: '.'
+          }
+        }
+      }),
+      'utf8'
+    );
+    const marketplacePath = path.join(
+      resourcesDir,
+      'plugins',
+      'openai-bundled',
+      '.agents',
+      'plugins',
+      'marketplace.json'
+    );
+    await fs.promises.mkdir(path.dirname(marketplacePath), { recursive: true });
+    await fs.promises.writeFile(
+      marketplacePath,
+      JSON.stringify({
+        name: 'openai-bundled',
+        plugins: [
+          { name: 'browser', source: { path: 'plugins/browser' } },
+          { name: 'chrome', source: { path: 'plugins/chrome' } },
+          { name: 'computer-use', source: { path: 'plugins/computer-use' } }
+        ]
+      }),
+      'utf8'
+    );
+
+    const result = await installLinuxComputerUseBackend({
+      resourcesDir,
+      homeDir,
+      appVersion: '26.616.41845',
+      runSetupDoctor: false
+    });
+
+    const mcpConfig = JSON.parse(await fs.promises.readFile(result.mcpConfigPath, 'utf8'));
+    const pluginJson = JSON.parse(await fs.promises.readFile(result.pluginJsonPath, 'utf8'));
+    const runtimeMarketplace = JSON.parse(
+      await fs.promises.readFile(result.cache.runtimeMarketplacePath, 'utf8')
+    );
+
+    assert.equal(result.status, 'installed');
+    assert.equal(await isExecutable(result.backendPath), true);
+    assert.equal(await pathExists(result.backendModulePath), true);
+    assert.deepEqual(mcpConfig.mcpServers['computer-use'], {
+      command: './bin/codex-computer-use-linux',
+      args: ['mcp'],
+      cwd: '.'
+    });
+    assert.doesNotMatch(JSON.stringify(mcpConfig), /MacOS|Codex Computer Use\.app/);
+    assert.equal(pluginJson.description, 'Control desktop apps on Linux from Codex through Computer Use.');
+    assert.equal(pluginJson.keywords.includes('linux'), true);
+    assert.equal(pluginJson.keywords.includes('macos'), false);
+    assert.equal(pluginJson.interface.shortDescription, 'Control Linux desktop apps from Codex');
+    assert.equal(await pathExists(result.cache.cacheVersionPath), true);
+    assert.equal(await pathExists(result.cache.runtimePluginPath), true);
+    assert.equal(
+      runtimeMarketplace.plugins.some((plugin) => plugin.name === 'computer-use'),
+      true
+    );
+
+    const doctor = await runJsonProcess(result.backendPath, ['doctor', '--json'], {
+      env: { ...process.env, PATH: '/bin' }
+    });
+    assert.equal(doctor.name, 'codex-computer-use-linux');
+    assert.equal(typeof doctor.status, 'string');
+    assert.equal(Array.isArray(doctor.setup.manual_commands), true);
+
+    const emptyPathDir = path.join(rootDir, 'empty-path');
+    await fs.promises.mkdir(emptyPathDir);
+    await writeTestExecutable(
+      path.join(emptyPathDir, 'bash'),
+      `#!/bin/sh\nexec /bin/bash "$@"\n`
+    );
+    await writeTestExecutable(
+      path.join(emptyPathDir, 'dirname'),
+      `#!/bin/sh\nexec /usr/bin/dirname "$@"\n`
+    );
+    await writeTestExecutable(
+      path.join(emptyPathDir, 'basename'),
+      `#!/bin/sh\nexec /usr/bin/basename "$@"\n`
+    );
+    const compositorOnlyDoctor = await runJsonProcess(result.backendPath, ['doctor', '--json'], {
+      env: {
+        ...process.env,
+        DISPLAY: ':99',
+        PATH: emptyPathDir,
+        XDG_CURRENT_DESKTOP: 'KDE',
+        XDG_SESSION_TYPE: 'wayland'
+      }
+    });
+    assert.equal(compositorOnlyDoctor.dependencies.windows.available, false);
+    assert.equal(compositorOnlyDoctor.readiness.can_list_windows, false);
+
+    const desktopEnvFile = path.join(rootDir, 'desktop.env');
+    const runtimeDir = path.join(rootDir, 'runtime');
+    await fs.promises.mkdir(runtimeDir);
+    await fs.promises.writeFile(
+      desktopEnvFile,
+      [
+        'XDG_CURRENT_DESKTOP=KDE',
+        'XDG_SESSION_TYPE=wayland',
+        'WAYLAND_DISPLAY=wayland-test',
+        'DISPLAY=:77',
+        `XDG_RUNTIME_DIR=${runtimeDir}`,
+        `DBUS_SESSION_BUS_ADDRESS=unix:path=${path.join(runtimeDir, 'bus')}`,
+        'DESKTOP_SESSION=/usr/share/wayland-sessions/plasma.desktop'
+      ].join('\0'),
+      'utf8'
+    );
+    const mcpPathDir = path.join(rootDir, 'mcp-path');
+    await fs.promises.mkdir(mcpPathDir);
+    await writeTestExecutable(
+      path.join(mcpPathDir, 'bash'),
+      `#!/bin/sh\nexec /bin/bash "$@"\n`
+    );
+    await writeTestExecutable(
+      path.join(mcpPathDir, 'dirname'),
+      `#!/bin/sh\nexec /usr/bin/dirname "$@"\n`
+    );
+    await writeTestExecutable(
+      path.join(mcpPathDir, 'basename'),
+      `#!/bin/sh\nexec /usr/bin/basename "$@"\n`
+    );
+    await writeTestExecutable(
+      path.join(mcpPathDir, 'ydotool'),
+      `#!/bin/sh\nexit 0\n`
+    );
+    await writeTestExecutable(
+      path.join(mcpPathDir, 'spectacle'),
+      `#!/bin/sh
+if [ "$XDG_CURRENT_DESKTOP" != "KDE" ] || [ "$WAYLAND_DISPLAY" != "wayland-test" ] || [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+  echo "missing desktop env" >&2
+  exit 17
+fi
+out=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    out="$1"
+  fi
+  shift || break
+done
+if [ -z "$out" ]; then
+  echo "missing output path" >&2
+  exit 18
+fi
+printf 'pngdata' > "$out"
+`
+    );
+    await writeTestExecutable(
+      path.join(mcpPathDir, 'gdbus'),
+      `#!/bin/sh
+args="$*"
+if [ "$CODEX_TEST_FAKE_DE" = "GNOME" ]; then
+  case "$args" in
+    *"org.kde.KWin"*)
+      echo "KWin unavailable" >&2
+      exit 1
+      ;;
+    *"org.gnome.Shell.Introspect.GetWindows"*)
+      echo "({uint64 42: {'title': <'Terminal'>}},)"
+      exit 0
+      ;;
+    *"org.gnome.Shell --object-path /org/gnome/Shell"*)
+      echo "FocusApp"
+      exit 0
+      ;;
+  esac
+else
+  case "$args" in
+    *"org.kde.KWin"*"/Scripting"*)
+      echo "interface org.kde.kwin.Scripting { loadScript(); };"
+      exit 0
+      ;;
+    *"org.gnome.Shell"*)
+      echo "GNOME unavailable" >&2
+      exit 1
+      ;;
+  esac
+fi
+echo "unsupported gdbus call: $args" >&2
+exit 1
+`
+    );
+    await writeTestExecutable(
+      path.join(mcpPathDir, 'python3'),
+      `#!/bin/sh
+if [ "$1" = "-c" ]; then
+  exit 0
+fi
+mode="$2"
+case "$mode" in
+  kwin-list)
+    printf '%s\\n' '{"backend":"kwin","windows":[{"uuid":"33eb757c-1dda-46df-aed5-c5bada257015","caption":"Codex","desktopFile":"codex","resourceClass":"codex","resourceName":"codex","pid":61525,"x":10,"y":20,"width":800,"height":600,"workspace":1,"minimized":false,"active":true,"clientType":"wayland","normalWindow":true,"desktopWindow":false,"skipTaskbar":false,"dock":false}]}'
+    ;;
+  kwin-activate)
+    printf '{"ok":true,"uuid":"%s"}\\n' "$3"
+    ;;
+  gnome-list)
+    printf '%s\\n' '{"windows":{"42":{"title":"Terminal","app-id":"org.gnome.Terminal","wm-class":"org.gnome.Terminal","pid":4242,"x":1,"y":2,"width":640,"height":480,"workspace":0,"has-focus":true,"is-hidden":false,"client-type":0}}}'
+    ;;
+  gnome-focus-app)
+    printf '{"ok":true,"app_id":"%s"}\\n' "$3"
+    ;;
+  *)
+    echo "unexpected python helper mode: $mode" >&2
+    exit 2
+    ;;
+esac
+`
+    );
+    const bareMcpEnv = {
+      PATH: mcpPathDir,
+      HOME: homeDir,
+      CODEX_LINUX_COMPUTER_USE_DESKTOP_ENV_FILE: desktopEnvFile
+    };
+    const recoveredDoctor = await runJsonProcess(result.backendPath, ['doctor', '--json'], {
+      env: bareMcpEnv
+    });
+    assert.equal(recoveredDoctor.session.desktop, 'KDE');
+    assert.equal(recoveredDoctor.session.session_type, 'wayland');
+    assert.equal(recoveredDoctor.session.wayland_display, 'wayland-test');
+    assert.equal(recoveredDoctor.readiness.can_list_windows, true);
+    assert.equal(recoveredDoctor.readiness.can_focus_windows, true);
+    assert.equal(recoveredDoctor.dependencies.windows.preferred_backend, 'kwin');
+    assert.equal(recoveredDoctor.dependencies.windows.probes.kwin.ok, true);
+    assert.equal(recoveredDoctor.readiness.can_capture_screenshot, true);
+    assert.equal(recoveredDoctor.dependencies.screenshot_probe.ok, true);
+    assert.equal(recoveredDoctor.dependencies.screenshot_probe.source, 'spectacle');
+
+    const recoveredWindows = await runJsonProcess(result.backendPath, ['windows', '--json'], {
+      env: bareMcpEnv
+    });
+    assert.equal(recoveredWindows.ok, true);
+    assert.equal(recoveredWindows.backend, 'kwin');
+    assert.equal(recoveredWindows.windows.length, 1);
+    assert.equal(recoveredWindows.windows[0].title, 'Codex');
+    assert.equal(recoveredWindows.windows[0].focused, true);
+    assert.equal(typeof recoveredWindows.windows[0].window_id, 'string');
+
+    const recoveredFocusedWindow = await runJsonProcess(
+      result.backendPath,
+      ['focused-window', '--json'],
+      { env: bareMcpEnv }
+    );
+    assert.equal(recoveredFocusedWindow.ok, true);
+    assert.equal(recoveredFocusedWindow.backend, 'kwin');
+    assert.equal(recoveredFocusedWindow.focused_window.title, 'Codex');
+
+    const recoveredActivation = await runJsonProcess(
+      result.backendPath,
+      ['activate-window', recoveredWindows.windows[0].window_id, '--json'],
+      { env: bareMcpEnv }
+    );
+    assert.equal(recoveredActivation.ok, true);
+    assert.equal(recoveredActivation.backend, 'kwin');
+    assert.equal(recoveredActivation.exact_window_focus, true);
+
+    const mcpWindows = mcpTextJson(
+      await runMcpTool(result.backendPath, 'list_windows', {}, { env: bareMcpEnv })
+    );
+    assert.equal(mcpWindows.ok, true);
+    assert.equal(mcpWindows.backend, 'kwin');
+    assert.equal(mcpWindows.windows[0].title, 'Codex');
+
+    const gnomeDoctor = await runJsonProcess(result.backendPath, ['doctor', '--json'], {
+      env: { ...bareMcpEnv, CODEX_TEST_FAKE_DE: 'GNOME', XDG_CURRENT_DESKTOP: 'GNOME' }
+    });
+    assert.equal(gnomeDoctor.dependencies.windows.preferred_backend, 'gnome-shell-introspect');
+    assert.equal(gnomeDoctor.dependencies.windows.probes['gnome-shell-introspect'].ok, true);
+    assert.equal(gnomeDoctor.readiness.can_list_windows, true);
+    assert.equal(gnomeDoctor.readiness.can_focus_windows, false);
+
+    const gnomeWindows = await runJsonProcess(result.backendPath, ['windows', '--json'], {
+      env: { ...bareMcpEnv, CODEX_TEST_FAKE_DE: 'GNOME', XDG_CURRENT_DESKTOP: 'GNOME' }
+    });
+    assert.equal(gnomeWindows.ok, true);
+    assert.equal(gnomeWindows.backend, 'gnome-shell-introspect');
+    assert.equal(gnomeWindows.windows[0].title, 'Terminal');
+    assert.equal(gnomeWindows.windows[0].focused, true);
+
+    const gnomeActivation = await runJsonProcess(
+      result.backendPath,
+      ['activate-window', '42', '--json'],
+      { env: { ...bareMcpEnv, CODEX_TEST_FAKE_DE: 'GNOME', XDG_CURRENT_DESKTOP: 'GNOME' } }
+    );
+    assert.equal(gnomeActivation.ok, true);
+    assert.equal(gnomeActivation.backend, 'gnome-shell-introspect');
+    assert.equal(gnomeActivation.exact_window_focus, false);
+
+    const recoveredScreenshotPath = path.join(rootDir, 'recovered-screenshot.png');
+    const recoveredScreenshot = await runJsonProcess(
+      result.backendPath,
+      ['screenshot', recoveredScreenshotPath, '--json'],
+      { env: bareMcpEnv }
+    );
+    assert.equal(recoveredScreenshot.ok, true);
+    assert.equal(recoveredScreenshot.source, 'spectacle');
+    assert.equal(recoveredScreenshot.bytes, 7);
+    assert.equal(recoveredScreenshot.data, Buffer.from('pngdata').toString('base64'));
+
+    const setup = await runJsonProcess(result.backendPath, ['setup', '--json'], {
+      env: { ...process.env, PATH: '/bin', CODEX_LINUX_COMPUTER_USE_DISABLE_SETUP: '1' }
+    });
+    assert.equal(setup.ok, false);
+    assert.match(setup.accessibility.message, /setup actions were disabled/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('buildLinuxChromeExtensionHostModule includes ping handler and native pipe bridge', () => {
   const source = buildLinuxChromeExtensionHostModule();
 
@@ -3019,11 +3456,11 @@ test('applyLinuxBrowserUseRuntimePathsPatch skips patching when disabled', () =>
   assert.equal(result.status, 'skipped');
 });
 
-test('injectLinuxBundledBrowserChromePluginsPatch keeps Browser and Chrome in Linux bundled marketplace', async () => {
+test('injectLinuxBundledBrowserChromePluginsPatch keeps Browser, Chrome, and Computer Use in Linux bundled marketplace', async () => {
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-bundled-browser-chrome-'));
   try {
     const resourcesDir = path.join(rootDir, 'resources');
-    for (const pluginName of ['browser', 'chrome']) {
+    for (const pluginName of ['browser', 'chrome', 'computer-use']) {
       await fs.promises.mkdir(
         path.join(
           resourcesDir,
@@ -3063,7 +3500,7 @@ test('injectLinuxBundledBrowserChromePluginsPatch keeps Browser and Chrome in Li
 
     assert.match(updated, /codexLinuxBundledBrowserChromePlugins/);
     assert.doesNotThrow(() => new Function(updated));
-    assert.deepEqual(result, ['latex', 'browser', 'chrome']);
+    assert.deepEqual(result, ['latex', 'browser', 'chrome', 'computer-use']);
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
@@ -3073,7 +3510,7 @@ test('injectLinuxBundledBrowserChromePluginsPatch supports 26.611 descriptor rec
   const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-bundled-260611-'));
   try {
     const resourcesDir = path.join(rootDir, 'resources');
-    for (const pluginName of ['browser', 'chrome']) {
+    for (const pluginName of ['browser', 'chrome', 'computer-use']) {
       await fs.promises.mkdir(
         path.join(
           resourcesDir,
@@ -3113,7 +3550,7 @@ test('injectLinuxBundledBrowserChromePluginsPatch supports 26.611 descriptor rec
 
     assert.match(updated, /codexLinuxBundledBrowserChromePlugins/);
     assert.match(updated, /var uc=t\.Gr\(`bundled-plugins`\)/);
-    assert.deepEqual(result, ['latex', 'browser', 'chrome']);
+    assert.deepEqual(result, ['latex', 'browser', 'chrome', 'computer-use']);
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
@@ -3139,7 +3576,7 @@ test('injectLinuxBundledBrowserChromePluginsPatch supports the 26.609 materializ
   const previousReader = globalThis.codexLinuxTestReadMarketplace;
   try {
     const marketplaceRoot = path.join(rootDir, 'openai-bundled');
-    for (const pluginName of ['browser', 'chrome']) {
+    for (const pluginName of ['browser', 'chrome', 'computer-use']) {
       await fs.promises.mkdir(
         path.join(marketplaceRoot, 'plugins', pluginName, '.codex-plugin'),
         { recursive: true }
@@ -3155,6 +3592,7 @@ test('injectLinuxBundledBrowserChromePluginsPatch supports the 26.609 materializ
       plugins: [
         { name: 'browser', source: { path: 'plugins/browser' } },
         { name: 'chrome', source: { path: 'plugins/chrome' } },
+        { name: 'computer-use', source: { path: 'plugins/computer-use' } },
         { name: 'latex', source: { path: 'plugins/latex' } }
       ]
     });
@@ -3176,7 +3614,7 @@ test('injectLinuxBundledBrowserChromePluginsPatch supports the 26.609 materializ
     assert.equal(twice, updated);
     assert.deepEqual(
       result.marketplace.plugins.map((plugin) => plugin.name),
-      ['latex', 'browser', 'chrome']
+      ['latex', 'browser', 'chrome', 'computer-use']
     );
   } finally {
     if (previousReader === undefined) {
@@ -3351,7 +3789,7 @@ test('injectLinuxRemoteControlPatch enables remote control on Linux feature avai
   const updated = injectLinuxRemoteControlPatch(REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513);
 
   assert.match(updated, /codexLinuxRemoteControlFeatureAvailability/);
-  assert.match(updated, /codexLinuxRemoteControlFeatures=n===`linux`&&t\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0\}:e/);
+  assert.match(updated, /codexLinuxRemoteControlFeatures=n===`linux`&&t\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0,computerUse:!0,computerUseNodeRepl:!0\}:e/);
   assert.match(
     updated,
     /return n!==`win32`\|\|t\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE!==`1`\?codexLinuxRemoteControlFeatures:\{\.\.\.codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0\}/
@@ -3364,7 +3802,7 @@ test('injectLinuxRemoteControlPatch supports 26.513 feature override helper drif
   );
 
   assert.match(updated, /codexLinuxRemoteControlFeatureAvailability/);
-  assert.match(updated, /codexLinuxRemoteControlFeatures=i===`linux`&&r\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0\}:e/);
+  assert.match(updated, /codexLinuxRemoteControlFeatures=i===`linux`&&r\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0,computerUse:!0,computerUseNodeRepl:!0\}:e/);
   assert.match(
     updated,
     /a=i===`win32`&&r\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`\?\{\.\.\.codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0\}:codexLinuxRemoteControlFeatures/
@@ -3379,7 +3817,7 @@ test('injectLinuxRemoteControlPatch supports 26.601 device attestation helper dr
   );
 
   assert.match(updated, /codexLinuxRemoteControlFeatureAvailability/);
-  assert.match(updated, /codexLinuxRemoteControlFeatures=i===`linux`&&r\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0\}:e/);
+  assert.match(updated, /codexLinuxRemoteControlFeatures=i===`linux`&&r\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0,computerUse:!0,computerUseNodeRepl:!0\}:e/);
   assert.match(
     updated,
     /return o==null\?\{\.\.\.a,deviceAttestation:xe\(\{platform:i\}\)\}:\{\.\.\.a,\.\.\.o,deviceAttestation:xe\(\{platform:i\}\)\}/
@@ -3392,7 +3830,7 @@ test('injectLinuxRemoteControlPatch supports 26.608 Mac node_repl guard drift', 
   );
 
   assert.match(updated, /codexLinuxRemoteControlFeatureAvailability/);
-  assert.match(updated, /codexLinuxRemoteControlFeatures=i===`linux`&&r\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0\}:e/);
+  assert.match(updated, /codexLinuxRemoteControlFeatures=i===`linux`&&r\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0,computerUse:!0,computerUseNodeRepl:!0\}:e/);
   assert.match(
     updated,
     /a=i===`darwin`&&!n\.P\.isInternal\(t\)&&codexLinuxRemoteControlFeatures\.computerUseNodeRepl!=null\?\{\.\.\.codexLinuxRemoteControlFeatures,computerUseNodeRepl:!1\}:codexLinuxRemoteControlFeatures/
@@ -3470,6 +3908,43 @@ test('injectLinuxRemoteControlVisibilityPatch reports diagnostics when visibilit
     {
       message:
         /Could not patch Linux remote-control settings visibility into the renderer bundle\. Source: remote\.js\. Missing anchors: remote-control connections state atom, slingshot visibility gate, remote-control visibility helper, remote-control access-required gate\. Detected anchors: remoteControlStateAtom=no, slingshotVisibilityGate=no, remoteControlVisibilityHelper=no, accessRequiredGate=no\./
+    }
+  );
+});
+
+test('injectLinuxComputerUseUiPatch enables Linux Computer Use availability gates', () => {
+  const updated = injectLinuxComputerUseUiPatch(COMPUTER_USE_UI_AVAILABILITY_BUNDLE_26_616);
+
+  assert.match(updated, /codexLinuxComputerUseUiAvailability/);
+  assert.match(updated, /return e===`macOS`\|\|e===`windows`\|\|e===`linux`/);
+  assert.match(updated, /areRequiredFeaturesEnabled:o===`linux`\|\|y/);
+  assert.match(updated, /isAnyFeatureLoading:o===`linux`\?!1:g/);
+  assert.match(updated, /isComputerUseGateEnabled:o===`linux`\|\|s/);
+  assert.match(updated, /isHostCompatiblePlatform:o===`linux`\|\|b\(o\)/);
+});
+
+test('injectLinuxComputerUseUiPatch is idempotent', () => {
+  const once = injectLinuxComputerUseUiPatch(COMPUTER_USE_UI_AVAILABILITY_BUNDLE_26_616);
+  const twice = injectLinuxComputerUseUiPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxComputerUseUiPatch skips patching when disabled', () => {
+  const result = applyLinuxComputerUseUiPatch(COMPUTER_USE_UI_AVAILABILITY_BUNDLE_26_616, {
+    skip: true
+  });
+
+  assert.equal(result.updated, COMPUTER_USE_UI_AVAILABILITY_BUNDLE_26_616);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxComputerUseUiPatch reports diagnostics when anchors are missing', () => {
+  assert.throws(
+    () => injectLinuxComputerUseUiPatch('const noop = true;', { sourceName: 'computer-use.js' }),
+    {
+      message:
+        /Could not patch Linux Computer Use UI availability into the renderer bundle\. Source: computer-use\.js\. Missing anchors: Computer Use feature gate, Computer Use availability helper call, host platform compatibility predicate\./
     }
   );
 });
@@ -6520,11 +6995,44 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
         path: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/chrome'
       },
       {
+        name: 'computer-use',
+        version: '1.0.829',
+        path: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/computer-use'
+      },
+      {
         name: 'sites',
         version: '26.601.21317',
         path: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/sites'
       }
     ]
+  };
+  const linuxComputerUse = {
+    status: 'installed',
+    pluginName: 'computer-use',
+    pluginVersion: '1.0.829',
+    pluginRoot:
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/computer-use',
+    pluginJsonPath:
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/computer-use/.codex-plugin/plugin.json',
+    mcpConfigPath:
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/computer-use/.mcp.json',
+    mcpServerName: 'computer-use',
+    backendPath:
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/computer-use/bin/codex-computer-use-linux',
+    backendModulePath:
+      '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/plugins/openai-bundled/plugins/computer-use/bin/codex-computer-use-linux.mjs',
+    cache: {
+      cacheVersionPath: '/home/user/.codex/plugins/cache/openai-bundled/computer-use/1.0.829',
+      runtimeMarketplacePath:
+        '/home/user/.codex/.tmp/bundled-marketplaces/openai-bundled/.agents/plugins/marketplace.json',
+      runtimePluginPath:
+        '/home/user/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/computer-use',
+      marketplacePlugins: ['browser', 'chrome', 'computer-use']
+    },
+    setupDoctor: {
+      setup: { status: 'ok' },
+      doctor: { status: 'ok', report: { status: 'needs-setup' } }
+    }
   };
   const manifest = createInstallDiagnosticManifest({
     installedAt: '2026-03-27T08:11:28.661Z',
@@ -6569,6 +7077,7 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       nodeModuleDirs: ['/home/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'],
       browserClientSha256s: ['abc123']
     },
+    linuxComputerUse,
     chromeExtensionHost: {
       status: 'installed',
       targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host',
@@ -6641,6 +7150,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       linuxBundledBrowserChromePlugins: {
         status: 'applied',
         sourceName: 'main.js'
+      },
+      linuxComputerUseUi: {
+        status: 'applied',
+        sourceName: 'use-is-plugins-enabled.js'
       },
       linuxChromeNativeHostRuntimePaths: {
         status: 'applied',
@@ -6744,6 +7257,7 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       nodeModuleDirs: ['/home/user/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'],
       browserClientSha256s: ['abc123']
     },
+    linuxComputerUse,
     chromeExtensionHost: {
       status: 'installed',
       targetPath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host',
@@ -6816,6 +7330,10 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       linuxBundledBrowserChromePlugins: {
         status: 'applied',
         sourceName: 'main.js'
+      },
+      linuxComputerUseUi: {
+        status: 'applied',
+        sourceName: 'use-is-plugins-enabled.js'
       },
       linuxChromeNativeHostRuntimePaths: {
         status: 'applied',
