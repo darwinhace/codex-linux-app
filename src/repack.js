@@ -8436,7 +8436,15 @@ async function installChannelRuntime({
 
   await copyDir(runtimeSourceDir, channelAppDir);
   const packagedBinaryPath = path.join(channelAppDir, channel.executableName);
-  await copyFile(path.join(channelAppDir, 'electron'), packagedBinaryPath);
+  const runtimeElectronBinaryPath = path.join(channelAppDir, 'electron');
+  if (!(await fileExists(runtimeElectronBinaryPath))) {
+    throw new Error(
+      `Installed Electron runtime is incomplete: ${describeMissingElectronRuntime(
+        runtimeSourceDir
+      )}.`
+    );
+  }
+  await copyFile(runtimeElectronBinaryPath, packagedBinaryPath);
   await fs.promises.chmod(packagedBinaryPath, 0o755);
   const resourcesDir = path.join(channelAppDir, 'resources');
   await ensureDir(resourcesDir);
@@ -11191,17 +11199,137 @@ async function resolveRipgrepPath() {
   );
 }
 
-async function resolveRuntimeSourceDir({ cacheHome, electronVersion, logger }) {
+async function isInstalledElectronPackageVersion(packageJsonPath, electronVersion) {
+  if (!(await fileExists(packageJsonPath))) {
+    return false;
+  }
+  try {
+    const installedPackage = await parseJsonFile(packageJsonPath);
+    return installedPackage.version === electronVersion;
+  } catch {
+    return false;
+  }
+}
+
+async function isElectronRuntimePackageInstalled({ runtimeRoot, electronVersion }) {
+  const electronPackageJsonPath = path.join(runtimeRoot, 'node_modules', 'electron', 'package.json');
+  const electronGetPackageJsonPath = path.join(
+    runtimeRoot,
+    'node_modules',
+    '@electron',
+    'get',
+    'package.json'
+  );
+  return (
+    (await isInstalledElectronPackageVersion(electronPackageJsonPath, electronVersion)) &&
+    (await fileExists(electronGetPackageJsonPath))
+  );
+}
+
+export async function isUsableElectronRuntimeDir(runtimeSourceDir) {
+  const executablePath = path.join(runtimeSourceDir, 'electron');
+  try {
+    const executableStat = await fs.promises.stat(executablePath);
+    return executableStat.isFile();
+  } catch {
+    return false;
+  }
+}
+
+function describeMissingElectronRuntime(runtimeSourceDir) {
+  return `missing Linux Electron executable ${path.join(runtimeSourceDir, 'electron')}`;
+}
+
+const ELECTRON_RUNTIME_ARCHIVE_RESOLVER_SCRIPT = `
+const { downloadArtifact } = require('@electron/get');
+const { version } = require('./node_modules/electron/package.json');
+
+downloadArtifact({
+  version,
+  artifactName: 'electron',
+  force: process.env.force_no_cache === 'true',
+  cacheRoot: process.env.electron_config_cache,
+  checksums:
+    process.env.electron_use_remote_checksums || process.env.npm_config_electron_use_remote_checksums
+      ? undefined
+      : require('./node_modules/electron/checksums.json'),
+  platform: process.env.ELECTRON_INSTALL_PLATFORM || process.env.npm_config_platform || process.platform,
+  arch: process.env.ELECTRON_INSTALL_ARCH || process.env.npm_config_arch || process.arch
+})
+  .then((archivePath) => {
+    process.stdout.write(archivePath);
+  })
+  .catch((error) => {
+    console.error(error.stack ?? error.message ?? String(error));
+    process.exit(1);
+  });
+`;
+
+async function installElectronRuntimeArchive({
+  cacheHome,
+  runtimeRoot,
+  runtimeSourceDir,
+  runCommandImpl,
+  logger
+}) {
+  const runtimeEnv = {
+    electron_config_cache: path.join(cacheHome, 'electron'),
+    ELECTRON_INSTALL_PLATFORM: 'linux',
+    ELECTRON_INSTALL_ARCH: process.arch,
+    npm_config_update_notifier: 'false',
+    npm_config_fund: 'false',
+    npm_config_audit: 'false'
+  };
+  const { stdout } = await runCommandImpl(
+    process.execPath,
+    ['-e', ELECTRON_RUNTIME_ARCHIVE_RESOLVER_SCRIPT],
+    {
+      cwd: runtimeRoot,
+      env: runtimeEnv,
+      logger
+    }
+  );
+  const archivePath = stdout.trim();
+  if (!archivePath) {
+    throw new Error('Electron runtime archive resolver did not return an archive path.');
+  }
+
+  await removeIfExists(runtimeSourceDir);
+  await ensureDir(runtimeSourceDir);
+  await runCommandImpl('unzip', ['-q', '-o', archivePath, '-d', runtimeSourceDir], {
+    logger
+  });
+  await fs.promises.writeFile(
+    path.join(runtimeRoot, 'node_modules', 'electron', 'path.txt'),
+    'electron',
+    'utf8'
+  );
+}
+
+export async function resolveRuntimeSourceDir({
+  cacheHome,
+  electronVersion,
+  logger,
+  retryForeverImpl = retryForever,
+  runCommandImpl = runCommand
+}) {
   const localRuntimeDir = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'dist');
   const localPackageJsonPath = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'package.json');
   if (await fileExists(localPackageJsonPath)) {
     const localPackage = await parseJsonFile(localPackageJsonPath);
-    if (localPackage.version === electronVersion && (await fileExists(localRuntimeDir))) {
-      logger.info(`Using local Electron runtime ${electronVersion}`);
-      return {
-        runtimeSourceDir: localRuntimeDir,
-        sourceKind: 'local'
-      };
+    if (localPackage.version === electronVersion) {
+      if (await isUsableElectronRuntimeDir(localRuntimeDir)) {
+        logger.info(`Using local Electron runtime ${electronVersion}`);
+        return {
+          runtimeSourceDir: localRuntimeDir,
+          sourceKind: 'local'
+        };
+      }
+      logger.warn(
+        `Ignoring local Electron runtime ${electronVersion}: ${describeMissingElectronRuntime(
+          localRuntimeDir
+        )}`
+      );
     }
   }
 
@@ -11213,9 +11341,9 @@ async function resolveRuntimeSourceDir({ cacheHome, electronVersion, logger }) {
     await fs.promises.writeFile(runtimePackageJsonPath, JSON.stringify({ private: true }, null, 2), 'utf8');
   }
 
-  if (!(await fileExists(runtimeSourceDir))) {
-    await retryForever(`install-electron-runtime-${electronVersion}`, logger, async () => {
-      await runCommand(
+  if (!(await isElectronRuntimePackageInstalled({ runtimeRoot, electronVersion }))) {
+    await retryForeverImpl(`install-electron-runtime-${electronVersion}`, logger, async () => {
+      await runCommandImpl(
         'npm',
         ['install', '--no-save', `electron@${electronVersion}`],
         {
@@ -11232,25 +11360,30 @@ async function resolveRuntimeSourceDir({ cacheHome, electronVersion, logger }) {
     });
   }
 
-  if (!(await fileExists(runtimeSourceDir))) {
-    await retryForever(`download-electron-runtime-${electronVersion}`, logger, async () => {
-      await runCommand(process.execPath, ['node_modules/electron/install.js'], {
-        cwd: runtimeRoot,
-        env: {
-          electron_config_cache: path.join(cacheHome, 'electron'),
-          ELECTRON_INSTALL_PLATFORM: 'linux',
-          ELECTRON_INSTALL_ARCH: process.arch,
-          npm_config_update_notifier: 'false',
-          npm_config_fund: 'false',
-          npm_config_audit: 'false'
-        },
+  if (!(await isUsableElectronRuntimeDir(runtimeSourceDir))) {
+    logger.warn(
+      `Repairing cached Electron runtime ${electronVersion}: ${describeMissingElectronRuntime(
+        runtimeSourceDir
+      )}`
+    );
+    await removeIfExists(runtimeSourceDir);
+    await retryForeverImpl(`download-electron-runtime-${electronVersion}`, logger, async () => {
+      await installElectronRuntimeArchive({
+        cacheHome,
+        runtimeRoot,
+        runtimeSourceDir,
+        runCommandImpl,
         logger
       });
     });
   }
 
-  if (!(await fileExists(runtimeSourceDir))) {
-    throw new Error(`Electron runtime ${electronVersion} could not be installed for Linux.`);
+  if (!(await isUsableElectronRuntimeDir(runtimeSourceDir))) {
+    throw new Error(
+      `Electron runtime ${electronVersion} could not be installed for Linux: ${describeMissingElectronRuntime(
+        runtimeSourceDir
+      )}.`
+    );
   }
 
   return {

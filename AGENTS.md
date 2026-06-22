@@ -1,12 +1,13 @@
 # Codex Linux App Agent Notes
 
-These notes are for the current pinned upstream version in `VERSION` (`26.616.41845+`). Do not carry old version-specific patch anchors forward; rediscover the installed bundle shape when upstream changes.
+These notes are for the current pinned upstream version in `VERSION` (`26.616.51431+`). Do not carry old version-specific patch anchors forward; rediscover the installed bundle shape when upstream changes.
 
 ## Current Release Rules
 
 - Treat `VERSION`, `src/repack.js`, `src/linux-computer-use-backend.mjs`, and `test/repack.test.js` as the main source files for current runtime work.
 - For runtime fixes, source tests are not enough. Reinstall with `./install-desktop` and verify the installed stable resources under `~/.local/share/codex-linux-app/channels/stable`.
 - Do not manually edit installed `app.asar` or installed resource files as the final fix. Patch the repack pipeline, reinstall, then prove the installed artifact.
+- Electron runtime cache validation must check the actual Linux executable at `dist/electron`, not only the `dist` directory. Incomplete caches should be repaired by the repack pipeline from the Electron archive before installing channel resources.
 - Keep `npm test` and `git diff --check` green before handoff.
 
 ## Linux Computer Use
@@ -16,6 +17,7 @@ These notes are for the current pinned upstream version in `VERSION` (`26.616.41
 - `doctor` readiness must use live probes where possible: screenshots must actually capture bytes, window backends must actually list/focus where supported, and diagnostics should show attempted commands, stderr, env presence, and setup hints.
 - Never make silent sudo changes. Package installs, group membership, and system services should be reported as explicit commands. Non-sudo setup may start user services only.
 - Desktop input depends on `ydotool` on Wayland and may use `xdotool` on X11. README must stay simple about installing `ydotool`, joining the `input` group, and enabling the service.
+- Arch/CachyOS ships `ydotool.service` as a user unit at `/usr/lib/systemd/user/ydotool.service`; document `systemctl --user enable --now ydotool.service`, not `sudo systemctl enable --now ydotoold` or `sudo systemctl enable --now ydotool`.
 - KDE/Plasma Wayland should prefer the KWin DBus scripting backend for `list_windows`, `focused_window`, and exact `activate_window`.
 - Ubuntu GNOME should use GNOME Shell Introspect for listing/focused windows when permitted. App-level focus through `FocusApp` is acceptable when exact window activation is unavailable.
 - Keep screenshot support practical for current desktops: `spectacle` on KDE, `gnome-screenshot` on GNOME, `grim` where available, and ImageMagick `import` only as an X11 fallback.

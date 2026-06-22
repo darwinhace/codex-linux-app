@@ -38,8 +38,18 @@ KDE/Plasma on Arch/CachyOS:
 ```bash
 sudo pacman -S --needed ydotool spectacle python-dbus python-gobject
 sudo usermod -a -G input "$USER"
-sudo systemctl enable --now ydotoold || sudo systemctl enable --now ydotool
 ```
+
+Log out and back in after changing the `input` group. After login, `groups` should include `input`; then enable the Arch/CachyOS user service:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now ydotool.service
+systemctl --user status ydotool.service
+ydotool type "hello"
+```
+
+Arch/CachyOS packages the unit as `/usr/lib/systemd/user/ydotool.service`; do not use `sudo systemctl` for it. If the unit is missing, check `pacman -Ql ydotool | grep systemd` and reinstall with `sudo pacman -Syu ydotool`. If `/dev/uinput` is missing, load it with `sudo modprobe uinput`. Fish users who see socket path errors can set `set -Ux YDOTOOL_SOCKET "$XDG_RUNTIME_DIR/.ydotool_socket"`.
 
 Ubuntu GNOME:
 
@@ -50,7 +60,7 @@ sudo usermod -a -G input "$USER"
 sudo systemctl enable --now ydotoold || sudo systemctl enable --now ydotool
 ```
 
-Log out and back in after changing the `input` group, then run `./install-desktop`.
+On Ubuntu, log out and back in after changing the `input` group before testing `ydotool`. After the distro service is running, run `./install-desktop`.
 
 To check readiness after install:
 
@@ -101,3 +111,7 @@ Remove repo-owned desktop installs:
 - Cache and downloads: `~/.cache/codex-linux-app`
 
 Advanced environment variables and recovery flags are documented in [docs/advanced.md](docs/advanced.md).
+
+## Troubleshooting
+
+If `./install-desktop` fails while copying `app/electron` to `app/codex`, the cached Electron runtime is incomplete. The installer validates the actual Linux `electron` executable and repairs `~/.cache/codex-linux-app/electron-runtime/<version>/node_modules/electron/dist` from the cached Electron archive; rerun `./install-desktop` after updating this repo.

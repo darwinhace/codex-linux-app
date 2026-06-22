@@ -89,6 +89,7 @@ import {
   injectLinuxVisualCompatJsPatch,
   isChannelAppProcessCommandLine,
   isLinuxChromeExtensionHostProcessCommandLine,
+  isUsableElectronRuntimeDir,
   patchRendererCompactSlashCommandBundle,
   patchRendererBackgroundSubagentsPanelBundle,
   patchRendererLinuxBrowserCommentSubmitCleanupBundle,
@@ -109,6 +110,7 @@ import {
   resolveInstallRelease,
   resolveBrowserUseRuntimeSources,
   resolveFirstExecutablePath,
+  resolveRuntimeSourceDir,
   stopRunningLinuxChromeExtensionHostProcesses
 } from '../src/repack.js';
 import { CHANNELS } from '../src/constants.js';
@@ -6907,6 +6909,108 @@ test('patchRendererCompactSlashCommandBundle skips when no candidate bundle exis
     );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('isUsableElectronRuntimeDir requires the Linux electron executable', async () => {
+  const rootDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-electron-runtime-valid-'));
+  try {
+    const runtimeDir = path.join(rootDir, 'dist');
+    await fs.promises.mkdir(path.join(runtimeDir, 'locales'), { recursive: true });
+    await fs.promises.writeFile(path.join(runtimeDir, 'locales', 'ko.pak'), 'partial', 'utf8');
+
+    assert.equal(await isUsableElectronRuntimeDir(runtimeDir), false);
+
+    await fs.promises.writeFile(path.join(runtimeDir, 'electron'), '#!/usr/bin/env bash\n', 'utf8');
+
+    assert.equal(await isUsableElectronRuntimeDir(runtimeDir), true);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveRuntimeSourceDir repairs cached Electron dist missing executable', async () => {
+  const cacheHome = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'codex-electron-runtime-cache-'));
+  try {
+    const electronVersion = '999.0.0-test';
+    const runtimeRoot = path.join(cacheHome, 'electron-runtime', electronVersion);
+    const electronPackageRoot = path.join(runtimeRoot, 'node_modules', 'electron');
+    const runtimeSourceDir = path.join(electronPackageRoot, 'dist');
+    await fs.promises.mkdir(path.join(runtimeSourceDir, 'locales'), { recursive: true });
+    await fs.promises.writeFile(
+      path.join(electronPackageRoot, 'package.json'),
+      JSON.stringify({ version: electronVersion }),
+      'utf8'
+    );
+    await fs.promises.mkdir(path.join(runtimeRoot, 'node_modules', '@electron', 'get'), {
+      recursive: true
+    });
+    await fs.promises.writeFile(
+      path.join(runtimeRoot, 'node_modules', '@electron', 'get', 'package.json'),
+      JSON.stringify({ version: '1.0.0' }),
+      'utf8'
+    );
+    await fs.promises.writeFile(path.join(runtimeSourceDir, 'locales', 'ko.pak'), 'partial', 'utf8');
+
+    const stages = [];
+    const commands = [];
+    const warnings = [];
+    const logger = {
+      info() {},
+      warn(message) {
+        warnings.push(message);
+      }
+    };
+
+    const result = await resolveRuntimeSourceDir({
+      cacheHome,
+      electronVersion,
+      logger,
+      retryForeverImpl: async (stageName, stageLogger, task) => {
+        stages.push(stageName);
+        return task(1);
+      },
+      runCommandImpl: async (command, args, options) => {
+        commands.push({ command, args, options });
+        if (command === process.execPath) {
+          assert.equal(args[0], '-e');
+          assert.match(args[1], /downloadArtifact/);
+          assert.equal(options.cwd, runtimeRoot);
+          assert.equal(options.env.ELECTRON_INSTALL_PLATFORM, 'linux');
+          return { stdout: path.join(cacheHome, 'electron.zip'), stderr: '' };
+        }
+
+        assert.equal(command, 'unzip');
+        assert.deepEqual(args, [
+          '-q',
+          '-o',
+          path.join(cacheHome, 'electron.zip'),
+          '-d',
+          runtimeSourceDir
+        ]);
+        await fs.promises.mkdir(runtimeSourceDir, { recursive: true });
+        await fs.promises.writeFile(path.join(runtimeSourceDir, 'electron'), '#!/usr/bin/env bash\n', 'utf8');
+        return { stdout: '', stderr: '' };
+      }
+    });
+
+    assert.deepEqual(result, {
+      runtimeSourceDir,
+      sourceKind: 'cache'
+    });
+    assert.deepEqual(stages, [`download-electron-runtime-${electronVersion}`]);
+    assert.equal(commands.length, 2);
+    assert.equal(
+      warnings.some((message) => message.includes('Repairing cached Electron runtime')),
+      true
+    );
+    assert.equal(await pathExists(path.join(runtimeSourceDir, 'locales', 'ko.pak')), false);
+    assert.equal(
+      await fs.promises.readFile(path.join(electronPackageRoot, 'path.txt'), 'utf8'),
+      'electron'
+    );
+  } finally {
+    await fs.promises.rm(cacheHome, { recursive: true, force: true });
   }
 });
 
