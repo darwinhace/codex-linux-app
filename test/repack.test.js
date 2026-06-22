@@ -36,6 +36,7 @@ import {
   applyLinuxNotificationSoundPatch,
   applyLinuxOpenTargetsPatch,
   applyLinuxMenuBarPatch,
+  applyLinuxTitleBarOverlayPatch,
   applyLinuxNewThreadModelPatch,
   applyLinuxTerminalLifecyclePatch,
   applyLinuxTodoProgressPatch,
@@ -82,6 +83,7 @@ import {
   injectLinuxNotificationSoundPatch,
   injectLinuxOpenTargetsPatch,
   injectLinuxMenuBarPatch,
+  injectLinuxTitleBarOverlayPatch,
   injectLinuxNewThreadModelPatch,
   injectLinuxTerminalLifecyclePatch,
   injectLinuxTodoProgressPatch,
@@ -312,6 +314,8 @@ const LINUX_MENU_BAR_BUNDLE_WITH_ABOUT =
   'var UZ=`codex.aboutDialog.title`,WZ=`About {appName}`;async function aQ({buildFlavor:e,parent:i}){}function gQ({buildFlavor:e}){let ye={label:n.U().formatMessage({messageId:UZ,defaultMessage:WZ,values:{appName:r.app.getName()}}),click:(t,n)=>{aQ({buildFlavor:e,parent:n instanceof r.BrowserWindow&&!n.isDestroyed()?n:null})}},x=new r.BrowserWindow({show:l,...process.platform===`win32`?{autoHideMenuBar:!0}:{}});return ye}';
 const LINUX_MENU_BAR_BUNDLE_WITH_ABOUT_AUTO_HIDE_PATCHED =
   'var UZ=`codex.aboutDialog.title`,WZ=`About {appName}`;async function aQ({buildFlavor:e,parent:i}){}function gQ({buildFlavor:e}){let ye={label:n.U().formatMessage({messageId:UZ,defaultMessage:WZ,values:{appName:r.app.getName()}}),click:(t,n)=>{aQ({buildFlavor:e,parent:n instanceof r.BrowserWindow&&!n.isDestroyed()?n:null})}},x=new r.BrowserWindow({show:l,...process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{}});return ye}';
+const LINUX_TITLE_BAR_OVERLAY_BUNDLE_26_616 =
+  'var B8=`#00000000`,Q8=36,$8=`#1f1f1f`,e5=`#ffffff`;function n5(e=1){return{color:B8,symbolColor:a.nativeTheme.shouldUseDarkColors?e5:$8,height:Math.round(Q8*e)}}function o5(n,r){return n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:n5(r)}:{titleBarStyle:`default`}}';
 const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_422 =
@@ -3168,6 +3172,48 @@ test('injectLinuxMenuBarPatch reports diagnostics when menu-bar anchors are miss
   assert.throws(() => injectLinuxMenuBarPatch('const noop = true;', { sourceName: 'main.js' }), {
     message:
       /Could not patch Linux native menu-bar auto-hide behavior in the Electron main bundle\. Source: main\.js\. Missing anchors: BrowserWindow constructor, autoHideMenuBar option, supported autoHideMenuBar platform ternary\. Detected anchors: browserWindowConstructor=no, autoHideMenuBarOption=no, win32AutoHideMenuBarTernary=no, win32OrLinuxAutoHideMenuBarTernary=no\./
+  });
+});
+
+test('injectLinuxTitleBarOverlayPatch sets Linux overlay colors with env escape hatch', () => {
+  const updated = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_BUNDLE_26_616);
+
+  assert.match(updated, /codexLinuxTitleBarOverlayColors/);
+  assert.match(
+    updated,
+    /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==`1`/
+  );
+  assert.match(updated, /codexLinuxTitleBarOverlayColor=a\.nativeTheme\.shouldUseDarkColors\?`#272c36`:`#f9f9f9`/);
+  assert.match(updated, /codexLinuxTitleBarOverlaySymbolColor=a\.nativeTheme\.shouldUseDarkColors\?`#aab2bf`:`#4b5563`/);
+  assert.match(updated, /color:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlayColor:B8/);
+  assert.match(
+    updated,
+    /symbolColor:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlaySymbolColor:/
+  );
+  assert.match(updated, /:a\.nativeTheme\.shouldUseDarkColors\?e5:\$8/);
+  assert.match(updated, /titleBarOverlay:n5\(r\)/);
+});
+
+test('injectLinuxTitleBarOverlayPatch is idempotent', () => {
+  const once = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_BUNDLE_26_616);
+  const twice = injectLinuxTitleBarOverlayPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxTitleBarOverlayPatch skips patching when disabled', () => {
+  const result = applyLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_BUNDLE_26_616, {
+    skip: true
+  });
+
+  assert.equal(result.updated, LINUX_TITLE_BAR_OVERLAY_BUNDLE_26_616);
+  assert.equal(result.status, 'skipped');
+});
+
+test('injectLinuxTitleBarOverlayPatch reports diagnostics when overlay anchors are missing', () => {
+  assert.throws(() => injectLinuxTitleBarOverlayPatch('const noop = true;', { sourceName: 'main.js' }), {
+    message:
+      /Could not patch Linux title-bar overlay colors in the Electron main bundle\. Source: main\.js\. Missing anchors: titleBarOverlay option, nativeTheme dark-color check, symbolColor option, titleBarOverlay options helper\. Detected anchors: titleBarOverlayOption=no, nativeThemeDarkColorCheck=no, symbolColorOption=no, overlayOptionsFunction=no\./
   });
 });
 

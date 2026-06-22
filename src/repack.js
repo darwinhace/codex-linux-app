@@ -74,6 +74,8 @@ const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the Electron main bundle worktree environment propagation for Linux.';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the Electron worker bundle worktree environment handling for Linux.';
+const LINUX_TITLE_BAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux title-bar overlay colors in the Electron main bundle.';
 const LINUX_NOTIFICATION_SOUND_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux notification sound playback in the Electron main bundle.';
 const LINUX_BROWSER_USE_HOST_FETCH_PATCH_BASE_ERROR_MESSAGE =
@@ -294,6 +296,11 @@ export async function installDesktop(options, logger) {
     ? buildSkippedPatchResult('cli-option-disabled')
     : await patchMainProcessBundle(extractedAppDir, logger);
   const linuxMenuBarPatch = await patchMainProcessLinuxMenuBar(extractedAppDir, logger);
+  const linuxTitleBarOverlayPatch = await patchMainProcessLinuxTitleBarOverlay(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux title-bar overlay colors', linuxTitleBarOverlayPatch);
   const linuxCloseCancelPatch = await patchMainProcessLinuxCloseCancel(extractedAppDir, logger);
   const linuxNotificationSoundPatch = await patchMainProcessLinuxNotificationSound(
     extractedAppDir,
@@ -470,6 +477,7 @@ export async function installDesktop(options, logger) {
     bootstrap: bootstrapPatch,
     openTargets: openTargetsPatch,
     linuxMenuBar: linuxMenuBarPatch,
+    linuxTitleBarOverlay: linuxTitleBarOverlayPatch,
     linuxCloseCancel: linuxCloseCancelPatch,
     linuxNotificationSound: linuxNotificationSoundPatch,
     linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
@@ -570,6 +578,7 @@ export async function installDesktop(options, logger) {
       bootstrap: bootstrapPatch,
       openTargets: openTargetsPatch,
       linuxMenuBar: linuxMenuBarPatch,
+      linuxTitleBarOverlay: linuxTitleBarOverlayPatch,
       linuxCloseCancel: linuxCloseCancelPatch,
       linuxNotificationSound: linuxNotificationSoundPatch,
       linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
@@ -914,6 +923,7 @@ async function patchBootstrap(extractedAppDir) {
 const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
 const LINUX_MENU_BAR_PATCH_MARKER = 'codexLinuxMenuBarAutoHide';
 const LINUX_ABOUT_DIALOG_PATCH_MARKER = 'codexLinuxAboutDialogFallback';
+const LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER = 'codexLinuxTitleBarOverlayColors';
 const LINUX_CLOSE_CANCEL_PATCH_MARKER = 'codexLinuxCloseCancel';
 const LINUX_NOTIFICATION_SOUND_PATCH_MARKER = 'codexLinuxNotificationSound';
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
@@ -959,6 +969,8 @@ const LINUX_MENU_BAR_AUTO_HIDE_REPLACEMENT_CURRENT =
   'process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{}';
 const LINUX_ABOUT_DIALOG_CLICK_PATTERN =
   /click:\((?<menuItemVar>[A-Za-z_$][\w$]*),(?<windowVar>[A-Za-z_$][\w$]*)\)=>\{(?<aboutFn>[A-Za-z_$][\w$]*)\(\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*),parent:\k<windowVar> instanceof (?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow&&!\k<windowVar>\.isDestroyed\(\)\?\k<windowVar>:null\}\)\}/;
+const LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\((?<scaleVar>[A-Za-z_$][\w$]*)=1\)\{return\{color:(?<colorVar>[A-Za-z_$][\w$]*),symbolColor:(?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.shouldUseDarkColors\?(?<darkColorVar>[A-Za-z_$][\w$]*):(?<lightColorVar>[A-Za-z_$][\w$]*),height:Math\.round\((?<heightVar>[A-Za-z_$][\w$]*)\*\k<scaleVar>\)\}\}/;
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT =
   't.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT =
@@ -1728,6 +1740,28 @@ async function patchMainProcessLinuxMenuBar(extractedAppDir, logger) {
   };
 }
 
+async function patchMainProcessLinuxTitleBarOverlay(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for Linux title-bar overlay patch`);
+  const result = applyLinuxTitleBarOverlayPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux title-bar overlay colors into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
 async function patchMainProcessLinuxCloseCancel(extractedAppDir, logger) {
   const buildDir = path.join(extractedAppDir, '.vite', 'build');
   const files = await fs.promises.readdir(buildDir);
@@ -2346,6 +2380,45 @@ export function injectLinuxMenuBarPatch(bundleSource, options = {}) {
     }
   }
   return injectLinuxAboutDialogFallbackPatch(updated, options);
+}
+
+export function applyLinuxTitleBarOverlayPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxTitleBarOverlayPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxTitleBarOverlayPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  const match = bundleSource.match(LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN);
+  if (!match?.groups) {
+    throw new Error(buildLinuxTitleBarOverlayPatchErrorMessage(bundleSource, options.sourceName));
+  }
+  return bundleSource.replace(LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN, () =>
+    buildLinuxTitleBarOverlayOptions(match.groups)
+  );
+}
+
+function buildLinuxTitleBarOverlayOptions({
+  colorVar,
+  darkColorVar,
+  electronVar,
+  fnName,
+  heightVar,
+  lightColorVar,
+  scaleVar
+}) {
+  return `function ${fnName}(${scaleVar}=1){let codexLinuxTitleBarOverlayEnabled=process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==\`1\`,codexLinuxTitleBarOverlayColor=${electronVar}.nativeTheme.shouldUseDarkColors?\`#272c36\`:\`#f9f9f9\`,codexLinuxTitleBarOverlaySymbolColor=${electronVar}.nativeTheme.shouldUseDarkColors?\`#aab2bf\`:\`#4b5563\`;return{color:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlayColor:${colorVar},symbolColor:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlaySymbolColor:${electronVar}.nativeTheme.shouldUseDarkColors?${darkColorVar}:${lightColorVar},height:Math.round(${heightVar}*${scaleVar})}}/* ${LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER} */`;
 }
 
 function injectLinuxAboutDialogFallbackPatch(bundleSource, options = {}) {
@@ -7052,6 +7125,14 @@ function buildLinuxMenuBarPatchErrorMessage(bundleSource, sourceName) {
   );
 }
 
+function buildLinuxTitleBarOverlayPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_TITLE_BAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxTitleBarOverlayBundle(bundleSource)
+  );
+}
+
 function buildLinuxAboutDialogPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     'Could not patch Linux About dialog fallback in the Electron main bundle.',
@@ -7218,6 +7299,25 @@ function analyzeLinuxMenuBarBundle(bundleSource) {
       !hasWin32OnlyAutoHideMenuBarTernary &&
         !hasWin32OrLinuxAutoHideMenuBarTernary &&
         'supported autoHideMenuBar platform ternary'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxTitleBarOverlayBundle(bundleSource) {
+  const detected = {
+    titleBarOverlayOption: bundleSource.includes('titleBarOverlay'),
+    nativeThemeDarkColorCheck: bundleSource.includes('.nativeTheme.shouldUseDarkColors'),
+    symbolColorOption: bundleSource.includes('symbolColor:'),
+    overlayOptionsFunction: LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.titleBarOverlayOption && 'titleBarOverlay option',
+      !detected.nativeThemeDarkColorCheck && 'nativeTheme dark-color check',
+      !detected.symbolColorOption && 'symbolColor option',
+      !detected.overlayOptionsFunction && 'titleBarOverlay options helper'
     ].filter(Boolean)
   };
 }
