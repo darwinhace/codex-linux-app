@@ -924,6 +924,8 @@ const LINUX_OPEN_TARGETS_PATCH_MARKER = 'codexLinuxTargets';
 const LINUX_MENU_BAR_PATCH_MARKER = 'codexLinuxMenuBarAutoHide';
 const LINUX_ABOUT_DIALOG_PATCH_MARKER = 'codexLinuxAboutDialogFallback';
 const LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER = 'codexLinuxTitleBarOverlayColors';
+const LINUX_TITLE_BAR_OVERLAY_THEME_SYNC_PATCH_MARKER =
+  'codexLinuxTitleBarOverlayThemeSync';
 const LINUX_CLOSE_CANCEL_PATCH_MARKER = 'codexLinuxCloseCancel';
 const LINUX_NOTIFICATION_SOUND_PATCH_MARKER = 'codexLinuxNotificationSound';
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
@@ -971,6 +973,18 @@ const LINUX_ABOUT_DIALOG_CLICK_PATTERN =
   /click:\((?<menuItemVar>[A-Za-z_$][\w$]*),(?<windowVar>[A-Za-z_$][\w$]*)\)=>\{(?<aboutFn>[A-Za-z_$][\w$]*)\(\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*),parent:\k<windowVar> instanceof (?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow&&!\k<windowVar>\.isDestroyed\(\)\?\k<windowVar>:null\}\)\}/;
 const LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\((?<scaleVar>[A-Za-z_$][\w$]*)=1\)\{return\{color:(?<colorVar>[A-Za-z_$][\w$]*),symbolColor:(?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.shouldUseDarkColors\?(?<darkColorVar>[A-Za-z_$][\w$]*):(?<lightColorVar>[A-Za-z_$][\w$]*),height:Math\.round\((?<heightVar>[A-Za-z_$][\w$]*)\*\k<scaleVar>\)\}\}/;
+const LINUX_TITLE_BAR_OVERLAY_PATCHED_OPTIONS_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\((?<scaleVar>[A-Za-z_$][\w$]*)=1\)\{let codexLinuxTitleBarOverlayEnabled=process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==`1`,codexLinuxTitleBarOverlayColor=(?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.shouldUseDarkColors\?`#272c36`:`#f9f9f9`,codexLinuxTitleBarOverlaySymbolColor=\k<electronVar>\.nativeTheme\.shouldUseDarkColors\?`#aab2bf`:`#4b5563`;return\{color:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlayColor:(?<colorVar>[A-Za-z_$][\w$]*),symbolColor:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlaySymbolColor:\k<electronVar>\.nativeTheme\.shouldUseDarkColors\?(?<darkColorVar>[A-Za-z_$][\w$]*):(?<lightColorVar>[A-Za-z_$][\w$]*),height:Math\.round\((?<heightVar>[A-Za-z_$][\w$]*)\*\k<scaleVar>\)\}\}\/\* codexLinuxTitleBarOverlayColors \*\//;
+const LINUX_TITLE_BAR_OVERLAY_CURRENT_PATCHED_OPTIONS_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\((?<scaleVar>[A-Za-z_$][\w$]*)=1,codexLinuxTitleBarOverlayTheme=null\)\{let codexLinuxTitleBarOverlayEnabled=process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==`1`,codexLinuxTitleBarOverlayColor=codexLinuxTitleBarOverlayTheme\?\.color\?\?\((?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.shouldUseDarkColors\?`#(?:272c36|222222)`:`#f9f9f9`\),codexLinuxTitleBarOverlaySymbolColor=codexLinuxTitleBarOverlayTheme\?\.symbolColor\?\?\(\k<electronVar>\.nativeTheme\.shouldUseDarkColors\?`#(?:aab2bf|c7c7c7)`:`#4b5563`\);return\{color:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlayColor:(?<colorVar>[A-Za-z_$][\w$]*),symbolColor:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlaySymbolColor:\k<electronVar>\.nativeTheme\.shouldUseDarkColors\?(?<darkColorVar>[A-Za-z_$][\w$]*):(?<lightColorVar>[A-Za-z_$][\w$]*),height:Math\.round\((?<heightVar>[A-Za-z_$][\w$]*)\*\k<scaleVar>\)\}\}\/\* codexLinuxTitleBarOverlayColors codexLinuxTitleBarOverlayThemeSync \*\//;
+const LINUX_TITLE_BAR_OVERLAY_TRANSPARENT_PATCHED_OPTIONS_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\((?<scaleVar>[A-Za-z_$][\w$]*)=1,codexLinuxTitleBarOverlayTheme=null\)\{let codexLinuxTitleBarOverlayEnabled=process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==`1`,codexLinuxTitleBarOverlaySymbolColor=codexLinuxTitleBarOverlayTheme\?\.symbolColor\?\?\((?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.shouldUseDarkColors\?`#c7c7c7`:`#4b5563`\);return\{color:(?<colorVar>[A-Za-z_$][\w$]*),symbolColor:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlaySymbolColor:\k<electronVar>\.nativeTheme\.shouldUseDarkColors\?(?<darkColorVar>[A-Za-z_$][\w$]*):(?<lightColorVar>[A-Za-z_$][\w$]*),height:Math\.round\((?<heightVar>[A-Za-z_$][\w$]*)\*\k<scaleVar>\)\}\}\/\* codexLinuxTitleBarOverlayColors codexLinuxTitleBarOverlayThemeSync \*\//;
+const LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN =
+  /setWindowZoom\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<zoomVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow\.fromWebContents\(\k<webContentsVar>\);\k<windowVar>==null\|\|this\.windowAppearances\.get\(\k<windowVar>\.id\)!==`primary`\|\|\(process\.platform===`darwin`\?\k<windowVar>\.setWindowButtonPosition\((?<buttonPositionFn>[A-Za-z_$][\w$]*)\(\k<zoomVar>\)\):\(process\.platform===`win32`\|\|process\.platform===`linux`\)&&\(this\.windowZooms\.set\(\k<windowVar>\.id,\k<zoomVar>\),\k<windowVar>\.setTitleBarOverlay\((?<overlayFn>[A-Za-z_$][\w$]*)\(\k<zoomVar>\)\)\)\)\}/;
+const LINUX_TITLE_BAR_OVERLAY_MESSAGE_CASE_PATTERN =
+  /case`power-save-blocker-set`:this\.updatePowerSaveBlocker\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<messageVar>[A-Za-z_$][\w$]*)\.shouldBlock,\k<messageVar>\.keepRemoteControlAwakeWhilePluggedIn\);break;/;
+const LINUX_TITLE_BAR_OVERLAY_EXISTING_MESSAGE_CASE_PATTERN =
+  /case`codex-linux-title-bar-overlay-theme-set`:this(?:\.windowManager)?\.codexLinuxSetTitleBarOverlayTheme\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<messageVar>[A-Za-z_$][\w$]*)\);break;(?<powerCase>case`power-save-blocker-set`:this\.updatePowerSaveBlocker\(\k<webContentsVar>,\k<messageVar>\.shouldBlock,\k<messageVar>\.keepRemoteControlAwakeWhilePluggedIn\);break;)/;
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT =
   't.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT =
@@ -2397,16 +2411,113 @@ export function applyLinuxTitleBarOverlayPatch(bundleSource, options = {}) {
 }
 
 export function injectLinuxTitleBarOverlayPatch(bundleSource, options = {}) {
-  if (bundleSource.includes(LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER)) {
-    return bundleSource;
+  const match =
+    bundleSource.match(LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN) ??
+    bundleSource.match(LINUX_TITLE_BAR_OVERLAY_PATCHED_OPTIONS_PATTERN) ??
+    bundleSource.match(LINUX_TITLE_BAR_OVERLAY_CURRENT_PATCHED_OPTIONS_PATTERN) ??
+    bundleSource.match(LINUX_TITLE_BAR_OVERLAY_TRANSPARENT_PATCHED_OPTIONS_PATTERN);
+  if (bundleSource.includes(LINUX_TITLE_BAR_OVERLAY_THEME_SYNC_PATCH_MARKER)) {
+    let updated = bundleSource;
+    if (match?.groups && LINUX_TITLE_BAR_OVERLAY_CURRENT_PATCHED_OPTIONS_PATTERN.test(bundleSource)) {
+      updated = updated.replace(LINUX_TITLE_BAR_OVERLAY_CURRENT_PATCHED_OPTIONS_PATTERN, () =>
+        buildLinuxTitleBarOverlayOptions(match.groups)
+      );
+    } else if (
+      match?.groups &&
+      LINUX_TITLE_BAR_OVERLAY_TRANSPARENT_PATCHED_OPTIONS_PATTERN.test(bundleSource)
+    ) {
+      updated = updated.replace(LINUX_TITLE_BAR_OVERLAY_TRANSPARENT_PATCHED_OPTIONS_PATTERN, () =>
+        buildLinuxTitleBarOverlayOptions(match.groups)
+      );
+    }
+    return injectLinuxTitleBarOverlayThemeSyncPatch(updated, options.sourceName);
   }
-  const match = bundleSource.match(LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN);
   if (!match?.groups) {
     throw new Error(buildLinuxTitleBarOverlayPatchErrorMessage(bundleSource, options.sourceName));
   }
-  return bundleSource.replace(LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN, () =>
+  const optionsPattern = bundleSource.includes(LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER)
+    ? LINUX_TITLE_BAR_OVERLAY_PATCHED_OPTIONS_PATTERN
+    : LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN;
+  const updated = bundleSource.replace(optionsPattern, () =>
     buildLinuxTitleBarOverlayOptions(match.groups)
   );
+  return injectLinuxTitleBarOverlayThemeSyncPatch(updated, options.sourceName);
+}
+
+function injectLinuxTitleBarOverlayThemeSyncPatch(bundleSource, sourceName) {
+  const shouldPatchThemeSync =
+    bundleSource.includes('setTitleBarOverlay(') ||
+    bundleSource.includes('windowZooms=new Map') ||
+    bundleSource.includes('power-save-blocker-set');
+  if (!shouldPatchThemeSync) {
+    return bundleSource;
+  }
+
+  let updated = bundleSource;
+  if (!updated.includes('codexLinuxTitleBarOverlayThemes=new Map')) {
+    updated = updated.replace(
+      /windowZooms=new Map;/,
+      'windowZooms=new Map;codexLinuxTitleBarOverlayThemes=new Map;'
+    );
+  }
+
+  const windowZoomMatch = updated.match(LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN);
+  if (windowZoomMatch?.groups) {
+    updated = updated.replace(
+      LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN,
+      buildLinuxTitleBarOverlayWindowZoomReplacement(windowZoomMatch.groups)
+    );
+  }
+
+  if (!updated.includes('case`codex-linux-title-bar-overlay-theme-set`')) {
+    updated = updated.replace(
+      LINUX_TITLE_BAR_OVERLAY_MESSAGE_CASE_PATTERN,
+      (...args) => {
+        const groups = args.at(-1);
+        return buildLinuxTitleBarOverlayThemeMessageCase(updated, {
+          webContentsVar: groups.webContentsVar,
+          messageVar: groups.messageVar,
+          powerCase: `case\`power-save-blocker-set\`:this.updatePowerSaveBlocker(${groups.webContentsVar},${groups.messageVar}.shouldBlock,${groups.messageVar}.keepRemoteControlAwakeWhilePluggedIn);break;`
+        });
+      }
+    );
+  } else {
+    updated = updated.replace(
+      LINUX_TITLE_BAR_OVERLAY_EXISTING_MESSAGE_CASE_PATTERN,
+      (...args) => {
+        const groups = args.at(-1);
+        return buildLinuxTitleBarOverlayThemeMessageCase(updated, groups);
+      }
+    );
+  }
+
+  const expectedMessageTarget = `${getLinuxTitleBarOverlayThemeMessageTarget(updated)}codexLinuxSetTitleBarOverlayTheme`;
+
+  if (
+    !updated.includes('codexLinuxTitleBarOverlayThemes=new Map') ||
+    !updated.includes('codexLinuxSetTitleBarOverlayTheme') ||
+    !updated.includes(`case\`codex-linux-title-bar-overlay-theme-set\`:${expectedMessageTarget}`)
+  ) {
+    throw new Error(
+      buildLinuxTitleBarOverlayThemeSyncPatchErrorMessage(bundleSource, sourceName)
+    );
+  }
+
+  return updated;
+}
+
+function getLinuxTitleBarOverlayThemeMessageTarget(bundleSource) {
+  return bundleSource.includes('this.windowManager.setWindowZoom(')
+    ? 'this.windowManager.'
+    : 'this.';
+}
+
+function buildLinuxTitleBarOverlayThemeMessageCase(bundleSource, {
+  messageVar,
+  powerCase,
+  webContentsVar
+}) {
+  return `case\`codex-linux-title-bar-overlay-theme-set\`:${getLinuxTitleBarOverlayThemeMessageTarget(bundleSource)}codexLinuxSetTitleBarOverlayTheme(${webContentsVar},${messageVar});break;${powerCase}`;
 }
 
 function buildLinuxTitleBarOverlayOptions({
@@ -2418,7 +2529,18 @@ function buildLinuxTitleBarOverlayOptions({
   lightColorVar,
   scaleVar
 }) {
-  return `function ${fnName}(${scaleVar}=1){let codexLinuxTitleBarOverlayEnabled=process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==\`1\`,codexLinuxTitleBarOverlayColor=${electronVar}.nativeTheme.shouldUseDarkColors?\`#272c36\`:\`#f9f9f9\`,codexLinuxTitleBarOverlaySymbolColor=${electronVar}.nativeTheme.shouldUseDarkColors?\`#aab2bf\`:\`#4b5563\`;return{color:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlayColor:${colorVar},symbolColor:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlaySymbolColor:${electronVar}.nativeTheme.shouldUseDarkColors?${darkColorVar}:${lightColorVar},height:Math.round(${heightVar}*${scaleVar})}}/* ${LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER} */`;
+  return `function ${fnName}(${scaleVar}=1,codexLinuxTitleBarOverlayTheme=null){let codexLinuxTitleBarOverlayEnabled=process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==\`1\`,codexLinuxTitleBarOverlayColor=codexLinuxTitleBarOverlayTheme?.color??${colorVar},codexLinuxTitleBarOverlaySymbolColor=codexLinuxTitleBarOverlayTheme?.symbolColor??(${electronVar}.nativeTheme.shouldUseDarkColors?\`#c7c7c7\`:\`#4b5563\`);return{color:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlayColor:${colorVar},symbolColor:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlaySymbolColor:${electronVar}.nativeTheme.shouldUseDarkColors?${darkColorVar}:${lightColorVar},height:Math.round(${heightVar}*${scaleVar})}}/* ${LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER} ${LINUX_TITLE_BAR_OVERLAY_THEME_SYNC_PATCH_MARKER} */`;
+}
+
+function buildLinuxTitleBarOverlayWindowZoomReplacement({
+  buttonPositionFn,
+  electronVar,
+  overlayFn,
+  webContentsVar,
+  windowVar,
+  zoomVar
+}) {
+  return `codexLinuxApplyTitleBarOverlay(${windowVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`||${windowVar}==null||${windowVar}.isDestroyed?.())return;let ${webContentsVar}=this.windowZooms.get(${windowVar}.id)??1,${zoomVar}=this.codexLinuxTitleBarOverlayThemes.get(${windowVar}.id)??null;${windowVar}.setTitleBarOverlay(${overlayFn}(${webContentsVar},${zoomVar}))}codexLinuxSetTitleBarOverlayTheme(${webContentsVar},${zoomVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`)return;let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar});if(${windowVar}==null||this.windowAppearances.get(${windowVar}.id)!==\`primary\`)return;let codexLinuxTitleBarOverlayTheme=${zoomVar}&&typeof ${zoomVar}.color===\`string\`&&typeof ${zoomVar}.symbolColor===\`string\`&&${zoomVar}.color.length<=120&&${zoomVar}.symbolColor.length<=120?{color:${zoomVar}.color,symbolColor:${zoomVar}.symbolColor}:null;if(codexLinuxTitleBarOverlayTheme==null)return;this.codexLinuxTitleBarOverlayThemes.set(${windowVar}.id,codexLinuxTitleBarOverlayTheme),this.codexLinuxApplyTitleBarOverlay(${windowVar})}setWindowZoom(${webContentsVar},${zoomVar}){let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar});${windowVar}==null||this.windowAppearances.get(${windowVar}.id)!==\`primary\`||(process.platform===\`darwin\`?${windowVar}.setWindowButtonPosition(${buttonPositionFn}(${zoomVar})):(process.platform===\`win32\`||process.platform===\`linux\`)&&(this.windowZooms.set(${windowVar}.id,${zoomVar}),process.platform===\`linux\`?this.codexLinuxApplyTitleBarOverlay(${windowVar}):${windowVar}.setTitleBarOverlay(${overlayFn}(${zoomVar}))))}`;
 }
 
 function injectLinuxAboutDialogFallbackPatch(bundleSource, options = {}) {
@@ -4934,8 +5056,18 @@ export function applyLinuxVisualCompatJsPatch(bundleSource, options = {}) {
 }
 
 export function injectLinuxVisualCompatJsPatch(bundleSource, options = {}) {
-  if (bundleSource.includes(LINUX_VISUAL_COMPAT_PATCH_MARKER)) {
+  if (bundleSource.includes(LINUX_TITLE_BAR_OVERLAY_THEME_SYNC_PATCH_MARKER)) {
     return bundleSource;
+  }
+  if (bundleSource.includes(LINUX_VISUAL_COMPAT_PATCH_MARKER)) {
+    const updated = bundleSource.replace(
+      /classList\.toggle\(`codex-linux-visual-compat`,r\);/,
+      (match) => `${match}${buildLinuxTitleBarOverlayThemeSyncJs()}`
+    );
+    if (updated === bundleSource) {
+      throw new Error(buildLinuxVisualCompatJsPatchErrorMessage(bundleSource, options.sourceName));
+    }
+    return updated;
   }
 
   return replaceFirstMatchingRegexOrThrow(
@@ -4978,7 +5110,13 @@ function buildLinuxVisualCompatJsReplacement({
   opaqueGuardFn,
   upstreamOpaqueCondition
 }) {
-  return `if(${elementVar}){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===\`linux\`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===\`1\`}catch{}let r=t&&!n;${elementVar}.classList.toggle(\`codex-linux-visual-compat\`,r);${buildLinuxRightPanelTabMetricsJs()}if((${upstreamOpaqueCondition}||r)&&!${opaqueGuardFn}()){${elementVar}.classList.add(\`electron-opaque\`);return}${elementVar}.classList.remove(\`electron-opaque\`)}`;
+  return `if(${elementVar}){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===\`linux\`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===\`1\`}catch{}let r=t&&!n;${elementVar}.classList.toggle(\`codex-linux-visual-compat\`,r);${buildLinuxTitleBarOverlayThemeSyncJs(`document.body??${elementVar}??document.documentElement`)}${buildLinuxRightPanelTabMetricsJs()}if((${upstreamOpaqueCondition}||r)&&!${opaqueGuardFn}()){${elementVar}.classList.add(\`electron-opaque\`);return}${elementVar}.classList.remove(\`electron-opaque\`)}`;
+}
+
+function buildLinuxTitleBarOverlayThemeSyncJs(
+  targetExpression = 'document.body??document.documentElement'
+) {
+  return `if(r){let i=()=>{try{let codexLinuxTitleBarOverlayTarget=${targetExpression};if(!codexLinuxTitleBarOverlayTarget)return;let codexLinuxTitleBarOverlayProbe=document.createElement(\`span\`);codexLinuxTitleBarOverlayProbe.style.cssText=\`position:absolute;left:-9999px;top:-9999px;pointer-events:none;color:var(--color-token-foreground,var(--color-token-description-foreground));background:var(--color-background-surface-under,var(--color-token-editor-background))\`,codexLinuxTitleBarOverlayTarget.appendChild(codexLinuxTitleBarOverlayProbe);let t=getComputedStyle(codexLinuxTitleBarOverlayProbe),n=t.backgroundColor,a=t.color;codexLinuxTitleBarOverlayProbe.remove();if(!n||!a||n===\`rgba(0, 0, 0, 0)\`)return;let o=\`\${n}|\${a}\`;if(globalThis.codexLinuxTitleBarOverlayThemeSyncLast===o)return;globalThis.codexLinuxTitleBarOverlayThemeSyncLast=o,window.electronBridge?.sendMessageFromView?.({type:\`codex-linux-title-bar-overlay-theme-set\`,color:n,symbolColor:a})?.catch?.(()=>{})}catch{}};i(),globalThis.codexLinuxTitleBarOverlayThemeSync||(globalThis.codexLinuxTitleBarOverlayThemeSync=1,globalThis.MutationObserver&&(()=>{let e={attributes:!0,attributeFilter:[\`class\`,\`style\`,\`data-theme\`,\`data-codex-theme\`,\`data-codex-color-scheme\`]},t=n=>{try{n&&new MutationObserver(i).observe(n,e)}catch{}};t(document.documentElement),t(document.body),t(${targetExpression})})(),window.electronBridge?.subscribeToSystemThemeVariant?.(i),setTimeout(i,50),setTimeout(i,300),setTimeout(i,1000),setInterval(i,1000))}/* ${LINUX_TITLE_BAR_OVERLAY_THEME_SYNC_PATCH_MARKER} */`;
 }
 
 export async function patchRendererLinuxBrowserViewportSurfaceBundle(extractedAppDir, logger) {
@@ -7133,6 +7271,14 @@ function buildLinuxTitleBarOverlayPatchErrorMessage(bundleSource, sourceName) {
   );
 }
 
+function buildLinuxTitleBarOverlayThemeSyncPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_TITLE_BAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxTitleBarOverlayThemeSyncBundle(bundleSource)
+  );
+}
+
 function buildLinuxAboutDialogPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     'Could not patch Linux About dialog fallback in the Electron main bundle.',
@@ -7304,11 +7450,15 @@ function analyzeLinuxMenuBarBundle(bundleSource) {
 }
 
 function analyzeLinuxTitleBarOverlayBundle(bundleSource) {
+  const hasOverlayOptionsFunction =
+    LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN.test(bundleSource) ||
+    LINUX_TITLE_BAR_OVERLAY_PATCHED_OPTIONS_PATTERN.test(bundleSource) ||
+    LINUX_TITLE_BAR_OVERLAY_CURRENT_PATCHED_OPTIONS_PATTERN.test(bundleSource);
   const detected = {
     titleBarOverlayOption: bundleSource.includes('titleBarOverlay'),
     nativeThemeDarkColorCheck: bundleSource.includes('.nativeTheme.shouldUseDarkColors'),
     symbolColorOption: bundleSource.includes('symbolColor:'),
-    overlayOptionsFunction: LINUX_TITLE_BAR_OVERLAY_OPTIONS_PATTERN.test(bundleSource)
+    overlayOptionsFunction: hasOverlayOptionsFunction
   };
 
   return {
@@ -7318,6 +7468,25 @@ function analyzeLinuxTitleBarOverlayBundle(bundleSource) {
       !detected.nativeThemeDarkColorCheck && 'nativeTheme dark-color check',
       !detected.symbolColorOption && 'symbolColor option',
       !detected.overlayOptionsFunction && 'titleBarOverlay options helper'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxTitleBarOverlayThemeSyncBundle(bundleSource) {
+  const detected = {
+    setTitleBarOverlayCall: bundleSource.includes('setTitleBarOverlay('),
+    windowZoomState: bundleSource.includes('windowZooms=new Map'),
+    windowZoomMethod: LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN.test(bundleSource),
+    powerSaveDispatchCase: LINUX_TITLE_BAR_OVERLAY_MESSAGE_CASE_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.setTitleBarOverlayCall && 'setTitleBarOverlay call',
+      !detected.windowZoomState && 'window zoom state',
+      !detected.windowZoomMethod && 'setWindowZoom method',
+      !detected.powerSaveDispatchCase && 'message dispatch switch'
     ].filter(Boolean)
   };
 }

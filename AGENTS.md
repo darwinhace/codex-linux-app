@@ -10,6 +10,13 @@ These notes are for the current pinned upstream version in `VERSION` (`26.616.51
 - Electron runtime cache validation must check the actual Linux executable at `dist/electron`, not only the `dist` directory. Incomplete caches should be repaired by the repack pipeline from the Electron archive before installing channel resources.
 - Keep `npm test` and `git diff --check` green before handoff.
 
+## Linux Title-Bar Overlay
+
+- The minimize/maximize/close box is Electron native title-bar overlay UI, not DOM chrome. It will not inherit theme CSS unless the renderer sends the active theme colors to the main process.
+- Keep the Linux title-bar overlay driven by renderer `codex-linux-title-bar-overlay-theme-set` messages routed through the window manager, with a per-window theme cache and `setTitleBarOverlay(...)` reapplied on theme and zoom changes.
+- The overlay background should match the app header/top strip, not the editor or page content. Probe `--color-background-surface-under` before falling back to `--color-token-editor-background`; do not restore editor-background-first sampling.
+- For this patch, installed artifact checks should confirm the packed renderer contains `background:var(--color-background-surface-under,var(--color-token-editor-background))` and no old `background:var(--color-token-editor-background,var(--color-background-surface-under))` probe.
+
 ## Linux Computer Use
 
 - `./install-desktop` must install and sync the bundled `computer-use` plugin, `.mcp.json`, plugin cache, and executable backend wrapper.

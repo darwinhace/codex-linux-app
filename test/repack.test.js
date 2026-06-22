@@ -316,6 +316,12 @@ const LINUX_MENU_BAR_BUNDLE_WITH_ABOUT_AUTO_HIDE_PATCHED =
   'var UZ=`codex.aboutDialog.title`,WZ=`About {appName}`;async function aQ({buildFlavor:e,parent:i}){}function gQ({buildFlavor:e}){let ye={label:n.U().formatMessage({messageId:UZ,defaultMessage:WZ,values:{appName:r.app.getName()}}),click:(t,n)=>{aQ({buildFlavor:e,parent:n instanceof r.BrowserWindow&&!n.isDestroyed()?n:null})}},x=new r.BrowserWindow({show:l,...process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{}});return ye}';
 const LINUX_TITLE_BAR_OVERLAY_BUNDLE_26_616 =
   'var B8=`#00000000`,Q8=36,$8=`#1f1f1f`,e5=`#ffffff`;function n5(e=1){return{color:B8,symbolColor:a.nativeTheme.shouldUseDarkColors?e5:$8,height:Math.round(Q8*e)}}function o5(n,r){return n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:n5(r)}:{titleBarStyle:`default`}}';
+const LINUX_TITLE_BAR_OVERLAY_MAIN_BUNDLE_26_616 =
+  'var B8=`#00000000`,Q8=36,$8=`#1f1f1f`,e5=`#ffffff`;function t5(e){return{x:16,y:Math.round((46*e-14)/2)}}function n5(e=1){return{color:B8,symbolColor:a.nativeTheme.shouldUseDarkColors?e5:$8,height:Math.round(Q8*e)}}var r5=class{windowAppearances=new Map;windowZooms=new Map;appShellShortcutStates=new Map;setAppShellShortcutState(e,t){this.appShellShortcutStates.set(e,t)}setWindowZoom(e,t){let n=a.BrowserWindow.fromWebContents(e);n==null||this.windowAppearances.get(n.id)!==`primary`||(process.platform===`darwin`?n.setWindowButtonPosition(t5(t)):(process.platform===`win32`||process.platform===`linux`)&&(this.windowZooms.set(n.id,t),n.setTitleBarOverlay(n5(t))))}handle(e,n){switch(n.type){case`power-save-blocker-set`:this.updatePowerSaveBlocker(e,n.shouldBlock,n.keepRemoteControlAwakeWhilePluggedIn);break;}}};function o5(n,r){return n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:n5(r)}:{titleBarStyle:`default`}}';
+const LINUX_TITLE_BAR_OVERLAY_MAIN_BUNDLE_OLD_PATCHED =
+  'var B8=`#00000000`,Q8=36,$8=`#1f1f1f`,e5=`#ffffff`;function t5(e){return{x:16,y:Math.round((46*e-14)/2)}}function n5(e=1){let codexLinuxTitleBarOverlayEnabled=process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==`1`,codexLinuxTitleBarOverlayColor=a.nativeTheme.shouldUseDarkColors?`#272c36`:`#f9f9f9`,codexLinuxTitleBarOverlaySymbolColor=a.nativeTheme.shouldUseDarkColors?`#aab2bf`:`#4b5563`;return{color:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlayColor:B8,symbolColor:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlaySymbolColor:a.nativeTheme.shouldUseDarkColors?e5:$8,height:Math.round(Q8*e)}}/* codexLinuxTitleBarOverlayColors */var r5=class{windowAppearances=new Map;windowZooms=new Map;appShellShortcutStates=new Map;setAppShellShortcutState(e,t){this.appShellShortcutStates.set(e,t)}setWindowZoom(e,t){let n=a.BrowserWindow.fromWebContents(e);n==null||this.windowAppearances.get(n.id)!==`primary`||(process.platform===`darwin`?n.setWindowButtonPosition(t5(t)):(process.platform===`win32`||process.platform===`linux`)&&(this.windowZooms.set(n.id,t),n.setTitleBarOverlay(n5(t))))}handle(e,n){switch(n.type){case`power-save-blocker-set`:this.updatePowerSaveBlocker(e,n.shouldBlock,n.keepRemoteControlAwakeWhilePluggedIn);break;}}};function o5(n,r){return n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:n5(r)}:{titleBarStyle:`default`}}';
+const LINUX_TITLE_BAR_OVERLAY_SPLIT_HANDLER_BUNDLE_26_616 =
+  'var B8=`#00000000`,Q8=36,$8=`#1f1f1f`,e5=`#ffffff`;function t5(e){return{x:16,y:Math.round((46*e-14)/2)}}function n5(e=1){return{color:B8,symbolColor:a.nativeTheme.shouldUseDarkColors?e5:$8,height:Math.round(Q8*e)}}var r5=class{windowAppearances=new Map;windowZooms=new Map;appShellShortcutStates=new Map;setAppShellShortcutState(e,t){this.appShellShortcutStates.set(e,t)}setWindowZoom(e,t){let n=a.BrowserWindow.fromWebContents(e);n==null||this.windowAppearances.get(n.id)!==`primary`||(process.platform===`darwin`?n.setWindowButtonPosition(t5(t)):(process.platform===`win32`||process.platform===`linux`)&&(this.windowZooms.set(n.id,t),n.setTitleBarOverlay(n5(t))))}};var m5=class{windowManager=new r5;handle(e,n){switch(n.type){case`power-save-blocker-set`:this.updatePowerSaveBlocker(e,n.shouldBlock,n.keepRemoteControlAwakeWhilePluggedIn);break;case`electron-window-zoom-changed`:this.windowManager.setWindowZoom(e,n.windowZoom);break;}}};function o5(n,r){return n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:n5(r)}:{titleBarStyle:`default`}}';
 const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_422 =
@@ -657,6 +663,8 @@ const LINUX_VISUAL_COMPAT_JS_26_409 =
   'let H,U;t[46]!==T||t[47]!==a?(H=()=>{if(a!==`electron`)return;let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if(T.opaqueWindows&&!wX()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}}},U=[T,a],t[46]=T,t[47]=a,t[48]=H,t[49]=U):(H=t[48],U=t[49]),(0,Z.useLayoutEffect)(H,U);';
 const LINUX_VISUAL_COMPAT_JS_26_519 =
   '(0,Q.useLayoutEffect)(()=>{let e=document.querySelector(`[data-codex-window-type="electron"]`);if(e){if((g.opaqueWindows||i)&&!pc()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}},[g,i]),(0,Q.useLayoutEffect)(()=>{let e=document.documentElement;if(e.dataset.codexOs===`darwin`)return},[p]);';
+const LINUX_VISUAL_COMPAT_JS_OLD_PATCHED =
+  'if(e){/* codexLinuxVisualCompat */let t=document.documentElement.dataset.codexOs===`linux`,n=!1;try{n=process?.env?.CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT===`1`}catch{}let r=t&&!n;e.classList.toggle(`codex-linux-visual-compat`,r);if((T.opaqueWindows||r)&&!XZ()){e.classList.add(`electron-opaque`);return}e.classList.remove(`electron-opaque`)}';
 const LINUX_BROWSER_COMMENT_POSITION_BUNDLE_CURRENT =
   'function wP(e){let x;let{message:N,root:P,popupWindow:F}=x,I=N.session.sessionId;let U;t[31]!==N.editorFrame.height||t[32]!==N.editorFrame.width||t[33]!==N.editorFrame.x||t[34]!==N.editorFrame.y?(U={left:N.editorFrame.x,top:N.editorFrame.y,width:N.editorFrame.width,height:N.editorFrame.height},t[31]=N.editorFrame.height,t[32]=N.editorFrame.width,t[33]=N.editorFrame.x,t[34]=N.editorFrame.y,t[35]=U):U=t[35];return U}function TP({conversationId:e,openerWindow:t,existingPopup:n,message:r}){let i=ze({windowId:ve.BROWSER_COMMENT_POPUP,conversationId:e});if(n!=null&&!n.window.closed&&n.frameName===i)return n;let{x:a,y:o,width:s,height:c}=r.overlayWindowBounds,l=t.open(`about:blank`,i,[`popup=yes`,`left=${Math.round(a)}`,`top=${Math.round(o)}`,`width=${Math.round(s)}`,`height=${Math.round(c)}`].join(`,`));return l==null?null:{frameName:i,window:l}}d(`browser-sidebar-comment-overlay-session`,k,A);';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_BUNDLE_CURRENT =
@@ -3179,13 +3187,25 @@ test('injectLinuxTitleBarOverlayPatch sets Linux overlay colors with env escape 
   const updated = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_BUNDLE_26_616);
 
   assert.match(updated, /codexLinuxTitleBarOverlayColors/);
+  assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
   assert.match(
     updated,
     /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==`1`/
   );
-  assert.match(updated, /codexLinuxTitleBarOverlayColor=a\.nativeTheme\.shouldUseDarkColors\?`#272c36`:`#f9f9f9`/);
-  assert.match(updated, /codexLinuxTitleBarOverlaySymbolColor=a\.nativeTheme\.shouldUseDarkColors\?`#aab2bf`:`#4b5563`/);
-  assert.match(updated, /color:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlayColor:B8/);
+  assert.match(
+    updated,
+    /codexLinuxTitleBarOverlayColor=codexLinuxTitleBarOverlayTheme\?\.color\?\?B8/
+  );
+  assert.doesNotMatch(updated, /#222222/);
+  assert.doesNotMatch(updated, /#272c36/);
+  assert.match(
+    updated,
+    /codexLinuxTitleBarOverlaySymbolColor=codexLinuxTitleBarOverlayTheme\?\.symbolColor\?\?\(a\.nativeTheme\.shouldUseDarkColors\?`#c7c7c7`:`#4b5563`\)/
+  );
+  assert.match(
+    updated,
+    /return\{color:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlayColor:B8,symbolColor:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlaySymbolColor/
+  );
   assert.match(
     updated,
     /symbolColor:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlaySymbolColor:/
@@ -3194,8 +3214,66 @@ test('injectLinuxTitleBarOverlayPatch sets Linux overlay colors with env escape 
   assert.match(updated, /titleBarOverlay:n5\(r\)/);
 });
 
+test('injectLinuxTitleBarOverlayPatch syncs Linux overlay colors from renderer theme messages', () => {
+  const updated = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_MAIN_BUNDLE_26_616);
+
+  assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
+  assert.match(updated, /codexLinuxTitleBarOverlayThemes=new Map/);
+  assert.match(updated, /codexLinuxSetTitleBarOverlayTheme/);
+  assert.match(updated, /codex-linux-title-bar-overlay-theme-set/);
+  assert.match(updated, /this\.codexLinuxTitleBarOverlayThemes\.set\(n\.id,codexLinuxTitleBarOverlayTheme\)/);
+  assert.match(updated, /n\.setTitleBarOverlay\(n5\(e,t\)\)/);
+  assert.match(
+    updated,
+    /process\.platform===`linux`\?this\.codexLinuxApplyTitleBarOverlay\(n\):n\.setTitleBarOverlay\(n5\(t\)\)/
+  );
+  assert.match(
+    updated,
+    /case`codex-linux-title-bar-overlay-theme-set`:this\.codexLinuxSetTitleBarOverlayTheme\(e,n\);break;case`power-save-blocker-set`/
+  );
+});
+
+test('injectLinuxTitleBarOverlayPatch routes renderer theme messages through the split window manager', () => {
+  const updated = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_SPLIT_HANDLER_BUNDLE_26_616);
+
+  assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
+  assert.match(updated, /codexLinuxTitleBarOverlayThemes=new Map/);
+  assert.match(updated, /codexLinuxSetTitleBarOverlayTheme/);
+  assert.match(
+    updated,
+    /case`codex-linux-title-bar-overlay-theme-set`:this\.windowManager\.codexLinuxSetTitleBarOverlayTheme\(e,n\);break;case`power-save-blocker-set`/
+  );
+  assert.doesNotMatch(
+    updated,
+    /case`codex-linux-title-bar-overlay-theme-set`:this\.codexLinuxSetTitleBarOverlayTheme\(e,n\)/
+  );
+  assert.match(
+    updated,
+    /return\{color:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlayColor:B8/
+  );
+});
+
+test('injectLinuxTitleBarOverlayPatch upgrades the old static Linux overlay patch', () => {
+  const updated = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_MAIN_BUNDLE_OLD_PATCHED);
+
+  assert.match(updated, /codexLinuxTitleBarOverlayColors/);
+  assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
+  assert.match(updated, /codexLinuxTitleBarOverlayThemes=new Map/);
+  assert.match(updated, /codex-linux-title-bar-overlay-theme-set/);
+  assert.match(updated, /codexLinuxTitleBarOverlayTheme\?\.color/);
+  assert.match(updated, /codexLinuxTitleBarOverlayTheme\?\.symbolColor/);
+  assert.match(
+    updated,
+    /return\{color:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlayColor:B8/
+  );
+  assert.doesNotMatch(
+    updated,
+    /codexLinuxTitleBarOverlayColor=a\.nativeTheme\.shouldUseDarkColors\?`#272c36`:`#f9f9f9`/
+  );
+});
+
 test('injectLinuxTitleBarOverlayPatch is idempotent', () => {
-  const once = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_BUNDLE_26_616);
+  const once = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_MAIN_BUNDLE_26_616);
   const twice = injectLinuxTitleBarOverlayPatch(once);
 
   assert.equal(twice, once);
@@ -5630,6 +5708,21 @@ test('injectLinuxVisualCompatJsPatch supports the 26.519 opaque window effect sh
   const updated = injectLinuxVisualCompatJsPatch(LINUX_VISUAL_COMPAT_JS_26_519);
 
   assert.match(updated, /codexLinuxVisualCompat/);
+  assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
+  assert.match(updated, /codex-linux-title-bar-overlay-theme-set/);
+  assert.match(
+    updated,
+    /color:var\(--color-token-foreground,var\(--color-token-description-foreground\)\)/
+  );
+  assert.match(
+    updated,
+    /background:var\(--color-background-surface-under,var\(--color-token-editor-background\)\)/
+  );
+  assert.match(updated, /document\.body\?\?e\?\?document\.documentElement/);
+  assert.match(updated, /sendMessageFromView/);
+  assert.match(updated, /MutationObserver/);
+  assert.match(updated, /subscribeToSystemThemeVariant/);
+  assert.match(updated, /setInterval\(i,1000\)/);
   assert.match(updated, /codexLinuxRightPanelTabMetrics/);
   assert.match(updated, /classList\.toggle\(`codex-linux-visual-compat`,r\)/);
   assert.match(updated, /data-app-shell-focus-area=right-panel/);
@@ -5655,6 +5748,18 @@ test('injectLinuxVisualCompatJsPatch supports the 26.519 opaque window effect sh
   assert.doesNotMatch(updated, /querySelector\(`div:has\(>button:not\(\[role=tab\]\)\)`\)/);
   assert.doesNotMatch(updated, /clientWidth\|\|innerWidth\)-104/);
   assert.match(updated, /\(g\.opaqueWindows\|\|i\|\|r\)&&!pc\(\)/);
+});
+
+test('injectLinuxVisualCompatJsPatch upgrades old Linux visual compat patches with titlebar theme sync', () => {
+  const updated = injectLinuxVisualCompatJsPatch(LINUX_VISUAL_COMPAT_JS_OLD_PATCHED);
+
+  assert.match(updated, /codexLinuxVisualCompat/);
+  assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
+  assert.match(updated, /codex-linux-title-bar-overlay-theme-set/);
+  assert.match(updated, /document\.body\?\?document\.documentElement/);
+  assert.match(updated, /setInterval\(i,1000\)/);
+  assert.match(updated, /sendMessageFromView/);
+  assert.match(updated, /classList\.toggle\(`codex-linux-visual-compat`,r\);if\(r\)/);
 });
 
 test('injectLinuxVisualCompatCssPatch is idempotent', () => {
@@ -5690,6 +5795,8 @@ for (const [label, fixture, opaqueGuard] of [
     const updated = injectLinuxVisualCompatJsPatch(fixture);
 
     assert.match(updated, /codexLinuxVisualCompat/);
+    assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
+    assert.match(updated, /codex-linux-title-bar-overlay-theme-set/);
     assert.match(updated, /CODEX_DESKTOP_DISABLE_LINUX_VISUAL_COMPAT/);
     assert.match(updated, /classList\.toggle\(`codex-linux-visual-compat`,r\)/);
     assert.match(updated, new RegExp(String.raw`\(T\.opaqueWindows\|\|r\)&&!${opaqueGuard}\(\)`));
