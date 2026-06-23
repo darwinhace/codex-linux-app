@@ -38,6 +38,13 @@ These notes are for the current pinned upstream version in `VERSION` (`26.616.51
 - Preserve Browser Use approval config behavior from `~/.codex/browser/config.toml` or `$CODEX_HOME/browser/config.toml`; local `never_ask` settings do not override upstream denied-site policy.
 - The Remote Connections keep-awake toggle should preserve Electron `powerSaveBlocker` behavior and add the Linux `systemd-inhibit` blocker while active.
 
+## Linux Open In
+
+- The `Open in` header menu depends on both the main-process target list and the worker-side open-target registry. Patch both bundles; a main-only patch can still hide the button or fail with `Unknown open target`.
+- The renderer hides `Open in` when target enrichment marks every editor unavailable, so check desktop logs for `Unknown open target "vscode"`, `"cursor"`, `"zed"`, or JetBrains IDs when the button is missing.
+- Worker registry dedupe must only skip upstream entries that already define `platforms.linux`; upstream macOS/Windows entries reuse IDs such as `vscode` and `cursor`, and ID-only dedupe drops the Linux target definitions.
+- Installed artifact checks should confirm `worker.js` contains `codexLinuxWorkerTargets.filter(e=>e.platforms.linux)`, `new Map(codexLinuxWorkerTargets.flatMap(...))`, Linux editor targets such as `cursor`, and the `zed`/`zeditor` detection alias.
+
 ## Pet Overlay
 
 - Preserve the Linux `/pet` yapping usage bubble, not a ring/halo design.

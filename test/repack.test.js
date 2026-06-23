@@ -3092,6 +3092,10 @@ test('injectLinuxOpenTargetsPatch adds Linux editor targets to the 26.616 worker
 
   assert.match(updated, /codexLinuxTargets/);
   assert.match(updated, /codexLinuxWorkerTargets=\[Hce,Wce/);
+  assert.match(
+    updated,
+    /codexLinuxWorkerTargetIds=new Set\(codexLinuxWorkerTargets\.filter\(e=>e\.platforms\.linux\)\.map\(e=>e\.id\)\)/
+  );
   assert.match(updated, /process\.platform===`linux`&&codexLinuxWorkerTargets\.push/);
   assert.match(updated, /var ale=new Map\(codexLinuxWorkerTargets\.flatMap/);
   assert.match(updated, /id:`vscode`/);

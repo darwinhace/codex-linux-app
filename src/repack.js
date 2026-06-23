@@ -3978,7 +3978,7 @@ function buildLinuxOpenTargetsWeakMapBlock({
 }
 
 function buildLinuxOpenTargetsWorkerRegistryBlock({ registryVar, targetList }) {
-  return `${buildLinuxOpenTargetsSupportBlock()}var codexLinuxWorkerTargets=[${targetList}],codexLinuxWorkerTargetIds=new Set(codexLinuxWorkerTargets.map(e=>e.id));process.platform===\`linux\`&&codexLinuxWorkerTargets.push(...codexLinuxTargets.filter(e=>!codexLinuxWorkerTargetIds.has(e.id)));var ${registryVar}=new Map(codexLinuxWorkerTargets.flatMap(e=>{let t=e.platforms[process.platform];return t==null?[]:[[e.id,{id:e.id,...t}]]}));`;
+  return `${buildLinuxOpenTargetsSupportBlock()}var codexLinuxWorkerTargets=[${targetList}],codexLinuxWorkerTargetIds=new Set(codexLinuxWorkerTargets.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&codexLinuxWorkerTargets.push(...codexLinuxTargets.filter(e=>!codexLinuxWorkerTargetIds.has(e.id)));var ${registryVar}=new Map(codexLinuxWorkerTargets.flatMap(e=>{let t=e.platforms[process.platform];return t==null?[]:[[e.id,{id:e.id,...t}]]}));`;
 }
 
 function buildLinuxOpenTargetsSupportBlock() {
