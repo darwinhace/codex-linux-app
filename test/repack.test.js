@@ -306,6 +306,8 @@ const OPEN_TARGETS_BLOCK_26_422 =
   'var Cd=[td,rd,$u,au,Il,Uu,_d,od,Pl,_u,Ku,lu,Rl,mu,ru,cd,yu,pu,ad,fd,Tu,Eu,Du,Ou,ku,Au,ju,Mu,Yu],wd=t.Or(`open-in-targets`);function Td(e){return Cd.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var Ed=Td(process.platform),Dd=Id(Ed),Od=new Set(Ed.filter(e=>e.kind===`editor`).map(e=>e.id)),kd=null,Ad=null;';
 const OPEN_TARGETS_BLOCK_26_616 =
   'var kN=[cN,uN,oN,lM,Bj,pM,XM,wN,pN,Rj,SM,$M,mM,Hj,yM,sM,hN,wM,vM,fN,yN,AM,jM,MM,NM,PM,FM,IM,LM,nN],AN=t.qr(`open-in-targets`);function jN(e){return kN.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var MN=jN(process.platform),NN=HN(MN),PN=new WeakMap,FN=new WeakMap,IN=async e=>a.shell.readShortcutLink(e);function LN(e,t=MN){return t.some(t=>t.id===e&&t.kind===`editor`)}';
+const OPEN_TARGETS_WORKER_BLOCK_26_616 =
+  'var ale=new Map([Hce,Wce,Bce,Zse,Fse,ece,jce,ele,qce,Nse,lce,Pce,tce,Ise,oce,Yse,Jce,dce,ace,Kce,Zce,gce,_ce,vce,yce,bce,xce,Sce,Cce,Ice].flatMap(e=>{let t=e.platforms[process.platform];return t==null?[]:[[e.id,{id:e.id,...t}]]}));function ole(e){return{detectTarget:async({target:t,customTarget:n})=>n==null?W9(t).detect(e):_se(n.command,process.platform)}}function W9(e){let t=ale.get(e);if(t==null)throw Error(`Unknown open target "${e}"`);return t}';
 const LINUX_MENU_BAR_BUNDLE_CURRENT =
   'new n.BrowserWindow({width:_,height:v,title:i??n.app.getName(),backgroundColor:T,show:l,...process.platform===`win32`?{autoHideMenuBar:!0}:{},...m,minWidth:w.width,minHeight:w.height,webPreferences:{contextIsolation:!0}});';
 const LINUX_MENU_BAR_BUNDLE_26_609 =
@@ -3074,11 +3076,35 @@ for (const [label, fixture] of [
     assert.match(updated, /id:`pycharm`/);
     assert.match(updated, /id:`webstorm`/);
     assert.match(updated, /id:`phpstorm`/);
+    assert.match(updated, /codexLinuxFallbackPathEntries/);
+    assert.match(updated, /`\/usr\/local\/bin`,`\/usr\/bin`,`\/bin`,`\/snap\/bin`/);
+    assert.match(updated, /`\.local`,`bin`/);
+    assert.match(updated, /`JetBrains`,`Toolbox`,`scripts`/);
+    assert.match(updated, /codexLinuxDetectAny\(\[`zed`,`zeditor`\]\)/);
     assert.match(updated, /args:codexLinuxVscodeArgs/);
     assert.match(updated, /args:codexLinuxJetBrainsArgs/);
     assert.match(updated, /process\.getBuiltinModule/);
   });
 }
+
+test('injectLinuxOpenTargetsPatch adds Linux editor targets to the 26.616 worker bundle', () => {
+  const updated = injectLinuxOpenTargetsPatch(OPEN_TARGETS_WORKER_BLOCK_26_616);
+
+  assert.match(updated, /codexLinuxTargets/);
+  assert.match(updated, /codexLinuxWorkerTargets=\[Hce,Wce/);
+  assert.match(updated, /process\.platform===`linux`&&codexLinuxWorkerTargets\.push/);
+  assert.match(updated, /var ale=new Map\(codexLinuxWorkerTargets\.flatMap/);
+  assert.match(updated, /id:`vscode`/);
+  assert.match(updated, /id:`cursor`/);
+  assert.match(updated, /id:`zed`/);
+  assert.match(updated, /id:`pycharm`/);
+  assert.match(updated, /id:`webstorm`/);
+  assert.match(updated, /id:`phpstorm`/);
+  assert.match(updated, /codexLinuxFallbackPathEntries/);
+  assert.match(updated, /codexLinuxDetectAny\(\[`zed`,`zeditor`\]\)/);
+  assert.match(updated, /args:codexLinuxVscodeArgs/);
+  assert.match(updated, /args:codexLinuxJetBrainsArgs/);
+});
 
 test('injectLinuxOpenTargetsPatch preserves 26.616 WeakMap open-target state', () => {
   const updated = injectLinuxOpenTargetsPatch(OPEN_TARGETS_BLOCK_26_616);
@@ -3091,6 +3117,13 @@ test('injectLinuxOpenTargetsPatch preserves 26.616 WeakMap open-target state', (
 
 test('injectLinuxOpenTargetsPatch is idempotent', () => {
   const once = injectLinuxOpenTargetsPatch(OPEN_TARGETS_BLOCK_CURRENT);
+  const twice = injectLinuxOpenTargetsPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('injectLinuxOpenTargetsPatch is idempotent for worker bundles', () => {
+  const once = injectLinuxOpenTargetsPatch(OPEN_TARGETS_WORKER_BLOCK_26_616);
   const twice = injectLinuxOpenTargetsPatch(once);
 
   assert.equal(twice, once);

@@ -956,6 +956,8 @@ const OPEN_TARGETS_BLOCK_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<editorTargetIdsVar>[A-Za-z_$][\w$]*)=new Set\(\k<platformTargetsVar>\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\),(?<stateVar1>[A-Za-z_$][\w$]*)=null,(?<stateVar2>[A-Za-z_$][\w$]*)=null;/;
 const OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<stateVar1>[A-Za-z_$][\w$]*)=new WeakMap,(?<stateVar2>[A-Za-z_$][\w$]*)=new WeakMap,(?<shortcutReaderVar>[A-Za-z_$][\w$]*)=async e=>(?<shortcutReaderObject>[A-Za-z_$][\w$]*)\.shell\.readShortcutLink\(e\);/;
+const OPEN_TARGETS_WORKER_REGISTRY_PATTERN =
+  /var (?<registryVar>[A-Za-z_$][\w$]*)=new Map\(\[(?<targetList>[A-Za-z0-9_$,]+)\]\.flatMap\(e=>\{let t=e\.platforms\[process\.platform\];return t==null\?\[\]:\[\[e\.id,\{id:e\.id,\.\.\.t\}\]\]\}\)\);/;
 const LINUX_CHROME_EXTENSION_PROFILE_DIR_PATTERN =
   /function (?<fn>[A-Za-z_$][\w$]*)\(\{homeDir:(?<homeDirVar>[A-Za-z_$][\w$]*),localAppDataDir:(?<localAppDataVar>[A-Za-z_$][\w$]*),platform:(?<platformVar>[A-Za-z_$][\w$]*)\}\)\{return \k<platformVar>===`darwin`\?(?<joinCall>(?:\(0,[A-Za-z_$][\w$]*\.join\)|join))\(\k<homeDirVar>,`Library`,`Application Support`,`Google`,`Chrome`\):\k<platformVar>===`win32`\?\k<joinCall>\(\k<localAppDataVar>\?\?\k<joinCall>\(\k<homeDirVar>,`AppData`,`Local`\),`Google`,`Chrome`,`User Data`\):null\}/;
 const LINUX_CHROME_EXTENSION_URL_HELPER_PATTERN =
@@ -1717,19 +1719,46 @@ async function patchMainProcessBundle(extractedAppDir, logger) {
   if (!mainFile) {
     throw new Error('Could not locate the Electron main bundle inside the extracted app.');
   }
+  const workerFile = files.find((name) => /^worker[-.].+\.js$/.test(name) || name === 'worker.js');
+  if (!workerFile) {
+    throw new Error('Could not locate the Electron worker bundle inside the extracted app.');
+  }
 
   const mainPath = path.join(buildDir, mainFile);
-  const original = await fs.promises.readFile(mainPath, 'utf8');
+  const mainOriginal = await fs.promises.readFile(mainPath, 'utf8');
   logger.info(`Resolved upstream Electron main bundle ${mainFile}`);
-  const result = applyLinuxOpenTargetsPatch(original, { sourceName: mainFile });
-  if (result.updated !== original) {
-    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+  const mainResult = applyLinuxOpenTargetsPatch(mainOriginal, { sourceName: mainFile });
+  if (mainResult.updated !== mainOriginal) {
+    await fs.promises.writeFile(mainPath, mainResult.updated, 'utf8');
     logger.info('Patched Linux open-in-targets support into the Electron main bundle');
   }
+
+  const workerPath = path.join(buildDir, workerFile);
+  const workerOriginal = await fs.promises.readFile(workerPath, 'utf8');
+  logger.info(`Resolved upstream Electron worker bundle ${workerFile} for open-in-targets patch`);
+  const workerResult = applyLinuxOpenTargetsPatch(workerOriginal, { sourceName: workerFile });
+  if (workerResult.updated !== workerOriginal) {
+    await fs.promises.writeFile(workerPath, workerResult.updated, 'utf8');
+    logger.info('Patched Linux open-in-targets support into the Electron worker bundle');
+  }
+
   return {
-    status: result.status,
-    sourceName: mainFile
+    status: mergePatchStatuses([mainResult, workerResult]),
+    sourceName: `${mainFile},${workerFile}`
   };
+}
+
+function mergePatchStatuses(results) {
+  if (results.some((result) => result.status === 'applied')) {
+    return 'applied';
+  }
+  if (results.every((result) => result.status === 'already-applied')) {
+    return 'already-applied';
+  }
+  if (results.every((result) => result.status === 'skipped')) {
+    return 'skipped';
+  }
+  return results[0]?.status ?? 'skipped';
 }
 
 async function patchMainProcessLinuxMenuBar(extractedAppDir, logger) {
@@ -2355,6 +2384,14 @@ export function injectLinuxOpenTargetsPatch(bundleSource, options = {}) {
     return bundleSource.replace(
       OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN,
       buildLinuxOpenTargetsWeakMapBlock(weakMapMatch.groups)
+    );
+  }
+
+  const workerRegistryMatch = bundleSource.match(OPEN_TARGETS_WORKER_REGISTRY_PATTERN);
+  if (workerRegistryMatch?.groups?.targetList && workerRegistryMatch.groups.registryVar) {
+    return bundleSource.replace(
+      OPEN_TARGETS_WORKER_REGISTRY_PATTERN,
+      buildLinuxOpenTargetsWorkerRegistryBlock(workerRegistryMatch.groups)
     );
   }
 
@@ -3913,7 +3950,7 @@ function buildLinuxOpenTargetsBlock({
   stateVar1,
   stateVar2
 }) {
-  return `var codexLinuxBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),os:process.getBuiltinModule(\`node:os\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,os:null,path:null},codexLinuxDesktopExecCache=null;function codexLinuxPathEntries(){let e=codexLinuxBuiltins.path;if(!e)return[];let t=process.env.PATH??\`\`;return t.split(e.delimiter).map(e=>e.trim()).filter(e=>e.length>0)}function codexLinuxIsExecutable(e){let t=codexLinuxBuiltins.fs;if(!t)return!1;try{return t.accessSync(e,t.constants.X_OK),!0}catch{return!1}}function codexLinuxDetectCommand(e){let t=codexLinuxBuiltins.path;if(!t)return null;for(let n of codexLinuxPathEntries()){let r=t.join(n,e);if(codexLinuxIsExecutable(r))return r}return null}function codexLinuxStripDesktopExec(e){if(typeof e!==\`string\`)return null;let t=e.replace(/%[fFuUdDnNickvm]/g,\` \`).trim();if(t.length===0)return null;let n=t.match(/^"([^"]+)"/);if(n?.[1])return n[1];let[r]=t.split(/\\s+/);return r??null}function codexLinuxDesktopExecs(){let e=codexLinuxBuiltins.fs,t=codexLinuxBuiltins.os,n=codexLinuxBuiltins.path;if(codexLinuxDesktopExecCache||!e||!n)return codexLinuxDesktopExecCache??new Map;let r=t?.homedir?.()??process.env.HOME??\`~\`,i=process.env.XDG_DATA_HOME??n.join(r,\`.local\`,\`share\`),a=new Map,o=[n.join(i,\`applications\`),\`/usr/share/applications\`];for(let t of o){let r;try{r=e.readdirSync(t)}catch{continue}for(let i of r){if(!i.endsWith(\`.desktop\`))continue;let r=n.join(t,i),o;try{o=e.readFileSync(r,\`utf8\`)}catch{continue}let s=o.match(/^Exec=(.+)$/m),c=codexLinuxStripDesktopExec(s?.[1]??\`\`);if(!c)continue;let l=n.basename(c).toLowerCase().replace(/\\.(sh|bin|appimage)$/,\`\`);a.has(l)||a.set(l,c)}}return codexLinuxDesktopExecCache=a,a}function codexLinuxDetectDesktopExec(e){let t=codexLinuxBuiltins.fs,n=codexLinuxBuiltins.path,r=codexLinuxDesktopExecs().get(e.toLowerCase());return!r?null:n&&t&&n.isAbsolute(r)&&t.existsSync(r)?r:codexLinuxDetectCommand(r)}function codexLinuxDetectAny(e){for(let t of e){let n=codexLinuxDetectCommand(t)??codexLinuxDetectDesktopExec(t);if(n)return n}return null}function codexLinuxJetBrainsScript(e){let t=codexLinuxBuiltins.fs,n=codexLinuxBuiltins.os,r=codexLinuxBuiltins.path;if(!t||!r)return null;let i=n?.homedir?.()??process.env.HOME;if(!i)return null;let a=r.join(i,\`.local\`,\`share\`,\`JetBrains\`,\`Toolbox\`,\`scripts\`,e);return t.existsSync(a)?a:null}function codexLinuxDetectJetBrains(e){return codexLinuxDetectAny([e])??codexLinuxJetBrainsScript(e)}function codexLinuxVscodeArgs(e,t){return t?[\`--goto\`,\`${"${"}e}:${"${"}t.line}:${"${"}t.column}\`]:[\`--goto\`,e]}function codexLinuxZedArgs(e,t){return t?[\`${"${"}e}:${"${"}t.line}:${"${"}t.column}\`]:[e]}function codexLinuxJetBrainsArgs(e,t){return t?[\`--line\`,t.line.toString(),\`--column\`,t.column.toString(),e]:[e]}var codexLinuxTargets=[{id:\`vscode\`,platforms:{linux:{label:\`VS Code\`,icon:\`apps/vscode.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`code\`,\`code-url-handler\`]),args:codexLinuxVscodeArgs}}},{id:\`vscodeInsiders\`,platforms:{linux:{label:\`VS Code Insiders\`,icon:\`apps/vscode-insiders.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`code-insiders\`]),args:codexLinuxVscodeArgs}}},{id:\`cursor\`,platforms:{linux:{label:\`Cursor\`,icon:\`apps/cursor.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`cursor\`]),args:codexLinuxVscodeArgs}}},{id:\`windsurf\`,platforms:{linux:{label:\`Windsurf\`,icon:\`apps/windsurf.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`windsurf\`]),args:codexLinuxVscodeArgs}}},{id:\`zed\`,platforms:{linux:{label:\`Zed\`,icon:\`apps/zed.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`zed\`]),args:codexLinuxZedArgs}}},{id:\`androidStudio\`,platforms:{linux:{label:\`Android Studio\`,icon:\`apps/android-studio.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`studio\`),args:codexLinuxJetBrainsArgs}}},{id:\`intellij\`,platforms:{linux:{label:\`IntelliJ IDEA\`,icon:\`apps/intellij.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`idea\`),args:codexLinuxJetBrainsArgs}}},{id:\`rider\`,platforms:{linux:{label:\`Rider\`,icon:\`apps/rider.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`rider\`),args:codexLinuxJetBrainsArgs}}},{id:\`goland\`,platforms:{linux:{label:\`GoLand\`,icon:\`apps/goland.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`goland\`),args:codexLinuxJetBrainsArgs}}},{id:\`rustrover\`,platforms:{linux:{label:\`RustRover\`,icon:\`apps/rustrover.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`rustrover\`),args:codexLinuxJetBrainsArgs}}},{id:\`pycharm\`,platforms:{linux:{label:\`PyCharm\`,icon:\`apps/pycharm.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`pycharm\`),args:codexLinuxJetBrainsArgs}}},{id:\`webstorm\`,platforms:{linux:{label:\`WebStorm\`,icon:\`apps/webstorm.svg\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`webstorm\`),args:codexLinuxJetBrainsArgs}}},{id:\`phpstorm\`,platforms:{linux:{label:\`PhpStorm\`,icon:\`apps/phpstorm.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`phpstorm\`),args:codexLinuxJetBrainsArgs}}}];var ${targetVar}=[${targetList}],codexLinuxExistingTargetIds=new Set(${targetVar}.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&${targetVar}.push(...codexLinuxTargets.filter(e=>!codexLinuxExistingTargetIds.has(e.id))),${loggerVar}=${loggerObject}.${loggerFactory}(\`open-in-targets\`);function ${platformFn}(e){return ${targetVar}.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var ${platformTargetsVar}=${platformFn}(process.platform),${normalizedTargetsVar}=${normalizeFn}(${platformTargetsVar}),${editorTargetIdsVar}=new Set(${platformTargetsVar}.filter(e=>e.kind===\`editor\`).map(e=>e.id)),${stateVar1}=null,${stateVar2}=null;`;
+  return `var codexLinuxBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),os:process.getBuiltinModule(\`node:os\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,os:null,path:null},codexLinuxDesktopExecCache=null;function codexLinuxHomeDir(){let e=codexLinuxBuiltins.os?.homedir?.()??process.env.HOME??\`\`;return e&&e!==\`~\`?e:null}function codexLinuxFallbackPathEntries(){let e=codexLinuxBuiltins.path,t=codexLinuxHomeDir();if(!e)return[];return[t&&e.join(t,\`.local\`,\`bin\`),t&&e.join(t,\`.local\`,\`share\`,\`JetBrains\`,\`Toolbox\`,\`scripts\`),\`/usr/local/bin\`,\`/usr/bin\`,\`/bin\`,\`/snap/bin\`].filter(Boolean)}function codexLinuxPathEntries(){let e=codexLinuxBuiltins.path;if(!e)return[];let t=process.env.PATH??\`\`,n=[...t.split(e.delimiter).map(e=>e.trim()).filter(e=>e.length>0),...codexLinuxFallbackPathEntries()];return Array.from(new Set(n))}function codexLinuxIsExecutable(e){let t=codexLinuxBuiltins.fs;if(!t)return!1;try{return t.accessSync(e,t.constants.X_OK),!0}catch{return!1}}function codexLinuxDetectCommand(e){let t=codexLinuxBuiltins.path;if(!t)return null;for(let n of codexLinuxPathEntries()){let r=t.join(n,e);if(codexLinuxIsExecutable(r))return r}return null}function codexLinuxStripDesktopExec(e){if(typeof e!==\`string\`)return null;let t=e.replace(/%[fFuUdDnNickvm]/g,\` \`).trim();if(t.length===0)return null;let n=t.match(/^"([^"]+)"/);if(n?.[1])return n[1];let[r]=t.split(/\\s+/);return r??null}function codexLinuxDesktopExecs(){let e=codexLinuxBuiltins.fs,n=codexLinuxBuiltins.path;if(codexLinuxDesktopExecCache||!e||!n)return codexLinuxDesktopExecCache??new Map;let r=codexLinuxHomeDir()??\`~\`,i=process.env.XDG_DATA_HOME??n.join(r,\`.local\`,\`share\`),a=new Map,o=[n.join(i,\`applications\`),\`/usr/share/applications\`];for(let t of o){let r;try{r=e.readdirSync(t)}catch{continue}for(let i of r){if(!i.endsWith(\`.desktop\`))continue;let r=n.join(t,i),o;try{o=e.readFileSync(r,\`utf8\`)}catch{continue}let s=o.match(/^Exec=(.+)$/m),c=codexLinuxStripDesktopExec(s?.[1]??\`\`);if(!c)continue;let l=n.basename(c).toLowerCase().replace(/\\.(sh|bin|appimage)$/,\`\`);a.has(l)||a.set(l,c)}}return codexLinuxDesktopExecCache=a,a}function codexLinuxDetectDesktopExec(e){let t=codexLinuxBuiltins.fs,n=codexLinuxBuiltins.path,r=codexLinuxDesktopExecs().get(e.toLowerCase());return!r?null:n&&t&&n.isAbsolute(r)&&t.existsSync(r)?r:codexLinuxDetectCommand(r)}function codexLinuxDetectAny(e){for(let t of e){let n=codexLinuxDetectCommand(t)??codexLinuxDetectDesktopExec(t);if(n)return n}return null}function codexLinuxJetBrainsScript(e){let t=codexLinuxBuiltins.fs,r=codexLinuxBuiltins.path;if(!t||!r)return null;let i=codexLinuxHomeDir();if(!i)return null;let a=r.join(i,\`.local\`,\`share\`,\`JetBrains\`,\`Toolbox\`,\`scripts\`,e);return t.existsSync(a)?a:null}function codexLinuxDetectJetBrains(e){return codexLinuxDetectAny([e])??codexLinuxJetBrainsScript(e)}function codexLinuxVscodeArgs(e,t){return t?[\`--goto\`,\`${"${"}e}:${"${"}t.line}:${"${"}t.column}\`]:[\`--goto\`,e]}function codexLinuxZedArgs(e,t){return t?[\`${"${"}e}:${"${"}t.line}:${"${"}t.column}\`]:[e]}function codexLinuxJetBrainsArgs(e,t){return t?[\`--line\`,t.line.toString(),\`--column\`,t.column.toString(),e]:[e]}var codexLinuxTargets=[{id:\`vscode\`,platforms:{linux:{label:\`VS Code\`,icon:\`apps/vscode.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`code\`,\`code-url-handler\`]),args:codexLinuxVscodeArgs}}},{id:\`vscodeInsiders\`,platforms:{linux:{label:\`VS Code Insiders\`,icon:\`apps/vscode-insiders.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`code-insiders\`]),args:codexLinuxVscodeArgs}}},{id:\`cursor\`,platforms:{linux:{label:\`Cursor\`,icon:\`apps/cursor.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`cursor\`]),args:codexLinuxVscodeArgs}}},{id:\`windsurf\`,platforms:{linux:{label:\`Windsurf\`,icon:\`apps/windsurf.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`windsurf\`]),args:codexLinuxVscodeArgs}}},{id:\`zed\`,platforms:{linux:{label:\`Zed\`,icon:\`apps/zed.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectAny([\`zed\`,\`zeditor\`]),args:codexLinuxZedArgs}}},{id:\`androidStudio\`,platforms:{linux:{label:\`Android Studio\`,icon:\`apps/android-studio.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`studio\`),args:codexLinuxJetBrainsArgs}}},{id:\`intellij\`,platforms:{linux:{label:\`IntelliJ IDEA\`,icon:\`apps/intellij.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`idea\`),args:codexLinuxJetBrainsArgs}}},{id:\`rider\`,platforms:{linux:{label:\`Rider\`,icon:\`apps/rider.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`rider\`),args:codexLinuxJetBrainsArgs}}},{id:\`goland\`,platforms:{linux:{label:\`GoLand\`,icon:\`apps/goland.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`goland\`),args:codexLinuxJetBrainsArgs}}},{id:\`rustrover\`,platforms:{linux:{label:\`RustRover\`,icon:\`apps/rustrover.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`rustrover\`),args:codexLinuxJetBrainsArgs}}},{id:\`pycharm\`,platforms:{linux:{label:\`PyCharm\`,icon:\`apps/pycharm.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`pycharm\`),args:codexLinuxJetBrainsArgs}}},{id:\`webstorm\`,platforms:{linux:{label:\`WebStorm\`,icon:\`apps/webstorm.svg\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`webstorm\`),args:codexLinuxJetBrainsArgs}}},{id:\`phpstorm\`,platforms:{linux:{label:\`PhpStorm\`,icon:\`apps/phpstorm.png\`,kind:\`editor\`,detect:()=>codexLinuxDetectJetBrains(\`phpstorm\`),args:codexLinuxJetBrainsArgs}}}];var ${targetVar}=[${targetList}],codexLinuxExistingTargetIds=new Set(${targetVar}.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&${targetVar}.push(...codexLinuxTargets.filter(e=>!codexLinuxExistingTargetIds.has(e.id))),${loggerVar}=${loggerObject}.${loggerFactory}(\`open-in-targets\`);function ${platformFn}(e){return ${targetVar}.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var ${platformTargetsVar}=${platformFn}(process.platform),${normalizedTargetsVar}=${normalizeFn}(${platformTargetsVar}),${editorTargetIdsVar}=new Set(${platformTargetsVar}.filter(e=>e.kind===\`editor\`).map(e=>e.id)),${stateVar1}=null,${stateVar2}=null;`;
 }
 
 function buildLinuxOpenTargetsWeakMapBlock({
@@ -3938,6 +3975,33 @@ function buildLinuxOpenTargetsWeakMapBlock({
   }
   const weakMapSuffix = `var ${groups.platformTargetsVar}=${groups.platformFn}(process.platform),${groups.normalizedTargetsVar}=${groups.normalizeFn}(${groups.platformTargetsVar}),${stateVar1}=new WeakMap,${stateVar2}=new WeakMap,${shortcutReaderVar}=async e=>${shortcutReaderObject}.shell.readShortcutLink(e);`;
   return `${legacyBlock.slice(0, -legacySuffix.length)}${weakMapSuffix}`;
+}
+
+function buildLinuxOpenTargetsWorkerRegistryBlock({ registryVar, targetList }) {
+  return `${buildLinuxOpenTargetsSupportBlock()}var codexLinuxWorkerTargets=[${targetList}],codexLinuxWorkerTargetIds=new Set(codexLinuxWorkerTargets.map(e=>e.id));process.platform===\`linux\`&&codexLinuxWorkerTargets.push(...codexLinuxTargets.filter(e=>!codexLinuxWorkerTargetIds.has(e.id)));var ${registryVar}=new Map(codexLinuxWorkerTargets.flatMap(e=>{let t=e.platforms[process.platform];return t==null?[]:[[e.id,{id:e.id,...t}]]}));`;
+}
+
+function buildLinuxOpenTargetsSupportBlock() {
+  const block = buildLinuxOpenTargetsBlock({
+    targetVar: 'codexLinuxSourceTargets',
+    targetList: '',
+    loggerVar: 'codexLinuxOpenTargetsLogger',
+    loggerObject: 'codexLinuxOpenTargetsLoggerObject',
+    loggerFactory: 'codexLinuxOpenTargetsLoggerFactory',
+    platformFn: 'codexLinuxPlatformTargets',
+    platformTargetsVar: 'codexLinuxPlatformTargetsResult',
+    normalizedTargetsVar: 'codexLinuxNormalizedTargets',
+    normalizeFn: 'codexLinuxNormalizeTargets',
+    editorTargetIdsVar: 'codexLinuxEditorTargetIds',
+    stateVar1: 'codexLinuxOpenTargetState1',
+    stateVar2: 'codexLinuxOpenTargetState2'
+  });
+  const suffix =
+    'var codexLinuxSourceTargets=[],codexLinuxExistingTargetIds=new Set(codexLinuxSourceTargets.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===`linux`&&codexLinuxSourceTargets.push(...codexLinuxTargets.filter(e=>!codexLinuxExistingTargetIds.has(e.id))),codexLinuxOpenTargetsLogger=codexLinuxOpenTargetsLoggerObject.codexLinuxOpenTargetsLoggerFactory(`open-in-targets`);function codexLinuxPlatformTargets(e){return codexLinuxSourceTargets.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var codexLinuxPlatformTargetsResult=codexLinuxPlatformTargets(process.platform),codexLinuxNormalizedTargets=codexLinuxNormalizeTargets(codexLinuxPlatformTargetsResult),codexLinuxEditorTargetIds=new Set(codexLinuxPlatformTargetsResult.filter(e=>e.kind===`editor`).map(e=>e.id)),codexLinuxOpenTargetState1=null,codexLinuxOpenTargetState2=null;';
+  if (!block.endsWith(suffix)) {
+    throw new Error('Could not derive shared Linux open-in-targets support block.');
+  }
+  return block.slice(0, -suffix.length);
 }
 
 async function patchRendererTerminalBundle(extractedAppDir, logger) {
@@ -7229,19 +7293,23 @@ function buildOpenTargetsPatchErrorMessage(bundleSource, sourceName) {
 
 function analyzeOpenTargetsBundle(bundleSource) {
   const weakMapPatternDetected = OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN.test(bundleSource);
+  const workerRegistryDetected = OPEN_TARGETS_WORKER_REGISTRY_PATTERN.test(bundleSource);
   const detected = {
     openInTargets: bundleSource.includes('`open-in-targets`'),
-    targetRegistryDeclaration: OPEN_TARGETS_BLOCK_PATTERN.test(bundleSource) || weakMapPatternDetected,
-    platformFlatten: /function [A-Za-z_$][\w$]*\(e\)\{return [A-Za-z_$][\w$]*\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}/.test(
-      bundleSource
-    ),
+    targetRegistryDeclaration:
+      OPEN_TARGETS_BLOCK_PATTERN.test(bundleSource) || weakMapPatternDetected || workerRegistryDetected,
+    platformFlatten:
+      /function [A-Za-z_$][\w$]*\(e\)\{return [A-Za-z_$][\w$]*\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}/.test(
+        bundleSource
+      ) || workerRegistryDetected,
     editorTargetIdSet:
       /new Set\([A-Za-z_$][\w$]*\.filter\(e=>e\.kind===`editor`\)\.map\(e=>e\.id\)\)/.test(
         bundleSource
       ) ||
       /function [A-Za-z_$][\w$]*\(e,t=[A-Za-z_$][\w$]*\)\{return t\.some\(t=>t\.id===e&&t\.kind===`editor`\)\}/.test(
         bundleSource
-      )
+      ) ||
+      workerRegistryDetected
   };
 
   return {

@@ -7,7 +7,7 @@ export const BETA_FEED_URL =
   'https://persistent.oaistatic.com/codex-app-beta/appcast.xml';
 export const SUPPORTED_PLATFORM = 'linux';
 export const SUPPORTED_ARCH = 'x64';
-export const FALLBACK_ELECTRON_VERSION = '40.0.0';
+export const FALLBACK_ELECTRON_VERSION = '42.1.0';
 export const CHANNELS = {
   stable: {
     id: 'stable',
