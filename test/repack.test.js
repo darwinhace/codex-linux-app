@@ -2762,6 +2762,10 @@ test('installLinuxComputerUseBackend stages Linux backend, rewrites MCP config, 
       `#!/bin/sh\nexit 0\n`
     );
     await writeTestExecutable(
+      path.join(mcpPathDir, 'pacman'),
+      `#!/bin/sh\nexit 0\n`
+    );
+    await writeTestExecutable(
       path.join(mcpPathDir, 'spectacle'),
       `#!/bin/sh
 if [ "$XDG_CURRENT_DESKTOP" != "KDE" ] || [ "$WAYLAND_DISPLAY" != "wayland-test" ] || [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
@@ -2863,6 +2867,19 @@ esac
     assert.equal(recoveredDoctor.readiness.can_capture_screenshot, true);
     assert.equal(recoveredDoctor.dependencies.screenshot_probe.ok, true);
     assert.equal(recoveredDoctor.dependencies.screenshot_probe.source, 'spectacle');
+    assert.equal(recoveredDoctor.dependencies.package_manager, 'pacman');
+    assert.equal(
+      recoveredDoctor.setup.manual_commands.includes(
+        'systemctl --user enable --now ydotool.service'
+      ),
+      true
+    );
+    assert.equal(
+      recoveredDoctor.setup.manual_commands.some((command) =>
+        /^sudo systemctl .*ydotool/.test(command)
+      ),
+      false
+    );
 
     const recoveredWindows = await runJsonProcess(result.backendPath, ['windows', '--json'], {
       env: bareMcpEnv

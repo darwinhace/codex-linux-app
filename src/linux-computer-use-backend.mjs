@@ -511,7 +511,8 @@ function setupYdotoolUserService() {
       manual_commands: []
     };
   }
-  const attempts = ['ydotoold.service', 'ydotool.service'].map((unit) => {
+  const packageManager = detectPackageManager(detectCommands(['apt-get', 'dnf', 'pacman', 'zypper']));
+  const attempts = ydotoolUserServiceUnits(packageManager).map((unit) => {
     const result = run(systemctl, ['--user', 'start', unit]);
     return { unit, ...result };
   });
@@ -532,7 +533,7 @@ function setupYdotoolUserService() {
     changed: false,
     attempts,
     message:
-      'Tried non-sudo user ydotool services, but no ydotool socket became available. Use the reported sudo system service command if your distro installs ydotool as a system daemon.',
+      'Tried non-sudo user ydotool services, but no ydotool socket became available. Use the reported manual service command for your distro.',
     manual_commands: []
   };
 }
@@ -558,13 +559,27 @@ function buildSetupPlan({ commands, atSpi, input, packageManager }) {
     notes.push('Log out and back in after changing input group membership.');
   }
   if (commands.ydotool) {
-    manualCommands.push('sudo systemctl enable --now ydotoold || sudo systemctl enable --now ydotool');
+    manualCommands.push(...ydotoolServiceManualCommands(packageManager));
   }
   return {
     manual_commands: [...new Set(manualCommands)],
     notes: [...new Set(notes)],
     sudo_required: manualCommands.some((entry) => entry.startsWith('sudo '))
   };
+}
+
+function ydotoolUserServiceUnits(packageManager) {
+  if (packageManager === 'pacman') {
+    return ['ydotool.service', 'ydotoold.service'];
+  }
+  return ['ydotoold.service', 'ydotool.service'];
+}
+
+function ydotoolServiceManualCommands(packageManager) {
+  if (packageManager === 'pacman') {
+    return ['systemctl --user enable --now ydotool.service'];
+  }
+  return ['sudo systemctl enable --now ydotoold || sudo systemctl enable --now ydotool'];
 }
 
 function ydotoolInstallCommand(packageManager) {
