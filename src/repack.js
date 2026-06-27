@@ -76,6 +76,14 @@ const LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the Electron worker bundle worktree environment handling for Linux.';
 const LINUX_TITLE_BAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux title-bar overlay colors in the Electron main bundle.';
+const LINUX_NATIVE_WINDOW_FRAME_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux native window frame behavior in the Electron main bundle.';
+const LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux primary window mode controls in the Electron main bundle.';
+const LINUX_WINDOW_FOCUSABLE_OPTION_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux BrowserWindow focusable option in the Electron main bundle.';
+const LINUX_WINDOW_ICON_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch Linux BrowserWindow icon in the Electron main bundle.';
 const LINUX_NOTIFICATION_SOUND_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch Linux notification sound playback in the Electron main bundle.';
 const LINUX_BROWSER_USE_HOST_FETCH_PATCH_BASE_ERROR_MESSAGE =
@@ -301,6 +309,24 @@ export async function installDesktop(options, logger) {
     logger
   );
   assertRequiredPatchApplied('Linux title-bar overlay colors', linuxTitleBarOverlayPatch);
+  const linuxNativeWindowFramePatch = await patchMainProcessLinuxNativeWindowFrame(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux native window frame', linuxNativeWindowFramePatch);
+  const linuxPrimaryWindowModeControlsPatch =
+    await patchMainProcessLinuxPrimaryWindowModeControls(extractedAppDir, logger);
+  assertRequiredPatchApplied(
+    'Linux primary window mode controls',
+    linuxPrimaryWindowModeControlsPatch
+  );
+  const linuxWindowFocusableOptionPatch = await patchMainProcessLinuxWindowFocusableOption(
+    extractedAppDir,
+    logger
+  );
+  assertRequiredPatchApplied('Linux BrowserWindow focusable option', linuxWindowFocusableOptionPatch);
+  const linuxWindowIconPatch = await patchMainProcessLinuxWindowIcon(extractedAppDir, logger);
+  assertRequiredPatchApplied('Linux window icon', linuxWindowIconPatch);
   const linuxCloseCancelPatch = await patchMainProcessLinuxCloseCancel(extractedAppDir, logger);
   const linuxNotificationSoundPatch = await patchMainProcessLinuxNotificationSound(
     extractedAppDir,
@@ -478,6 +504,10 @@ export async function installDesktop(options, logger) {
     openTargets: openTargetsPatch,
     linuxMenuBar: linuxMenuBarPatch,
     linuxTitleBarOverlay: linuxTitleBarOverlayPatch,
+    linuxNativeWindowFrame: linuxNativeWindowFramePatch,
+    linuxPrimaryWindowModeControls: linuxPrimaryWindowModeControlsPatch,
+    linuxWindowFocusableOption: linuxWindowFocusableOptionPatch,
+    linuxWindowIcon: linuxWindowIconPatch,
     linuxCloseCancel: linuxCloseCancelPatch,
     linuxNotificationSound: linuxNotificationSoundPatch,
     linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
@@ -579,6 +609,10 @@ export async function installDesktop(options, logger) {
       openTargets: openTargetsPatch,
       linuxMenuBar: linuxMenuBarPatch,
       linuxTitleBarOverlay: linuxTitleBarOverlayPatch,
+      linuxNativeWindowFrame: linuxNativeWindowFramePatch,
+      linuxPrimaryWindowModeControls: linuxPrimaryWindowModeControlsPatch,
+      linuxWindowFocusableOption: linuxWindowFocusableOptionPatch,
+      linuxWindowIcon: linuxWindowIconPatch,
       linuxCloseCancel: linuxCloseCancelPatch,
       linuxNotificationSound: linuxNotificationSoundPatch,
       linuxWorktreeEnvironmentMain: linuxWorktreeEnvironmentMainPatch,
@@ -926,6 +960,11 @@ const LINUX_ABOUT_DIALOG_PATCH_MARKER = 'codexLinuxAboutDialogFallback';
 const LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER = 'codexLinuxTitleBarOverlayColors';
 const LINUX_TITLE_BAR_OVERLAY_THEME_SYNC_PATCH_MARKER =
   'codexLinuxTitleBarOverlayThemeSync';
+const LINUX_NATIVE_WINDOW_FRAME_PATCH_MARKER = 'codexLinuxNativeWindowFrame';
+const LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH_MARKER =
+  'codexLinuxPrimaryWindowModeControls';
+const LINUX_WINDOW_FOCUSABLE_OPTION_PATCH_MARKER = 'codexLinuxWindowFocusableOption';
+const LINUX_WINDOW_ICON_PATCH_MARKER = 'codexLinuxWindowIcon';
 const LINUX_CLOSE_CANCEL_PATCH_MARKER = 'codexLinuxCloseCancel';
 const LINUX_NOTIFICATION_SOUND_PATCH_MARKER = 'codexLinuxNotificationSound';
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER = 'codexLinuxWorktreeEnvironmentMain';
@@ -958,6 +997,8 @@ const OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN =
   /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\],(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`open-in-targets`\);function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<normalizedTargetsVar>[A-Za-z_$][\w$]*)=(?<normalizeFn>[A-Za-z_$][\w$]*)\(\k<platformTargetsVar>\),(?<stateVar1>[A-Za-z_$][\w$]*)=new WeakMap,(?<stateVar2>[A-Za-z_$][\w$]*)=new WeakMap,(?<shortcutReaderVar>[A-Za-z_$][\w$]*)=async e=>(?<shortcutReaderObject>[A-Za-z_$][\w$]*)\.shell\.readShortcutLink\(e\);/;
 const OPEN_TARGETS_WORKER_REGISTRY_PATTERN =
   /var (?<registryVar>[A-Za-z_$][\w$]*)=new Map\(\[(?<targetList>[A-Za-z0-9_$,]+)\]\.flatMap\(e=>\{let t=e\.platforms\[process\.platform\];return t==null\?\[\]:\[\[e\.id,\{id:e\.id,\.\.\.t\}\]\]\}\)\);/;
+const OPEN_TARGETS_DYNAMIC_REGISTRY_PATTERN =
+  /var (?<targetVar>[A-Za-z_$][\w$]*)=\[(?<targetList>[A-Za-z0-9_$,]+)\];(?<loggerStatement>[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(`open-in-targets`\);)function (?<platformFn>[A-Za-z_$][\w$]*)\(e\)\{return \k<targetVar>\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}var (?<platformTargetsVar>[A-Za-z_$][\w$]*)=\k<platformFn>\(process\.platform\),(?<shortcutReaderVar>[A-Za-z_$][\w$]*)=async e=>(?<shortcutReaderObject>[A-Za-z_$][\w$]*)\.shell\.readShortcutLink\(e\);/;
 const LINUX_CHROME_EXTENSION_PROFILE_DIR_PATTERN =
   /function (?<fn>[A-Za-z_$][\w$]*)\(\{homeDir:(?<homeDirVar>[A-Za-z_$][\w$]*),localAppDataDir:(?<localAppDataVar>[A-Za-z_$][\w$]*),platform:(?<platformVar>[A-Za-z_$][\w$]*)\}\)\{return \k<platformVar>===`darwin`\?(?<joinCall>(?:\(0,[A-Za-z_$][\w$]*\.join\)|join))\(\k<homeDirVar>,`Library`,`Application Support`,`Google`,`Chrome`\):\k<platformVar>===`win32`\?\k<joinCall>\(\k<localAppDataVar>\?\?\k<joinCall>\(\k<homeDirVar>,`AppData`,`Local`\),`Google`,`Chrome`,`User Data`\):null\}/;
 const LINUX_CHROME_EXTENSION_URL_HELPER_PATTERN =
@@ -966,6 +1007,8 @@ const LINUX_CHROME_EXTENSION_OPEN_SETTINGS_PATTERN =
   /async function (?<fn>[A-Za-z_$][\w$]*)\(\{extensionId:(?<extensionIdVar>[A-Za-z_$][\w$]*),platform:(?<platformVar>[A-Za-z_$][\w$]*)=process\.platform,detectChromeCommand:(?<detectVar>[A-Za-z_$][\w$]*)=(?<defaultDetectVar>[A-Za-z_$][\w$]*),runCommand:(?<runVar>[A-Za-z_$][\w$]*)=(?<defaultRunVar>[A-Za-z_$][\w$]*)\}\)\{(?<body>if\(\k<platformVar>===`darwin`\)\{.*?\}if\(\k<platformVar>===`win32`\)\{.*?\})throw Error\(`Opening Chrome extension settings is only supported on macOS and Windows`\)\}/;
 const LINUX_OWL_FEATURE_BINDING_PATTERN =
   /function (?<helperFn>[A-Za-z_$][\w$]*)\(\)\{let (?<bindingVar>[A-Za-z_$][\w$]*)=process\._linkedBinding;if\(typeof \k<bindingVar>!=`function`\)throw Error\(`Owl feature binding is unavailable`\);return (?<schemaVar>[A-Za-z_$][\w$]*)\.parse\(\k<bindingVar>\.call\(process,`electron_common_owl_features`\)\)\}/;
+const LINUX_OWL_FEATURE_BINDING_NULLABLE_PATTERN =
+  /function (?<helperFn>[A-Za-z_$][\w$]*)\(\)\{let (?<bindingVar>[A-Za-z_$][\w$]*)=process\._linkedBinding;if\(typeof \k<bindingVar>!=`function`\)return null;let (?<nativeFeaturesVar>[A-Za-z_$][\w$]*);try\{\k<nativeFeaturesVar>=\k<bindingVar>\.call\(process,(?<featureBindingNameVar>[A-Za-z_$][\w$]*)\)\}catch\((?<errorVar>[A-Za-z_$][\w$]*)\)\{if\((?<missingBindingFn>[A-Za-z_$][\w$]*)\(\k<errorVar>\)\)return null;throw \k<errorVar>\}return (?<schemaVar>[A-Za-z_$][\w$]*)\.parse\(\k<nativeFeaturesVar>\)\}/;
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_26_609 =
   'process.platform===`win32`||process.platform===`linux`?{autoHideMenuBar:!0}:{}';
@@ -983,10 +1026,20 @@ const LINUX_TITLE_BAR_OVERLAY_TRANSPARENT_PATCHED_OPTIONS_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\((?<scaleVar>[A-Za-z_$][\w$]*)=1,codexLinuxTitleBarOverlayTheme=null\)\{let codexLinuxTitleBarOverlayEnabled=process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==`1`,codexLinuxTitleBarOverlaySymbolColor=codexLinuxTitleBarOverlayTheme\?\.symbolColor\?\?\((?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.shouldUseDarkColors\?`#c7c7c7`:`#4b5563`\);return\{color:(?<colorVar>[A-Za-z_$][\w$]*),symbolColor:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlaySymbolColor:\k<electronVar>\.nativeTheme\.shouldUseDarkColors\?(?<darkColorVar>[A-Za-z_$][\w$]*):(?<lightColorVar>[A-Za-z_$][\w$]*),height:Math\.round\((?<heightVar>[A-Za-z_$][\w$]*)\*\k<scaleVar>\)\}\}\/\* codexLinuxTitleBarOverlayColors codexLinuxTitleBarOverlayThemeSync \*\//;
 const LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN =
   /setWindowZoom\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<zoomVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow\.fromWebContents\(\k<webContentsVar>\);\k<windowVar>==null\|\|this\.windowAppearances\.get\(\k<windowVar>\.id\)!==`primary`\|\|\(process\.platform===`darwin`\?\k<windowVar>\.setWindowButtonPosition\((?<buttonPositionFn>[A-Za-z_$][\w$]*)\(\k<zoomVar>\)\):\(process\.platform===`win32`\|\|process\.platform===`linux`\)&&\(this\.windowZooms\.set\(\k<windowVar>\.id,\k<zoomVar>\),\k<windowVar>\.setTitleBarOverlay\((?<overlayFn>[A-Za-z_$][\w$]*)\(\k<zoomVar>\)\)\)\)\}/;
+const LINUX_TITLE_BAR_OVERLAY_APP_SYNC_PATTERN =
+  /installApplicationMenuTitleBarOverlaySync\((?<windowVar>[A-Za-z_$][\w$]*),(?<appearanceVar>[A-Za-z_$][\w$]*)\)\{if\(process\.platform!==`win32`&&process\.platform!==`linux`\|\|\k<appearanceVar>!==`primary`\)return;let (?<handlerVar>[A-Za-z_$][\w$]*)=\(\)=>\{\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.setTitleBarOverlay\((?<overlayFn>[A-Za-z_$][\w$]*)\(this\.windowZooms\.get\(\k<windowVar>\.id\)\)\)\};return (?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.on\(`updated`,\k<handlerVar>\),\k<handlerVar>\(\),\(\)=>\{\k<electronVar>\.nativeTheme\.off\(`updated`,\k<handlerVar>\)\}\}/;
 const LINUX_TITLE_BAR_OVERLAY_MESSAGE_CASE_PATTERN =
   /case`power-save-blocker-set`:this\.updatePowerSaveBlocker\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<messageVar>[A-Za-z_$][\w$]*)\.shouldBlock,\k<messageVar>\.keepRemoteControlAwakeWhilePluggedIn\);break;/;
 const LINUX_TITLE_BAR_OVERLAY_EXISTING_MESSAGE_CASE_PATTERN =
   /case`codex-linux-title-bar-overlay-theme-set`:this(?:\.windowManager)?\.codexLinuxSetTitleBarOverlayTheme\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<messageVar>[A-Za-z_$][\w$]*)\);break;(?<powerCase>case`power-save-blocker-set`:this\.updatePowerSaveBlocker\(\k<webContentsVar>,\k<messageVar>\.shouldBlock,\k<messageVar>\.keepRemoteControlAwakeWhilePluggedIn\);break;)/;
+const LINUX_NATIVE_WINDOW_FRAME_PRIMARY_BRANCH_PATTERN =
+  /(?<platformVar>[A-Za-z_$][\w$]*)===`win32`\|\|\k<platformVar>===`linux`\?\{titleBarStyle:`hidden`,titleBarOverlay:(?<overlayFn>[A-Za-z_$][\w$]*)\((?<zoomVar>[A-Za-z_$][\w$]*)\)\}:\{titleBarStyle:`default`\}/;
+const LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN =
+  /(?<windowVar>[A-Za-z_$][\w$]*)\.setResizable\(!1\),\k<windowVar>\.setMaximizable\(!1\),\k<windowVar>\.setFullScreenable\(!1\)/;
+const LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN =
+  /show:(?<showVar>[A-Za-z_$][\w$]*),parent:(?<parentVar>[A-Za-z_$][\w$]*),focusable:(?<focusableVar>[A-Za-z_$][\w$]*),\.\.\.process\.platform/;
+const LINUX_WINDOW_ICON_BROWSER_WINDOW_PATTERN =
+  /new (?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow\(\{(?<options>width:[\s\S]{0,3000}?)(?<webPreferences>webPreferences:(?:[A-Za-z_$][\w$]*|\{[^}]*\}))\}\);this\.applyWindowBackdrop/;
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT =
   't.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_CURRENT =
@@ -1024,7 +1077,7 @@ const LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_PATTERN =
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_HELPER_PATTERN =
   /async function (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,t,n,r,i\)\{return\(await (?<environmentRunnerFn>[A-Za-z_$][\w$]*)\(\{workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,(?<clientParamName>appServerClient|host):i,onLog:n,signal:r\}\)\)\?\.setupResult\?\?null\}/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_PATTERN =
-  /if\((?<onLogVar>[A-Za-z_$][\w$]*)\?\.\(`info`,(?<bufferVar>[A-Za-z_$][\w$]*)\.Buffer\.from\(`Worktree created at \$\{(?<worktreeWorkspaceRootVar>[A-Za-z_$][\w$]*)\}(?:\\n|\n)`,`utf8`\)\),await (?<storeEnvFn>[A-Za-z_$][\w$]*)\(\k<worktreeWorkspaceRootVar>,(?<selectedVar>[A-Za-z_$][\w$]*)\?\?`__none__`,(?<appServerClientVar>[A-Za-z_$][\w$]*),`worktree`,(?<signalVar>[A-Za-z_$][\w$]*)\)\|\|\k<onLogVar>\?\.\(`stderr`,\k<bufferVar>\.Buffer\.from\(`Failed to store selected environment in git config(?:\\n|\n)`,`utf8`\)\),\k<selectedVar>==null\)return \k<onLogVar>\?\.\(`info`,\k<bufferVar>\.Buffer\.from\(`No local environment selected(?:\\n|\n)`,`utf8`\)\),\{success:!0,worktreeGitRoot:(?<worktreeGitRootVar>[A-Za-z_$][\w$]*),worktreeWorkspaceRoot:\k<worktreeWorkspaceRootVar>,setupResult:null(?<emptySetupError>,setupError:null)?\};let (?<environmentVar>[A-Za-z_$][\w$]*)=await (?<readEnvironmentFn>[A-Za-z_$][\w$]*)\(\k<selectedVar>,\k<appServerClientVar>\);/;
+  /if\((?<onLogVar>[A-Za-z_$][\w$]*)\?\.\(`info`,(?<logEncodeFn>[A-Za-z_$][\w$]*(?:\.Buffer\.from|\.encode))\(`Worktree created at \$\{(?<worktreeWorkspaceRootVar>[A-Za-z_$][\w$]*)\}(?:\\n|\n)`(?:,`utf8`)?\)\),await (?<storeEnvFn>[A-Za-z_$][\w$]*)\(\k<worktreeWorkspaceRootVar>,(?<selectedVar>[A-Za-z_$][\w$]*)\?\?`__none__`,(?<appServerClientVar>[A-Za-z_$][\w$]*),`worktree`,(?<signalVar>[A-Za-z_$][\w$]*)\)\|\|\k<onLogVar>\?\.\(`stderr`,[A-Za-z_$][\w$]*(?:\.Buffer\.from|\.encode)\(`Failed to store selected environment in git config(?:\\n|\n)`(?:,`utf8`)?\)\),\k<selectedVar>==null\)return \k<onLogVar>\?\.\(`info`,[A-Za-z_$][\w$]*(?:\.Buffer\.from|\.encode)\(`No local environment selected(?:\\n|\n)`(?:,`utf8`)?\)\),\{success:!0,worktreeGitRoot:(?<worktreeGitRootVar>[A-Za-z_$][\w$]*),worktreeWorkspaceRoot:\k<worktreeWorkspaceRootVar>,setupResult:null(?<emptySetupError>,setupError:null)?\};(?<preReadSetupStartCall>[A-Za-z_$][\w$]*\?\.\(\);)?let (?<environmentVar>[A-Za-z_$][\w$]*)=await (?<readEnvironmentFn>[A-Za-z_$][\w$]*)\(\k<selectedVar>,\k<appServerClientVar>\);/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_CALL_PATTERN =
   /let (?<cleanupResultVar>[A-Za-z_$][\w$]*)=await (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,a,void 0,r,n\);/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_DELETE_CLEANUP_FUNCTION_PATTERN =
@@ -1060,7 +1113,7 @@ const BROWSER_USE_RUNTIME_PATHS_FUNCTION_PATTERN =
 const BROWSER_USE_RUNTIME_PATHS_RETURN_PATTERN =
   /return\{codexCliPath:(?<codexCliPath>[^,]+),codexCliPathSource:(?<codexCliPathSource>[^,]+),nodeModuleDirs:(?<nodeModuleDirs>[^,]+),nodePath:(?<nodePath>[^,]+),nodePathSource:(?<nodePathSource>[^,]+),nodeReplPath:(?<nodeReplPath>[^,]+),nodeReplPathSource:(?<nodeReplPathSource>[^,]+),platform:(?<platform>[^}]+)\}\}/;
 const BUNDLED_PLUGIN_RECONCILER_ANCHOR_PATTERN =
-  /var (?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`bundled-plugins`\),(?<devFlagVar>[A-Za-z_$][\w$]*)=`CODEX_ENABLE_DEV_BUNDLED_PLUGINS`;function (?<fn>[A-Za-z_$][\w$]*)\(e\)\{/;
+  /var (?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`bundled-plugins`\),(?<devFlagVar>[A-Za-z_$][\w$]*)=`CODEX_ENABLE_DEV_BUNDLED_PLUGINS`(?<extraDeclarations>(?:,[^;]+)?);function (?<fn>[A-Za-z_$][\w$]*)\(e\)\{/;
 const BUNDLED_PLUGIN_RECONCILER_CONTEXT_PATTERN =
   /function [A-Za-z_$][\w$]*\(e\)\{let (?<envVar>[A-Za-z_$][\w$]*)=e\.env\?\?process\.env,(?<resourcesVar>[A-Za-z_$][\w$]*)=e\.resourcesPath\?\?[A-Za-z_$][\w$]*\(\{env:\k<envVar>\}\)[\s\S]{0,3000}?,(?<platformVar>[A-Za-z_$][\w$]*)=e\.platform\?\?process\.platform;/;
 const BUNDLED_PLUGIN_DESCRIPTOR_SELECTOR_PATTERN =
@@ -1096,13 +1149,15 @@ const LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN =
 const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
   /\}\),(?<windowVar>[A-Za-z_$][\w$]*)\}positionWindow\((?<positionArgs>[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*)\)\{/;
 const LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN =
-  /showWindow\((?<windowVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<wasOpenVar>[A-Za-z_$][\w$]*)=this\.isOpen\(\);(?<revealExpr>this\.[A-Za-z_$][\w$]*&&=\(\k<windowVar>\.setOpacity\(1\),!1\),)?\k<windowVar>\.moveTop\(\),\k<windowVar>\.showInactive\(\),!\k<wasOpenVar>&&this\.isOpen\(\)&&(?<openStateExpr>(?:\(this\.finishPendingPresentation\(\),this\.broadcastOpenState\(\)\)|this\.broadcastOpenState\(\)))\}/;
+  /showWindow\((?<windowVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<wasOpenVar>[A-Za-z_$][\w$]*)=this\.isOpen\(\);(?<revealExpr>this\.[A-Za-z_$][\w$]*&&=\(\k<windowVar>\.setOpacity\(1\),!1\),)?\k<windowVar>\.moveTop\(\),\k<windowVar>\.showInactive\(\),!\k<wasOpenVar>&&this\.isOpen\(\)&&(?<openStateExpr>(?:\(this\.finishPendingPresentation\(\),this\.broadcastOpenState\(\)\)|this\.broadcastOpenState\(\)))(?<postOpenExpr>;let (?<pendingPresentationVar>[A-Za-z_$][\w$]*)=this\.pendingPresentation;\k<pendingPresentationVar>!=null&&\(this\.pendingPresentation=null,\k<pendingPresentationVar>\.velocity==null\?\(this\.dockRestoreAnchor=\k<pendingPresentationVar>\.target,this\.animatePresentationTo\(\k<pendingPresentationVar>\.target,[A-Za-z_$][\w$]*\(this\.anchor,\k<pendingPresentationVar>\.target\),\(\)=>\{this\.dockRestoreAnchor===\k<pendingPresentationVar>\.target&&\(this\.dockRestoreAnchor=null\)\}\)\):this\.startMomentum\(\k<pendingPresentationVar>\.velocity\.x,\k<pendingPresentationVar>\.velocity\.y,!0\)\))?\}/;
 const LINUX_AVATAR_OVERLAY_OPEN_METHOD_PATTERN =
   /async open\((?<openerVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);this\.globalState\.set\((?<openStateVar>[A-Za-z_$][\w$]*),!0\),this\.positionWindow\(\k<windowVar>,\k<openerVar>\),this\.rendererReady&&\(this\.showWindow\(\k<windowVar>\),this\.applyPointerInteractivityPolicy\(\)\)\}/;
 const LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_608_PATTERN =
   /async open\((?<openerVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);this\.globalState\.set\((?<openStateVar>[A-Za-z_$][\w$]*),!0\),this\.positionWindow\(\k<windowVar>,\k<openerVar>\),this\.showWindowIfReady\(\k<windowVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_616_PATTERN =
   /async open\((?<openerVar>[A-Za-z_$][\w$]*),\{forcePetView:(?<forcePetViewVar>[A-Za-z_$][\w$]*)=!1\}=\{\}\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);this\.globalState\.set\((?<openStateExpr>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?),!0\),this\.windowOpenIntent=!0,this\.positionWindow\(\k<windowVar>,\k<openerVar>\),(?<nativePresentationExpr>this\.nativeCompositionSupported&&this\.compositionHost\.isEnabled\(\)&&\(this\.initialPresentationState=`waiting-for-native`\),this\.stageWindowForNativePresentation\(\k<windowVar>\),this\.compositionHost\.wake\(\),)this\.showWindowIfReady\(\k<windowVar>\),\k<forcePetViewVar>&&this\.windowManager\.sendMessageToWebContents\(\k<windowVar>\.webContents,\{type:`avatar-overlay-explicit-pet-opened`\}\)\}/;
+const LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_623_PATTERN =
+  /async open\((?<openerVar>[A-Za-z_$][\w$]*),\{forcePetView:(?<forcePetViewVar>[A-Za-z_$][\w$]*)=!1,persistPetIntent:(?<persistIntentVar>[A-Za-z_$][\w$]*)=!0\}=\{\}\)\{\k<persistIntentVar>&&\(this\.globalState\.set\((?<openStateExpr>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?),!0\),this\.petOpenIntent=!0\);let (?<sequenceVar>[A-Za-z_$][\w$]*)=\+\+this\.windowVisibilitySequence,(?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);\k<sequenceVar>===this\.windowVisibilitySequence&&\(this\.positionWindow\(\k<windowVar>,\k<openerVar>\),this\.pendingPresentation!=null&&\(this\.pendingPresentation\.target=\{\.\.\.this\.anchor\},this\.positionPresentationAtOrigin\(\k<windowVar>,this\.pendingPresentation\.origin\)\),this\.presentWindow\(\k<windowVar>\),\k<forcePetViewVar>&&this\.windowManager\.sendMessageToWebContents\(\k<windowVar>\.webContents,\{type:`avatar-overlay-explicit-pet-opened`\}\)\)\}/;
 const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN =
   /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*)(?:,(?<animateVar>[A-Za-z_$][\w$]*))?\)\{\k<windowVar>\.isDestroyed\(\)\|\|(?<equalFn>[A-Za-z_$][\w$]*)\(\k<windowVar>\.(?<getBoundsMethod>get(?:Content)?Bounds)\(\),\k<boundsVar>\)\|\|\k<windowVar>\.(?<setBoundsMethod>set(?:Content)?Bounds)\(\k<boundsVar>,(?<animateArg>!1|\k<animateVar>)\)\}/;
 const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_PATTERN =
@@ -1123,10 +1178,14 @@ const LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN =
   /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),\{pointerWindowX:(?<pointerXVar>[A-Za-z_$][\w$]*),pointerWindowY:(?<pointerYVar>[A-Za-z_$][\w$]*)\}\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\)(?<clearDetachedCall>,this\.clearDetachedDisplayRestore\(\))?;let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.dragState=\{pointerAnchorX:\k<pointerXVar>-\k<layoutVar>\.mascot\.left,pointerAnchorY:\k<pointerYVar>-\k<layoutVar>\.mascot\.top,hasMoved:!1,displayBounds:(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getDisplayNearestPoint\(\k<electronVar>\.screen\.getCursorScreenPoint\(\)\)\.bounds\}\}/;
 const LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN =
   /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<eventVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\),this\.(?<suppressVar>[A-Za-z_$][\w$]*)=!1,this\.clearDetachedDisplayRestore\(\);let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.clear\(\);let (?<nativePointVar>[A-Za-z_$][\w$]*)=(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\),(?<rendererPointVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerScreenX!=null&&\k<eventVar>\.pointerScreenY!=null\?\{x:\k<eventVar>\.pointerScreenX,y:\k<eventVar>\.pointerScreenY\}:(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<sourcePointVar>[A-Za-z_$][\w$]*)=\k<nativePointVar>\?\?\k<rendererPointVar>,(?<pointerAnchorXVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowX-\k<layoutVar>\.mascot\.left,(?<pointerAnchorYVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowY-\k<layoutVar>\.mascot\.top;this\.dragState=new (?<dragStateCtor>[A-Za-z_$][\w$]*)\(\k<nativePointVar>==null\?`renderer`:`native`,\k<pointerAnchorXVar>,\k<pointerAnchorYVar>,\k<electronVar>\.screen\.getDisplayNearestPoint\(\k<sourcePointVar>\)\.bounds\)\}/;
+const LINUX_AVATAR_OVERLAY_START_DRAG_26_623_PATTERN =
+  /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<eventVar>[A-Za-z_$][\w$]*),(?<usesOrbPhysicsVar>[A-Za-z_$][\w$]*)=!1\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\),this\.dockRestoreAnchor=null,this\.cancelOrbDragFollow\(\),this\.(?<suppressVar>[A-Za-z_$][\w$]*)=!1,this\.clearDetachedDisplayRestore\(\);let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.clear\(\);let (?<nativePointVar>[A-Za-z_$][\w$]*)=(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\),(?<rendererPointVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerScreenX!=null&&\k<eventVar>\.pointerScreenY!=null\?\{x:\k<eventVar>\.pointerScreenX,y:\k<eventVar>\.pointerScreenY\}:(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<sourcePointVar>[A-Za-z_$][\w$]*)=\k<nativePointVar>\?\?\k<rendererPointVar>,(?<pointerAnchorXVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowX-\k<layoutVar>\.mascot\.left,(?<pointerAnchorYVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowY-\k<layoutVar>\.mascot\.top;this\.dragState=new (?<dragStateCtor>[A-Za-z_$][\w$]*)\(\k<nativePointVar>==null\?`renderer`:`native`,\k<pointerAnchorXVar>,\k<pointerAnchorYVar>,\k<electronVar>\.screen\.getDisplayNearestPoint\(\k<sourcePointVar>\)\.bounds,\k<usesOrbPhysicsVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN =
   /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\|\|\(this\.cancelMomentum\(\),this\.dragState\.hasMoved=!0,this\.moveDragToCurrentCursor\(\k<windowVar>\)\)\}endDrag/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_611_PATTERN =
   /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\)return;this\.cancelMomentum\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;\k<dragStateVar>\.recordMovementIntent\(\);let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}/;
+const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_623_PATTERN =
+  /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\)return;this\.cancelMomentum\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;\k<dragStateVar>\.recordMovementIntent\(\);let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&\(\k<dragStateVar>\.usesOrbPhysics\?\(this\.orbDragFollowTarget=\k<nextPointVar>,this\.scheduleOrbDragFollow\(\k<windowVar>\)\):this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN =
   /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=n\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\);\k<dragStateVar>\.displayBounds=\k<displayBoundsVar>(?:,this\.resolutionKey=[^,}]+)?,this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayBoundsVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_527_PATTERN =
@@ -1135,12 +1194,18 @@ const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_608_PATTERN =
   /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=\k<electronVar>\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.displayBounds=\k<displayVar>\.bounds,this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayVar>,!1,!1\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN =
   /moveDragToPointer\((?<windowVar>[A-Za-z_$][\w$]*),(?<cursorVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.recordMove\(\k<displayVar>\.bounds\),this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayVar>,!1,!1\)\}/;
+const LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_623_PATTERN =
+  /moveDragToPointer\((?<windowVar>[A-Za-z_$][\w$]*),(?<cursorVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.recordMove\(\k<displayVar>\.bounds\);let (?<targetXVar>[A-Za-z_$][\w$]*)=\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,(?<targetYVar>[A-Za-z_$][\w$]*)=\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY,(?<easeVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.usesOrbPhysics\?(?<orbEaseVar>[A-Za-z_$][\w$]*):1,(?<nextAnchorVar>[A-Za-z_$][\w$]*)=\{\.\.\.this\.anchor,x:this\.anchor\.x\+\(\k<targetXVar>-this\.anchor\.x\)\*\k<easeVar>,y:this\.anchor\.y\+\(\k<targetYVar>-this\.anchor\.y\)\*\k<easeVar>\},(?<currentBoundsVar>[A-Za-z_$][\w$]*)=\k<windowVar>\.getContentBounds\(\);this\.anchor=\k<nextAnchorVar>,this\.applyLayout\(\k<windowVar>,\k<displayVar>,!1,!1\),this\.layout!=null&&(?<equalFn>[A-Za-z_$][\w$]*)\(\k<currentBoundsVar>,this\.layout\.windowBounds\)&&\(this\.anchor\.x!==Math\.round\(\k<nextAnchorVar>\.x\)\|\|this\.anchor\.y!==Math\.round\(\k<nextAnchorVar>\.y\)\)&&this\.compositionHost\.settleDragFollowSurfaces\(\)\}/;
 const LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN =
   /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|\(this\.dragState\?\.hasMoved&&this\.moveDragToCurrentCursor\(\k<windowVar>\),this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\)\)\}/;
 const LINUX_AVATAR_OVERLAY_END_DRAG_26_611_PATTERN =
   /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>\?\.hasMovementIntent\)\{let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}this\.(?<suppressVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\?\.shouldSuppressRendererThrow\(\)\?\?!1,this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\)\}/;
+const LINUX_AVATAR_OVERLAY_END_DRAG_26_623_PATTERN =
+  /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelOrbDragFollow\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>\?\.hasMovementIntent\)\{let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}this\.(?<suppressVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\?\.shouldSuppressRendererThrow\(\)\?\?!1,this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\);let (?<dockTargetVar>[A-Za-z_$][\w$]*)=this\.dockTarget,(?<currentAnchorVar>[A-Za-z_$][\w$]*)=(?<anchorFn>[A-Za-z_$][\w$]*)\(this\.anchor,this\.presentationOffset\);\k<dockTargetVar>!=null&&(?<dockCheckFn>[A-Za-z_$][\w$]*)\(\{current:\k<currentAnchorVar>,next:\k<currentAnchorVar>,target:\{x:\k<dockTargetVar>\.anchor\.centerX,y:\k<dockTargetVar>\.anchor\.centerY\}\}\)\.shouldDock&&this\.dockPresentation\(\k<dockTargetVar>\.anchor,\k<dockTargetVar>\.onDock\)\}/;
 const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN =
   /throwWithVelocity\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<velocityXVar>[A-Za-z_$][\w$]*),(?<velocityYVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|!Number\.isFinite\(\k<velocityXVar>\)\|\|!Number\.isFinite\(\k<velocityYVar>\)\|\|\k<velocityXVar>===0&&\k<velocityYVar>===0\)return;/;
+const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_26_623_PATTERN =
+  /throwWithVelocity\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<velocityXVar>[A-Za-z_$][\w$]*),(?<velocityYVar>[A-Za-z_$][\w$]*),(?<shouldBounceVar>[A-Za-z_$][\w$]*)=!1\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|!Number\.isFinite\(\k<velocityXVar>\)\|\|!Number\.isFinite\(\k<velocityYVar>\)\|\|\k<velocityXVar>===0&&\k<velocityYVar>===0\)return;let (?<suppressVar>[A-Za-z_$][\w$]*)=this\.suppressNextRendererThrow;this\.suppressNextRendererThrow=!1,!\(\k<suppressVar>&&!\k<shouldBounceVar>\)&&this\.startMomentum\(\k<velocityXVar>,\k<velocityYVar>,\k<shouldBounceVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_PATTERN =
   /let (?<sampleVar>[A-Za-z_$][\w$]*)=(?<sampleFn>[A-Za-z_$][\w$]*)\((?<eventVar>[A-Za-z_$][\w$]*)\);(?<body>[\s\S]*?\.dispatchMessage\(`avatar-overlay-drag-move`,)\{\}\)/;
 const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_POINTER_PATTERN =
@@ -1148,17 +1213,21 @@ const LINUX_AVATAR_OVERLAY_RENDERER_DRAG_MOVE_POINTER_PATTERN =
 const LINUX_PET_YAPPING_USAGE_MAIN_HANDLER_PATTERN =
   /(?<anchor>"fast-mode-rollout-metrics":async (?<paramsVar>[A-Za-z_$][\w$]*)=>(?:[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.hostConfig\)\?null:)?[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\{codexHome:[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\{preferWsl:[A-Za-z_$][\w$]*(?:,hostConfig:(?:this\.hostConfig|[A-Za-z_$][\w$]*))?\}\),params:\k<paramsVar>\}\),)/;
 const LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN =
-  /(?:^|[;,]|\bvar\s+)(?<reactVar>[A-Za-z_$][\w$]*)=e\([A-Za-z_$][\w$]*\(\),1\)/;
+  /(?:^|[;,]|\bvar\s+)(?<reactVar>[A-Za-z_$][\w$]*)=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\(\),1\)/;
 const LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"(?<module>\.\/vscode-api-[^"]+\.js)";/;
 const LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"(?<module>\.\/setting-storage-[^"]+\.js)";/;
+const LINUX_PET_YAPPING_USAGE_ROLLDOWN_APP_IMPORT_PATTERN =
+  /import\{(?<imports>[^}]*)\}from"(?<module>\.\/app-initial~app-main~[^"]+\.js)";/g;
 const LINUX_PET_YAPPING_USAGE_JSX_RUNTIME_IMPORT_PATTERN =
   /import\{(?<imports>[^}]*)\}from"\.\/jsx-runtime-[^"]+\.js";/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN =
   /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:\[?)(?<mascotCall>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{ariaLabel:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\))/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN =
   /(?<prefix>"data-avatar-overlay-hit-region":`mascot`[\s\S]*?children:\[)(?<mascotContent>[\s\S]*?notificationBadge:[\s\S]*?transientState:[A-Za-z_$][\w$]*\}\)),(?<realtimeButton>\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsx\)\([A-Za-z_$][\w$]*,\{[\s\S]*?canStart:[\s\S]*?onStop:[A-Za-z_$][\w$]*[\s\S]*?\}\))\]\}/;
+const LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_623_PATTERN =
+  /(?<prefix>"data-avatar-overlay-hit-region":[A-Za-z_$][\w$]*\?void 0:`mascot`[\s\S]*?children:)(?<mascotContent>[A-Za-z_$][\w$]*)(?<suffix>\}\)\})/;
 const LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN =
   /children:\[(?<avatar>[A-Za-z_$][\w$]*),(?<badge>[A-Za-z_$][\w$]*)\]\}/;
 const LINUX_PET_YAPPING_USAGE_LAYOUT_QUERY_PATTERN =
@@ -1250,7 +1319,7 @@ function buildLinuxWorktreeEnvironmentWorkerCreateReplacement(
   {
     storeEnvFn,
     readEnvironmentFn,
-    bufferVar,
+    logEncodeFn,
     onLogVar,
     selectedVar,
     appServerClientVar,
@@ -1258,11 +1327,29 @@ function buildLinuxWorktreeEnvironmentWorkerCreateReplacement(
     worktreeGitRootVar,
     worktreeWorkspaceRootVar,
     emptySetupError,
-    environmentVar
+    environmentVar,
+    preReadSetupStartCall = ''
   },
   { loggerFn }
 ) {
-  return `let codexLinuxEnvironmentSelection=await codexLinuxResolveWorktreeEnvironmentConfigPath(t,${selectedVar},${appServerClientVar}),codexLinuxLocalEnvironmentConfigPath=codexLinuxEnvironmentSelection.configPath;codexLinuxEnvironmentSelection.source===\`single-environment-fallback\`?${loggerFn}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}):codexLinuxEnvironmentSelection.source===\`explicit-none\`&&${loggerFn}().info(\`[worktree-create] explicit-no-environment\`,{safe:{},sensitive:{workspaceRoot:t}});if(${onLogVar}?.(\`info\`,${bufferVar}.Buffer.from(\`Worktree created at \${${worktreeWorkspaceRootVar}}\\n\`,\`utf8\`)),await ${storeEnvFn}(${worktreeWorkspaceRootVar},codexLinuxLocalEnvironmentConfigPath??\`__none__\`,${appServerClientVar},\`worktree\`,${signalVar})||(${loggerFn}().warning(\`[worktree-create] failed-to-store-environment-selection\`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}),${onLogVar}?.(\`stderr\`,${bufferVar}.Buffer.from(\`Failed to store selected environment in git config\\n\`,\`utf8\`))),(codexLinuxLocalEnvironmentConfigPath==null||codexLinuxLocalEnvironmentConfigPath===\`__none__\`))return ${onLogVar}?.(\`info\`,${bufferVar}.Buffer.from(\`No local environment selected\\n\`,\`utf8\`)),{success:!0,worktreeGitRoot:${worktreeGitRootVar},worktreeWorkspaceRoot:${worktreeWorkspaceRootVar},setupResult:null${emptySetupError ?? ''}};let ${environmentVar}=await ${readEnvironmentFn}(codexLinuxLocalEnvironmentConfigPath,${appServerClientVar});`;
+  const createdLog = buildLinuxWorktreeEnvironmentLogEncode(
+    logEncodeFn,
+    `Worktree created at ${'${'}${worktreeWorkspaceRootVar}}\\n`
+  );
+  const storeFailedLog = buildLinuxWorktreeEnvironmentLogEncode(
+    logEncodeFn,
+    'Failed to store selected environment in git config\\n'
+  );
+  const noEnvironmentLog = buildLinuxWorktreeEnvironmentLogEncode(
+    logEncodeFn,
+    'No local environment selected\\n'
+  );
+  return `let codexLinuxEnvironmentSelection=await codexLinuxResolveWorktreeEnvironmentConfigPath(t,${selectedVar},${appServerClientVar}),codexLinuxLocalEnvironmentConfigPath=codexLinuxEnvironmentSelection.configPath;codexLinuxEnvironmentSelection.source===\`single-environment-fallback\`?${loggerFn}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}):codexLinuxEnvironmentSelection.source===\`explicit-none\`&&${loggerFn}().info(\`[worktree-create] explicit-no-environment\`,{safe:{},sensitive:{workspaceRoot:t}});if(${onLogVar}?.(\`info\`,${createdLog}),await ${storeEnvFn}(${worktreeWorkspaceRootVar},codexLinuxLocalEnvironmentConfigPath??\`__none__\`,${appServerClientVar},\`worktree\`,${signalVar})||(${loggerFn}().warning(\`[worktree-create] failed-to-store-environment-selection\`,{safe:{},sensitive:{workspaceRoot:t,configPath:codexLinuxLocalEnvironmentConfigPath}}),${onLogVar}?.(\`stderr\`,${storeFailedLog})),(codexLinuxLocalEnvironmentConfigPath==null||codexLinuxLocalEnvironmentConfigPath===\`__none__\`))return ${onLogVar}?.(\`info\`,${noEnvironmentLog}),{success:!0,worktreeGitRoot:${worktreeGitRootVar},worktreeWorkspaceRoot:${worktreeWorkspaceRootVar},setupResult:null${emptySetupError ?? ''}};${preReadSetupStartCall}let ${environmentVar}=await ${readEnvironmentFn}(codexLinuxLocalEnvironmentConfigPath,${appServerClientVar});`;
+}
+
+function buildLinuxWorktreeEnvironmentLogEncode(logEncodeFn, templateContent) {
+  const encodingArg = logEncodeFn.endsWith('.encode') ? '' : ',`utf8`';
+  return `${logEncodeFn}(\`${templateContent}\`${encodingArg})`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerCleanupCallReplacement(
@@ -1295,9 +1382,10 @@ function buildLinuxAvatarOverlayShowWindowMethod({
   windowVar,
   wasOpenVar,
   revealExpr = '',
-  openStateExpr = 'this.broadcastOpenState()'
+  openStateExpr = 'this.broadcastOpenState()',
+  postOpenExpr = ''
 }) {
-  return `showWindow(${windowVar}){if(${windowVar}.isDestroyed())return;let ${wasOpenVar}=this.isOpen();this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),${revealExpr}${windowVar}.showInactive(),this.codexLinuxRecoverAvatarOverlayVisibility(${windowVar}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),!${wasOpenVar}&&this.isOpen()&&(${openStateExpr})}`;
+  return `showWindow(${windowVar}){if(${windowVar}.isDestroyed())return;let ${wasOpenVar}=this.isOpen();this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),${revealExpr}${windowVar}.showInactive(),this.codexLinuxRecoverAvatarOverlayVisibility(${windowVar}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),!${wasOpenVar}&&this.isOpen()&&(${openStateExpr})${postOpenExpr}}`;
 }
 
 function appendNamedImportAlias(imports, importedName, aliasName) {
@@ -1341,7 +1429,7 @@ function findLinuxPetYappingUsageJsxRuntime(bundleSource) {
     ? getNamedImportLocalName(importMatch.groups.imports, 't')
     : null;
   if (!jsxFactory) {
-    return null;
+    return findLinuxPetYappingUsageRolldownJsxRuntime(bundleSource);
   }
   const declarationPattern = new RegExp(
     `var (?<jsxVar>[A-Za-z_$][\\w$]*)=${escapeRegExp(jsxFactory)}\\(\\)(?<varTail>,[^;]+)?;`
@@ -1353,7 +1441,120 @@ function findLinuxPetYappingUsageJsxRuntime(bundleSource) {
   return {
     declarationPattern,
     jsxFactory,
+    kind: 'declaration',
     jsxVar: declarationMatch.groups.jsxVar
+  };
+}
+
+const LINUX_PET_YAPPING_USAGE_ROLLDOWN_REQUEST_IMPORT_NAMES = ['Ay', 'vD', 'YN', 'a'];
+const LINUX_PET_YAPPING_USAGE_ROLLDOWN_JSX_IMPORT_NAMES = ['yA', 'Lz', 'BV', 'I'];
+const LINUX_PET_YAPPING_USAGE_ROLLDOWN_SPLIT_REQUEST_ANCHOR_IMPORT_NAMES = [
+  'Ao',
+  'Fo',
+  'Io',
+  'Po'
+];
+
+function findLinuxPetYappingUsageRolldownImport(bundleSource, importedNames) {
+  for (const match of bundleSource.matchAll(LINUX_PET_YAPPING_USAGE_ROLLDOWN_APP_IMPORT_PATTERN)) {
+    const imports = match.groups?.imports;
+    if (!imports) {
+      continue;
+    }
+    const importName = importedNames.find((name) =>
+      getNamedImportLocalName(imports, name)
+    );
+    if (!importName) {
+      continue;
+    }
+    return buildLinuxPetYappingUsageRolldownImport(match, importName);
+  }
+  return null;
+}
+
+function buildLinuxPetYappingUsageRolldownImport(match, importName) {
+  const imports = match.groups.imports;
+  return {
+    imports,
+    importName,
+    localName: getNamedImportLocalName(imports, importName),
+    module: match.groups.module,
+    pattern: new RegExp(
+      `import\\{(?<imports>${escapeRegExp(imports)})\\}from"(?<module>${escapeRegExp(
+        match.groups.module
+      )})";`
+    )
+  };
+}
+
+function findLinuxPetYappingUsageRolldownRequestImport(bundleSource) {
+  const requestImport = findLinuxPetYappingUsageRolldownImport(
+    bundleSource,
+    LINUX_PET_YAPPING_USAGE_ROLLDOWN_REQUEST_IMPORT_NAMES
+  );
+  if (requestImport) {
+    return {
+      ...requestImport,
+      requestFn: requestImport.localName,
+      requestImportName: requestImport.importName
+    };
+  }
+
+  const splitRequestImport = findLinuxPetYappingUsageRolldownImport(
+    bundleSource,
+    LINUX_PET_YAPPING_USAGE_ROLLDOWN_SPLIT_REQUEST_ANCHOR_IMPORT_NAMES
+  );
+  if (splitRequestImport) {
+    return {
+      ...splitRequestImport,
+      requestFn: getNamedImportLocalName(splitRequestImport.imports, 'a'),
+      requestImportName: 'a'
+    };
+  }
+
+  const bvImport = findLinuxPetYappingUsageRolldownImport(bundleSource, ['BV']);
+  if (!bvImport) {
+    return null;
+  }
+  return {
+    ...bvImport,
+    requestFn: getNamedImportLocalName(bvImport.imports, 'YN'),
+    requestImportName: 'YN'
+  };
+}
+
+function findLinuxPetYappingUsageRolldownJsxImport(bundleSource) {
+  const jsxImport = findLinuxPetYappingUsageRolldownImport(
+    bundleSource,
+    LINUX_PET_YAPPING_USAGE_ROLLDOWN_JSX_IMPORT_NAMES
+  );
+  if (!jsxImport) {
+    return null;
+  }
+  return {
+    ...jsxImport,
+    jsxFactory: jsxImport.localName,
+    jsxFactoryImportName: jsxImport.importName
+  };
+}
+
+function findLinuxPetYappingUsageRolldownJsxRuntime(bundleSource) {
+  const jsxImport = findLinuxPetYappingUsageRolldownJsxImport(bundleSource);
+  if (!jsxImport?.jsxFactory) {
+    return null;
+  }
+  const assignmentPattern = new RegExp(
+    `(?<jsxVar>[A-Za-z_$][\\w$]*)=${escapeRegExp(jsxImport.jsxFactory)}\\(\\),`
+  );
+  const assignmentMatch = bundleSource.match(assignmentPattern);
+  if (!assignmentMatch?.groups?.jsxVar) {
+    return null;
+  }
+  return {
+    declarationPattern: assignmentPattern,
+    jsxFactory: jsxImport.jsxFactory,
+    kind: 'assignment',
+    jsxVar: assignmentMatch.groups.jsxVar
   };
 }
 
@@ -1406,6 +1607,8 @@ const TERMINAL_ATTACH_WITH_ATTACH_PATTERN =
   /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.attach\(\{sessionId:\k<resumeSessionVar>,conversationId:(?<conversationIdVar>[A-Za-z_$][\w$]*),(?:conversationTitle:(?<conversationTitleVar>[A-Za-z_$][\w$]*),)?hostId:(?<hostIdVar>[A-Za-z_$][\w$]*)\?\?null,cwd:(?<cwdVar>[A-Za-z_$][\w$]*)\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
 const TERMINAL_ATTACH_WITH_CREATE_PATTERN =
   /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.create\(\{sessionId:\k<resumeSessionVar>,conversationId:(?<conversationIdVar>[A-Za-z_$][\w$]*),(?:conversationTitle:(?<conversationTitleVar>[A-Za-z_$][\w$]*),)?hostId:(?<hostIdVar>[A-Za-z_$][\w$]*)\?\?null,cwd:(?<cwdVar>[A-Za-z_$][\w$]*)\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
+const TERMINAL_ATTACH_WITH_UNSTARTED_CREATE_PATTERN =
+  /(?<resumeSessionVar>[A-Za-z_$][\w$]*)&&!(?<service>[A-Za-z_$][\w$]*)\.isSessionStarted\(\k<resumeSessionVar>\)&&requestAnimationFrame\(\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|\k<service>\.create\(\{sessionId:\k<resumeSessionVar>,conversationId:(?<conversationIdVar>[A-Za-z_$][\w$]*),(?:conversationTitle:(?<conversationTitleVar>[A-Za-z_$][\w$]*),)?hostId:(?<hostIdVar>[A-Za-z_$][\w$]*)\?\?null,cwd:(?<cwdVar>[A-Za-z_$][\w$]*)\?\?null,cols:(?<terminalVar>[A-Za-z_$][\w$]*)\.cols,rows:\k<terminalVar>\.rows\}\)\}\);/;
 const TERMINAL_ON_ATTACH_WITH_DETAILS_PREFIX_PATTERN =
   /onAttach:\((?<eventVar>[A-Za-z_$][\w$]*),(?<detailsVar>[A-Za-z_$][\w$]*)\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)\|\|\(/;
 const TERMINAL_ON_ATTACH_NO_ARGS_PREFIX_PATTERN =
@@ -1798,6 +2001,98 @@ async function patchMainProcessLinuxTitleBarOverlay(extractedAppDir, logger) {
   if (result.updated !== original) {
     await fs.promises.writeFile(mainPath, result.updated, 'utf8');
     logger.info('Patched Linux title-bar overlay colors into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+async function patchMainProcessLinuxNativeWindowFrame(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for Linux native frame patch`);
+  const result = applyLinuxNativeWindowFramePatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux primary window to use the native window frame');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+async function patchMainProcessLinuxPrimaryWindowModeControls(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(
+    `Resolved upstream Electron main bundle ${mainFile} for Linux primary window mode controls patch`
+  );
+  const result = applyLinuxPrimaryWindowModeControlsPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux primary window mode to keep native window controls available');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+async function patchMainProcessLinuxWindowFocusableOption(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(
+    `Resolved upstream Electron main bundle ${mainFile} for Linux BrowserWindow focusable option patch`
+  );
+  const result = applyLinuxWindowFocusableOptionPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux BrowserWindow focusable option handling into the Electron main bundle');
+  }
+  return {
+    status: result.status,
+    sourceName: mainFile
+  };
+}
+
+async function patchMainProcessLinuxWindowIcon(extractedAppDir, logger) {
+  const buildDir = path.join(extractedAppDir, '.vite', 'build');
+  const files = await fs.promises.readdir(buildDir);
+  const mainFile = files.find((name) => /^main[-.].+\.js$/.test(name) || name === 'main.js');
+  if (!mainFile) {
+    throw new Error('Could not locate the Electron main bundle inside the extracted app.');
+  }
+
+  const mainPath = path.join(buildDir, mainFile);
+  const original = await fs.promises.readFile(mainPath, 'utf8');
+  logger.info(`Resolved upstream Electron main bundle ${mainFile} for Linux window icon patch`);
+  const result = applyLinuxWindowIconPatch(original, { sourceName: mainFile });
+  if (result.updated !== original) {
+    await fs.promises.writeFile(mainPath, result.updated, 'utf8');
+    logger.info('Patched Linux BrowserWindow icon into the Electron main bundle');
   }
   return {
     status: result.status,
@@ -2395,6 +2690,14 @@ export function injectLinuxOpenTargetsPatch(bundleSource, options = {}) {
     );
   }
 
+  const dynamicRegistryMatch = bundleSource.match(OPEN_TARGETS_DYNAMIC_REGISTRY_PATTERN);
+  if (dynamicRegistryMatch?.groups?.targetList && dynamicRegistryMatch.groups.targetVar) {
+    return bundleSource.replace(
+      OPEN_TARGETS_DYNAMIC_REGISTRY_PATTERN,
+      buildLinuxOpenTargetsDynamicRegistryBlock(dynamicRegistryMatch.groups)
+    );
+  }
+
   throw new Error(buildOpenTargetsPatchErrorMessage(bundleSource, options.sourceName));
 }
 
@@ -2506,6 +2809,14 @@ function injectLinuxTitleBarOverlayThemeSyncPatch(bundleSource, sourceName) {
     );
   }
 
+  const appSyncMatch = updated.match(LINUX_TITLE_BAR_OVERLAY_APP_SYNC_PATTERN);
+  if (appSyncMatch?.groups) {
+    updated = updated.replace(
+      LINUX_TITLE_BAR_OVERLAY_APP_SYNC_PATTERN,
+      buildLinuxTitleBarOverlayAppSyncReplacement(appSyncMatch.groups)
+    );
+  }
+
   if (!updated.includes('case`codex-linux-title-bar-overlay-theme-set`')) {
     updated = updated.replace(
       LINUX_TITLE_BAR_OVERLAY_MESSAGE_CASE_PATTERN,
@@ -2566,7 +2877,7 @@ function buildLinuxTitleBarOverlayOptions({
   lightColorVar,
   scaleVar
 }) {
-  return `function ${fnName}(${scaleVar}=1,codexLinuxTitleBarOverlayTheme=null){let codexLinuxTitleBarOverlayEnabled=process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==\`1\`,codexLinuxTitleBarOverlayColor=codexLinuxTitleBarOverlayTheme?.color??${colorVar},codexLinuxTitleBarOverlaySymbolColor=codexLinuxTitleBarOverlayTheme?.symbolColor??(${electronVar}.nativeTheme.shouldUseDarkColors?\`#c7c7c7\`:\`#4b5563\`);return{color:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlayColor:${colorVar},symbolColor:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlaySymbolColor:${electronVar}.nativeTheme.shouldUseDarkColors?${darkColorVar}:${lightColorVar},height:Math.round(${heightVar}*${scaleVar})}}/* ${LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER} ${LINUX_TITLE_BAR_OVERLAY_THEME_SYNC_PATCH_MARKER} */`;
+  return `function ${fnName}(${scaleVar}=1,codexLinuxTitleBarOverlayTheme=null){let codexLinuxTitleBarOverlayEnabled=process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==\`1\`,codexLinuxTitleBarOverlayColor=codexLinuxTitleBarOverlayTheme?.color??${colorVar},codexLinuxTitleBarOverlaySymbolColor=codexLinuxTitleBarOverlayTheme?.symbolColor??(${electronVar}.nativeTheme.shouldUseDarkColors?\`#c7c7c7\`:\`#4b5563\`);return{color:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlayColor:${colorVar},symbolColor:codexLinuxTitleBarOverlayEnabled?codexLinuxTitleBarOverlaySymbolColor:${electronVar}.nativeTheme.shouldUseDarkColors?${darkColorVar}:${lightColorVar},height:Math.round(${heightVar}*${scaleVar})}}/* ${LINUX_TITLE_BAR_OVERLAY_PATCH_MARKER} ${LINUX_TITLE_BAR_OVERLAY_THEME_SYNC_PATCH_MARKER} */`;
 }
 
 function buildLinuxTitleBarOverlayWindowZoomReplacement({
@@ -2577,7 +2888,143 @@ function buildLinuxTitleBarOverlayWindowZoomReplacement({
   windowVar,
   zoomVar
 }) {
-  return `codexLinuxApplyTitleBarOverlay(${windowVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`||${windowVar}==null||${windowVar}.isDestroyed?.())return;let ${webContentsVar}=this.windowZooms.get(${windowVar}.id)??1,${zoomVar}=this.codexLinuxTitleBarOverlayThemes.get(${windowVar}.id)??null;${windowVar}.setTitleBarOverlay(${overlayFn}(${webContentsVar},${zoomVar}))}codexLinuxSetTitleBarOverlayTheme(${webContentsVar},${zoomVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`)return;let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar});if(${windowVar}==null||this.windowAppearances.get(${windowVar}.id)!==\`primary\`)return;let codexLinuxTitleBarOverlayTheme=${zoomVar}&&typeof ${zoomVar}.color===\`string\`&&typeof ${zoomVar}.symbolColor===\`string\`&&${zoomVar}.color.length<=120&&${zoomVar}.symbolColor.length<=120?{color:${zoomVar}.color,symbolColor:${zoomVar}.symbolColor}:null;if(codexLinuxTitleBarOverlayTheme==null)return;this.codexLinuxTitleBarOverlayThemes.set(${windowVar}.id,codexLinuxTitleBarOverlayTheme),this.codexLinuxApplyTitleBarOverlay(${windowVar})}setWindowZoom(${webContentsVar},${zoomVar}){let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar});${windowVar}==null||this.windowAppearances.get(${windowVar}.id)!==\`primary\`||(process.platform===\`darwin\`?${windowVar}.setWindowButtonPosition(${buttonPositionFn}(${zoomVar})):(process.platform===\`win32\`||process.platform===\`linux\`)&&(this.windowZooms.set(${windowVar}.id,${zoomVar}),process.platform===\`linux\`?this.codexLinuxApplyTitleBarOverlay(${windowVar}):${windowVar}.setTitleBarOverlay(${overlayFn}(${zoomVar}))))}`;
+  return `codexLinuxApplyTitleBarOverlay(${windowVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY!==\`1\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`||${windowVar}==null||${windowVar}.isDestroyed?.())return;let ${webContentsVar}=this.windowZooms.get(${windowVar}.id)??1,${zoomVar}=this.codexLinuxTitleBarOverlayThemes.get(${windowVar}.id)??null;${windowVar}.setTitleBarOverlay(${overlayFn}(${webContentsVar},${zoomVar}))}codexLinuxSetTitleBarOverlayTheme(${webContentsVar},${zoomVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY!==\`1\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`)return;let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar});if(${windowVar}==null||this.windowAppearances.get(${windowVar}.id)!==\`primary\`)return;let codexLinuxTitleBarOverlayTheme=${zoomVar}&&typeof ${zoomVar}.color===\`string\`&&typeof ${zoomVar}.symbolColor===\`string\`&&${zoomVar}.color.length<=120&&${zoomVar}.symbolColor.length<=120?{color:${zoomVar}.color,symbolColor:${zoomVar}.symbolColor}:null;if(codexLinuxTitleBarOverlayTheme==null)return;this.codexLinuxTitleBarOverlayThemes.set(${windowVar}.id,codexLinuxTitleBarOverlayTheme),this.codexLinuxApplyTitleBarOverlay(${windowVar})}setWindowZoom(${webContentsVar},${zoomVar}){let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar});${windowVar}==null||this.windowAppearances.get(${windowVar}.id)!==\`primary\`||(process.platform===\`darwin\`?${windowVar}.setWindowButtonPosition(${buttonPositionFn}(${zoomVar})):(process.platform===\`win32\`||process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`)&&(this.windowZooms.set(${windowVar}.id,${zoomVar}),process.platform===\`linux\`?this.codexLinuxApplyTitleBarOverlay(${windowVar}):${windowVar}.setTitleBarOverlay(${overlayFn}(${zoomVar}))))}`;
+}
+
+function buildLinuxTitleBarOverlayAppSyncReplacement({
+  appearanceVar,
+  electronVar,
+  handlerVar,
+  overlayFn,
+  windowVar
+}) {
+  return `installApplicationMenuTitleBarOverlaySync(${windowVar},${appearanceVar}){if((process.platform!==\`win32\`&&!(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`))||process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`||${appearanceVar}!==\`primary\`)return;let ${handlerVar}=()=>{${windowVar}.isDestroyed()||${windowVar}.setTitleBarOverlay(${overlayFn}(this.windowZooms.get(${windowVar}.id)))};return ${electronVar}.nativeTheme.on(\`updated\`,${handlerVar}),${handlerVar}(),()=>{${electronVar}.nativeTheme.off(\`updated\`,${handlerVar})}}`;
+}
+
+export function applyLinuxNativeWindowFramePatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxNativeWindowFramePatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxNativeWindowFramePatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_NATIVE_WINDOW_FRAME_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_NATIVE_WINDOW_FRAME_PRIMARY_BRANCH_PATTERN,
+    ({ overlayFn, platformVar, zoomVar }) =>
+      buildLinuxNativeWindowFramePrimaryBranch({ overlayFn, platformVar, zoomVar }),
+    buildLinuxNativeWindowFramePatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+function buildLinuxNativeWindowFramePrimaryBranch({ overlayFn, platformVar, zoomVar }) {
+  const hiddenOverlay = `{titleBarStyle:\`hidden\`,titleBarOverlay:${overlayFn}(${zoomVar})}`;
+  return `${platformVar}===\`win32\`?${hiddenOverlay}:${platformVar}===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`?${hiddenOverlay}:${platformVar}===\`linux\`?{frame:!0}:{titleBarStyle:\`default\`}/* ${LINUX_NATIVE_WINDOW_FRAME_PATCH_MARKER} */`;
+}
+
+export function applyLinuxPrimaryWindowModeControlsPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxPrimaryWindowModeControlsPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxPrimaryWindowModeControlsPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN,
+    ({ windowVar }) => buildLinuxPrimaryWindowModeControlsReplacement({ windowVar }),
+    buildLinuxPrimaryWindowModeControlsPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+function buildLinuxPrimaryWindowModeControlsReplacement({ windowVar }) {
+  return `process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH!==\`1\`?(${windowVar}.setResizable(!0),${windowVar}.setMaximizable(!0),${windowVar}.setFullScreenable(!0),typeof ${windowVar}.setMinimizable===\`function\`&&${windowVar}.setMinimizable(!0),typeof ${windowVar}.setClosable===\`function\`&&${windowVar}.setClosable(!0),typeof ${windowVar}.setMovable===\`function\`&&${windowVar}.setMovable(!0)):(${windowVar}.setResizable(!1),${windowVar}.setMaximizable(!1),${windowVar}.setFullScreenable(!1))/* ${LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH_MARKER} */`;
+}
+
+export function applyLinuxWindowFocusableOptionPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxWindowFocusableOptionPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxWindowFocusableOptionPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_WINDOW_FOCUSABLE_OPTION_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN,
+    ({ focusableVar, parentVar, showVar }) =>
+      buildLinuxWindowFocusableOptionReplacement({ focusableVar, parentVar, showVar }),
+    buildLinuxWindowFocusableOptionPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+function buildLinuxWindowFocusableOptionReplacement({ focusableVar, parentVar, showVar }) {
+  return `show:${showVar},...${parentVar}==null?{}:{parent:${parentVar}},...${focusableVar}==null?{}:{focusable:${focusableVar}}/* ${LINUX_WINDOW_FOCUSABLE_OPTION_PATCH_MARKER} */,...process.platform`;
+}
+
+export function applyLinuxWindowIconPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxWindowIconPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxWindowIconPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_WINDOW_ICON_PATCH_MARKER)) {
+    return bundleSource;
+  }
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_WINDOW_ICON_BROWSER_WINDOW_PATTERN,
+    ({ electronVar, options: windowOptions, webPreferences }) => {
+      const separator = windowOptions.trimEnd().endsWith(',') ? '' : ',';
+      return `new ${electronVar}.BrowserWindow({${windowOptions}${separator}${buildLinuxWindowIconOptionSpread()},${webPreferences}});this.applyWindowBackdrop`;
+    },
+    buildLinuxWindowIconPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+function buildLinuxWindowIconOptionSpread() {
+  return `...process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_WINDOW_ICON_PATCH!==\`1\`?(()=>{try{let e=process.getBuiltinModule?.(\`node:path\`),t=process.getBuiltinModule?.(\`node:fs\`);if(!e||!t||typeof process.resourcesPath!==\`string\`)return{};let n=e.join(process.resourcesPath,\`..\`,\`..\`,\`icons\`,\`codex.png\`);return t.existsSync(n)?{icon:n}:{}}catch{return{}}})():{}/* ${LINUX_WINDOW_ICON_PATCH_MARKER} */`;
 }
 
 function injectLinuxAboutDialogFallbackPatch(bundleSource, options = {}) {
@@ -2889,8 +3336,8 @@ export function injectLinuxBundledBrowserChromePluginsPatch(bundleSource, option
     let updated = replaceRegexOrThrow(
       bundleSource,
       BUNDLED_PLUGIN_RECONCILER_ANCHOR_PATTERN,
-      ({ loggerVar, loggerObject, loggerFactory, devFlagVar, fn }) =>
-        `var ${loggerVar}=${loggerObject}.${loggerFactory}(\`bundled-plugins\`),${devFlagVar}=\`CODEX_ENABLE_DEV_BUNDLED_PLUGINS\`;${buildLinuxBundledBrowserChromePluginsHelper()}function ${fn}(e){`,
+      ({ loggerVar, loggerObject, loggerFactory, devFlagVar, extraDeclarations = '', fn }) =>
+        `var ${loggerVar}=${loggerObject}.${loggerFactory}(\`bundled-plugins\`),${devFlagVar}=\`CODEX_ENABLE_DEV_BUNDLED_PLUGINS\`${extraDeclarations};${buildLinuxBundledBrowserChromePluginsHelper()}function ${fn}(e){`,
       errorMessage
     );
     updated = replaceRegexOrThrow(
@@ -2980,13 +3427,34 @@ export function injectLinuxOwlFeatureBindingPatch(bundleSource, options = {}) {
   if (bundleSource.includes(LINUX_OWL_FEATURE_BINDING_PATCH_MARKER)) {
     return bundleSource;
   }
-  return replaceRegexOrThrow(
+  return replaceFirstMatchingRegexOrThrow(
     bundleSource,
-    LINUX_OWL_FEATURE_BINDING_PATTERN,
-    ({ helperFn, bindingVar, schemaVar }) =>
-      `function ${helperFn}(){/* ${LINUX_OWL_FEATURE_BINDING_PATCH_MARKER} */let ${bindingVar}=process._linkedBinding;if(typeof ${bindingVar}==\`function\`){try{return ${schemaVar}.parse(${bindingVar}.call(process,\`electron_common_owl_features\`))}catch{}}return{isOwlFeatureEnabled:${bindingVar}=>{let t=nt(rt(\`enable-features\`)),n=nt(rt(\`disable-features\`));return t.includes(${bindingVar})&&!n.includes(${bindingVar})}}}`,
+    [
+      {
+        pattern: LINUX_OWL_FEATURE_BINDING_PATTERN,
+        replacement: ({ helperFn, bindingVar, schemaVar }) =>
+          `function ${helperFn}(){/* ${LINUX_OWL_FEATURE_BINDING_PATCH_MARKER} */let ${bindingVar}=process._linkedBinding;if(typeof ${bindingVar}==\`function\`){try{return ${schemaVar}.parse(${bindingVar}.call(process,\`electron_common_owl_features\`))}catch{}}${buildLinuxOwlFeatureSwitchFallback()}}`
+      },
+      {
+        pattern: LINUX_OWL_FEATURE_BINDING_NULLABLE_PATTERN,
+        replacement: ({
+          bindingVar,
+          errorVar,
+          featureBindingNameVar,
+          helperFn,
+          missingBindingFn,
+          nativeFeaturesVar,
+          schemaVar
+        }) =>
+          `function ${helperFn}(){/* ${LINUX_OWL_FEATURE_BINDING_PATCH_MARKER} */let ${bindingVar}=process._linkedBinding;if(typeof ${bindingVar}==\`function\`){let ${nativeFeaturesVar};try{${nativeFeaturesVar}=${bindingVar}.call(process,${featureBindingNameVar})}catch(${errorVar}){if(!${missingBindingFn}(${errorVar}))throw ${errorVar}}if(${nativeFeaturesVar}!=null)try{return ${schemaVar}.parse(${nativeFeaturesVar})}catch{}}${buildLinuxOwlFeatureSwitchFallback()}}`
+      }
+    ],
     buildLinuxOwlFeatureBindingPatchErrorMessage(bundleSource, options.sourceName)
   );
+}
+
+function buildLinuxOwlFeatureSwitchFallback() {
+  return 'return{isOwlFeatureEnabled:codexLinuxOwlFeatureName=>{let t=nt(rt(`enable-features`)),n=nt(rt(`disable-features`));return t.includes(codexLinuxOwlFeatureName)&&!n.includes(codexLinuxOwlFeatureName)}}';
 }
 
 export function applyLinuxChromeExtensionSettingsPatch(bundleSource, options = {}) {
@@ -3392,6 +3860,19 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
             nativePresentationExpr
           }) =>
             `async open(${openerVar},{forcePetView:${forcePetViewVar}=!1}={}){let ${windowVar}=await this.ensureWindow(${ensureWindowArg});this.globalState.set(${openStateExpr},!0),this.windowOpenIntent=!0,this.positionWindow(${windowVar},${openerVar}),${nativePresentationExpr}this.showWindowIfReady(${windowVar}),this.codexLinuxScheduleAvatarOverlayVisibilityRecovery(${windowVar}),${forcePetViewVar}&&this.windowManager.sendMessageToWebContents(${windowVar}.webContents,{type:\`avatar-overlay-explicit-pet-opened\`})}`
+        },
+        {
+          pattern: LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_623_PATTERN,
+          replacement: ({
+            openerVar,
+            forcePetViewVar,
+            persistIntentVar,
+            openStateExpr,
+            sequenceVar,
+            windowVar,
+            ensureWindowArg = ''
+          }) =>
+            `async open(${openerVar},{forcePetView:${forcePetViewVar}=!1,persistPetIntent:${persistIntentVar}=!0}={}){${persistIntentVar}&&(this.globalState.set(${openStateExpr},!0),this.petOpenIntent=!0);let ${sequenceVar}=++this.windowVisibilitySequence,${windowVar}=await this.ensureWindow(${ensureWindowArg});${sequenceVar}===this.windowVisibilitySequence&&(this.positionWindow(${windowVar},${openerVar}),this.pendingPresentation!=null&&(this.pendingPresentation.target={...this.anchor},this.positionPresentationAtOrigin(${windowVar},this.pendingPresentation.origin)),this.presentWindow(${windowVar}),this.codexLinuxScheduleAvatarOverlayVisibilityRecovery(${windowVar}),${forcePetViewVar}&&this.windowManager.sendMessageToWebContents(${windowVar}.webContents,{type:\`avatar-overlay-explicit-pet-opened\`}))}`
         }
       ],
       errorMessage
@@ -3399,12 +3880,13 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
     updated = replaceRegexOrThrow(
       updated,
       LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN,
-      ({ windowVar, wasOpenVar, revealExpr, openStateExpr }) =>
+      ({ windowVar, wasOpenVar, revealExpr, openStateExpr, postOpenExpr }) =>
         buildLinuxAvatarOverlayShowWindowMethod({
           windowVar,
           wasOpenVar,
           revealExpr: revealExpr ?? '',
-          openStateExpr
+          openStateExpr,
+          postOpenExpr: postOpenExpr ?? ''
         }),
       errorMessage
     );
@@ -3503,6 +3985,10 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
       {
         pattern: LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN,
         replacement: (_groups, match) => match[0]
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_START_DRAG_26_623_PATTERN,
+        replacement: (_groups, match) => match[0]
       }
     ],
     errorMessage
@@ -3528,6 +4014,20 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
           coercePointFn
         }) =>
           `moveDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||this.dragState==null)return;this.cancelMomentum();let ${dragStateVar}=this.dragState;${dragStateVar}.recordMovementIntent();let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&this.moveDragToPointer(${windowVar},${nextPointVar})}codexLinuxAvatarOverlayScreenPoint(e){return e!=null&&Number.isFinite(e.pointerScreenX)&&Number.isFinite(e.pointerScreenY)?{x:e.pointerScreenX,y:e.pointerScreenY}:e!=null&&Number.isFinite(e.cursorScreenX)&&Number.isFinite(e.cursorScreenY)?{x:e.cursorScreenX,y:e.cursorScreenY}:null}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_623_PATTERN,
+        replacement: ({
+          webContentsIdVar,
+          pointVar,
+          windowVar,
+          dragStateVar,
+          cursorVar,
+          electronVar,
+          nextPointVar,
+          coercePointFn
+        }) =>
+          `moveDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||this.dragState==null)return;this.cancelMomentum();let ${dragStateVar}=this.dragState;${dragStateVar}.recordMovementIntent();let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&(${dragStateVar}.usesOrbPhysics?(this.orbDragFollowTarget=${nextPointVar},this.scheduleOrbDragFollow(${windowVar})):this.moveDragToPointer(${windowVar},${nextPointVar}))}codexLinuxAvatarOverlayScreenPoint(e){return e!=null&&Number.isFinite(e.pointerScreenX)&&Number.isFinite(e.pointerScreenY)?{x:e.pointerScreenX,y:e.pointerScreenY}:e!=null&&Number.isFinite(e.cursorScreenX)&&Number.isFinite(e.cursorScreenY)?{x:e.cursorScreenX,y:e.cursorScreenY}:null}`
       }
     ],
     errorMessage
@@ -3554,6 +4054,26 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
         pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN,
         replacement: ({ windowVar, cursorVar, dragStateVar, displayBoundsVar, displayFn, displayVar, electronVar }) =>
           `moveDragToPointer(${windowVar},${cursorVar}){let ${dragStateVar}=this.dragState;if(${dragStateVar}==null)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayLayout=this.getLayout(${windowVar}),codexLinuxAvatarOverlayBounds=${windowVar}.getContentBounds(),codexLinuxAvatarOverlayNext={x:Math.round(${cursorVar}.x-${dragStateVar}.pointerAnchorX-codexLinuxAvatarOverlayLayout.mascot.left),y:Math.round(${cursorVar}.y-${dragStateVar}.pointerAnchorY-codexLinuxAvatarOverlayLayout.mascot.top),width:codexLinuxAvatarOverlayBounds.width,height:codexLinuxAvatarOverlayBounds.height};this.anchor={...this.anchor,x:codexLinuxAvatarOverlayNext.x+codexLinuxAvatarOverlayLayout.mascot.left,y:codexLinuxAvatarOverlayNext.y+codexLinuxAvatarOverlayLayout.mascot.top,width:this.mascotSize.width,height:this.mascotSize.height};let codexLinuxAvatarOverlayDisplay=${electronVar}.screen.getDisplayNearestPoint({x:this.anchor.x,y:this.anchor.y});${dragStateVar}.recordMove(codexLinuxAvatarOverlayDisplay.bounds),${dragStateVar}.lastScreenPoint=${cursorVar},${dragStateVar}.display=codexLinuxAvatarOverlayDisplay,this.displayId=codexLinuxAvatarOverlayDisplay.id,this.displayBounds=codexLinuxAvatarOverlayDisplay.bounds,this.layout={...codexLinuxAvatarOverlayLayout,windowBounds:codexLinuxAvatarOverlayNext,mascot:{...codexLinuxAvatarOverlayLayout.mascot,left:codexLinuxAvatarOverlayLayout.mascot.left,top:codexLinuxAvatarOverlayLayout.mascot.top},viewport:{width:codexLinuxAvatarOverlayNext.width,height:codexLinuxAvatarOverlayNext.height}},this.setWindowBounds(${windowVar},codexLinuxAvatarOverlayNext,!1,!1),this.sendLayoutToRenderer(${windowVar});return}let ${displayBoundsVar}=${displayFn}(${cursorVar},${dragStateVar}.displayBounds),${displayVar}=${electronVar}.screen.getDisplayMatching(${displayBoundsVar});${dragStateVar}.recordMove(${displayVar}.bounds),this.anchor={...this.anchor,x:${cursorVar}.x-${dragStateVar}.pointerAnchorX,y:${cursorVar}.y-${dragStateVar}.pointerAnchorY},this.applyLayout(${windowVar},${displayVar},!1,!1)}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_623_PATTERN,
+        replacement: ({
+          windowVar,
+          cursorVar,
+          dragStateVar,
+          displayBoundsVar,
+          displayFn,
+          displayVar,
+          electronVar,
+          targetXVar,
+          targetYVar,
+          easeVar,
+          orbEaseVar,
+          nextAnchorVar,
+          currentBoundsVar,
+          equalFn
+        }) =>
+          `moveDragToPointer(${windowVar},${cursorVar}){let ${dragStateVar}=this.dragState;if(${dragStateVar}==null)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayLayout=this.getLayout(${windowVar}),codexLinuxAvatarOverlayBounds=${windowVar}.getContentBounds(),${targetXVar}=${cursorVar}.x-${dragStateVar}.pointerAnchorX,${targetYVar}=${cursorVar}.y-${dragStateVar}.pointerAnchorY,${easeVar}=${dragStateVar}.usesOrbPhysics?${orbEaseVar}:1,codexLinuxAvatarOverlayAnchor={...this.anchor,x:this.anchor.x+(${targetXVar}-this.anchor.x)*${easeVar},y:this.anchor.y+(${targetYVar}-this.anchor.y)*${easeVar}},codexLinuxAvatarOverlayNext={x:Math.round(codexLinuxAvatarOverlayAnchor.x-codexLinuxAvatarOverlayLayout.mascot.left),y:Math.round(codexLinuxAvatarOverlayAnchor.y-codexLinuxAvatarOverlayLayout.mascot.top),width:codexLinuxAvatarOverlayBounds.width,height:codexLinuxAvatarOverlayBounds.height};this.anchor={...this.anchor,x:codexLinuxAvatarOverlayNext.x+codexLinuxAvatarOverlayLayout.mascot.left,y:codexLinuxAvatarOverlayNext.y+codexLinuxAvatarOverlayLayout.mascot.top,width:this.mascotSize.width,height:this.mascotSize.height};let codexLinuxAvatarOverlayDisplay=${electronVar}.screen.getDisplayNearestPoint({x:this.anchor.x,y:this.anchor.y});${dragStateVar}.recordMove(codexLinuxAvatarOverlayDisplay.bounds),${dragStateVar}.lastScreenPoint=${cursorVar},${dragStateVar}.display=codexLinuxAvatarOverlayDisplay,this.displayId=codexLinuxAvatarOverlayDisplay.id,this.displayBounds=codexLinuxAvatarOverlayDisplay.bounds,this.layout={...codexLinuxAvatarOverlayLayout,windowBounds:codexLinuxAvatarOverlayNext,mascot:{...codexLinuxAvatarOverlayLayout.mascot,left:codexLinuxAvatarOverlayLayout.mascot.left,top:codexLinuxAvatarOverlayLayout.mascot.top},viewport:{width:codexLinuxAvatarOverlayNext.width,height:codexLinuxAvatarOverlayNext.height}},this.setWindowBounds(${windowVar},codexLinuxAvatarOverlayNext,!1,!1),this.sendLayoutToRenderer(${windowVar});return}let ${displayBoundsVar}=${displayFn}(${cursorVar},${dragStateVar}.displayBounds),${displayVar}=${electronVar}.screen.getDisplayMatching(${displayBoundsVar});${dragStateVar}.recordMove(${displayVar}.bounds);let ${targetXVar}=${cursorVar}.x-${dragStateVar}.pointerAnchorX,${targetYVar}=${cursorVar}.y-${dragStateVar}.pointerAnchorY,${easeVar}=${dragStateVar}.usesOrbPhysics?${orbEaseVar}:1,${nextAnchorVar}={...this.anchor,x:this.anchor.x+(${targetXVar}-this.anchor.x)*${easeVar},y:this.anchor.y+(${targetYVar}-this.anchor.y)*${easeVar}},${currentBoundsVar}=${windowVar}.getContentBounds();this.anchor=${nextAnchorVar},this.applyLayout(${windowVar},${displayVar},!1,!1),this.layout!=null&&${equalFn}(${currentBoundsVar},this.layout.windowBounds)&&(this.anchor.x!==Math.round(${nextAnchorVar}.x)||this.anchor.y!==Math.round(${nextAnchorVar}.y))&&this.compositionHost.settleDragFollowSurfaces()}`
       }
     ],
     errorMessage
@@ -3580,15 +4100,43 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
           suppressVar
         }) =>
           `endDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;let ${dragStateVar}=this.dragState;if(${dragStateVar}?.hasMovementIntent){let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&this.moveDragToPointer(${windowVar},${nextPointVar})}this.${suppressVar}=${dragStateVar}?.shouldSuppressRendererThrow()??!1;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayDisplay=${dragStateVar}?.display;this.dragState=null,this.persistWindowBounds(${windowVar},codexLinuxAvatarOverlayDisplay??this.getCurrentDisplay());return}this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0})}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_END_DRAG_26_623_PATTERN,
+        replacement: ({
+          webContentsIdVar,
+          pointVar,
+          windowVar,
+          dragStateVar,
+          cursorVar,
+          electronVar,
+          nextPointVar,
+          coercePointFn,
+          suppressVar,
+          dockTargetVar,
+          currentAnchorVar,
+          anchorFn,
+          dockCheckFn
+        }) =>
+          `endDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;this.cancelOrbDragFollow();let ${dragStateVar}=this.dragState;if(${dragStateVar}?.hasMovementIntent){let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&this.moveDragToPointer(${windowVar},${nextPointVar})}this.${suppressVar}=${dragStateVar}?.shouldSuppressRendererThrow()??!1;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayDisplay=${dragStateVar}?.display;this.dragState=null,this.persistWindowBounds(${windowVar},codexLinuxAvatarOverlayDisplay??this.getCurrentDisplay());let ${dockTargetVar}=this.dockTarget,${currentAnchorVar}=${anchorFn}(this.anchor,this.presentationOffset);${dockTargetVar}!=null&&${dockCheckFn}({current:${currentAnchorVar},next:${currentAnchorVar},target:{x:${dockTargetVar}.anchor.centerX,y:${dockTargetVar}.anchor.centerY}}).shouldDock&&this.dockPresentation(${dockTargetVar}.anchor,${dockTargetVar}.onDock);return}this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0});let ${dockTargetVar}=this.dockTarget,${currentAnchorVar}=${anchorFn}(this.anchor,this.presentationOffset);${dockTargetVar}!=null&&${dockCheckFn}({current:${currentAnchorVar},next:${currentAnchorVar},target:{x:${dockTargetVar}.anchor.centerX,y:${dockTargetVar}.anchor.centerY}}).shouldDock&&this.dockPresentation(${dockTargetVar}.anchor,${dockTargetVar}.onDock)}`
       }
     ],
     errorMessage
   );
-  updated = replaceRegexOrThrow(
+  updated = replaceFirstMatchingRegexOrThrow(
     updated,
-    LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN,
-    ({ webContentsIdVar, velocityXVar, velocityYVar, windowVar }) =>
-      `throwWithVelocity(${webContentsIdVar},${velocityXVar},${velocityYVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||!Number.isFinite(${velocityXVar})||!Number.isFinite(${velocityYVar})||${velocityXVar}===0&&${velocityYVar}===0)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){this.persistWindowBounds(${windowVar});return}`,
+    [
+      {
+        pattern: LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN,
+        replacement: ({ webContentsIdVar, velocityXVar, velocityYVar, windowVar }) =>
+          `throwWithVelocity(${webContentsIdVar},${velocityXVar},${velocityYVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||!Number.isFinite(${velocityXVar})||!Number.isFinite(${velocityYVar})||${velocityXVar}===0&&${velocityYVar}===0)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){this.persistWindowBounds(${windowVar});return}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_26_623_PATTERN,
+        replacement: ({ webContentsIdVar, velocityXVar, velocityYVar, shouldBounceVar, windowVar }) =>
+          `throwWithVelocity(${webContentsIdVar},${velocityXVar},${velocityYVar},${shouldBounceVar}=!1){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||!Number.isFinite(${velocityXVar})||!Number.isFinite(${velocityYVar})||${velocityXVar}===0&&${velocityYVar}===0)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){this.persistWindowBounds(${windowVar});return}let codexLinuxAvatarOverlaySuppressThrow=this.suppressNextRendererThrow;this.suppressNextRendererThrow=!1,!(codexLinuxAvatarOverlaySuppressThrow&&!${shouldBounceVar})&&this.startMomentum(${velocityXVar},${velocityYVar},${shouldBounceVar})}`
+      }
+    ],
     errorMessage
   );
   return updated;
@@ -3675,12 +4223,30 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
       },
       errorMessage
     );
-  } else {
+  } else if (LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN.test(updated)) {
     updated = replaceRegexOrThrow(
       updated,
       LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN,
       ({ imports, module }) => {
         const nextImports = appendNamedImportAlias(imports, 'l', 'codexLinuxFetchUsage');
+        return `import{${nextImports}}from"${module}";`;
+      },
+      errorMessage
+    );
+  } else {
+    const rolldownImport = findLinuxPetYappingUsageRolldownRequestImport(updated);
+    if (!rolldownImport) {
+      throw new Error(errorMessage);
+    }
+    updated = replaceRegexOrThrow(
+      updated,
+      rolldownImport.pattern,
+      ({ imports, module }) => {
+        const nextImports = appendNamedImportAlias(
+          imports,
+          rolldownImport.requestImportName,
+          'codexLinuxFetchUsage'
+        );
         return `import{${nextImports}}from"${module}";`;
       },
       errorMessage
@@ -3694,15 +4260,21 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
     updated,
     jsxRuntime.declarationPattern,
     ({ jsxVar, varTail }) =>
-      `var ${jsxVar}=${jsxRuntime.jsxFactory}();${buildLinuxPetYappingUsageComponent({
-        jsxVar: petContext.jsxVar,
-        reactVar: petContext.reactVar
-      })}${varTail ? `var ${varTail.slice(1)};` : ''}`,
+      jsxRuntime.kind === 'assignment'
+        ? `${jsxVar}=${jsxRuntime.jsxFactory}();${buildLinuxPetYappingUsageComponent({
+            jsxVar: petContext.jsxVar,
+            reactVar: petContext.reactVar
+          })}`
+        : `var ${jsxVar}=${jsxRuntime.jsxFactory}();${buildLinuxPetYappingUsageComponent({
+            jsxVar: petContext.jsxVar,
+            reactVar: petContext.reactVar
+          })}${varTail ? `var ${varTail.slice(1)};` : ''}`,
     errorMessage
   );
   if (
     LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(updated) ||
-    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN.test(updated)
+    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN.test(updated) ||
+    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_623_PATTERN.test(updated)
   ) {
     updated = replaceFirstMatchingRegexOrThrow(
       updated,
@@ -3716,6 +4288,11 @@ export function injectLinuxPetYappingUsagePatch(bundleSource, options = {}) {
           pattern: LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN,
           replacement: ({ prefix, mascotContent, realtimeButton }) =>
             `${prefix}${mascotContent},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{}),${realtimeButton}]}/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`
+        },
+        {
+          pattern: LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_623_PATTERN,
+          replacement: ({ prefix, mascotContent, suffix }) =>
+            `${prefix}[${mascotContent},(0,${petContext.jsxVar}.jsx)(codexLinuxPetYappingUsage,{})]${suffix}/* ${LINUX_PET_YAPPING_USAGE_PATCH_MARKER} */`
         }
       ],
       errorMessage
@@ -3981,6 +4558,18 @@ function buildLinuxOpenTargetsWorkerRegistryBlock({ registryVar, targetList }) {
   return `${buildLinuxOpenTargetsSupportBlock()}var codexLinuxWorkerTargets=[${targetList}],codexLinuxWorkerTargetIds=new Set(codexLinuxWorkerTargets.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&codexLinuxWorkerTargets.push(...codexLinuxTargets.filter(e=>!codexLinuxWorkerTargetIds.has(e.id)));var ${registryVar}=new Map(codexLinuxWorkerTargets.flatMap(e=>{let t=e.platforms[process.platform];return t==null?[]:[[e.id,{id:e.id,...t}]]}));`;
 }
 
+function buildLinuxOpenTargetsDynamicRegistryBlock({
+  loggerStatement,
+  platformFn,
+  platformTargetsVar,
+  shortcutReaderObject,
+  shortcutReaderVar,
+  targetList,
+  targetVar
+}) {
+  return `${buildLinuxOpenTargetsSupportBlock()}var ${targetVar}=[${targetList}],codexLinuxExistingTargetIds=new Set(${targetVar}.filter(e=>e.platforms.linux).map(e=>e.id));process.platform===\`linux\`&&${targetVar}.push(...codexLinuxTargets.filter(e=>!codexLinuxExistingTargetIds.has(e.id)));${loggerStatement}function ${platformFn}(e){return ${targetVar}.flatMap(t=>{let n=t.platforms[e];return n?[{id:t.id,...n}]:[]})}var ${platformTargetsVar}=${platformFn}(process.platform),${shortcutReaderVar}=async e=>${shortcutReaderObject}.shell.readShortcutLink(e);`;
+}
+
 function buildLinuxOpenTargetsSupportBlock() {
   const block = buildLinuxOpenTargetsBlock({
     targetVar: 'codexLinuxSourceTargets',
@@ -4114,6 +4703,20 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
           terminalVar
         }) =>
           `${resumeSessionVar}&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,${guardVar}||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.create({sessionId:${resumeSessionVar},${buildTerminalConversationProps({ conversationIdVar, conversationTitleVar, hostIdVar, cwdVar })},cols:${terminalVar}.cols,rows:${terminalVar}.rows}))}));`
+      },
+      {
+        pattern: TERMINAL_ATTACH_WITH_UNSTARTED_CREATE_PATTERN,
+        replacement: ({
+          resumeSessionVar,
+          guardVar,
+          service,
+          conversationIdVar,
+          conversationTitleVar,
+          hostIdVar,
+          cwdVar,
+          terminalVar
+        }) =>
+          `${resumeSessionVar}&&!${service}.isSessionStarted(${resumeSessionVar})&&(codexLinuxTraceTerminalAttachScheduled(codexLinuxTerminalMountKey),codexLinuxAttachFrame=requestAnimationFrame(()=>{codexLinuxAttachFrame=null,${guardVar}||(codexLinuxTraceTerminalAttachStarted(codexLinuxTerminalMountKey),${service}.create({sessionId:${resumeSessionVar},${buildTerminalConversationProps({ conversationIdVar, conversationTitleVar, hostIdVar, cwdVar })},cols:${terminalVar}.cols,rows:${terminalVar}.rows}))}));`
       }
     ],
     errorMessage
@@ -4421,7 +5024,7 @@ function detectUpstreamNewThreadModelSupport(bundleSourcesByAsset) {
 }
 
 function hasUpstreamNewThreadModelCollaborationMode(bundleSource) {
-  return (
+  const hasLegacyCollaborationModeFlow =
     bundleSource.includes('from"./use-model-settings-') &&
     bundleSource.includes('modelSettings:') &&
     bundleSource.includes('settings:{model:') &&
@@ -4430,8 +5033,21 @@ function hasUpstreamNewThreadModelCollaborationMode(bundleSource) {
     bundleSource.includes('setSelectedMode:') &&
     /\.\.\.[A-Za-z_$][\w$]*\.settings,model:[A-Za-z_$][\w$]*\.model,reasoning_effort:[A-Za-z_$][\w$]*\.reasoningEffort/.test(
       bundleSource
-    )
-  );
+    );
+  const hasPendingSettingsFlow =
+    bundleSource.includes('setModelAndReasoningEffortForNextTurn') &&
+    bundleSource.includes('setModelAndReasoningEffort:') &&
+    bundleSource.includes('modelSettings:') &&
+    bundleSource.includes('activeMode:') &&
+    bundleSource.includes('selectedMode:') &&
+    bundleSource.includes('setSelectedMode:') &&
+    /\{model:[A-Za-z_$][\w$]*,reasoningEffort:[A-Za-z_$][\w$]*\},\(\)=>[A-Za-z_$][\w$]*\(/.test(
+      bundleSource
+    ) &&
+    /\.\.\.[A-Za-z_$][\w$]*\.settings,model:[A-Za-z_$][\w$]*\.model,reasoning_effort:[A-Za-z_$][\w$]*\.reasoningEffort/.test(
+      bundleSource
+    );
+  return hasLegacyCollaborationModeFlow || hasPendingSettingsFlow;
 }
 
 function hasUpstreamNewThreadModelStartParams(bundleSource) {
@@ -4462,7 +5078,9 @@ function hasUpstreamNewThreadModelComposerSubmit(bundleSource) {
     bundleSource.includes('startConversationWithPrimaryRuntimeForFirstTurn') &&
     bundleSource.includes('collaborationMode:') &&
     bundleSource.includes('startConversationParamsInput') &&
-    /collaborationMode:[A-Za-z_$][\w$]*,memoryPreferences:/.test(bundleSource)
+    /collaborationMode:[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?,memoryPreferences:/.test(
+      bundleSource
+    )
   );
 }
 
@@ -5277,10 +5895,13 @@ export function injectLinuxBrowserViewportSurfacePatch(bundleSource, options = {
   );
   const hasManagedWebviewHost = hasLinuxBrowserManagedWebviewHost(bundleSource);
   const hasImportedManagedWebviewHost = hasLinuxBrowserImportedManagedWebviewHost(bundleSource);
+  const hasManagedWebviewVisibilityFlow =
+    hasLinuxBrowserManagedWebviewVisibilityFlow(bundleSource);
   const hasVisibleWhenUrl =
     LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATTERN.test(bundleSource) ||
     LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_26_527_PATTERN.test(bundleSource) ||
     LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_DIRECT_PATTERN.test(bundleSource) ||
+    hasManagedWebviewVisibilityFlow ||
     hasVisibleWhenUrlMarker;
   if (
     hasViewportMarker &&
@@ -5376,11 +5997,23 @@ function hasLinuxBrowserManagedWebviewHost(bundleSource) {
     (bundleSource.includes('pt.getWebview') &&
       bundleSource.includes('shouldBootstrapWhenHidden') &&
       bundleSource.includes('shouldPaint:')) ||
+    hasLinuxBrowserManagedWebviewVisibilityFlow(bundleSource) ||
     (bundleSource.includes('.getRetainedWebview(') &&
       bundleSource.includes('browser-sidebar-sync') &&
       bundleSource.includes('sync({bounds:') &&
       bundleSource.includes('webviewRef:') &&
       bundleSource.includes('windowZoom:'))
+  );
+}
+
+function hasLinuxBrowserManagedWebviewVisibilityFlow(bundleSource) {
+  return (
+    bundleSource.includes('.getWebview(') &&
+    bundleSource.includes('shouldBootstrapWhenHidden') &&
+    bundleSource.includes('shouldPaint:') &&
+    bundleSource.includes('browser-sidebar-sync') &&
+    bundleSource.includes('webviewRef:') &&
+    bundleSource.includes('windowZoom:')
   );
 }
 
@@ -6163,6 +6796,7 @@ function analyzeLinuxBrowserViewportSurfaceBundle(bundleSource) {
     LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATTERN.test(bundleSource) ||
     LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_26_527_PATTERN.test(bundleSource) ||
     LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_DIRECT_PATTERN.test(bundleSource) ||
+    hasLinuxBrowserManagedWebviewVisibilityFlow(bundleSource) ||
     bundleSource.includes(LINUX_BROWSER_WEBVIEW_VISIBLE_WHEN_URL_PATCH_MARKER);
   const detected = {
     browserSyncMessage: bundleSource.includes('browser-sidebar-sync'),
@@ -6587,7 +7221,14 @@ export function injectLinuxBrowserCommentSubmitModePatch(bundleSource, options =
     LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATTERN.test(bundleSource) ||
     LINUX_BROWSER_COMMENT_SUBMIT_MODE_FALLBACK_PATTERN.test(bundleSource) ||
     LINUX_BROWSER_COMMENT_SUBMIT_MODE_CALLER_PATTERN.test(bundleSource);
+  const hasSavedDefault =
+    bundleSource.includes('browser-sidebar-comment-overlay-submit') &&
+    bundleSource.includes('defaultCreateSubmitMode') &&
+    !hasDirectMode;
   if (hasMarker && !hasDirectMode) {
+    return bundleSource;
+  }
+  if (hasSavedDefault) {
     return bundleSource;
   }
 
@@ -7294,10 +7935,14 @@ function buildOpenTargetsPatchErrorMessage(bundleSource, sourceName) {
 function analyzeOpenTargetsBundle(bundleSource) {
   const weakMapPatternDetected = OPEN_TARGETS_BLOCK_WEAKMAP_PATTERN.test(bundleSource);
   const workerRegistryDetected = OPEN_TARGETS_WORKER_REGISTRY_PATTERN.test(bundleSource);
+  const dynamicRegistryDetected = OPEN_TARGETS_DYNAMIC_REGISTRY_PATTERN.test(bundleSource);
   const detected = {
     openInTargets: bundleSource.includes('`open-in-targets`'),
     targetRegistryDeclaration:
-      OPEN_TARGETS_BLOCK_PATTERN.test(bundleSource) || weakMapPatternDetected || workerRegistryDetected,
+      OPEN_TARGETS_BLOCK_PATTERN.test(bundleSource) ||
+      weakMapPatternDetected ||
+      workerRegistryDetected ||
+      dynamicRegistryDetected,
     platformFlatten:
       /function [A-Za-z_$][\w$]*\(e\)\{return [A-Za-z_$][\w$]*\.flatMap\(t=>\{let n=t\.platforms\[e\];return n\?\[\{id:t\.id,\.\.\.n\}\]:\[\]\}\)\}/.test(
         bundleSource
@@ -7344,6 +7989,38 @@ function buildLinuxTitleBarOverlayThemeSyncPatchErrorMessage(bundleSource, sourc
     LINUX_TITLE_BAR_OVERLAY_PATCH_BASE_ERROR_MESSAGE,
     sourceName,
     analyzeLinuxTitleBarOverlayThemeSyncBundle(bundleSource)
+  );
+}
+
+function buildLinuxNativeWindowFramePatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_NATIVE_WINDOW_FRAME_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxNativeWindowFrameBundle(bundleSource)
+  );
+}
+
+function buildLinuxPrimaryWindowModeControlsPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxPrimaryWindowModeControlsBundle(bundleSource)
+  );
+}
+
+function buildLinuxWindowFocusableOptionPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_WINDOW_FOCUSABLE_OPTION_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxWindowFocusableOptionBundle(bundleSource)
+  );
+}
+
+function buildLinuxWindowIconPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_WINDOW_ICON_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxWindowIconBundle(bundleSource)
   );
 }
 
@@ -7559,6 +8236,80 @@ function analyzeLinuxTitleBarOverlayThemeSyncBundle(bundleSource) {
   };
 }
 
+function analyzeLinuxNativeWindowFrameBundle(bundleSource) {
+  const detected = {
+    titleBarStyleHidden: bundleSource.includes('titleBarStyle:`hidden`'),
+    titleBarStyleDefault: bundleSource.includes('titleBarStyle:`default`'),
+    linuxHiddenTitleBarBranch: LINUX_NATIVE_WINDOW_FRAME_PRIMARY_BRANCH_PATTERN.test(bundleSource),
+    titleBarOverlayOption: bundleSource.includes('titleBarOverlay')
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.titleBarStyleHidden && 'hidden titleBarStyle option',
+      !detected.titleBarStyleDefault && 'default titleBarStyle option',
+      !detected.titleBarOverlayOption && 'titleBarOverlay option',
+      !detected.linuxHiddenTitleBarBranch && 'Linux hidden titlebar primary branch'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxPrimaryWindowModeControlsBundle(bundleSource) {
+  const detected = {
+    windowModeMessage: bundleSource.includes('electron-set-window-mode'),
+    primaryWindowModeState: bundleSource.includes('primaryWindowMode'),
+    disableControlsSequence: LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.windowModeMessage && 'window mode message',
+      !detected.primaryWindowModeState && 'primary window mode state',
+      !detected.disableControlsSequence && 'primary window mode disable controls sequence'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxWindowFocusableOptionBundle(bundleSource) {
+  const detected = {
+    browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
+    parentOption: bundleSource.includes('parent:'),
+    focusableOption: bundleSource.includes('focusable:'),
+    unconditionalFocusableOption: LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.browserWindowConstructor && 'BrowserWindow constructor',
+      !detected.parentOption && 'parent option',
+      !detected.focusableOption && 'focusable option',
+      !detected.unconditionalFocusableOption && 'unconditional focusable option'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxWindowIconBundle(bundleSource) {
+  const detected = {
+    browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
+    mainWindowBackdropCall: bundleSource.includes('this.applyWindowBackdrop'),
+    webPreferencesOption: bundleSource.includes('webPreferences:'),
+    mainBrowserWindowConstructor: LINUX_WINDOW_ICON_BROWSER_WINDOW_PATTERN.test(bundleSource)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.browserWindowConstructor && 'BrowserWindow constructor',
+      !detected.mainWindowBackdropCall && 'main window backdrop call',
+      !detected.webPreferencesOption && 'webPreferences option',
+      !detected.mainBrowserWindowConstructor && 'main BrowserWindow constructor'
+    ].filter(Boolean)
+  };
+}
+
 function analyzeLinuxAboutDialogBundle(bundleSource) {
   const detected = {
     aboutDialogIntlId: bundleSource.includes('codex.aboutDialog.title'),
@@ -7737,9 +8488,12 @@ function analyzeLinuxChromeNativeHostRuntimePathsBundle(bundleSource) {
 }
 
 function analyzeLinuxOwlFeatureBindingBundle(bundleSource) {
+  const linkedBindingHelper =
+    LINUX_OWL_FEATURE_BINDING_PATTERN.test(bundleSource) ||
+    LINUX_OWL_FEATURE_BINDING_NULLABLE_PATTERN.test(bundleSource);
   const detected = {
     owlFeatureBinding: bundleSource.includes('electron_common_owl_features'),
-    linkedBindingHelper: LINUX_OWL_FEATURE_BINDING_PATTERN.test(bundleSource),
+    linkedBindingHelper,
     featureSwitchReader:
       bundleSource.includes('enable-features') && bundleSource.includes('disable-features'),
     featurePredicate: bundleSource.includes('isOwlFeatureEnabled')
@@ -7897,24 +8651,29 @@ function analyzeLinuxAvatarOverlayBundle(bundleSource) {
     moveDragMethod:
       bundleSource.includes('codexLinuxAvatarOverlayScreenPoint') ||
       LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN.test(bundleSource) ||
-      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_611_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_611_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_623_PATTERN.test(bundleSource),
     startDrag:
       bundleSource.includes('pointerWindowX:') ||
       LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN.test(bundleSource) ||
-      LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_START_DRAG_26_623_PATTERN.test(bundleSource),
     moveDragCursor:
       (bundleSource.includes('moveDragToCurrentCursor') &&
         (bundleSource.includes('codexLinuxAvatarOverlayPoint??') ||
           LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN.test(bundleSource) ||
           LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_527_PATTERN.test(bundleSource) ||
           LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_608_PATTERN.test(bundleSource))) ||
-      LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_623_PATTERN.test(bundleSource),
     endDrag:
       bundleSource.includes('this.persistWindowBounds') ||
-      LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_END_DRAG_26_623_PATTERN.test(bundleSource),
     throwWithVelocity:
       bundleSource.includes('this.persistWindowBounds(i);return') ||
-      LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN.test(bundleSource)
+      LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_26_623_PATTERN.test(bundleSource)
   };
 
   const basePatchApplied = bundleSource.includes(LINUX_AVATAR_OVERLAY_PATCH_MARKER);
@@ -7968,16 +8727,18 @@ function analyzeLinuxAvatarOverlayRendererBundle(bundleSource) {
 }
 
 function analyzeLinuxPetYappingUsageBundle(bundleSource) {
-  const hasMascotHitRegion = bundleSource.includes('"data-avatar-overlay-hit-region":`mascot`');
+  const hasMascotHitRegion = bundleSource.includes('"data-avatar-overlay-hit-region"');
   const hasLegacyMascotChildren = LINUX_PET_YAPPING_USAGE_MASCOT_CHILDREN_PATTERN.test(
     bundleSource
   );
   const hasMascotHitRegionChildren =
     LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_PATTERN.test(bundleSource) ||
-    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN.test(bundleSource);
+    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_611_PATTERN.test(bundleSource) ||
+    LINUX_PET_YAPPING_USAGE_MASCOT_HIT_REGION_26_623_PATTERN.test(bundleSource);
   const hasUsageBridgeImport =
     LINUX_PET_YAPPING_USAGE_VSCODE_API_IMPORT_PATTERN.test(bundleSource) ||
-    LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN.test(bundleSource);
+    LINUX_PET_YAPPING_USAGE_SETTING_STORAGE_IMPORT_PATTERN.test(bundleSource) ||
+    findLinuxPetYappingUsageRolldownRequestImport(bundleSource) != null;
   const detected = {
     reactRuntime: LINUX_PET_YAPPING_USAGE_REACT_VAR_PATTERN.test(bundleSource),
     jsxRuntime: findLinuxPetYappingUsageJsxRuntime(bundleSource) != null,
@@ -8055,7 +8816,8 @@ function analyzeTerminalBundle(bundleSource) {
     sessionCreate: TERMINAL_SESSION_CREATE_PATTERN.test(bundleSource),
     attach:
       TERMINAL_ATTACH_WITH_ATTACH_PATTERN.test(bundleSource) ||
-      TERMINAL_ATTACH_WITH_CREATE_PATTERN.test(bundleSource),
+      TERMINAL_ATTACH_WITH_CREATE_PATTERN.test(bundleSource) ||
+      TERMINAL_ATTACH_WITH_UNSTARTED_CREATE_PATTERN.test(bundleSource),
     onAttach:
       TERMINAL_ON_ATTACH_WITH_DETAILS_PREFIX_PATTERN.test(bundleSource) ||
       TERMINAL_ON_ATTACH_NO_ARGS_PREFIX_PATTERN.test(bundleSource),

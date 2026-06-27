@@ -1,6 +1,6 @@
 # Codex Linux App Agent Notes
 
-These notes are for the current pinned upstream version in `VERSION` (`26.616.51431+`). Do not carry old version-specific patch anchors forward; rediscover the installed bundle shape when upstream changes.
+These notes are for the current pinned upstream version in `VERSION` (`26.623.42026+`). Do not carry old version-specific patch anchors forward; rediscover the installed bundle shape when upstream changes.
 
 ## Current Release Rules
 
@@ -16,6 +16,15 @@ These notes are for the current pinned upstream version in `VERSION` (`26.616.51
 - Keep the Linux title-bar overlay driven by renderer `codex-linux-title-bar-overlay-theme-set` messages routed through the window manager, with a per-window theme cache and `setTitleBarOverlay(...)` reapplied on theme and zoom changes.
 - The overlay background should match the app header/top strip, not the editor or page content. Probe `--color-background-surface-under` before falling back to `--color-token-editor-background`; do not restore editor-background-first sampling.
 - For this patch, installed artifact checks should confirm the packed renderer contains `background:var(--color-background-surface-under,var(--color-token-editor-background))` and no old `background:var(--color-token-editor-background,var(--color-background-surface-under))` probe.
+
+## Linux Native Window Controls
+
+- A 26.623 repackage regressed KDE/KWin window management when the primary window used Linux hidden title-bar overlay defaults, onboarding mode disabled resizable/maximizable/fullscreenable, and the BrowserWindow constructor passed `parent` or `focusable` with undefined values. The symptom is severe: the app cannot be dragged, resized, minimized, maximized, or closed, and may sit above other apps.
+- Keep the Linux primary-window path on native Electron frames by default. The main bundle should contain `codexLinuxNativeWindowFrame`, using `{frame:!0}` for Linux unless `CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY=1` explicitly opts into hidden title-bar overlay.
+- Keep Linux primary onboarding windows manageable. The main bundle should contain `codexLinuxPrimaryWindowModeControls`, keeping resizable, maximizable, fullscreenable, minimizable, closable, and movable enabled on Linux unless `CODEX_DESKTOP_DISABLE_LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH=1`.
+- Keep BrowserWindow option handling nullish-safe. The main bundle should contain `codexLinuxWindowFocusableOption`, spreading `parent` and `focusable` only when they are not nullish; do not restore unconditional `parent:p,focusable:m` style options.
+- Do not treat a successful source test as proof for this class of bug. Reinstall, inspect the installed `app.asar` source named by the manifest, and verify that the old Linux hidden-titlebar branch and old unconditional focusable option shape are absent.
+- Runtime proof on KDE/Plasma should query KWin state for the installed app. A fixed Codex window should report `managed:true`, `wantsInput:true`, `normalWindow:true`, `keepAbove:false`, `skipTaskbar:false`, and `minimizable`, `maximizable`, `resizeable`, `moveable`, and `closeable` all true.
 
 ## Linux Computer Use
 
