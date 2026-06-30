@@ -1447,12 +1447,23 @@ function findLinuxPetYappingUsageJsxRuntime(bundleSource) {
 }
 
 const LINUX_PET_YAPPING_USAGE_ROLLDOWN_REQUEST_IMPORT_NAMES = ['Ay', 'vD', 'YN', 'a'];
-const LINUX_PET_YAPPING_USAGE_ROLLDOWN_JSX_IMPORT_NAMES = ['yA', 'Lz', 'BV', 'I'];
-const LINUX_PET_YAPPING_USAGE_ROLLDOWN_SPLIT_REQUEST_ANCHOR_IMPORT_NAMES = [
-  'Ao',
-  'Fo',
-  'Io',
-  'Po'
+const LINUX_PET_YAPPING_USAGE_ROLLDOWN_JSX_IMPORT_NAMES = [
+  'yA',
+  'Lz',
+  'BV',
+  'I',
+  'xl',
+  'lc'
+];
+const LINUX_PET_YAPPING_USAGE_ROLLDOWN_SPLIT_REQUEST_IMPORTS = [
+  {
+    anchorImportNames: ['Ao', 'Fo', 'Io', 'Po'],
+    requestImportName: 'a'
+  },
+  {
+    anchorImportNames: ['xl'],
+    requestImportName: 'ot'
+  }
 ];
 
 function findLinuxPetYappingUsageRolldownImport(bundleSource, importedNames) {
@@ -1500,16 +1511,19 @@ function findLinuxPetYappingUsageRolldownRequestImport(bundleSource) {
     };
   }
 
-  const splitRequestImport = findLinuxPetYappingUsageRolldownImport(
-    bundleSource,
-    LINUX_PET_YAPPING_USAGE_ROLLDOWN_SPLIT_REQUEST_ANCHOR_IMPORT_NAMES
-  );
-  if (splitRequestImport) {
-    return {
-      ...splitRequestImport,
-      requestFn: getNamedImportLocalName(splitRequestImport.imports, 'a'),
-      requestImportName: 'a'
-    };
+  for (const { anchorImportNames, requestImportName } of
+    LINUX_PET_YAPPING_USAGE_ROLLDOWN_SPLIT_REQUEST_IMPORTS) {
+    const splitRequestImport = findLinuxPetYappingUsageRolldownImport(
+      bundleSource,
+      anchorImportNames
+    );
+    if (splitRequestImport) {
+      return {
+        ...splitRequestImport,
+        requestFn: getNamedImportLocalName(splitRequestImport.imports, requestImportName),
+        requestImportName
+      };
+    }
   }
 
   const bvImport = findLinuxPetYappingUsageRolldownImport(bundleSource, ['BV']);

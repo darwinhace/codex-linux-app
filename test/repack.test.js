@@ -547,6 +547,10 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_31921 =
   'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{$P as n,BV as s,DA as i}from"./app-initial~app-main~remote-conversation-page~plugin-detail-page~new-thread-panel-page~appg~ijdupmx5-CdYgxe-b.js";function mt(){let R=(0,Z.jsx)(q,{ariaLabel:`Pet`});return(0,Z.jsx)(`main`,{children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":k?void 0:`mascot`,children:R})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var Y,X,Z,Q,Yt=e((()=>{Y=U(),X=t(i(),1),Z=s(),Q=pe({})}));';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_42026 =
   'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{D as n,I as r,L as i,O as a,R as o,k as s}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~plugin-detail-page~new-~sfopfmmp-9J50_--p.js";import{Ao as c,Fo as l,Io as u,Po as d}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~new-thread-panel-page~o~dv5z3ftk-BhBbJNnt.js";function pt(){let R=(0,Z.jsx)(Y,{ariaLabel:`Pet`});return(0,Z.jsx)(`main`,{children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":A?void 0:`mascot`,children:R})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var zt,X,Z,Q,Yt=e((()=>{zt=i(),X=t(o(),1),n(),Z=r(),Q=d({})}));';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_61825 =
+  'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{Bt as n,Ht as r,It as i,Lt as a,Ol as o,Ut as s,ac as c,bt as l,kl as u,oc as d,sc as f,tc as p,xl as m,xt as h,yt as g}from"./app-initial~app-main~remote-conversation-page~pull-requests-page~new-thread-panel-page~proj~i4yy32ef-BvSrqfh0.js";function pt(){let R=(0,Z.jsx)(q,{ariaLabel:`Pet`});return(0,Z.jsx)(`main`,{children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":k?void 0:`mascot`,children:R})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var zt,X,Z,Q,Yt=e((()=>{zt=o(),X=t(u(),1),Z=m(),Q=pe({})}));';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_70822 =
+  'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{_c as c,lc as u}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~new-thread-panel-page~o~ko8xg8gw-DEdbMp8p.js";import{Ay as F}from"./app-initial~app-main~remote-conversation-page~new-thread-panel-page~projects-index-page~app~iy8s9c2d-BUvvfhQQ.js";function pt(){let B=(0,Z.jsx)(q,{ariaLabel:`Pet`});return(0,Z.jsx)(`main`,{children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":A?void 0:`mascot`,children:B})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var zt,X,Z,Q,Yt=e((()=>{zt=l(),X=t(c(),1),Z=u(),Q=ae({})}));';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -5027,6 +5031,40 @@ test('injectLinuxPetYappingUsagePatch supports 26.623.42026 split Rolldown share
   assert.match(
     updated,
     /children:\[R,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
+  );
+  assert.match(
+    updated,
+    /let t=an\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?an\(e\.querySelector\(_n\)\),n=on\(e\.querySelector\(vn\)\)/
+  );
+});
+
+test('injectLinuxPetYappingUsagePatch supports 26.623.61825 Rolldown request and JSX exports', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_61825);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /ot as codexLinuxFetchUsage/);
+  assert.match(updated, /X\.useState\(null\)/);
+  assert.match(updated, /Z=m\(\);function codexLinuxPetYappingUsage/);
+  assert.match(
+    updated,
+    /children:\[R,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
+  );
+  assert.match(
+    updated,
+    /let t=an\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?an\(e\.querySelector\(_n\)\),n=on\(e\.querySelector\(vn\)\)/
+  );
+});
+
+test('injectLinuxPetYappingUsagePatch supports 26.623.70822 Rolldown JSX exports', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_70822);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /Ay as codexLinuxFetchUsage/);
+  assert.match(updated, /X\.useState\(null\)/);
+  assert.match(updated, /Z=u\(\);function codexLinuxPetYappingUsage/);
+  assert.match(
+    updated,
+    /children:\[B,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
   );
   assert.match(
     updated,
