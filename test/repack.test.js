@@ -442,6 +442,11 @@ const AVATAR_OVERLAY_CONTENT_BOUNDS_BUNDLE_CURRENT = AVATAR_OVERLAY_BUNDLE_26_42
     'persistWindowBounds(e){e.isDestroyed()||this.globalState.set(xe,{...e.getBounds()',
     'persistWindowBounds(e){e.isDestroyed()||this.globalState.set(xe,{...e.getContentBounds()'
   );
+const AVATAR_OVERLAY_DARWIN_WINDOW_OPTIONS_BUNDLE_CURRENT =
+  AVATAR_OVERLAY_BUNDLE_26_429_30905.replace(
+    'case`avatarOverlay`:return{...MM({alwaysOnTop:!0,platform:n,resizable:!1,thickFrame:!1}),hasShadow:!1}',
+    'case`avatarOverlay`:return{...MM({alwaysOnTop:!0,platform:n,resizable:!1,thickFrame:!1}),...n===`darwin`?{enableLargerThanScreen:!0}:{},hasShadow:!1}'
+  );
 const AVATAR_OVERLAY_RESOLUTION_KEY_DRAG_BUNDLE_26_519 =
   AVATAR_OVERLAY_BUNDLE_26_429_30905.replace(
     't.displayBounds=i,this.anchor={...this.anchor,x:r.x-t.pointerAnchorX,y:r.y-t.pointerAnchorY},this.applyLayout(e,i)',
@@ -513,6 +518,8 @@ const AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_623 =
       /throwWithVelocity\(e,t,r\)\{[\s\S]*?\}setElementSize/,
       'throwWithVelocity(e,t,r,i=!1){let a=this.window;if(a==null||a.isDestroyed()||a.webContents.id!==e||!Number.isFinite(t)||!Number.isFinite(r)||t===0&&r===0)return;let o=this.suppressNextRendererThrow;this.suppressNextRendererThrow=!1,!(o&&!i)&&this.startMomentum(t,r,i)}setElementSize'
     );
+const AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_623_PRESENTATION_ORIGIN =
+  `${AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_623}positionPresentationAtOrigin(e,t){this.anchor=j6(t,this.mascotSize,this.presentationOffset),this.applyLayout(e,n.screen.getDisplayNearestPoint(O6(this.anchor)))}`;
 const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
   'function $e(){let P={current:null};let Y=e=>{let t=P.current;if(t==null||t.pointerId!==e.pointerId)return;let n=V(e);t.samples=U([...t.samples,n]);let r=n.screenX-t.screenX,i=n.screenY-t.screenY;Math.abs(r)<Ge&&Math.abs(i)<Ge||(t.hasMoved=!0,t.screenX=n.screenX,t.screenY=n.screenY,s(e=>ut({currentDragState:e,deltaX:r})),f.dispatchMessage(`avatar-overlay-drag-move`,{}))}}';
 const AVATAR_OVERLAY_RENDERER_BUNDLE_26_611 = AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT.replace(
@@ -551,6 +558,10 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_61825 =
   'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{Bt as n,Ht as r,It as i,Lt as a,Ol as o,Ut as s,ac as c,bt as l,kl as u,oc as d,sc as f,tc as p,xl as m,xt as h,yt as g}from"./app-initial~app-main~remote-conversation-page~pull-requests-page~new-thread-panel-page~proj~i4yy32ef-BvSrqfh0.js";function pt(){let R=(0,Z.jsx)(q,{ariaLabel:`Pet`});return(0,Z.jsx)(`main`,{children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":k?void 0:`mascot`,children:R})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var zt,X,Z,Q,Yt=e((()=>{zt=o(),X=t(u(),1),Z=m(),Q=pe({})}));';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_70822 =
   'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{_c as c,lc as u}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~new-thread-panel-page~o~ko8xg8gw-DEdbMp8p.js";import{Ay as F}from"./app-initial~app-main~remote-conversation-page~new-thread-panel-page~projects-index-page~app~iy8s9c2d-BUvvfhQQ.js";function pt(){let B=(0,Z.jsx)(q,{ariaLabel:`Pet`});return(0,Z.jsx)(`main`,{children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":A?void 0:`mascot`,children:B})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var zt,X,Z,Q,Yt=e((()=>{zt=l(),X=t(c(),1),Z=u(),Q=ae({})}));';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_81905 =
+  'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{AP as n,BP as r,CP as i,EB as a,Fl as o,HP as s,Hu as c,IP as l,JN as u,Ka as d,LP as f,Mj as p,PP as m,Pj as h,Qj as g,RV as _,SP as v,TB as y,TP as b,Ua as x,VP as ee,Vp as te,XO as S,Xu as C,YN as ne,YO as w,_S as re,aD as T,bB as ie,cM as ae,cP as oe,eC as E,eM as D,fN as O,gP as k,gS as A,hN as j,iC as M,iD as N,jE as P,jP as F,jV as I,mN as L,mP as R,nD as se,oP as z,oa as B,pN as V,pS as H,qN as U,qP as ce,sM as le,sa as ue,tC as de,tD as fe,tu as pe,vp as me,wB as he,wP as W,yE as ge,yp as _e,zV as ve}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~pull-requests-page~plug~kmtatxxf-IUI8plS9.js";function pt(){let z=(0,Z.jsx)(Ee,{ariaLabel:ne.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:se,resizeHandle:u==null?void 0:{ariaLabel:ne.formatMessage(Q.resizeMascot),...u},state:re.mascotState,style:c,transientState:l});return(0,Z.jsx)(`main`,{children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":D?void 0:`mascot`,children:z})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var zt,X,Z,Q,Yt=e((()=>{zt=_(),X=t(ve(),1),Z=I(),Q=ee({})}));';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_101652 =
+  'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{$U as n,AM as r,AW as i,BU as a,DW as o,Dx as s,EW as c,Fx as l,GY as u,IV as d,JR as f,LW as p,MI as m,MW as h,My as g,NM as _,PM as v,RV as y,VU as b,Vp as x,WI as S,Wp as ee,XY as C,YR as w,YY as te,ZU as T,ZY as E,_L as D,_N as O,aH as ne,aU as k,aW as A,bB as re,bW as j,cH as M,cZ as N,fW as ie,fy as P,gH as F,hH as I,hL as L,hW as R,iH as ae,iU as oe,jW as se,lZ as ce,mL as z,mW as B,n_ as V,nw as H,oH as U,oU as le,op as ue,pW as de,r_ as fe,sU as pe,sW as me,sp as W,tZ as he,tw as ge,vL as _e,vN as ve,wW as ye,ww as be,xN as G,xW as K,yB as xe,zU as q}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~onboarding-page~hotkey-~ke3yc5wu-BLQiF1Gs.js";function Xt(){let V=(0,Z.jsx)(ke,{ariaLabel:T.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:z,resizeHandle:d==null?void 0:{ariaLabel:T.formatMessage(Q.resizeMascot),...d},state:D.mascotState,style:l,transientState:u});return(0,Z.jsx)(`main`,{className:`relative h-screen w-screen overflow-hidden bg-transparent`,children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":j?void 0:`mascot`,children:V})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var Y,X,Z,Q,Yt=e((()=>{Y=N(),R(),T(),u(),X=t(ce(),1),h(),H(),Z=he(),Q=se({})}));';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -4540,6 +4551,9 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
   assert.match(updated, /codexLinuxAvatarOverlayScreenPointDrag/);
   assert.match(updated, /codexLinuxAvatarOverlayAutoClose/);
   assert.match(updated, /codexLinuxAvatarOverlayVisibilityRecovery/);
+  assert.doesNotMatch(updated, /codexLinuxAvatarOverlayKWinPosition/);
+  assert.doesNotMatch(updated, /codexLinuxApplyAvatarOverlayKWinState/);
+  assert.doesNotMatch(updated, /window\.frameGeometry = /);
   assert.match(updated, /codexLinuxRegisterAvatarOverlayAutoClose\([A-Za-z_$][\w$]*\)/);
   assert.match(updated, /browser-window-created/);
   assert.match(updated, /before-quit/);
@@ -4553,7 +4567,11 @@ test('injectLinuxAvatarOverlayPatch patches the 26.429.30905 avatar overlay main
     updated,
     /e\.setAlwaysOnTop\(!0,process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?`screen-saver`:`floating`\),t&&e\.moveTop\(\)/
   );
-  assert.doesNotMatch(updated, /type:`dock`|focusable:!0/);
+  assert.doesNotMatch(updated, /type:`dock`/);
+  assert.match(
+    updated,
+    /case`avatarOverlay`:return\{[\s\S]*?\.\.\.[A-Za-z_$][\w$]*===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?\{acceptFirstMouse:!0,focusable:!0\}:\{\}/
+  );
   assert.match(
     updated,
     /showWindow\([A-Za-z_$][\w$]*\)\{[\s\S]*?showInactive\(\),this\.codexLinuxRecoverAvatarOverlayVisibility\([A-Za-z_$][\w$]*\),this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*,!0\)/
@@ -4599,6 +4617,16 @@ test('injectLinuxAvatarOverlayPatch supports avatar overlay content-bounds drift
     /setWindowBounds\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\)\{[\s\S]*?getContentBounds\(\)[\s\S]*?setContentBounds\([A-Za-z_$][\w$]*,!1\)[\s\S]*?this\.codexLinuxKeepAvatarOverlayFrontmost\([A-Za-z_$][\w$]*\)/
   );
   assert.match(updated, /codexLinuxRegisterAvatarOverlayAutoClose\([A-Za-z_$][\w$]*\)/);
+});
+
+test('injectLinuxAvatarOverlayPatch preserves current Darwin avatar overlay options', () => {
+  const updated = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_DARWIN_WINDOW_OPTIONS_BUNDLE_CURRENT);
+
+  assert.match(updated, /enableLargerThanScreen:!0/);
+  assert.match(
+    updated,
+    /hasShadow:!1,\.\.\.[A-Za-z_$][\w$]*===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?\{acceptFirstMouse:!0,focusable:!0\}:\{\}/
+  );
 });
 
 test('injectLinuxAvatarOverlayPatch supports 26.519 resolution-key drag drift', () => {
@@ -4656,6 +4684,17 @@ test('injectLinuxAvatarOverlayPatch supports 26.611 native pointer drag drift', 
     /case`avatar-overlay-drag-move`:\{let [A-Za-z_$][\w$]*=DP\([A-Za-z_$][\w$]*\);\/\* codexLinuxAvatarOverlayScreenPointDrag \*\//
   );
   assert.match(updated, /codexLinuxAvatarOverlayScreenPoint\(e\)\{return e!=null&&Number\.isFinite\(e\.pointerScreenX\)/);
+  assert.doesNotMatch(updated, /codexLinuxAvatarOverlayElectronPoint/);
+  assert.match(
+    updated,
+    /codexLinuxAvatarOverlayRendererDrag=process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`,[A-Za-z_$][\w$]*=codexLinuxAvatarOverlayRendererDrag\?null:[A-Za-z_$][\w$]*\(this\.compositionHost\.getCursorPosition\(\)\)/
+  );
+  assert.match(
+    updated,
+    /[A-Za-z_$][\w$]*\.getCursorPointForSource\(\{native:process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?null:[A-Za-z_$][\w$]*\.cursorSource===`native`\?[A-Za-z_$][\w$]*\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:this\.codexLinuxAvatarOverlayScreenPoint/
+  );
+  assert.doesNotMatch(updated, /CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?[A-Za-z_$][\w$]*\?\?[A-Za-z_$][\w$]*:[A-Za-z_$][\w$]*\.getCursorPointForSource/);
+  assert.doesNotMatch(updated, /codexLinuxAvatarOverlayRendererPoint=this\.codexLinuxAvatarOverlayScreenPoint/);
   assert.match(updated, /moveDragToPointer\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\)\{[\s\S]*?getContentBounds\(\)/);
   assert.match(
     updated,
@@ -4689,11 +4728,41 @@ test('injectLinuxAvatarOverlayPatch supports 26.623 presentation and orb-drag dr
   assert.match(updated, /this\.presentWindow\([A-Za-z_$][\w$]*\),this\.codexLinuxScheduleAvatarOverlayVisibilityRecovery\([A-Za-z_$][\w$]*\)/);
   assert.match(updated, /this\.pendingPresentation=null,[A-Za-z_$][\w$]*\.velocity==null/);
   assert.match(updated, /usesOrbPhysics\?\(this\.orbDragFollowTarget=[A-Za-z_$][\w$]*,this\.scheduleOrbDragFollow\([A-Za-z_$][\w$]*\)\):this\.moveDragToPointer/);
+  assert.match(
+    updated,
+    /hasShadow:!1,\.\.\.[A-Za-z_$][\w$]*===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?\{acceptFirstMouse:!0,focusable:!0\}:\{\}/
+  );
+  assert.doesNotMatch(updated, /codexLinuxAvatarOverlayElectronPoint/);
+  assert.match(
+    updated,
+    /codexLinuxAvatarOverlayRendererDrag=process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`,[A-Za-z_$][\w$]*=codexLinuxAvatarOverlayRendererDrag\?null:[A-Za-z_$][\w$]*\(this\.compositionHost\.getCursorPosition\(\)\)/
+  );
+  assert.match(
+    updated,
+    /[A-Za-z_$][\w$]*\.getCursorPointForSource\(\{native:process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?null:[A-Za-z_$][\w$]*\.cursorSource===`native`\?[A-Za-z_$][\w$]*\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:this\.codexLinuxAvatarOverlayScreenPoint/
+  );
+  assert.doesNotMatch(updated, /CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?[A-Za-z_$][\w$]*\?\?[A-Za-z_$][\w$]*:[A-Za-z_$][\w$]*\.getCursorPointForSource/);
   assert.match(updated, /codexLinuxAvatarOverlayAnchor=\{\.\.\.this\.anchor,x:this\.anchor\.x\+\([A-Za-z_$][\w$]*-this\.anchor\.x\)\*[A-Za-z_$][\w$]*/);
   assert.match(updated, /this\.persistWindowBounds\([A-Za-z_$][\w$]*,codexLinuxAvatarOverlayDisplay\?\?this\.getCurrentDisplay\(\)\);let [A-Za-z_$][\w$]*=this\.dockTarget/);
   assert.match(updated, /this\.dockPresentation\([A-Za-z_$][\w$]*\.anchor,[A-Za-z_$][\w$]*\.onDock\);return/);
   assert.match(updated, /codexLinuxAvatarOverlaySuppressThrow/);
   assert.match(updated, /throwWithVelocity\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*=!1\)/);
+});
+
+test('injectLinuxAvatarOverlayPatch keeps 26.623 presentation wake on the current Linux anchor', () => {
+  const updated = injectLinuxAvatarOverlayPatch(
+    AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_623_PRESENTATION_ORIGIN
+  );
+
+  assert.match(updated, /codexLinuxAvatarOverlayStablePresentationOrigin/);
+  assert.match(
+    updated,
+    /if\(process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\)\{\/\* codexLinuxAvatarOverlayStablePresentationOrigin \*\/this\.applyLayout\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\.screen\.getDisplayNearestPoint\([A-Za-z_$][\w$]*\(this\.anchor\)\)\);return\}/
+  );
+  assert.match(
+    updated,
+    /this\.anchor=[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*,this\.mascotSize,this\.presentationOffset\),this\.applyLayout/
+  );
 });
 
 test('injectLinuxAvatarOverlayRendererPatch sends pointer screen coordinates with drag moves', () => {
@@ -4976,7 +5045,8 @@ test('injectLinuxPetYappingUsagePatch supports 26.623 Rolldown avatar renderer',
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /Ay as codexLinuxFetchUsage/);
   assert.match(updated, /X\.useState\(null\)/);
-  assert.match(updated, /Z=F\(\);function codexLinuxPetYappingUsage/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function (?:pt|mt)\(/);
+  assert.doesNotMatch(updated, /Z=F\(\);function codexLinuxPetYappingUsage/);
   assert.match(
     updated,
     /children:\[se,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
@@ -4993,7 +5063,8 @@ test('injectLinuxPetYappingUsagePatch supports 26.623.31443 Rolldown shared expo
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /vD as codexLinuxFetchUsage/);
   assert.match(updated, /X\.useState\(null\)/);
-  assert.match(updated, /Z=y\(\);function codexLinuxPetYappingUsage/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function (?:pt|mt)\(/);
+  assert.doesNotMatch(updated, /Z=y\(\);function codexLinuxPetYappingUsage/);
   assert.match(
     updated,
     /children:\[se,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
@@ -5010,7 +5081,8 @@ test('injectLinuxPetYappingUsagePatch supports 26.623.31921 Rolldown shared expo
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /YN as codexLinuxFetchUsage/);
   assert.match(updated, /X\.useState\(null\)/);
-  assert.match(updated, /Z=s\(\);function codexLinuxPetYappingUsage/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function (?:pt|mt)\(/);
+  assert.doesNotMatch(updated, /Z=s\(\);function codexLinuxPetYappingUsage/);
   assert.match(
     updated,
     /children:\[R,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
@@ -5027,7 +5099,8 @@ test('injectLinuxPetYappingUsagePatch supports 26.623.42026 split Rolldown share
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /a as codexLinuxFetchUsage/);
   assert.match(updated, /X\.useState\(null\)/);
-  assert.match(updated, /Z=r\(\);function codexLinuxPetYappingUsage/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function (?:pt|mt)\(/);
+  assert.doesNotMatch(updated, /Z=r\(\);function codexLinuxPetYappingUsage/);
   assert.match(
     updated,
     /children:\[R,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
@@ -5044,7 +5117,8 @@ test('injectLinuxPetYappingUsagePatch supports 26.623.61825 Rolldown request and
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /ot as codexLinuxFetchUsage/);
   assert.match(updated, /X\.useState\(null\)/);
-  assert.match(updated, /Z=m\(\);function codexLinuxPetYappingUsage/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function (?:pt|mt)\(/);
+  assert.doesNotMatch(updated, /Z=m\(\);function codexLinuxPetYappingUsage/);
   assert.match(
     updated,
     /children:\[R,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
@@ -5061,10 +5135,50 @@ test('injectLinuxPetYappingUsagePatch supports 26.623.70822 Rolldown JSX exports
   assert.match(updated, /codexLinuxPetYappingUsage/);
   assert.match(updated, /Ay as codexLinuxFetchUsage/);
   assert.match(updated, /X\.useState\(null\)/);
-  assert.match(updated, /Z=u\(\);function codexLinuxPetYappingUsage/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function (?:pt|mt)\(/);
+  assert.doesNotMatch(updated, /Z=u\(\);function codexLinuxPetYappingUsage/);
   assert.match(
     updated,
     /children:\[B,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
+  );
+  assert.match(
+    updated,
+    /let t=an\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?an\(e\.querySelector\(_n\)\),n=on\(e\.querySelector\(vn\)\)/
+  );
+});
+
+test('injectLinuxPetYappingUsagePatch supports 26.623.81905 Rolldown JSX exports', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_81905);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /PN as codexLinuxFetchUsage/);
+  assert.match(updated, /YN as ne/);
+  assert.doesNotMatch(updated, /YN as codexLinuxFetchUsage/);
+  assert.match(updated, /X\.useState\(null\)/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function (?:pt|mt)\(/);
+  assert.doesNotMatch(updated, /Z=I\(\);function codexLinuxPetYappingUsage/);
+  assert.match(
+    updated,
+    /children:\[z,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
+  );
+  assert.match(
+    updated,
+    /let t=an\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?an\(e\.querySelector\(_n\)\),n=on\(e\.querySelector\(vn\)\)/
+  );
+});
+
+test('injectLinuxPetYappingUsagePatch supports 26.623.101652 Rolldown JSX exports', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_101652);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /EU as codexLinuxFetchUsage/);
+  assert.match(updated, /tZ as he/);
+  assert.match(updated, /X\.useState\(null\)/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function Xt\(/);
+  assert.doesNotMatch(updated, /Z=he\(\);function codexLinuxPetYappingUsage/);
+  assert.match(
+    updated,
+    /children:\[V,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
   );
   assert.match(
     updated,
@@ -7756,6 +7870,8 @@ test('buildWrapperScript includes perf toggles and runtime logging', () => {
   assert.match(script, /--disable-gpu/);
   assert.match(script, /CODEX_DESKTOP_OZONE_PLATFORM_HINT/);
   assert.match(script, /ozone_hint="\$\{CODEX_DESKTOP_OZONE_PLATFORM_HINT:-x11\}"/);
+  assert.doesNotMatch(script, /XDG_SESSION_TYPE/);
+  assert.doesNotMatch(script, /WAYLAND_DISPLAY/);
   assert.match(script, /--ozone-platform=/);
   assert.doesNotMatch(script, /--ozone-platform-hint=/);
   assert.match(script, /CODEX_DESKTOP_ENABLE_CHROMIUM_LOGGING/);

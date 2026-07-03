@@ -61,6 +61,12 @@ These notes are for the current pinned upstream version in `VERSION` (`26.623.42
 - Hover text must show `5H left N% | Weekly left N%`.
 - The bubble should poll through the main-process `codex-linux-pet-usage` bridge, read latest session rate limits, stay compact near the pet head, and fade out.
 - Keep the overlay footprint only as large as the visible pet, bubble, and hover info. `.codex-usage-yap-wrap` remains the layout measurement target and must not introduce unused transparent padding.
+- If PET wakes near the center but jumps to the top-left or another monitor when dragged, suspect mixed Linux coordinate sources before changing UI layout. Newer 26.623 bundles can mix renderer `pointerScreenX/Y` coordinates with native composition cursor coordinates from Electron/KWin; on multi-monitor setups those can disagree badly.
+- For Linux PET drag fixes, keep drag source selection renderer-first. The main bundle should contain `codexLinuxAvatarOverlayRendererDrag`, pass `native:null` to `getCursorPointForSource(...)` on Linux unless `CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH=1`, and consume renderer `pointerScreenX/Y` or `cursorScreenX/Y` from the avatar renderer IPC.
+- Do not revive the old KWin force-position workaround for PET movement. Installed artifacts should not contain `codexLinuxAvatarOverlayKWinPosition`, `codexLinuxApplyAvatarOverlayKWinState`, or direct `window.frameGeometry = ...` writes for the avatar overlay; those can fight Electron window bounds and reintroduce cross-monitor jumps.
+- Keep Linux PET wake presentation anchored to the current PET anchor. For 26.623-style `positionPresentationAtOrigin(...)`, Linux should apply layout from `this.anchor` instead of recalculating `this.anchor` from the pending presentation origin. Installed artifacts should contain `codexLinuxAvatarOverlayStablePresentationOrigin`.
+- Keep the Linux avatar overlay window as a normal managed input-capable window: no `type:\`dock\`` final shape, and include Linux `acceptFirstMouse:!0,focusable:!0` plus `setIgnoreMouseEvents(!1)` in the pointer policy path.
+- Automated drag proof can be misleading on KDE/Wayland. `ydotool` may move `workspace.cursorPos` while its button events still do not reach Electron renderers. Treat CDP/synthetic renderer drag as proof of the app drag pipeline only; final runtime proof should include manual physical drag or a verified input backend such as `xdotool` on X11.
 
 ## Validation
 
