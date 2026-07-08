@@ -58,6 +58,8 @@ const LINUX_BROWSER_VIEWPORT_SURFACE_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Browser viewport surface for Linux.';
 const LINUX_BROWSER_WEBVIEW_STACKING_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer Browser webview stacking for Linux.';
+const LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH_BASE_ERROR_MESSAGE =
+  'Could not patch the renderer Browser Use hidden webview paint behavior for Linux.';
 const LINUX_RIGHT_PANEL_PANE_TABS_PATCH_BASE_ERROR_MESSAGE =
   'Could not patch the renderer right panel pane tabs for Linux.';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_BASE_ERROR_MESSAGE =
@@ -441,6 +443,8 @@ export async function installDesktop(options, logger) {
     extractedAppDir,
     logger
   );
+  const linuxBrowserUseHiddenWebviewPaintPatch =
+    await patchRendererLinuxBrowserUseHiddenWebviewPaintBundle(extractedAppDir, logger);
   const linuxRightPanelPaneTabsPatch = await patchRendererLinuxRightPanelPaneTabsBundle(
     extractedAppDir,
     logger
@@ -533,6 +537,7 @@ export async function installDesktop(options, logger) {
     linuxVisualCompat: linuxVisualCompatPatch,
     linuxBrowserViewportSurface: linuxBrowserViewportSurfacePatch,
     linuxBrowserWebviewStacking: linuxBrowserWebviewStackingPatch,
+    linuxBrowserUseHiddenWebviewPaint: linuxBrowserUseHiddenWebviewPaintPatch,
     linuxRightPanelPaneTabs: linuxRightPanelPaneTabsPatch,
     linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
     linuxBrowserCommentSubmitMode: linuxBrowserCommentSubmitModePatch,
@@ -638,6 +643,7 @@ export async function installDesktop(options, logger) {
       linuxVisualCompat: linuxVisualCompatPatch,
       linuxBrowserViewportSurface: linuxBrowserViewportSurfacePatch,
       linuxBrowserWebviewStacking: linuxBrowserWebviewStackingPatch,
+      linuxBrowserUseHiddenWebviewPaint: linuxBrowserUseHiddenWebviewPaintPatch,
       linuxRightPanelPaneTabs: linuxRightPanelPaneTabsPatch,
       linuxBrowserCommentPosition: linuxBrowserCommentPositionPatch,
       linuxBrowserCommentSubmitMode: linuxBrowserCommentSubmitModePatch,
@@ -1809,6 +1815,8 @@ const LINUX_RIGHT_PANEL_HEADER_PASSTHROUGH_PATCH_MARKER =
   'codexLinuxRightPanelHeaderPassthrough';
 const LINUX_RIGHT_PANEL_HEADER_OFFSET_PATCH_MARKER = 'codexLinuxRightPanelHeaderOffset';
 const LINUX_BROWSER_COMMENT_POSITION_PATCH_MARKER = 'codexLinuxBrowserCommentPosition';
+const LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH_MARKER =
+  'codexLinuxBrowserUseHiddenWebviewPaint';
 const LINUX_BROWSER_COMMENT_SUBMIT_MODE_PATCH_MARKER = 'codexLinuxBrowserCommentSubmitMode';
 const LINUX_BROWSER_COMMENT_SUBMIT_CLEANUP_PATCH_MARKER =
   'codexLinuxBrowserCommentSubmitCleanup';
@@ -1923,6 +1931,8 @@ const LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_PATTERN =
   /if\(this\.browserUseCaptureSurfaceSize!=null\)\{H\(this\.container,this\.webview,(?<boundsVar>[A-Za-z_$][\w$]*)\);return\}if\(this\.state\.isVisible\)\{this\.lastVisibleBounds=\k<boundsVar>,B\(this\.container,this\.webview,\k<boundsVar>,this\.state\.scale,this\.state\.windowZoom\?\?1\);return\}/;
 const LINUX_BROWSER_WEBVIEW_CAPTURE_SURFACE_CURRENT_PATTERN =
   /if\(this\.browserUseCaptureSurfaceSize!=null\)\{if\(this\.state\.isVisible&&this\.state\.bounds!=null\)\{this\.lastVisibleBounds=this\.state\.bounds,B\(this\.container,this\.webview,this\.state\.bounds,this\.state\.scale,this\.state\.windowZoom\?\?1\);return\}H\(this\.container,this\.webview,(?<boundsVar>[A-Za-z_$][\w$]*)\);return\}\/\* codexLinuxBrowserWebviewCaptureSurface \*\/if\(this\.state\.isVisible\)\{this\.lastVisibleBounds=\k<boundsVar>,B\(this\.container,this\.webview,\k<boundsVar>,this\.state\.scale,this\.state\.windowZoom\?\?1\);return\}/;
+const LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATTERN =
+  /(?<condition>[A-Za-z_$][\w$]*\|\|this\.state\.shouldPaint===!1)\?\((?<bootstrapFn>[A-Za-z_$][\w$]*)\((?<containerVar>[A-Za-z_$][\w$]*),(?<webviewVar>[A-Za-z_$][\w$]*),(?<cursorVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*),this\.state\.scale,this\.state\.windowZoom\?\?1\),`bootstrap`\):this\.isStaged\?\((?<stagedFn>[A-Za-z_$][\w$]*)\(\k<containerVar>,\k<webviewVar>,\k<cursorVar>,\k<boundsVar>,this\.state\.scale,this\.state\.windowZoom\?\?1\),`staged`\)/;
 const LINUX_RIGHT_PANEL_PANE_TABS_HEADER_PATTERN = /(?<prop>headerHeight):`toolbar`/;
 const LINUX_RIGHT_PANEL_PANE_TABS_BEFORE_LIST_PATTERN =
   /beforeList:\(0,(?<jsxVar>[A-Za-z_$][\w$]*)\.jsxs\)\(\k<jsxVar>\.Fragment,\{children:\[(?<isFullWidthVar>[A-Za-z_$][\w$]*)&&!(?<isEdgeVar>[A-Za-z_$][\w$]*)&&\(0,\k<jsxVar>\.jsx\)\((?<motionVar>[A-Za-z_$][\w$]*)\.div,\{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:\{width:(?<leftWidthVar>[A-Za-z_$][\w$]*)\}\}\),(?<beforeListVar>[A-Za-z_$][\w$]*)\]\}\),/;
@@ -6350,6 +6360,123 @@ function hasLinuxBrowserManagedWebviewManager(bundleSource) {
   );
 }
 
+export async function patchRendererLinuxBrowserUseHiddenWebviewPaintBundle(
+  extractedAppDir,
+  logger
+) {
+  const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+  const assetNames = await fs.promises.readdir(assetsDir);
+  const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
+  let sawCandidate = false;
+  let firstAnchorError = null;
+  let firstAnchorErrorSourceName = null;
+
+  for (const assetName of jsAssets) {
+    const assetPath = path.join(assetsDir, assetName);
+    const original = await fs.promises.readFile(assetPath, 'utf8');
+    if (!isLinuxBrowserUseHiddenWebviewPaintCandidateBundle(original)) {
+      continue;
+    }
+
+    sawCandidate = true;
+    logger.info(`Resolved renderer Browser Use hidden webview paint bundle ${assetName}`);
+
+    let result;
+    try {
+      result = applyLinuxBrowserUseHiddenWebviewPaintPatch(original, { sourceName: assetName });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith(LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH_BASE_ERROR_MESSAGE)
+      ) {
+        if (!firstAnchorError) {
+          firstAnchorError = error;
+          firstAnchorErrorSourceName = assetName;
+        }
+        logger.warn(
+          `Skipping Linux Browser Use hidden webview paint patch for ${assetName} because bundle anchors were not compatible: ${error.message}`
+        );
+        continue;
+      }
+      throw error;
+    }
+
+    if (result.updated !== original) {
+      await fs.promises.writeFile(assetPath, result.updated, 'utf8');
+      logger.info(`Patched Linux Browser Use hidden webview paint into renderer bundle ${assetName}`);
+    }
+    return {
+      status: result.status,
+      sourceName: assetName
+    };
+  }
+
+  if (!sawCandidate) {
+    logger.warn(
+      'Skipping Linux Browser Use hidden webview paint patch because no renderer candidate bundle was detected.'
+    );
+    return {
+      status: 'skipped',
+      reason: 'bundle-not-found'
+    };
+  }
+
+  logger.warn(
+    `Skipping Linux Browser Use hidden webview paint patch because renderer candidates were incompatible with the expected anchors.${firstAnchorErrorSourceName ? ` Source: ${firstAnchorErrorSourceName}.` : ''}`
+  );
+  return {
+    status: 'skipped',
+    reason: 'anchor-mismatch',
+    sourceName: firstAnchorErrorSourceName,
+    details: firstAnchorError?.message ?? null
+  };
+}
+
+export function applyLinuxBrowserUseHiddenWebviewPaintPatch(bundleSource, options = {}) {
+  if (options.skip) {
+    return {
+      updated: bundleSource,
+      status: 'skipped'
+    };
+  }
+  const updated = injectLinuxBrowserUseHiddenWebviewPaintPatch(bundleSource, options);
+  return {
+    updated,
+    status: updated === bundleSource ? 'already-applied' : 'applied'
+  };
+}
+
+export function injectLinuxBrowserUseHiddenWebviewPaintPatch(bundleSource, options = {}) {
+  if (bundleSource.includes(LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH_MARKER)) {
+    return bundleSource;
+  }
+
+  return replaceRegexOrThrow(
+    bundleSource,
+    LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATTERN,
+    ({
+      bootstrapFn,
+      boundsVar,
+      condition,
+      containerVar,
+      cursorVar,
+      stagedFn,
+      webviewVar
+    }) =>
+      `${condition}?(this.hostKind===\`hidden-browser-use\`&&typeof process<\`u\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH!==\`1\`?${stagedFn}(${containerVar},${webviewVar},${cursorVar},${boundsVar},this.state.scale,this.state.windowZoom??1):${bootstrapFn}(${containerVar},${webviewVar},${cursorVar},${boundsVar},this.state.scale,this.state.windowZoom??1),\`bootstrap\`/* ${LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH_MARKER} */):this.isStaged?(${stagedFn}(${containerVar},${webviewVar},${cursorVar},${boundsVar},this.state.scale,this.state.windowZoom??1),\`staged\`)`,
+    buildLinuxBrowserUseHiddenWebviewPaintPatchErrorMessage(bundleSource, options.sourceName)
+  );
+}
+
+function isLinuxBrowserUseHiddenWebviewPaintCandidateBundle(bundleSource) {
+  return (
+    hasLinuxBrowserManagedWebviewManager(bundleSource) &&
+    bundleSource.includes('hidden-browser-use') &&
+    (LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATTERN.test(bundleSource) ||
+      bundleSource.includes(LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH_MARKER))
+  );
+}
+
 export async function patchRendererLinuxRightPanelPaneTabsBundle(extractedAppDir, logger) {
   const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
   const assetNames = await fs.promises.readdir(assetsDir);
@@ -6824,6 +6951,14 @@ function buildLinuxBrowserWebviewStackingPatchErrorMessage(bundleSource, sourceN
   );
 }
 
+function buildLinuxBrowserUseHiddenWebviewPaintPatchErrorMessage(bundleSource, sourceName) {
+  return buildPatchErrorMessage(
+    LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH_BASE_ERROR_MESSAGE,
+    sourceName,
+    analyzeLinuxBrowserUseHiddenWebviewPaintBundle(bundleSource)
+  );
+}
+
 function buildLinuxRightPanelPaneTabsPatchErrorMessage(bundleSource, sourceName) {
   return buildPatchErrorMessage(
     LINUX_RIGHT_PANEL_PANE_TABS_PATCH_BASE_ERROR_MESSAGE,
@@ -6958,6 +7093,25 @@ function analyzeLinuxBrowserWebviewStackingBundle(bundleSource) {
       !detected.webviewSyncMethod && 'browser webview sync method',
       !detected.webviewDetachMethod && 'browser webview detach method',
       !detected.captureSurfaceVisibleBranch && 'capture-surface visible branch'
+    ].filter(Boolean)
+  };
+}
+
+function analyzeLinuxBrowserUseHiddenWebviewPaintBundle(bundleSource) {
+  const detected = {
+    managedWebviewManager: hasLinuxBrowserManagedWebviewManager(bundleSource),
+    hiddenBrowserUseHost: bundleSource.includes('hidden-browser-use'),
+    bootstrapPaintBranch:
+      LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATTERN.test(bundleSource) ||
+      bundleSource.includes(LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH_MARKER)
+  };
+
+  return {
+    detected,
+    missingAnchors: [
+      !detected.managedWebviewManager && 'managed Browser webview manager',
+      !detected.hiddenBrowserUseHost && 'hidden Browser Use host kind',
+      !detected.bootstrapPaintBranch && 'bootstrap hidden-webview paint branch'
     ].filter(Boolean)
   };
 }

@@ -10,6 +10,7 @@ import {
   applyLinuxBrowserCommentPositionPatch,
   applyLinuxBrowserCommentSubmitCleanupPatch,
   applyLinuxBrowserCommentSubmitModePatch,
+  applyLinuxBrowserUseHiddenWebviewPaintPatch,
   applyLinuxBrowserWebviewStackingPatch,
   applyLinuxBrowserViewportSurfacePatch,
   applyLinuxRightPanelPaneTabsPatch,
@@ -60,6 +61,7 @@ import {
   injectLinuxBrowserCommentPositionPatch,
   injectLinuxBrowserCommentSubmitCleanupPatch,
   injectLinuxBrowserCommentSubmitModePatch,
+  injectLinuxBrowserUseHiddenWebviewPaintPatch,
   injectLinuxBrowserWebviewStackingPatch,
   injectLinuxBrowserViewportSurfacePatch,
   injectLinuxRightPanelPaneTabsPatch,
@@ -104,6 +106,7 @@ import {
   patchRendererBackgroundSubagentsPanelBundle,
   patchRendererLinuxBrowserCommentSubmitCleanupBundle,
   patchRendererLinuxBrowserCommentSubmitModeBundle,
+  patchRendererLinuxBrowserUseHiddenWebviewPaintBundle,
   patchRendererLinuxBrowserWebviewStackingBundle,
   patchRendererLinuxBrowserViewportSurfaceBundle,
   patchRendererLinuxRightPanelPaneTabsBundle,
@@ -778,6 +781,8 @@ const LINUX_BROWSER_WEBVIEW_STACKING_BUNDLE_WITH_CAPTURE_26_519 =
     'syncContainerStyle(){B(this.container,this.webview,{x:1,y:2,width:300,height:200},1,1)}',
     'syncContainerStyle(){let e=z({bounds:this.state.bounds,browserUseCaptureSurfaceSize:this.browserUseCaptureSurfaceSize,browserUseViewportSize:this.browserUseViewportSize,hasBrowserUsePaintHost:this.hasBrowserUsePaintHost,isVisible:this.state.isVisible,lastVisibleBounds:this.lastVisibleBounds});if(e==null){V(this.container,this.webview,this.lastVisibleBounds,this.browserUseViewportSize,this.isBrowserUseActive||this.browserUseViewportSize!=null);return}if(this.browserUseCaptureSurfaceSize!=null){H(this.container,this.webview,e);return}if(this.state.isVisible){this.lastVisibleBounds=e,B(this.container,this.webview,e,this.state.scale,this.state.windowZoom??1);return}H(this.container,this.webview,e)}'
   );
+const LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_MANAGED_26_623 =
+  'function dSe(e){return e===`hidden-browser-use`?null:e}function kSe(){let e=document.querySelector(`[data-browser-sidebar-webview-host-root]`);return e}var Ux=class{hostKind;state={bounds:null,isVisible:!1,mountGeneration:0,scale:1,shouldPaint:!0,windowZoom:1};syncContainerStyle(){let e=this.container,t=this.cursorOverlayHost,n=this.webview;if(e==null||t==null||n==null)return`hidden`;let r=this.state.shouldBootstrap===!0,i=xSe({bounds:this.state.bounds,isVisible:this.state.isVisible||r,lastVisibleBounds:this.lastVisibleBounds});if(i!=null&&this.browserUseCaptureSurfaceSize==null){this.lastVisibleBounds=i,this.attachToDom();let a=this.state.isVisible?null:SSe({browserUseCaptureSurfaceSize:null,browserUseViewportSize:this.browserUseViewportSize,isBrowserUseActive:this.isBrowserUseActive||this.isTabCaptureActive,lastVisibleBounds:i});return a==null?r||this.state.shouldPaint===!1?(wSe(e,n,t,i,this.state.scale,this.state.windowZoom??1),`bootstrap`):this.isStaged?(TSe(e,n,t,i,this.state.scale,this.state.windowZoom??1),`staged`):(Mx(e,n,t,i,this.state.scale,this.state.windowZoom??1),`visible`):(CSe(e,n,t,a),`hidden`)}return`hidden`}};F.info(`IAB_LIFECYCLE renderer created browser sidebar webview`);';
 const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_519 =
   'function $t(){let e=C(ie),t=C(Ae),n=C(R),r=C(ce),i=C(ne),a=C(ge),{headerLeftWidth:o,headerRightWidth:s}=Oe(),c=Dt`max(0px, calc(${s}px)`;return(0,Q.jsx)(Vt,{headerHeight:`toolbar`,beforeList:(0,Q.jsxs)(Q.Fragment,{children:[i&&!a&&(0,Q.jsx)(P.div,{"aria-hidden":!0,className:`pointer-events-none h-full shrink-0`,style:{width:o}}),n]}),afterListSticky:t,emptyState:r,afterList:(0,Q.jsxs)(Q.Fragment,{children:[e,(0,Q.jsx)(Qt,{}),(0,Q.jsx)(P.div,{"aria-hidden":!0,"data-testid":`right-panel-tab-bar-header-spacer`,className:`pointer-events-none flex h-full shrink-0 items-center`,style:{width:c}})]}),controller:Ve})}function Un({children:e}){let l=C(G);return(0,Q.jsx)(`div`,{children:(0,Q.jsx)(P.div,{children:(0,Q.jsxs)(`div`,{className:`h-full min-h-0 min-w-0 overflow-hidden [--thread-content-top-inset:calc(var(--spacing)*8)]`,children:[e,l]})})})}var Mr={RightPanelTabs:(0,Z.memo)(fr)};function Qt(){return S().formatMessage({id:`codex.rightPanel.expandFullWidth`})}';
 const LINUX_RIGHT_PANEL_PANE_TABS_BUNDLE_26_527 =
@@ -6751,6 +6756,80 @@ test('patchRendererLinuxBrowserWebviewStackingBundle patches the Browser manager
     assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewHostPosition/);
     assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewHostContainer/);
     assert.match(await fs.promises.readFile(bundlePath, 'utf8'), /codexLinuxBrowserWebviewDetachDelay/);
+  } finally {
+    await fs.promises.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('injectLinuxBrowserUseHiddenWebviewPaintPatch keeps hidden Browser Use webviews painted', () => {
+  const updated = injectLinuxBrowserUseHiddenWebviewPaintPatch(
+    LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_MANAGED_26_623
+  );
+
+  assert.match(updated, /codexLinuxBrowserUseHiddenWebviewPaint/);
+  assert.match(updated, /this\.hostKind===`hidden-browser-use`/);
+  assert.match(
+    updated,
+    /CODEX_DESKTOP_DISABLE_LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_PATCH/
+  );
+  assert.match(updated, /TSe\(e,n,t,i,this\.state\.scale,this\.state\.windowZoom\?\?1\)/);
+  assert.match(updated, /wSe\(e,n,t,i,this\.state\.scale,this\.state\.windowZoom\?\?1\)/);
+});
+
+test('injectLinuxBrowserUseHiddenWebviewPaintPatch is idempotent', () => {
+  const once = injectLinuxBrowserUseHiddenWebviewPaintPatch(
+    LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_MANAGED_26_623
+  );
+  const twice = injectLinuxBrowserUseHiddenWebviewPaintPatch(once);
+
+  assert.equal(twice, once);
+});
+
+test('applyLinuxBrowserUseHiddenWebviewPaintPatch skips patching when disabled', () => {
+  const result = applyLinuxBrowserUseHiddenWebviewPaintPatch(
+    LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_MANAGED_26_623,
+    {
+      skip: true
+    }
+  );
+
+  assert.equal(result.updated, LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_MANAGED_26_623);
+  assert.equal(result.status, 'skipped');
+});
+
+test('patchRendererLinuxBrowserUseHiddenWebviewPaintBundle patches the managed Browser bundle', async () => {
+  const rootDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'codex-browser-use-hidden-webview-paint-ok-')
+  );
+  try {
+    const extractedAppDir = path.join(rootDir, 'extracted');
+    const assetsDir = path.join(extractedAppDir, 'webview', 'assets');
+    await fs.promises.mkdir(assetsDir, { recursive: true });
+    const bundlePath = path.join(assetsDir, 'app-main.js');
+    await fs.promises.writeFile(
+      bundlePath,
+      LINUX_BROWSER_USE_HIDDEN_WEBVIEW_PAINT_MANAGED_26_623,
+      'utf8'
+    );
+
+    const logger = {
+      info() {},
+      warn() {}
+    };
+
+    const result = await patchRendererLinuxBrowserUseHiddenWebviewPaintBundle(
+      extractedAppDir,
+      logger
+    );
+
+    assert.deepEqual(result, {
+      status: 'applied',
+      sourceName: 'app-main.js'
+    });
+    assert.match(
+      await fs.promises.readFile(bundlePath, 'utf8'),
+      /codexLinuxBrowserUseHiddenWebviewPaint/
+    );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
