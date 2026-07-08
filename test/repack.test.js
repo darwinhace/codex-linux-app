@@ -562,6 +562,8 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_81905 =
   'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{AP as n,BP as r,CP as i,EB as a,Fl as o,HP as s,Hu as c,IP as l,JN as u,Ka as d,LP as f,Mj as p,PP as m,Pj as h,Qj as g,RV as _,SP as v,TB as y,TP as b,Ua as x,VP as ee,Vp as te,XO as S,Xu as C,YN as ne,YO as w,_S as re,aD as T,bB as ie,cM as ae,cP as oe,eC as E,eM as D,fN as O,gP as k,gS as A,hN as j,iC as M,iD as N,jE as P,jP as F,jV as I,mN as L,mP as R,nD as se,oP as z,oa as B,pN as V,pS as H,qN as U,qP as ce,sM as le,sa as ue,tC as de,tD as fe,tu as pe,vp as me,wB as he,wP as W,yE as ge,yp as _e,zV as ve}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~pull-requests-page~plug~kmtatxxf-IUI8plS9.js";function pt(){let z=(0,Z.jsx)(Ee,{ariaLabel:ne.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:se,resizeHandle:u==null?void 0:{ariaLabel:ne.formatMessage(Q.resizeMascot),...u},state:re.mascotState,style:c,transientState:l});return(0,Z.jsx)(`main`,{children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":D?void 0:`mascot`,children:z})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var zt,X,Z,Q,Yt=e((()=>{zt=_(),X=t(ve(),1),Z=I(),Q=ee({})}));';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_101652 =
   'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{$U as n,AM as r,AW as i,BU as a,DW as o,Dx as s,EW as c,Fx as l,GY as u,IV as d,JR as f,LW as p,MI as m,MW as h,My as g,NM as _,PM as v,RV as y,VU as b,Vp as x,WI as S,Wp as ee,XY as C,YR as w,YY as te,ZU as T,ZY as E,_L as D,_N as O,aH as ne,aU as k,aW as A,bB as re,bW as j,cH as M,cZ as N,fW as ie,fy as P,gH as F,hH as I,hL as L,hW as R,iH as ae,iU as oe,jW as se,lZ as ce,mL as z,mW as B,n_ as V,nw as H,oH as U,oU as le,op as ue,pW as de,r_ as fe,sU as pe,sW as me,sp as W,tZ as he,tw as ge,vL as _e,vN as ve,wW as ye,ww as be,xN as G,xW as K,yB as xe,zU as q}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~onboarding-page~hotkey-~ke3yc5wu-BLQiF1Gs.js";function Xt(){let V=(0,Z.jsx)(ke,{ariaLabel:T.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:z,resizeHandle:d==null?void 0:{ariaLabel:T.formatMessage(Q.resizeMascot),...d},state:D.mascotState,style:l,transientState:u});return(0,Z.jsx)(`main`,{className:`relative h-screen w-screen overflow-hidden bg-transparent`,children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":j?void 0:`mascot`,children:V})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var Y,X,Z,Q,Yt=e((()=>{Y=N(),R(),T(),u(),X=t(ce(),1),h(),H(),Z=he(),Q=se({})}));';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_141536 =
+  'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{At as n,El as r,vl as p}from"./app-initial~app-main~worktree-init-v2-page~appgen-settings-page~page~appgen-publication-ter~fzo5ij6p-BKVLyD1q.js";import{pv as H}from"./app-initial~app-main~new-thread-panel-page-BZHGOlMi.js";function Xt(){let V=(0,Z.jsx)(q,{ariaLabel:T.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:z,resizeHandle:d==null?void 0:{ariaLabel:T.formatMessage(Q.resizeMascot),...d},state:D.mascotState,style:l,transientState:u});return(0,Z.jsx)(`main`,{className:`relative h-screen w-screen overflow-hidden bg-transparent`,children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":j?void 0:`mascot`,children:V})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var Y,X,Z,Q,Yt=e((()=>{Y=N(),X=t(r(),1),Z=p(),Q=se({})}));';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -2913,6 +2915,10 @@ fi
 mode="$2"
 case "$mode" in
   kwin-list)
+    if [ "$CODEX_TEST_KWIN_LIST_FAIL" = "1" ]; then
+      echo "timed out waiting for KWin script callback" >&2
+      exit 3
+    fi
     printf '%s\\n' '{"backend":"kwin","windows":[{"uuid":"33eb757c-1dda-46df-aed5-c5bada257015","caption":"Codex","desktopFile":"codex","resourceClass":"codex","resourceName":"codex","pid":61525,"x":10,"y":20,"width":800,"height":600,"workspace":1,"minimized":false,"active":true,"clientType":"wayland","normalWindow":true,"desktopWindow":false,"skipTaskbar":false,"dock":false}]}'
     ;;
   kwin-activate)
@@ -2946,6 +2952,7 @@ esac
     assert.equal(recoveredDoctor.readiness.can_focus_windows, true);
     assert.equal(recoveredDoctor.dependencies.windows.preferred_backend, 'kwin');
     assert.equal(recoveredDoctor.dependencies.windows.probes.kwin.ok, true);
+    assert.equal(recoveredDoctor.dependencies.windows.probes.kwin.live_probe.ok, true);
     assert.equal(recoveredDoctor.readiness.can_capture_screenshot, true);
     assert.equal(recoveredDoctor.dependencies.screenshot_probe.ok, true);
     assert.equal(recoveredDoctor.dependencies.screenshot_probe.source, 'spectacle');
@@ -2961,6 +2968,19 @@ esac
         /^sudo systemctl .*ydotool/.test(command)
       ),
       false
+    );
+
+    const kwinListFailDoctor = await runJsonProcess(result.backendPath, ['doctor', '--json'], {
+      env: { ...bareMcpEnv, CODEX_TEST_KWIN_LIST_FAIL: '1' }
+    });
+    assert.equal(kwinListFailDoctor.status, 'needs-setup');
+    assert.equal(kwinListFailDoctor.readiness.can_list_windows, false);
+    assert.equal(kwinListFailDoctor.dependencies.windows.preferred_backend, null);
+    assert.equal(kwinListFailDoctor.dependencies.windows.probes.kwin.ok, false);
+    assert.equal(kwinListFailDoctor.dependencies.windows.probes.kwin.static_probe.ok, true);
+    assert.match(
+      kwinListFailDoctor.dependencies.windows.probes.kwin.live_probe.error,
+      /timed out waiting for KWin script callback/
     );
 
     const recoveredWindows = await runJsonProcess(result.backendPath, ['windows', '--json'], {
@@ -5176,6 +5196,25 @@ test('injectLinuxPetYappingUsagePatch supports 26.623.101652 Rolldown JSX export
   assert.match(updated, /X\.useState\(null\)/);
   assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function Xt\(/);
   assert.doesNotMatch(updated, /Z=he\(\);function codexLinuxPetYappingUsage/);
+  assert.match(
+    updated,
+    /children:\[V,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
+  );
+  assert.match(
+    updated,
+    /let t=an\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?an\(e\.querySelector\(_n\)\),n=on\(e\.querySelector\(vn\)\)/
+  );
+});
+
+test('injectLinuxPetYappingUsagePatch supports 26.623.141536 Rolldown JSX exports', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_141536);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /pv as codexLinuxFetchUsage/);
+  assert.match(updated, /vl as p/);
+  assert.match(updated, /X\.useState\(null\)/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function Xt\(/);
+  assert.doesNotMatch(updated, /Z=p\(\);function codexLinuxPetYappingUsage/);
   assert.match(
     updated,
     /children:\[V,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/

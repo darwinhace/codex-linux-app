@@ -1454,7 +1454,7 @@ function findLinuxPetYappingUsageJsxRuntime(bundleSource) {
   };
 }
 
-const LINUX_PET_YAPPING_USAGE_ROLLDOWN_REQUEST_IMPORT_NAMES = ['Ay', 'vD', 'YN', 'a'];
+const LINUX_PET_YAPPING_USAGE_ROLLDOWN_REQUEST_IMPORT_NAMES = ['Ay', 'vD', 'YN', 'a', 'pv'];
 const LINUX_PET_YAPPING_USAGE_ROLLDOWN_JSX_IMPORT_NAMES = [
   'yA',
   'Lz',
@@ -1463,7 +1463,8 @@ const LINUX_PET_YAPPING_USAGE_ROLLDOWN_JSX_IMPORT_NAMES = [
   'jV',
   'tZ',
   'xl',
-  'lc'
+  'lc',
+  'vl'
 ];
 const LINUX_PET_YAPPING_USAGE_ROLLDOWN_SPLIT_REQUEST_IMPORTS = [
   {

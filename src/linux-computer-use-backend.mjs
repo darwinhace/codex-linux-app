@@ -381,7 +381,8 @@ function doctorReport() {
   const ready =
     readiness.can_capture_screenshot &&
     readiness.can_send_input &&
-    readiness.can_build_accessibility_tree;
+    readiness.can_build_accessibility_tree &&
+    readiness.can_list_windows;
   return {
     ok: true,
     name: SERVER_NAME,
@@ -851,6 +852,9 @@ function parseWmctrlWindows(stdout) {
 
 function parseKwinWindows(stdout) {
   const payload = JSON.parse(stdout);
+  if (payload && typeof payload.error === 'string' && payload.error.length > 0) {
+    throw new Error(payload.error);
+  }
   const rawWindows = Array.isArray(payload) ? payload : payload.windows;
   if (!Array.isArray(rawWindows)) {
     throw new Error('KWin payload did not include a windows array.');
@@ -1245,7 +1249,8 @@ function getAppState(params = {}) {
 
 function captureScreenshot(params = {}) {
   const explicitPath = normalizeOutputPath(params.output_path ?? params.outputPath);
-  const outputPath = explicitPath ?? path.join(os.tmpdir(), `codex-computer-use-${process.pid}-${Date.now()}.png`);
+  const outputPath =
+    explicitPath ?? path.join(desktopTempDir(), `codex-computer-use-${process.pid}-${Date.now()}.png`);
   const includeData = params.include_data !== false && params.includeData !== false;
   const attempts = screenshotAttempts(outputPath);
   const attemptResults = [];
@@ -1286,6 +1291,26 @@ function captureScreenshot(params = {}) {
     message:
       screenshotFailureMessage(attemptResults)
   };
+}
+
+function desktopTempDir() {
+  const candidates = [
+    process.env.XDG_RUNTIME_DIR ? path.join(process.env.XDG_RUNTIME_DIR, 'codex-computer-use') : null,
+    process.env.TMPDIR,
+    process.env.TEMP,
+    process.env.TMP,
+    os.tmpdir(),
+    '/dev/shm'
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    try {
+      fs.mkdirSync(candidate, { recursive: true });
+      if (directoryWritable(candidate)) {
+        return candidate;
+      }
+    } catch {}
+  }
+  return os.tmpdir();
 }
 
 function screenshotAttempts(outputPath) {
@@ -1573,11 +1598,20 @@ function detectInputBackend(commands) {
 }
 
 function detectWindowBackend(commands) {
-  const probes = {
+  const staticProbes = {
     [KWIN_BACKEND]: probeKwinWindowBackend(commands),
     [GNOME_INTROSPECT_BACKEND]: probeGnomeIntrospectBackend(commands),
     [X11_WMCTRL_BACKEND]: probeWmctrlWindowBackend(commands),
     [X11_XDOTOOL_BACKEND]: probeXdotoolWindowBackend(commands)
+  };
+  const probes = {
+    [KWIN_BACKEND]: liveWindowListProbe(staticProbes[KWIN_BACKEND], listKwinWindows),
+    [GNOME_INTROSPECT_BACKEND]: liveWindowListProbe(
+      staticProbes[GNOME_INTROSPECT_BACKEND],
+      listGnomeIntrospectWindows
+    ),
+    [X11_WMCTRL_BACKEND]: liveWindowListProbe(staticProbes[X11_WMCTRL_BACKEND], listWmctrlWindows),
+    [X11_XDOTOOL_BACKEND]: liveWindowListProbe(staticProbes[X11_XDOTOOL_BACKEND], listXdotoolWindows)
   };
   const backends = [
     probes[KWIN_BACKEND].can_list_windows && KWIN_BACKEND,
@@ -1602,6 +1636,47 @@ function detectWindowBackend(commands) {
         ? null
         : windowPermissionHint()
   };
+}
+
+function liveWindowListProbe(staticProbe, listBackend) {
+  if (!staticProbe.can_list_windows) {
+    return staticProbe;
+  }
+  const result = listBackend();
+  const canListWindows = Boolean(result.ok && Array.isArray(result.windows));
+  const liveProbe = {
+    ok: canListWindows,
+    backend: result.backend,
+    windows: result.windows?.length ?? 0,
+    error: result.error ?? null,
+    helper: result.helper ?? null
+  };
+  const detail = canListWindows
+    ? `${staticProbe.detail} Live ${staticProbe.backend} window listing returned ${liveProbe.windows} window(s).`
+    : `${staticProbe.detail} Live ${staticProbe.backend} window listing failed: ${
+        result.error ?? 'backend did not return a window list'
+      }`;
+  const { backend, command, helper, exact_focus: exactFocus } = staticProbe;
+  return windowProbe(
+    backend,
+    canListWindows,
+    canListWindows && staticProbe.can_focus_apps,
+    canListWindows && staticProbe.can_focus_windows,
+    detail,
+    {
+      command,
+      helper,
+      ...(exactFocus == null ? {} : { exact_focus: exactFocus }),
+      static_probe: {
+        ok: staticProbe.ok,
+        can_list_windows: staticProbe.can_list_windows,
+        can_focus_apps: staticProbe.can_focus_apps,
+        can_focus_windows: staticProbe.can_focus_windows,
+        detail: staticProbe.detail
+      },
+      live_probe: liveProbe
+    }
+  );
 }
 
 function probeKwinWindowBackend(commands = detectCommands(['gdbus', 'python3'])) {
@@ -1804,7 +1879,7 @@ function runDesktopDbusHelper(mode, args = []) {
     };
   }
   const helperPath = path.join(
-    os.tmpdir(),
+    desktopTempDir(),
     `codex-computer-use-dbus-${process.pid}-${Date.now()}-${Math.random()
       .toString(16)
       .slice(2)}.py`
@@ -1851,6 +1926,7 @@ from gi.repository import GLib
 KWIN_SERVICE = 'org.kde.KWin'
 KWIN_SCRIPTING_PATH = '/Scripting'
 KWIN_SCRIPTING_IFACE = 'org.kde.kwin.Scripting'
+KWIN_SCRIPT_IFACE = 'org.kde.kwin.Script'
 KWIN_CALLBACK_IFACE = 'com.openai.Codex.KWinWindowQuery'
 GNOME_SERVICE = 'org.gnome.Shell'
 GNOME_INTROSPECT_PATH = '/org/gnome/Shell/Introspect'
@@ -1914,6 +1990,8 @@ def call_kwin_script(script_builder):
     callback = KWinCallback(bus, object_path, loop)
     script_path = None
     loaded = False
+    start_method = None
+    start_errors = []
 
     def timeout():
         loop.quit()
@@ -1922,10 +2000,15 @@ def call_kwin_script(script_builder):
     GLib.timeout_add(2500, timeout)
     try:
         script = script_builder(unique_name, object_path, KWIN_CALLBACK_IFACE, plugin_name)
-        fd, script_path = tempfile.mkstemp(prefix=plugin_name + '_', suffix='.js')
+        fd, script_path = tempfile.mkstemp(
+            prefix=plugin_name + '_',
+            suffix='.js',
+            dir=kwin_script_dir(),
+        )
         with os.fdopen(fd, 'w', encoding='utf-8') as handle:
             handle.write(script)
-        bus.call_blocking(
+        os.chmod(script_path, 0o644)
+        script_id = bus.call_blocking(
             KWIN_SERVICE,
             KWIN_SCRIPTING_PATH,
             KWIN_SCRIPTING_IFACE,
@@ -1934,17 +2017,40 @@ def call_kwin_script(script_builder):
             (script_path, plugin_name),
         )
         loaded = True
-        bus.call_blocking(
-            KWIN_SERVICE,
-            KWIN_SCRIPTING_PATH,
-            KWIN_SCRIPTING_IFACE,
-            'start',
-            '',
-            (),
-        )
+        try:
+            script_object_path = '%s/Script%d' % (KWIN_SCRIPTING_PATH, int(script_id))
+            bus.call_blocking(
+                KWIN_SERVICE,
+                script_object_path,
+                KWIN_SCRIPT_IFACE,
+                'run',
+                '',
+                (),
+            )
+            start_method = 'script-run'
+        except Exception:
+            start_errors.append(traceback.format_exc().strip())
+            try:
+                bus.call_blocking(
+                    KWIN_SERVICE,
+                    KWIN_SCRIPTING_PATH,
+                    KWIN_SCRIPTING_IFACE,
+                    'start',
+                    '',
+                    (),
+                )
+                start_method = 'scripting-start'
+            except Exception:
+                start_errors.append(traceback.format_exc().strip())
+                raise
         loop.run()
         if callback.payload is None:
-            raise RuntimeError('timed out waiting for KWin script callback')
+            detail = 'timed out waiting for KWin script callback'
+            if start_method:
+                detail += ' after %s' % start_method
+            if start_errors:
+                detail += '; start errors: %s' % ' | '.join(start_errors)
+            raise RuntimeError(detail)
         return callback.payload
     finally:
         try:
@@ -1970,12 +2076,47 @@ def call_kwin_script(script_builder):
                 pass
 
 
+def kwin_script_dir():
+    candidates = []
+    explicit = os.environ.get('CODEX_LINUX_COMPUTER_USE_KWIN_SCRIPT_DIR')
+    if explicit:
+        candidates.append(explicit)
+    xdg_cache = os.environ.get('XDG_CACHE_HOME')
+    if xdg_cache:
+        candidates.append(os.path.join(xdg_cache, 'codex-computer-use', 'kwin-scripts'))
+    home = os.environ.get('HOME')
+    if home:
+        candidates.append(os.path.join(home, '.cache', 'codex-computer-use', 'kwin-scripts'))
+    candidates.append(os.path.join(os.getcwd(), '.tmp', 'codex-computer-use-kwin-scripts'))
+    candidates.append(tempfile.gettempdir())
+    for candidate in candidates:
+        if not candidate:
+            continue
+        try:
+            os.makedirs(candidate, mode=0o700, exist_ok=True)
+            fd, probe_path = tempfile.mkstemp(prefix='probe_', suffix='.tmp', dir=candidate)
+            os.close(fd)
+            os.unlink(probe_path)
+            return candidate
+        except Exception:
+            continue
+    return None
+
+
 def kwin_list_script(service_name, object_path, iface, plugin_name):
     return r'''(function() {
     var serviceName = %s;
     var objectPath = %s;
     var iface = %s;
     var pluginName = %s;
+
+    function sendWindows(payload) {
+        payload.backend = "kwin";
+        payload.pluginName = pluginName;
+        callDBus(serviceName, objectPath, iface, "ReceiveWindows", JSON.stringify(payload), function() {});
+    }
+
+    try {
 
     function read(obj, key) {
         try {
@@ -2091,11 +2232,15 @@ def kwin_list_script(service_name, object_path, iface, plugin_name):
         };
     });
 
-    callDBus(serviceName, objectPath, iface, "ReceiveWindows", JSON.stringify({
-        backend: "kwin",
-        pluginName: pluginName,
+    sendWindows({
         windows: windows
-    }));
+    });
+    } catch (error) {
+        sendWindows({
+            windows: [],
+            error: String(error && (error.stack || error.message) || error)
+        });
+    }
 })();''' % (json.dumps(service_name), json.dumps(object_path), json.dumps(iface), json.dumps(plugin_name))
 
 
@@ -2110,7 +2255,7 @@ def kwin_activate_script(service_name, object_path, iface, plugin_name, target_u
     function send(payload) {
         payload.backend = "kwin";
         payload.pluginName = pluginName;
-        callDBus(serviceName, objectPath, iface, "ReceiveResult", JSON.stringify(payload));
+        callDBus(serviceName, objectPath, iface, "ReceiveResult", JSON.stringify(payload), function() {});
     }
 
     function serialize(value) {
@@ -2579,6 +2724,14 @@ function canWrite(candidate) {
   try {
     fs.accessSync(candidate, fs.constants.W_OK);
     return true;
+  } catch {
+    return false;
+  }
+}
+
+function directoryWritable(candidate) {
+  try {
+    return fs.statSync(candidate).isDirectory() && canWrite(candidate);
   } catch {
     return false;
   }
