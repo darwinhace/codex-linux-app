@@ -339,14 +339,24 @@ const LINUX_TITLE_BAR_OVERLAY_SPLIT_HANDLER_BUNDLE_26_616 =
   'var B8=`#00000000`,Q8=36,$8=`#1f1f1f`,e5=`#ffffff`;function t5(e){return{x:16,y:Math.round((46*e-14)/2)}}function n5(e=1){return{color:B8,symbolColor:a.nativeTheme.shouldUseDarkColors?e5:$8,height:Math.round(Q8*e)}}var r5=class{windowAppearances=new Map;windowZooms=new Map;appShellShortcutStates=new Map;setAppShellShortcutState(e,t){this.appShellShortcutStates.set(e,t)}setWindowZoom(e,t){let n=a.BrowserWindow.fromWebContents(e);n==null||this.windowAppearances.get(n.id)!==`primary`||(process.platform===`darwin`?n.setWindowButtonPosition(t5(t)):(process.platform===`win32`||process.platform===`linux`)&&(this.windowZooms.set(n.id,t),n.setTitleBarOverlay(n5(t))))}};var m5=class{windowManager=new r5;handle(e,n){switch(n.type){case`power-save-blocker-set`:this.updatePowerSaveBlocker(e,n.shouldBlock,n.keepRemoteControlAwakeWhilePluggedIn);break;case`electron-window-zoom-changed`:this.windowManager.setWindowZoom(e,n.windowZoom);break;}}};function o5(n,r){return n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:n5(r)}:{titleBarStyle:`default`}}';
 const LINUX_NATIVE_WINDOW_FRAME_BUNDLE_26_623 =
   'function N9({appearance:e,opaqueWindowSurfaceEnabled:t,platform:n,windowZoom:r=1}){switch(e){case`primary`:return n===`darwin`?t?{titleBarStyle:`hiddenInset`,trafficLightPosition:p9(r)}:{vibrancy:`menu`,titleBarStyle:`hiddenInset`,trafficLightPosition:p9(r)}:n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:m9(r)}:{titleBarStyle:`default`};case`secondary`:return n===`darwin`?t?{titleBarStyle:`default`}:{vibrancy:`menu`,titleBarStyle:`default`}:{titleBarStyle:`default`}}}';
+const LINUX_NATIVE_WINDOW_FRAME_BUNDLE_26_707 =
+  'function z9({appearance:e,opaqueWindowSurfaceEnabled:t,platform:n,windowZoom:r=1}){switch(e){case`quickChat`:case`primary`:return n===`darwin`?{titleBarStyle:`hiddenInset`,trafficLightPosition:A9(r),...e===`quickChat`?{hasShadow:!0,resizable:!0,transparent:!0}:{},...t?{}:{vibrancy:`menu`}}:n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:j9(r),...e===`quickChat`?{resizable:!0}:{}}:{titleBarStyle:`default`,...e===`quickChat`?{resizable:!0}:{}};case`secondary`:return n===`darwin`?t?{titleBarStyle:`default`}:{vibrancy:`menu`,titleBarStyle:`default`}:{titleBarStyle:`default`}}}';
 const LINUX_TITLE_BAR_OVERLAY_APP_SYNC_BUNDLE_26_623 =
   'var Q7=`#00000000`,u9=36,d9=`#1f1f1f`,f9=`#ffffff`;function p9(e){return{x:16,y:Math.round((46*e-14)/2)}}function m9(e=1){return{color:Q7,symbolColor:a.nativeTheme.shouldUseDarkColors?f9:d9,height:Math.round(u9*e)}}var h9=class{windowAppearances=new Map;windowZooms=new Map;appShellShortcutStates=new Map;setAppShellShortcutState(e,t){this.appShellShortcutStates.set(e,t)}setWindowZoom(e,t){let n=a.BrowserWindow.fromWebContents(e);n==null||this.windowAppearances.get(n.id)!==`primary`||(process.platform===`darwin`?n.setWindowButtonPosition(p9(t)):(process.platform===`win32`||process.platform===`linux`)&&(this.windowZooms.set(n.id,t),n.setTitleBarOverlay(m9(t))))}installApplicationMenuTitleBarOverlaySync(e,t){if(process.platform!==`win32`&&process.platform!==`linux`||t!==`primary`)return;let n=()=>{e.isDestroyed()||e.setTitleBarOverlay(m9(this.windowZooms.get(e.id)))};return a.nativeTheme.on(`updated`,n),n(),()=>{a.nativeTheme.off(`updated`,n)}}handle(e,n){switch(n.type){case`power-save-blocker-set`:this.updatePowerSaveBlocker(e,n.shouldBlock,n.keepRemoteControlAwakeWhilePluggedIn);break;}}};function N9({appearance:e,opaqueWindowSurfaceEnabled:t,platform:n,windowZoom:r=1}){switch(e){case`primary`:return n===`darwin`?t?{titleBarStyle:`hiddenInset`,trafficLightPosition:p9(r)}:{vibrancy:`menu`,titleBarStyle:`hiddenInset`,trafficLightPosition:p9(r)}:n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:m9(r)}:{titleBarStyle:`default`};case`secondary`:return n===`darwin`?t?{titleBarStyle:`default`}:{vibrancy:`menu`,titleBarStyle:`default`}:{titleBarStyle:`default`}}}';
+const LINUX_TITLE_BAR_OVERLAY_APP_SYNC_BUNDLE_26_707 =
+  'var Q7=`#00000000`,u9=36,d9=`#1f1f1f`,f9=`#ffffff`;function p9(e){return{x:16,y:Math.round((46*e-14)/2)}}function m9(e=1){return{color:Q7,symbolColor:a.nativeTheme.shouldUseDarkColors?f9:d9,height:Math.round(u9*e)}}var h9=class{windowAppearances=new Map;windowZooms=new Map;appShellShortcutStates=new Map;setAppShellShortcutState(e,t){this.appShellShortcutStates.set(e,t)}setWindowZoom(e,t){let n=a.BrowserWindow.fromWebContents(e),r=n&&this.windowAppearances.get(n.id);n==null||r!==`primary`&&r!==`quickChat`||(process.platform===`darwin`?n.setWindowButtonPosition(p9(t)):(process.platform===`win32`||process.platform===`linux`)&&(this.windowZooms.set(n.id,t),n.setTitleBarOverlay(m9(t))))}installApplicationMenuTitleBarOverlaySync(e,t){if(process.platform!==`win32`&&process.platform!==`linux`||t!==`primary`&&t!==`quickChat`)return;let n=()=>{e.isDestroyed()||e.setTitleBarOverlay(m9(this.windowZooms.get(e.id)))};return a.nativeTheme.on(`updated`,n),n(),()=>{a.nativeTheme.off(`updated`,n)}}handle(e,n){switch(n.type){case`power-save-blocker-set`:this.updatePowerSaveBlocker(e,n.shouldBlock,n.keepRemoteControlAwakeWhilePluggedIn);break;}}};function z9({appearance:e,opaqueWindowSurfaceEnabled:t,platform:n,windowZoom:r=1}){switch(e){case`quickChat`:case`primary`:return n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:m9(r),...e===`quickChat`?{resizable:!0}:{}}:{titleBarStyle:`default`,...e===`quickChat`?{resizable:!0}:{}}}}';
 const LINUX_PRIMARY_WINDOW_MODE_CONTROLS_BUNDLE_26_623 =
   'case`electron-set-window-mode`:this.setPrimaryWindowMode(e,{mode:n.mode,onboardingVariant:n.onboardingVariant});break;}setPrimaryWindowMode(e,t){let n=a.BrowserWindow.fromWebContents(e);if(!n||n.isDestroyed())return;let r=this.windowManager.getPrimaryWindow();if(!r||r.isDestroyed()||r.id!==n.id)return;let i=NQ(t);if((0,If.default)(this.primaryWindowMode,t)){i!=null&&this.showPrimaryWindow(n);return}if(this.primaryWindowMode=t,i!=null){this.primaryWindowRestoreBounds||={bounds:n.getNormalBounds(),wasMaximized:n.isMaximized(),wasFullScreen:n.isFullScreen()},n.isFullScreen()&&n.setFullScreen(!1),n.isMaximized()&&n.unmaximize(),n.setResizable(!1),n.setMaximizable(!1),n.setFullScreenable(!1),n.setMinimumSize(i.width,i.height),n.setSize(i.width,i.height),n.center(),this.showPrimaryWindow(n);return}if(n.setResizable(!0),n.setMaximizable(!0),n.setFullScreenable(!0),this.primaryWindowRestoreBounds){let{bounds:e,wasMaximized:t,wasFullScreen:r}=this.primaryWindowRestoreBounds;this.primaryWindowRestoreBounds=null}}';
+const LINUX_PRIMARY_WINDOW_MODE_CONTROLS_BUNDLE_26_707 =
+  'case`electron-set-window-mode`:this.setPrimaryWindowMode(e,{mode:t.mode,onboardingVariant:t.onboardingVariant});break;}setPrimaryWindowMode(e,t){let n=c.BrowserWindow.fromWebContents(e);if(!n||n.isDestroyed())return;let r=this.windowManager.getPrimaryWindow();if(!r||r.isDestroyed()||r.id!==n.id)return;let i=V$(t);if((0,af.default)(this.primaryWindowMode,t)){i!=null&&this.showPrimaryWindow(n);return}if(this.primaryWindowMode=t,i!=null){this.primaryWindowRestoreBounds||={bounds:n.getNormalBounds(),wasMaximized:n.isMaximized(),wasFullScreen:n.isFullScreen()},n.isFullScreen()&&n.setFullScreen(!1),n.isMaximized()&&n.unmaximize(),n.setResizable(!0);let e=c.screen.getDisplayMatching(n.getNormalBounds()).workAreaSize,t={width:0,height:0},r={width:Math.min(i.width,e.width-t.width),height:Math.min(i.height,e.height-t.height)},a=this.windowManager.getPrimaryMinimumSize();n.setMaximizable(!1),n.setFullScreenable(!1),n.setMinimumSize(Math.min(a.width,r.width),Math.min(a.height,r.height)),n.setSize(r.width,r.height),n.center(),this.showPrimaryWindow(n);return}if(n.setResizable(!0),n.setMaximizable(!0),n.setFullScreenable(!0),this.primaryWindowRestoreBounds){this.primaryWindowRestoreBounds=null}}';
 const LINUX_WINDOW_ICON_BUNDLE_26_623 =
   'M=new a.BrowserWindow({width:b,height:x,...S===void 0||C===void 0?{}:{x:S,y:C},title:n??a.app.getName(),backgroundColor:A,show:l,parent:p,focusable:m,...process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{},backgroundMaterial:j??void 0,...D,minWidth:T?.width,minHeight:T?.height,webPreferences:k});this.applyWindowBackdrop(M,c,!0);';
+const LINUX_WINDOW_FOCUSABLE_BUNDLE_26_707 =
+  'M=new c.BrowserWindow({width:b,height:x,...S===void 0||C===void 0?{}:{x:S,y:C},title:t??c.app.getName(),backgroundColor:A,show:s,parent:f,...m===void 0?{}:{focusable:m},...process.platform===`win32`?{autoHideMenuBar:!0}:process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AUTO_HIDE_MENU_BAR!==`1`?{/* codexLinuxMenuBarAutoHide */autoHideMenuBar:!0}:{},backgroundMaterial:j??void 0,...D,minWidth:T?.width,minHeight:T?.height,webPreferences:k});this.applyWindowBackdrop(M,o,!0);';
 const LINUX_CLOSE_CANCEL_BUNDLE_CURRENT =
   'function dp({isWindows:e,disableQuitConfirmationPrompt:n,quitState:r,windows:i,applicationMenuManager:a,ensureHostWindow:o,appEvent:d,errorReporter:f}){let p=!1,m=!1;t.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!t.app.isPackaged||process.platform!==`darwin`&&!e)&&t.app.quit()}),t.app.on(`before-quit`,a=>{if(e||r.canQuitWithoutPrompt()||n){m=!0,i.markAppQuitting();return}let o=t.app.getName();if(t.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${o}?`,message:`Quit ${o}?`,detail:`Any local threads running on this machine will be interrupted and scheduled automations won\'t run`})!==0){a.preventDefault();return}r.markQuitApproved(),m=!0,i.markAppQuitting()}),t.app.on(`activate`,()=>{m||(i.showLastActivePrimaryWindow()||o(`local`),a.refresh())})}';
+const LINUX_CLOSE_CANCEL_BUNDLE_26_707 =
+  'function U6({isWindows:e,disableQuitConfirmationPrompt:t,quitState:r,windows:i,applicationMenuManager:o,ensureWindow:s,hotkeyWindowLifecycleManager:l}){let g=!1,_=!1;c.app.on(`before-quit`,o=>{if(Ka()){o.preventDefault();return}let s=kb(),l=n.Cr().some(e=>e.status===`ACTIVE`);if(e||r.canQuitWithoutPrompt()||t||!s&&!l){_=!0,i.markAppQuitting();return}let u=c.app.getName(),d=a.H(),f=d.formatMessage({messageId:y6,defaultMessage:b6,values:{appName:u}});if(c.dialog.showMessageBoxSync({type:`warning`,buttons:[d.formatMessage({messageId:`desktop.quitConfirmation.quit`,defaultMessage:`Quit`}),d.formatMessage({messageId:`desktop.quitConfirmation.cancel`,defaultMessage:`Cancel`})],defaultId:0,cancelId:1,noLink:!0,title:f,message:f,detail:W6({nativeIntl:d,appName:u,hasInProgressLocalConversation:s,hasEnabledAutomations:l})})!==0){o.preventDefault();return}r.markQuitApproved(),_=!0,i.markAppQuitting()}),c.app.on(`activate`,()=>{_||(i.showLastActivePrimaryWindow()||s(),o.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_422 =
   'function Zl({isWindows:e,disableQuitConfirmationPrompt:r,quitState:i,windows:a,applicationMenuManager:o,ensureHostWindow:s,automationManager:t,flushAndDisposeContexts:n,disposables:c,appEvent:l,errorReporter:u}){let d=!1,g=!1;n.app.on(`window-all-closed`,()=>{(process.platform===`darwin`&&!n.app.isPackaged||process.platform!==`darwin`&&!e)&&n.app.quit()}),n.app.on(`before-quit`,o=>{let s=y_(),c=t.Wn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:Mb({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();return}i.markQuitApproved(),g=!0,a.markAppQuitting()}),n.app.on(`activate`,()=>{g||(a.showLastActivePrimaryWindow()||s(`local`),o.refresh())})}';
 const LINUX_CLOSE_CANCEL_BUNDLE_26_422_STABLE =
@@ -402,10 +412,14 @@ const CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_608 =
   'var nL=`chrome-native-hosts-v2.json`;async function TL(e){let t=WL(),n=QL({devRuntimeRepoRoot:e.devRuntimeRepoRoot,nativeHostName:e.nativeHostName,resourcesPath:e.resourcesPath}),i=await UL({pluginRoot:e.pluginRoot,target:t}),a=e.channel??RL(e.nativeHostName),o=new Date().toISOString(),s={browserClientPath:(0,r.join)(e.pluginRoot,`scripts`,`browser-client.mjs`),codexCliPath:n.codexCliPath,codexHome:e.codexHome,extensionHostPath:i,nodePath:n.nodePath,...n.nodeModuleDirs.length===0?{}:{nodeModuleDirs:n.nodeModuleDirs},nodeReplPath:n.nodeReplPath,resourcesPath:e.resourcesPath},c={schemaVersion:iL,paths:s,updatedAt:o};await Promise.all([DL({codexHome:e.codexHome,resource:c}),HL({extensionHostPath:i,extensionId:e.extensionId,nativeHostName:e.nativeHostName})])}';
 const CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_616 =
   'var Zz=`chrome-native-hosts-v2.json`;async function XB(e){let t=ZB(e),n=NM(e.resourcesPath),r=MM(e.resourcesPath),i=[t==null?`codex`:null,n==null?`node`:null,r==null?`node_repl`:null].filter(e=>e!=null);if(i.length>0)throw Error(`Missing bundled Electron runtime required to sync Chrome native host resources for ${e.nativeHostName}: ${i.join(`, `)} (resourcesPath: ${e.resourcesPath}).`);if(t==null||n==null||r==null)throw Error(`Missing bundled Electron runtime required to sync Chrome native host resources for ${e.nativeHostName}.`);return{codexCliPath:await fz({codexCliPath:t,codexHome:e.codexHome,nativeHostName:e.nativeHostName}),nodePath:n,nodeModuleDirs:PM(e.resourcesPath),nodeReplPath:r}}';
+const CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_707 =
+  'async function EW(e){let t=JW(),n=await qW({pluginRoot:e.pluginRoot,target:t}),r=await nG({codexHome:e.codexHome,devRuntimeRepoRoot:e.devRuntimeRepoRoot,nativeHostName:e.nativeHostName,resourcesPath:e.resourcesPath}),a=e.channel??HW(e.nativeHostName),o=new Date().toISOString(),s={browserClientPath:(0,i.join)(e.pluginRoot,`scripts`,`browser-client.mjs`),codexCliPath:r.codexCliPath,codexHome:e.codexHome,extensionHostPath:n,nodePath:r.nodePath,...r.nodeModuleDirs.length===0?{}:{nodeModuleDirs:r.nodeModuleDirs},nodeReplPath:r.nodeReplPath,resourcesPath:e.resourcesPath},c={schemaVersion:eW,paths:s,updatedAt:o};await Promise.all([kW({codexHome:e.codexHome,resource:c}),KW({extensionHostPath:n,extensionId:e.extensionId,nativeHostName:e.nativeHostName})])}';
 const OWL_FEATURE_BINDING_BUNDLE_26_616 =
   'function rt(e){return app.commandLine.getSwitchValue(e).split(`,`)}function nt(e){return e.filter(Boolean)}var Ge=t.pc({isOwlFeatureEnabled:t.sc(e=>typeof e==`function`)});function Qe(){let e=process._linkedBinding;if(typeof e!=`function`)throw Error(`Owl feature binding is unavailable`);return Ge.parse(e.call(process,`electron_common_owl_features`))}function Ze(e){return Qe().isOwlFeatureEnabled(e)}';
 const OWL_FEATURE_BINDING_BUNDLE_26_623 =
   'function rt(e){return r.app.commandLine.getSwitchValue(e).split(`,`).filter(Boolean)}function nt(e){return(0,ze.default)(e).filter(e=>t.qi.some(t=>t===e))}var Ve=`electron_common_owl_features`,Ge=t.Yc({isOwlFeatureEnabled:t.Wc(e=>typeof e==`function`)});function Ze(e){let t=Qe();if(t==null)return!1;try{return t.isOwlFeatureEnabled(e)}catch(e){if(e instanceof Error&&e.message.startsWith(`Unsupported Owl feature:`))return!1;throw e}}function Qe(){let e=process._linkedBinding;if(typeof e!=`function`)return null;let t;try{t=e.call(process,Ve)}catch(e){if(st(e))return null;throw e}return Ge.parse(t)}function st(e){return e instanceof Error?e.message.includes(Ve)&&e.message.includes(`No such binding was linked:`):!1}';
+const OWL_FEATURE_BINDING_BUNDLE_26_707 =
+  'function un(e){return a.app.commandLine.getSwitchValue(e).split(`,`).filter(Boolean)}function ln(e){return(0,Gt.default)(e).filter(e=>Jt.some(t=>t===e))}var qt=`electron_common_owl_features`,Zt=t.xl({isOwlFeatureEnabled:t.hl(e=>typeof e==`function`)});function rn(e){let t=an();if(t==null)return!1;try{return t.isOwlFeatureEnabled(e)}catch(e){if(e instanceof Error&&e.message.startsWith(`Unsupported Owl feature:`))return!1;throw e}}function an(){let e=process._linkedBinding;if(typeof e!=`function`)return null;let t;try{t=e.call(process,qt)}catch(e){if(mn(e))return null;throw e}return Zt.parse(t)}function mn(e){return e instanceof Error?e.message.includes(qt)&&e.message.includes(`No such binding was linked:`):!1}';
 const CHROME_EXTENSION_SETTINGS_BUNDLE_26_519 =
   'function aa(e){return`chrome://extensions/?id=${ua(e)}`}function oa({extensionId:e,homeDir:t=(0,r.homedir)(),localAppDataDir:n=process.env.LOCALAPPDATA,platform:a=process.platform}){let s=ua(e),c=da({homeDir:t,localAppDataDir:n,platform:a});return c==null||!(0,o.existsSync)(c)?!1:(0,o.readdirSync)(c,{withFileTypes:!0}).some(e=>e.isDirectory()&&(0,o.existsSync)((0,i.join)(c,e.name,`Extensions`,s)))}async function sa({extensionId:e,platform:t=process.platform,detectChromeCommand:n=ca,runCommand:r=zi}){if(t===`darwin`){await r(ra,[`-b`,na,aa(e)]);return}if(t===`win32`){let t=n();if(t==null)throw Error(`Google Chrome is not installed`);await r(t,[aa(e)]);return}throw Error(`Opening Chrome extension settings is only supported on macOS and Windows`)}function da({homeDir:e,localAppDataDir:t,platform:n}){return n===`darwin`?(0,i.join)(e,`Library`,`Application Support`,`Google`,`Chrome`):n===`win32`?(0,i.join)(t??(0,i.join)(e,`AppData`,`Local`),`Google`,`Chrome`,`User Data`):null}function ua(e){return e}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_513 =
@@ -416,6 +430,8 @@ const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_601 =
   'var fe={ambientSuggestions:!1,artifactsPane:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,control:!1,deviceAttestation:!1,multiWindow:!1},pe=Object.keys(fe),me={...fe},he=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function ge(){return me}function _e(e){return pe.every(t=>typeof e[t]==`boolean`)}function ve(e){let t={...me,...e};return pe.every(e=>t[e]===me[e])?!1:(me=t,!0)}function ye(e,{buildFlavor:n=t.D.resolve(),env:r=d.default.env,platform:i=d.default.platform}={}){let a=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...e,computerUse:!0,computerUseNodeRepl:!0}:e,o=n===t.D.Dev?be(r):null;return o==null?{...a,deviceAttestation:xe({platform:i})}:{...a,...o,deviceAttestation:xe({platform:i})}}function be(e){let t=e[he]?.trim();if(!t)return null;return JSON.parse(t)}';
 const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_608 =
   'var Ne={ambientSuggestions:!1,appshotsEnabled:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,computerUse:!1,computerUseNodeRepl:!1,sites:!1,control:!1,deviceAttestation:ve(),dil:!1,multiBrowserTabs:!1,multiWindow:!1,processManager:!1,visualize:!1},Pe=Object.keys(Ne),Fe={...Ne},Ie=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function Le(){return Fe}function Re(e){return Pe.every(t=>typeof e[t]==`boolean`)}function ze(e,t){return Pe.some(n=>e[n]!==t[n])}function Be(e){let t={...Fe,...e,deviceAttestation:ve()};return Pe.every(e=>t[e]===Fe[e])?!1:(Fe=t,!0)}function Ve(e,{buildFlavor:t=n.P.resolve(),env:r=p.default.env,platform:i=p.default.platform}={}){let a=i===`darwin`&&!n.P.isInternal(t)&&e.computerUseNodeRepl!=null?{...e,computerUseNodeRepl:!1}:e,o=i===`win32`&&e.computerUse===!0?{...a,computerUseNodeRepl:!0}:a,s=i===`win32`&&r.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...o,computerUse:!0,computerUseNodeRepl:!0}:o,c=t===n.P.Dev?He(r):null;return c==null?{...s,deviceAttestation:ve({platform:i})}:{...s,...c,deviceAttestation:ve({platform:i})}}function He(e){let t=e[Ie]?.trim();if(!t)return null;return JSON.parse(t)}';
+const REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_707 =
+  'var He={ambientSuggestions:!1,appshotsEnabled:!1,cuaPIP:!1,browserPane:!1,inAppBrowserUse:!1,inAppBrowserUseAllowed:!1,defaultLinkOpenTargetPreference:`external-browser`,linksDefaultInAppBrowser:!1,localBackend:!1,externalBrowserUse:!1,externalBrowserUseAllowed:!1,findShortcuts:!1,computerUse:!1,computerUseNodeRepl:!1,recordAndReplay:!1,sites:!1,control:!1,deviceAttestation:be(),dil:!1,multiBrowserTabs:!1,unifiedBrowserSkill:!1,multiWindow:!1,openAIMcpFormElicitations:!0,processManager:!1,quickChat:!1,remoteControlClientScopedEnvironments:!1,webMcp:!1,deepResearch:!1,visualize:!1},Ue=Object.keys(He),We={...He},Ge=`CODEX_ELECTRON_DESKTOP_FEATURE_OVERRIDES`;function Ke(){return We}function qe(e){return Be.safeParse(e).success}function Je(e,t){return Ue.some(n=>e[n]!==t[n])}function Ye(e){let t={...We,...e,deviceAttestation:be()};return Ue.every(e=>t[e]===We[e])?!1:(We=t,!0)}function Xe(e,{buildFlavor:t=i.a.resolve(),env:n=g.default.env,platform:r=g.default.platform}={}){let a=r===`win32`&&e.computerUse===!0?{...e,computerUseNodeRepl:!0}:e,o=r===`win32`&&n.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`?{...a,computerUse:!0,computerUseNodeRepl:!0}:a,s=t===i.a.Dev?Ze(n):null;return s==null?{...o,deviceAttestation:be({platform:r})}:{...o,...s,deviceAttestation:be({platform:r})}}function Ze(e){let t=e[Ge]?.trim();if(!t)return null;return JSON.parse(t)}';
 const REMOTE_CONTROL_VISIBILITY_BUNDLE_26_513 =
   'import{p as e,pt as t}from"./vscode-api-DH_DWhkY.js";import{r as n}from"./remote-connection-visibility-CMLPP7XS.js";var r=t();function i(){let t=(0,r.c)(3),[i]=e(`remote_control_connections_state`),o=n(),s;return t[0]!==i||t[1]!==o?(s=a({remoteControlConnectionsState:i,slingshotEnabled:o}),t[0]=i,t[1]=o,t[2]=s):s=t[2],s}function a({remoteControlConnectionsState:e,slingshotEnabled:t}){return t&&(e?.available??!0)&&e?.accessRequired!==!0}export{i as t};';
 const COMPUTER_USE_UI_AVAILABILITY_BUNDLE_26_616 =
@@ -521,6 +537,24 @@ const AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_623 =
       /throwWithVelocity\(e,t,r\)\{[\s\S]*?\}setElementSize/,
       'throwWithVelocity(e,t,r,i=!1){let a=this.window;if(a==null||a.isDestroyed()||a.webContents.id!==e||!Number.isFinite(t)||!Number.isFinite(r)||t===0&&r===0)return;let o=this.suppressNextRendererThrow;this.suppressNextRendererThrow=!1,!(o&&!i)&&this.startMomentum(t,r,i)}setElementSize'
     );
+const AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_707 =
+  AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_623
+    .replace(
+      'setWindowBounds(e,t,n,r){if(e.isDestroyed())return;let i=e.getContentBounds();if(EO(i,t)){this.nativePositionController.position(e,t);return}let a=i.width===t.width&&i.height===t.height;a&&!r&&this.compositionHost.prepareDragFollowForOverlayMove(t),e.setContentBounds(t,n&&!this.nativeCompositionSupported),this.nativePositionController.position(e,t),(r||!a)&&this.compositionHost.moveBackingCanvases()}',
+      'setWindowBounds(e,t,n,r){if(e.isDestroyed())return;let i=e.getContentBounds();if(EO(i,t)){this.nativePositionController.position(e,t);return}let a=i.width===t.width&&i.height===t.height;e.setContentBounds(t,n&&!this.nativeCompositionSupported),this.nativePositionController.position(e,t),(r||!a)&&this.compositionHost.moveBackingCanvases()}'
+    )
+    .replace(
+      'showWindow(e){if(e.isDestroyed())return;let t=this.isOpen();this.windowStagedForNativePresentation&&=(e.setOpacity(1),!1),e.moveTop(),e.showInactive(),!t&&this.isOpen()&&this.broadcastOpenState();let n=this.pendingPresentation;n!=null&&(this.pendingPresentation=null,n.velocity==null?(this.dockRestoreAnchor=n.target,this.animatePresentationTo(n.target,j6(this.anchor,n.target),()=>{this.dockRestoreAnchor===n.target&&(this.dockRestoreAnchor=null)})):this.startMomentum(n.velocity.x,n.velocity.y,!0))}',
+      'showWindow(e){if(e.isDestroyed())return;let t=this.isOpen();this.windowStagedForNativePresentation&&=(e.setOpacity(1),!1),e.moveTop(),e.showInactive(),this.compositionHost.publishRemoteHostedPIPContentHost(),!t&&this.isOpen()&&this.broadcastOpenState();let n=this.pendingPresentation;n!=null&&(this.pendingPresentation=null,n.velocity==null?(this.dockRestoreAnchor=n.target,this.animatePresentationTo(n.target,j6(this.anchor,n.target),()=>{this.dockRestoreAnchor===n.target&&(this.dockRestoreAnchor=null)})):this.startMomentum(n.velocity.x,n.velocity.y,!0))}'
+    )
+    .replace(
+      'startDrag(e,t,r=!1){let i=this.window;if(i==null||i.isDestroyed()||i.webContents.id!==e)return;this.cancelMomentum(),this.dockRestoreAnchor=null,this.cancelOrbDragFollow(),this.suppressNextRendererThrow=!1,this.clearDetachedDisplayRestore();let a=this.getLayout(i);this.nativePositionController.clear();let o=V2(this.compositionHost.getCursorPosition()),s=t.pointerScreenX!=null&&t.pointerScreenY!=null?{x:t.pointerScreenX,y:t.pointerScreenY}:n.screen.getCursorScreenPoint(),c=o??s,l=t.pointerWindowX-a.mascot.left,u=t.pointerWindowY-a.mascot.top;this.dragState=new h2(o==null?`renderer`:`native`,l,u,n.screen.getDisplayNearestPoint(c).bounds,r)}moveDrag(e,t){let r=this.window;if(r==null||r.isDestroyed()||r.webContents.id!==e||this.dragState==null)return;this.cancelMomentum();let i=this.dragState;i.recordMovementIntent();let a=n.screen.getCursorScreenPoint(),o=i.getCursorPointForSource({native:i.cursorSource===`native`?V2(this.compositionHost.getCursorPosition()):null,renderer:{x:t?.pointerScreenX??a.x,y:t?.pointerScreenY??a.y}});o!=null&&(i.usesOrbPhysics?(this.orbDragFollowTarget=o,this.scheduleOrbDragFollow(r)):this.moveDragToPointer(r,o))}endDrag(e,t){let r=this.window;if(r==null||r.isDestroyed()||r.webContents.id!==e)return;this.cancelOrbDragFollow();let i=this.dragState;if(i?.hasMovementIntent){let e=n.screen.getCursorScreenPoint(),a=i.getCursorPointForSource({native:i.cursorSource===`native`?V2(this.compositionHost.getCursorPosition()):null,renderer:{x:t?.pointerScreenX??e.x,y:t?.pointerScreenY??e.y}});a!=null&&this.moveDragToPointer(r,a)}this.suppressNextRendererThrow=i?.shouldSuppressRendererThrow()??!1,this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0});let a=this.dockTarget,o=O6(this.anchor,this.presentationOffset);a!=null&&F3({current:o,next:o,target:{x:a.anchor.centerX,y:a.anchor.centerY}}).shouldDock&&this.dockPresentation(a.anchor,a.onDock)}',
+      'startDrag(e,t,r=!1){let i=this.window;if(i==null||i.isDestroyed()||i.webContents.id!==e)return;this.cancelMomentum(),this.dockRestoreAnchor=null,this.cancelOrbDragFollow(),this.windowServerDragActive=!1,this.windowServerDragDirection=null,this.windowServerDragWindowX=i.getContentBounds().x,this.suppressNextRendererThrow=!1,this.clearDetachedDisplayRestore();let a=this.getLayout(i);this.nativePositionController.clear();let o=V2(this.compositionHost.getCursorPosition()),s=t.pointerScreenX!=null&&t.pointerScreenY!=null?{x:t.pointerScreenX,y:t.pointerScreenY}:n.screen.getCursorScreenPoint(),c=o??s,l=t.pointerWindowX-a.mascot.left,u=t.pointerWindowY-a.mascot.top;this.dragState=new h2(o==null?`renderer`:`native`,l,u,n.screen.getDisplayNearestPoint(c).bounds,r),this.windowServerDragActive=this.layoutMode===`native`&&!r&&this.compositionHost.performWindowDrag(),this.windowServerDragActive||(this.windowServerDragWindowX=null)}moveDrag(e,t){let r=this.window;if(r==null||r.isDestroyed()||r.webContents.id!==e||this.dragState==null)return;this.cancelMomentum();let i=this.dragState;if(i.recordMovementIntent(),this.windowServerDragActive)return;let a=n.screen.getCursorScreenPoint(),o=i.getCursorPointForSource({native:i.cursorSource===`native`?V2(this.compositionHost.getCursorPosition()):null,renderer:{x:t?.pointerScreenX??a.x,y:t?.pointerScreenY??a.y}});o!=null&&(i.usesOrbPhysics?(this.orbDragFollowTarget=o,this.scheduleOrbDragFollow(r)):this.moveDragToPointer(r,o))}endDrag(e,t){let r=this.window;if(r==null||r.isDestroyed()||r.webContents.id!==e)return;this.cancelOrbDragFollow();let i=this.dragState,a=this.windowServerDragActive,o=null;if(a&&i!=null){let e=V2(this.compositionHost.getCursorPosition())??(t==null?n.screen.getCursorScreenPoint():{x:t.pointerScreenX,y:t.pointerScreenY}),a=n.screen.getDisplayNearestPoint(e),s={...this.anchor,x:e.x-i.pointerAnchorX,y:e.y-i.pointerAnchorY};o=a,this.updateWindowServerDragPlacement(r,r.getContentBounds(),s,a),this.sendWindowServerDragDirection(r,null)}else if(i?.hasMovementIntent){let e=n.screen.getCursorScreenPoint(),a=i.getCursorPointForSource({native:i.cursorSource===`native`?V2(this.compositionHost.getCursorPosition()):null,renderer:{x:t?.pointerScreenX??e.x,y:t?.pointerScreenY??e.y}});a!=null&&this.moveDragToPointer(r,a)}this.suppressNextRendererThrow=i?.shouldSuppressRendererThrow()??!1,this.dragState=null,this.windowServerDragActive=!1,this.windowServerDragWindowX=null,a?this.persistWindowBounds(r,o??this.getCurrentDisplay()):this.reclampWindowToVisibleDisplay({shouldPersist:!0});let s=this.dockTarget,c=O6(this.anchor,this.presentationOffset);s!=null&&F3({current:c,next:c,target:{x:s.anchor.centerX,y:s.anchor.centerY}}).shouldDock&&this.dockPresentation(s.anchor,s.onDock)}'
+    )
+    .replace(
+      'moveDragToPointer(e,t){let r=this.dragState;if(r==null)return;let i=SO(t,r.displayBounds),a=n.screen.getDisplayMatching(i);r.recordMove(a.bounds);let o=t.x-r.pointerAnchorX,s=t.y-r.pointerAnchorY,c=r.usesOrbPhysics?f6:1,l={...this.anchor,x:this.anchor.x+(o-this.anchor.x)*c,y:this.anchor.y+(s-this.anchor.y)*c},u=e.getContentBounds();this.anchor=l,this.applyLayout(e,a,!1,!1),this.layout!=null&&EO(u,this.layout.windowBounds)&&(this.anchor.x!==Math.round(l.x)||this.anchor.y!==Math.round(l.y))&&this.compositionHost.settleDragFollowSurfaces()}',
+      'moveDragToPointer(e,t){let r=this.dragState;if(r==null)return;let i=SO(t,r.displayBounds),a=n.screen.getDisplayMatching(i);r.recordMove(a.bounds);let o=t.x-r.pointerAnchorX,s=t.y-r.pointerAnchorY,c=r.usesOrbPhysics?f6:1;this.anchor={...this.anchor,x:this.anchor.x+(o-this.anchor.x)*c,y:this.anchor.y+(s-this.anchor.y)*c},this.applyLayout(e,a,!1,!1)}'
+    );
 const AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_623_PRESENTATION_ORIGIN =
   `${AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_623}positionPresentationAtOrigin(e,t){this.anchor=j6(t,this.mascotSize,this.presentationOffset),this.applyLayout(e,n.screen.getDisplayNearestPoint(O6(this.anchor)))}`;
 const AVATAR_OVERLAY_RENDERER_BUNDLE_CURRENT =
@@ -567,6 +601,8 @@ const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_101652 =
   'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{$U as n,AM as r,AW as i,BU as a,DW as o,Dx as s,EW as c,Fx as l,GY as u,IV as d,JR as f,LW as p,MI as m,MW as h,My as g,NM as _,PM as v,RV as y,VU as b,Vp as x,WI as S,Wp as ee,XY as C,YR as w,YY as te,ZU as T,ZY as E,_L as D,_N as O,aH as ne,aU as k,aW as A,bB as re,bW as j,cH as M,cZ as N,fW as ie,fy as P,gH as F,hH as I,hL as L,hW as R,iH as ae,iU as oe,jW as se,lZ as ce,mL as z,mW as B,n_ as V,nw as H,oH as U,oU as le,op as ue,pW as de,r_ as fe,sU as pe,sW as me,sp as W,tZ as he,tw as ge,vL as _e,vN as ve,wW as ye,ww as be,xN as G,xW as K,yB as xe,zU as q}from"./app-initial~app-main~worktree-init-v2-page~remote-conversation-page~onboarding-page~hotkey-~ke3yc5wu-BLQiF1Gs.js";function Xt(){let V=(0,Z.jsx)(ke,{ariaLabel:T.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:z,resizeHandle:d==null?void 0:{ariaLabel:T.formatMessage(Q.resizeMascot),...d},state:D.mascotState,style:l,transientState:u});return(0,Z.jsx)(`main`,{className:`relative h-screen w-screen overflow-hidden bg-transparent`,children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":j?void 0:`mascot`,children:V})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var Y,X,Z,Q,Yt=e((()=>{Y=N(),R(),T(),u(),X=t(ce(),1),h(),H(),Z=he(),Q=se({})}));';
 const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_623_141536 =
   'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{At as n,El as r,vl as p}from"./app-initial~app-main~worktree-init-v2-page~appgen-settings-page~page~appgen-publication-ter~fzo5ij6p-BKVLyD1q.js";import{pv as H}from"./app-initial~app-main~new-thread-panel-page-BZHGOlMi.js";function Xt(){let V=(0,Z.jsx)(q,{ariaLabel:T.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:z,resizeHandle:d==null?void 0:{ariaLabel:T.formatMessage(Q.resizeMascot),...d},state:D.mascotState,style:l,transientState:u});return(0,Z.jsx)(`main`,{className:`relative h-screen w-screen overflow-hidden bg-transparent`,children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":j?void 0:`mascot`,children:V})})}function nn(e){if(e==null)return null;let t=an(e.querySelector(_n)),n=on(e.querySelector(vn));return t==null?null:{mascot:t,tray:n}}function an(e){return null}var Y,X,Z,Q,Yt=e((()=>{Y=N(),X=t(r(),1),Z=p(),Q=se({})}));';
+const PET_YAPPING_USAGE_RENDERER_BUNDLE_26_707 =
+  'import{n as e,s as t}from"./rolldown-runtime-Czos8NxU.js";import{tQ as q,Vet as O,Yet as N}from"./app-initial~app-main~pull-request-code-review~onboarding-page~hotkey-window-thread-page~cha~b76hmflu-y0KJWbm3.js";function Xt(){let V=(0,Z.jsx)(ke,{ariaLabel:E.formatMessage(Q.mascotLabel,{petName:e.displayName}),assetRef:e.assetRef,spritesheetUrl:e.spritesheetUrl,notificationBadge:H,resizeHandle:f==null?void 0:{ariaLabel:E.formatMessage(Q.resizeMascot),...f},state:ne.mascotState,style:u,transientState:d});return(0,Z.jsx)(`main`,{className:`relative h-screen w-screen overflow-hidden bg-transparent`,children:(0,Z.jsx)(`div`,{"data-avatar-overlay-hit-region":j?void 0:`mascot`,children:V})})}function dn(e){if(e==null)return null;let t=pn(e.querySelector(Tn)),n=mn(e.querySelector(En));return t==null?null:{mascot:t,tray:n}}function pn(e){return null}var yn,$,Z,Q,Yt=e((()=>{yn=g(),$=t(N(),1),Z=O(),Q=se({})}));';
 const PET_YAPPING_USAGE_CSS_CURRENT =
   '.codex-avatar-root{aspect-ratio:192/208;width:7.04rem;image-rendering:pixelated;background-repeat:no-repeat;background-size:800% 900%}\n';
 const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_CURRENT =
@@ -617,6 +653,19 @@ const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_527 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE
   .replace(
     'if(this.updateEntry(n,e=>({...e,phase:`worktree-ready`',
     'if(r.setupError!=null){cv().info(`[worktree-create] setup-failed`,{safe:{worktreeId:t.Ut(r.worktreeGitRoot),flow:`pending`,launchMode:i.launchMode,hasLocalEnvironment:i.localEnvironmentConfigPath!=null},sensitive:{}}),this.updateEntry(n,e=>({...e,phase:`failed`,errorMessage:r.setupError,worktreeGitRoot:r.worktreeGitRoot,worktreeWorkspaceRoot:r.worktreeWorkspaceRoot,needsAttention:!0}));let e=this.statesById.get(n);e&&(e.runtime=null),this.notifyFailure(n,r.setupError);return}if(this.updateEntry(n,e=>({...e,phase:`worktree-ready`'
+  );
+const WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_707 = WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_527
+  .replace(
+    'var sv=32e3,cv=t.Or(`worktree-service`),lv=class{',
+    'var S$=e.o(a.M()),sv=32e3,cv=t.Or(`worktree-service`),lv=class{'
+  )
+  .replace(
+    'streamId:a.streamId,allowSetupFailure:!0,setUpSyncedBranch:i.launchMode===`create-stable-worktree`?!1:void 0',
+    'streamId:a.streamId,allowSetupFailure:!0,worktreesRoot:gi(this.options.settingsStore),setUpSyncedBranch:i.launchMode===`create-stable-worktree`?!1:void 0'
+  )
+  .replace(
+    'streamId:o}}),c=this.newbornWorktreeRoots.has(s.worktreeGitRoot)',
+    'streamId:o,worktreesRoot:gi(this.options.settingsStore)}}),c=this.newbornWorktreeRoots.has(s.worktreeGitRoot)'
   );
 const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT = `async function MZ(e,t,n){let r=await AZ(e,t,n);r!=null&&await cz.rm(r,void 0,t)}async function cX(e,t,n,r,i,a){return uX({workspaceRoot:e,localEnvironment:t,scriptType:\`setup\`,appServerClient:a,injectedEnvironment:i,onLog:n,signal:r})}async function lX(e,t,n,r,i){return(await uX({workspaceRoot:e,localEnvironment:t,scriptType:\`cleanup\`,appServerClient:i,onLog:n,signal:r}))?.setupResult??null}async function NZ({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,setUpSyncedBranch:i=!0,appServerClient:a,signal:o,onLog:s,onWorktreePathAllocated:c}){if(o?.aborted)return{success:!1,error:Error(\`Request canceled\`)};let l=(await e.getWorktreeRepository(NL(t),a))?.root;if(!l)return{success:!1,error:Error(\`Not a git repository\`)};let m={worktreeGitRoot:\`/tmp/source/.git\`,worktreeWorkspaceRoot:\`/tmp/worktree\`},{worktreeGitRoot:h,worktreeWorkspaceRoot:g}=m;c?.(h);if(s?.(\`info\`,ce.Buffer.from(\`Worktree created at \${g}\n\`,\`utf8\`)),await vZ(g,r??\`__none__\`,a,\`worktree\`,o)||s?.(\`stderr\`,ce.Buffer.from(\`Failed to store selected environment in git config
 \`,\`utf8\`)),r==null)return s?.(\`info\`,ce.Buffer.from(\`No local environment selected
@@ -671,6 +720,10 @@ const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_623 = WORKTREE_ENVIRONMENT_WORKER_BU
   .replaceAll('ce.Buffer.from', 'Z3.encode')
   .replaceAll(',`utf8`)', ')')
   .replace('let v=await QJ(r,o);', 'u?.();let v=await QJ(r,o);');
+const WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_707 = WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_623.replace(
+  'host:o,signal:s,onLog:c,onWorktreePathAllocated:l,onSetupStart:u',
+  'host:o,signal:s,onLog:c,onWorktreePathAllocated:l,onSetupStart:u,worktreesRoot:d'
+);
 const TERMINAL_PANEL_BLOCK_LEGACY =
   'function vDe(e){let ee,te;t[29]!==n||t[30]!==i||t[31]!==r||t[32]!==o||t[33]!==m?(ee=()=>{let e=T.current;if(!e)return;let t=o??St.create({conversationId:n,hostId:r??null,cwd:i??null});O.current=t,k.current=!1;let a=!1,s=new nDe.Terminal({allowTransparency:!0,cursorStyle:`bar`,fontSize:j.current,allowProposedApi:!0,cursorBlink:!0,fontFamily:A.current,letterSpacing:0,lineHeight:1.2,theme:RQ()}),c=null,l=()=>{c??=requestAnimationFrame(()=>{c=null,s.scrollToBottom()})};E.current=s;let u=new aDe.ClipboardAddon,d=new iDe.FitAddon;D.current=d;let f=new rDe.WebLinksAddon(bDe);s.loadAddon(u),s.loadAddon(d),s.loadAddon(f),s.attachCustomKeyEventHandler(e=>lDe({clipboard:typeof navigator<`u`&&navigator.clipboard!=null&&m?navigator.clipboard:void 0,event:e,sendText:e=>{St.write(t,e)},term:s})),s.open(e);let p=n=>{a||e.isConnected&&requestAnimationFrame(()=>{a||e.isConnected&&(k.current?IQ(s,d,t):LQ(d),n?.())})};p(),M.current=!1;let h=St.register(t,{onInitLog:e=>{s.write(e),l()},onData:e=>{M.current||(M.current=!0,P(`Running`),I(null)),s.write(e),l()},onExit:()=>{a||P(`Exited`)},onError:e=>{a||(P(`Error`),I(e))},onAttach:(e,t)=>{a||(k.current=!0,P(`Running`),I(null),R(t??null),p())}}),g=s.onData(e=>{St.write(t,e)}),_=s.onKey(yDe);o&&requestAnimationFrame(()=>{a||St.attach({sessionId:o,conversationId:n,hostId:r??null,cwd:i??null,cols:s.cols,rows:s.rows})});let v=new ResizeObserver(()=>{p()});return v.observe(e),()=>{a=!0,c!=null&&(cancelAnimationFrame(c),c=null),v.disconnect(),g.dispose(),_.dispose(),h(),D.current=null,O.current=null,k.current=!1,o||St.close(t),s.dispose(),E.current=null}},te=[n,i,r,o,m],t[29]=n,t[30]=i,t[31]=r,t[32]=o,t[33]=m,t[34]=ee,t[35]=te):(ee=t[34],te=t[35]),(0,Z.useEffect)(ee,te);return(0,$.jsx)(`div`,{"data-codex-terminal":!0})}';
 const TERMINAL_PANEL_BLOCK_CURRENT =
@@ -691,6 +744,8 @@ const TERMINAL_PANEL_BLOCK_26_623 = TERMINAL_PANEL_BLOCK_26_611.replace(
   'c&&requestAnimationFrame(()=>{d||i.create({sessionId:c,conversationId:n,conversationTitle:r,hostId:o??null,cwd:s??null,cols:p.cols,rows:p.rows})});',
   'c&&!i.isSessionStarted(c)&&requestAnimationFrame(()=>{d||i.create({sessionId:c,conversationId:n,conversationTitle:r,hostId:o??null,cwd:s??null,cols:p.cols,rows:p.rows})});'
 );
+const TERMINAL_PANEL_BLOCK_26_707 =
+  'let G;t[32]!==n||t[33]!==a||t[34]!==L||t[35]!==i||t[36]!==s||t[37]!==c||t[38]!==l||t[39]!==o||t[40]!==f?(G=()=>{let e=S.current,t=x.current;if(!e||!t)return;let r=L(),u=o??Al.create({conversationId:n,conversationTitle:r,hostId:i??null,cwd:a??null});T.current=u,E.current=!1;let d=!1,p=new ww.Terminal({allowTransparency:!0,cursorStyle:`bar`,fontSize:O.current,allowProposedApi:!0,cursorBlink:!0,fontFamily:D.current,letterSpacing:0,lineHeight:1.2,linkHandler:QC,theme:mw(t)}),m=null,h=null,g=()=>{h!=null&&clearTimeout(h),h=setTimeout(()=>{h=null,lp(l,{cwd:a,hostId:i})},Dw)},_=()=>{m??=requestAnimationFrame(()=>{m=null,p.scrollToBottom()})};C.current=p;let v=new xw.ClipboardAddon,y=new Sw.FitAddon;w.current=y,p.loadAddon(v),p.loadAddon(y),p.open(e);let b=gw(p,()=>k.current),A=()=>{d||e.isConnected&&requestAnimationFrame(()=>{d||e.isConnected&&(E.current?yw(p,y,u):y.fit())})};A();let j=Al.register(u,{onClearActive:()=>{t.contains(document.activeElement)&&p.clear()},onInitLog:e=>{let t=fw(p);p.reset(),p.write(e),t&&_()},onData:e=>{let t=fw(p);p.write(e),g(),t&&_()},onAttach:()=>{d||(E.current=!0,A())}}),M=p.onData(e=>{Al.write(u,e)}),N=p.onTitleChange(e=>{Al.setTitle(u,e)}),P=p.onKey(e=>{let{domEvent:t}=e;t.key===`Enter`&&g()});o&&!Al.isSessionStarted(o)&&requestAnimationFrame(()=>{d||Al.create({sessionId:o,conversationId:n,conversationTitle:r,hostId:i??null,cwd:a??null,cols:p.cols,rows:p.rows})});let F=new ResizeObserver(()=>{A()});return F.observe(e),()=>{d=!0,m!=null&&(cancelAnimationFrame(m),m=null),h!=null&&clearTimeout(h),F.disconnect(),M.dispose(),N.dispose(),P.dispose(),j(),w.current=null,T.current=null,E.current=!1,o||Al.close(u),b(),p.dispose(),C.current=null}},t[32]=n,t[33]=a,t[34]=L,t[35]=i,t[36]=s,t[37]=c,t[38]=l,t[39]=o,t[40]=f,t[41]=G):G=t[41];let ee;t[42]!==n||t[43]!==a||t[44]!==i||t[45]!==s||t[46]!==c||t[47]!==l||t[48]!==o||t[49]!==f?(ee=[n,a,i,s,c,l,o,f],t[42]=n,t[43]=a,t[44]=i,t[45]=s,t[46]=c,t[47]=l,t[48]=o,t[49]=f,t[50]=ee):ee=t[50],(0,Tw.useEffect)(G,ee);return(0,Ew.jsx)(`div`,{"data-codex-terminal":!0})}';
 const NEW_THREAD_MODEL_SELECTOR_BLOCK_CURRENT =
   'function xf(e){let t=(0,Q.c)(30),n=e===void 0?null:e,{authMethod:r}=Ds(),i=Un(),a;t[0]===Symbol.for(`react.memo_cache_sentinel`)?(a={select:Tf},t[0]=a):a=t[0];let{data:o}=Le(`active-workspace-roots`,a),s=o??null,c;t[1]===s?c=t[2]:(c={hostId:De,cwd:s},t[1]=s,t[2]=c);let l=yf(c),u=_f(),d=Dn(n,wf),f=Dn(n,Cf),p;t[3]===f?p=t[4]:(p=f!=null&&f.trim().length>0?f:null,t[3]=f,t[4]=p);let m=p,h=Dn(n,Sf),g=r===`copilot`,_;t[5]!==i||t[6]!==n?(_=async(e,t)=>{n!=null&&await mf(i,n,e,t)},t[5]=i,t[6]=n,t[7]=_):_=t[7];let v=_,y;t[8]!==h||t[9]!==l||t[10]!==u||t[11]!==d||t[12]!==g||t[13]!==m?(y=d?{model:m??l.model,reasoningEffort:h,isLoading:!1}:g?u:l,t[8]=h,t[9]=l,t[10]=u,t[11]=d,t[12]=g,t[13]=m,t[14]=y):y=t[14];let{model:b,reasoningEffort:x,isLoading:S}=y,{setData:C}=Os(`copilot-default-model`),w=o??null,T;t[15]===w?T=t[16]:(T={hostId:De,cwd:w},t[15]=w,t[16]=T);let E=bf(T),D;t[17]!==i||t[18]!==v||t[19]!==g||t[20]!==E||t[21]!==C?(D=async(e,t)=>{if(await v(e,t),g){C(e);return}try{await i.setDefaultModelConfig(e,t)}catch(e){let t=e;O.error(`Failed to set default model and reasoning effort`,{safe:{},sensitive:{error:t}});return}await E()},t[17]=i,t[18]=v,t[19]=g,t[20]=E,t[21]=C,t[22]=D):D=t[22];let k=D,A;t[23]!==S||t[24]!==b||t[25]!==x?(A={model:b,reasoningEffort:x,isLoading:S},t[23]=S,t[24]=b,t[25]=x,t[26]=A):A=t[26];let j=A,M;return t[27]!==j||t[28]!==k?(M={setModelAndReasoningEffort:k,modelSettings:j},t[27]=j,t[28]=k,t[29]=M):M=t[29],M}';
 const NEW_THREAD_MODEL_SUBMIT_BLOCK_CURRENT =
@@ -2478,6 +2533,10 @@ test('repairLinuxChromeNativeHostRuntimeRegistries rewrites stale cua_node runti
     const registryPath = path.join(homeDir, '.codex', 'chrome-native-hosts-v2.json');
     await writeTestExecutable(path.join(resourcesDir, 'node'), '#!/usr/bin/env bash\nexit 0\n');
     await writeTestExecutable(path.join(resourcesDir, 'node_repl'), '#!/usr/bin/env bash\nexit 0\n');
+    await writeTestExecutable(
+      path.join(resourcesDir, 'chrome-extension-host'),
+      '#!/usr/bin/env bash\nexit 0\n'
+    );
     await fs.promises.mkdir(path.dirname(registryPath), { recursive: true });
     await fs.promises.writeFile(
       registryPath,
@@ -2502,7 +2561,19 @@ test('repairLinuxChromeNativeHostRuntimeRegistries rewrites stale cua_node runti
                 browserClientPath: path.join(rootDir, 'chrome', 'scripts', 'browser-client.mjs'),
                 codexCliPath: path.join(resourcesDir, 'codex'),
                 codexHome: path.join(homeDir, '.codex'),
-                extensionHostPath: path.join(resourcesDir, 'chrome-extension-host'),
+                extensionHostPath: path.join(
+                  homeDir,
+                  '.codex',
+                  'plugins',
+                  'cache',
+                  'openai-bundled',
+                  'chrome',
+                  'latest',
+                  'extension-host',
+                  'linux',
+                  os.arch(),
+                  'extension-host'
+                ),
                 nodePath: path.join(resourcesDir, 'cua_node', 'bin', 'node'),
                 nodeModuleDirs: [path.join(resourcesDir, 'cua_node', 'lib', 'node_modules')],
                 nodeReplPath: path.join(resourcesDir, 'cua_node', 'bin', 'node_repl'),
@@ -2530,6 +2601,7 @@ test('repairLinuxChromeNativeHostRuntimeRegistries rewrites stale cua_node runti
 
     assert.equal(result.status, 'installed');
     assert.deepEqual(result.repairedPaths, [registryPath]);
+    assert.equal(paths.extensionHostPath, path.join(resourcesDir, 'chrome-extension-host'));
     assert.equal(paths.nodePath, path.join(resourcesDir, 'node'));
     assert.equal(paths.nodeReplPath, path.join(resourcesDir, 'node_repl'));
     assert.deepEqual(paths.nodeModuleDirs, [
@@ -2633,6 +2705,26 @@ test('installLinuxChromeBundledPluginHost installs Linux host wrappers for bundl
       '{}',
       'utf8'
     );
+    const installManifestSource =
+      'var s={extensionId:`extension-id`};var Pt=async t=>{let e=N(D.resolve(import.meta.dirname,`..`));await y({extensionHostPath:l(e),extensionId:s.extensionId,manifestPaths:g(s)})};';
+    await fs.promises.mkdir(path.join(resourcePluginRoot, 'scripts'), { recursive: true });
+    await fs.promises.mkdir(path.join(cachePluginRoot, 'scripts'), { recursive: true });
+    await fs.promises.mkdir(path.join(staleCachePluginRoot, 'scripts'), { recursive: true });
+    await fs.promises.writeFile(
+      path.join(resourcePluginRoot, 'scripts', 'installManifest.mjs'),
+      installManifestSource,
+      'utf8'
+    );
+    await fs.promises.writeFile(
+      path.join(cachePluginRoot, 'scripts', 'installManifest.mjs'),
+      installManifestSource,
+      'utf8'
+    );
+    await fs.promises.writeFile(
+      path.join(staleCachePluginRoot, 'scripts', 'installManifest.mjs'),
+      installManifestSource,
+      'utf8'
+    );
     await fs.promises.symlink(cachePluginRoot, path.join(path.dirname(cachePluginRoot), 'latest'));
 
     const result = await installLinuxChromeBundledPluginHost({
@@ -2671,6 +2763,21 @@ test('installLinuxChromeBundledPluginHost installs Linux host wrappers for bundl
       assert.equal(await isExecutable(targetPath), true);
       assert.match(await fs.promises.readFile(targetPath, 'utf8'), new RegExp(escapeRegExp(hostExecutablePath)));
     }
+    for (const pluginRoot of [resourcePluginRoot, cachePluginRoot]) {
+      const manifestScript = await fs.promises.readFile(
+        path.join(pluginRoot, 'scripts', 'installManifest.mjs'),
+        'utf8'
+      );
+      assert.match(manifestScript, /codexLinuxStableChromeExtensionHost/);
+      assert.match(manifestScript, new RegExp(escapeRegExp(hostExecutablePath)));
+    }
+    assert.doesNotMatch(
+      await fs.promises.readFile(
+        path.join(staleCachePluginRoot, 'scripts', 'installManifest.mjs'),
+        'utf8'
+      ),
+      /codexLinuxStableChromeExtensionHost/
+    );
   } finally {
     await fs.promises.rm(rootDir, { recursive: true, force: true });
   }
@@ -3414,11 +3521,33 @@ test('injectLinuxTitleBarOverlayPatch keeps Linux app-sync overlay calls opt-in'
   assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
   assert.match(
     updated,
-    /installApplicationMenuTitleBarOverlaySync\(e,t\)\{if\(\(process\.platform!==`win32`&&!\(process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===`1`\)\)\|\|process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===`1`\|\|t!==`primary`\)return/
+    /installApplicationMenuTitleBarOverlaySync\(e,t\)\{if\(\(process\.platform!==`win32`&&!\(process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===`1`\)\)\|\|process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===`1`\|\|t!==`primary`&&t!==`quickChat`\)return/
   );
   assert.doesNotMatch(
     updated,
     /if\(process\.platform!==`win32`&&process\.platform!==`linux`\|\|t!==`primary`\)return/
+  );
+});
+
+test('injectLinuxTitleBarOverlayPatch supports 26.707 quickChat overlay sync', () => {
+  const updated = injectLinuxTitleBarOverlayPatch(LINUX_TITLE_BAR_OVERLAY_APP_SYNC_BUNDLE_26_707);
+
+  assert.match(updated, /codexLinuxTitleBarOverlayThemeSync/);
+  assert.match(
+    updated,
+    /codexLinuxTitleBarOverlayAppearance=n&&this\.windowAppearances\.get\(n\.id\)/
+  );
+  assert.match(
+    updated,
+    /codexLinuxTitleBarOverlayAppearance!==`primary`&&codexLinuxTitleBarOverlayAppearance!==`quickChat`/
+  );
+  assert.match(
+    updated,
+    /process\.platform===`win32`\|\|process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===`1`/
+  );
+  assert.match(
+    updated,
+    /installApplicationMenuTitleBarOverlaySync\(e,t\)\{if\(\(process\.platform!==`win32`&&!\(process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===`1`\)\)\|\|process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===`1`\|\|t!==`primary`&&t!==`quickChat`\)return/
   );
 });
 
@@ -3507,6 +3636,18 @@ test('injectLinuxNativeWindowFramePatch preserves the older compact titlebar hel
   assert.doesNotMatch(updated, /n===`win32`\|\|n===`linux`\?\{titleBarStyle:`hidden`/);
 });
 
+test('injectLinuxNativeWindowFramePatch preserves quick chat options in 26.707 shape', () => {
+  const updated = injectLinuxNativeWindowFramePatch(LINUX_NATIVE_WINDOW_FRAME_BUNDLE_26_707);
+
+  assert.match(updated, /codexLinuxNativeWindowFrame/);
+  assert.match(
+    updated,
+    /n===`win32`\?\{titleBarStyle:`hidden`,titleBarOverlay:j9\(r\),\.\.\.e===`quickChat`\?\{resizable:!0\}:\{\}\}:n===`linux`&&process\?\.env\?\.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===`1`\?\{titleBarStyle:`hidden`,titleBarOverlay:j9\(r\),\.\.\.e===`quickChat`\?\{resizable:!0\}:\{\}\}:n===`linux`\?\{frame:!0,\.\.\.e===`quickChat`\?\{resizable:!0\}:\{\}\}:\{titleBarStyle:`default`,\.\.\.e===`quickChat`\?\{resizable:!0\}:\{\}\}/
+  );
+  assert.doesNotMatch(updated, /n===`win32`\|\|n===`linux`\?\{titleBarStyle:`hidden`/);
+  assert.doesNotThrow(() => new Function(updated));
+});
+
 test('injectLinuxNativeWindowFramePatch is idempotent', () => {
   const once = injectLinuxNativeWindowFramePatch(LINUX_NATIVE_WINDOW_FRAME_BUNDLE_26_623);
   const twice = injectLinuxNativeWindowFramePatch(once);
@@ -3549,6 +3690,22 @@ test('injectLinuxPrimaryWindowModeControlsPatch keeps onboarding windows managea
   );
 });
 
+test('injectLinuxPrimaryWindowModeControlsPatch supports 26.707 maximize-only disable shape', () => {
+  const updated = injectLinuxPrimaryWindowModeControlsPatch(
+    LINUX_PRIMARY_WINDOW_MODE_CONTROLS_BUNDLE_26_707
+  );
+
+  assert.match(updated, /codexLinuxPrimaryWindowModeControls/);
+  assert.match(
+    updated,
+    /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH!==`1`\?\(n\.setResizable\(!0\),n\.setMaximizable\(!0\),n\.setFullScreenable\(!0\)/
+  );
+  assert.match(updated, /typeof n\.setMinimizable===`function`&&n\.setMinimizable\(!0\)/);
+  assert.match(updated, /typeof n\.setClosable===`function`&&n\.setClosable\(!0\)/);
+  assert.match(updated, /typeof n\.setMovable===`function`&&n\.setMovable\(!0\)/);
+  assert.match(updated, /:\(n\.setMaximizable\(!1\),n\.setFullScreenable\(!1\)\)/);
+});
+
 test('injectLinuxPrimaryWindowModeControlsPatch is idempotent', () => {
   const once = injectLinuxPrimaryWindowModeControlsPatch(
     LINUX_PRIMARY_WINDOW_MODE_CONTROLS_BUNDLE_26_623
@@ -3585,6 +3742,16 @@ test('injectLinuxWindowFocusableOptionPatch omits undefined parent and focusable
   assert.match(updated, /\.\.\.p==null\?\{\}:\{parent:p\}/);
   assert.match(updated, /\.\.\.m==null\?\{\}:\{focusable:m\}/);
   assert.doesNotMatch(updated, /show:l,parent:p,focusable:m/);
+});
+
+test('injectLinuxWindowFocusableOptionPatch supports 26.707 undefined focusable guard', () => {
+  const updated = injectLinuxWindowFocusableOptionPatch(LINUX_WINDOW_FOCUSABLE_BUNDLE_26_707);
+
+  assert.match(updated, /codexLinuxWindowFocusableOption/);
+  assert.match(updated, /\.\.\.f==null\?\{\}:\{parent:f\}/);
+  assert.match(updated, /\.\.\.m==null\?\{\}:\{focusable:m\}/);
+  assert.doesNotMatch(updated, /show:s,parent:f,\.\.\.m===void 0/);
+  assert.doesNotThrow(() => new Function(updated));
 });
 
 test('injectLinuxWindowFocusableOptionPatch is idempotent', () => {
@@ -3659,6 +3826,23 @@ test('injectLinuxCloseCancelPatch restores the window when quit confirmation is 
   assert.match(updated, /e\.isMinimized\(\)&&e\.restore\(\),e\.show\(\),e\.focus\(\)/);
   assert.match(updated, /s\.preventDefault\(\)/);
   assert.match(updated, /r\.markQuitApproved\(\),m=!0,i\.markAppQuitting\(\)/);
+});
+
+test('injectLinuxCloseCancelPatch supports 26.707 localized quit confirmation', () => {
+  const updated = injectLinuxCloseCancelPatch(LINUX_CLOSE_CANCEL_BUNDLE_26_707);
+
+  assert.match(updated, /codexLinuxCloseCancel/);
+  assert.match(updated, /desktop\.quitConfirmation\.quit/);
+  assert.match(updated, /desktop\.quitConfirmation\.cancel/);
+  assert.match(
+    updated,
+    /process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`/
+  );
+  assert.match(updated, /let e=i\.showLastActivePrimaryWindow\(\);e\?/);
+  assert.match(updated, /Promise\.resolve\(s\(\)\)\.then/);
+  assert.match(updated, /e\.isMinimized\(\)&&e\.restore\(\),e\.show\(\),e\.focus\(\)/);
+  assert.match(updated, /o\.preventDefault\(\)/);
+  assert.match(updated, /r\.markQuitApproved\(\),_=!0,i\.markAppQuitting\(\)/);
 });
 
 test('injectLinuxCloseCancelPatch supports the 26.422 before-quit prompt details', () => {
@@ -4179,8 +4363,11 @@ test('injectLinuxChromeNativeHostRuntimePathsPatch forces Linux Chrome registry 
 
   assert.match(updated, /codexLinuxChromeNativeHostRuntimePaths/);
   assert.doesNotThrow(() => new Function(updated));
+  assert.match(updated, /chrome-extension-host/);
   assert.match(updated, /nodePath:i/);
   assert.match(updated, /nodeReplPath:a/);
+  assert.match(updated, /extensionHostPath:n\.extensionHostPath\?\?i,nodePath:n\.nodePath/);
+  assert.match(updated, /HL\(\{extensionHostPath:n\.extensionHostPath\?\?i,extensionId:e\.extensionId/);
   assert.match(
     updated,
     /n=codexLinuxChromeNativeHostRuntimePaths\(\{runtimePaths:QL\(\{devRuntimeRepoRoot:e\.devRuntimeRepoRoot,nativeHostName:e\.nativeHostName,resourcesPath:e\.resourcesPath\}\),resourcesPath:e\.resourcesPath\}\)/
@@ -4197,6 +4384,24 @@ test('injectLinuxChromeNativeHostRuntimePathsPatch supports 26.616 runtime retur
   assert.match(
     updated,
     /return codexLinuxChromeNativeHostRuntimePaths\(\{runtimePaths:\{codexCliPath:await fz\(\{codexCliPath:t,codexHome:e\.codexHome,nativeHostName:e\.nativeHostName\}\),nodePath:n,nodeModuleDirs:PM\(e\.resourcesPath\),nodeReplPath:r\},resourcesPath:e\.resourcesPath\}\)/
+  );
+});
+
+test('injectLinuxChromeNativeHostRuntimePathsPatch supports 26.707 native host lifecycle shape', () => {
+  const updated = injectLinuxChromeNativeHostRuntimePathsPatch(
+    CHROME_NATIVE_HOST_RUNTIME_PATHS_BUNDLE_26_707
+  );
+
+  assert.match(updated, /codexLinuxChromeNativeHostRuntimePaths/);
+  assert.doesNotThrow(() => new Function(updated));
+  assert.match(
+    updated,
+    /r=codexLinuxChromeNativeHostRuntimePaths\(\{runtimePaths:await nG\(\{codexHome:e\.codexHome,devRuntimeRepoRoot:e\.devRuntimeRepoRoot,nativeHostName:e\.nativeHostName,resourcesPath:e\.resourcesPath\}\),resourcesPath:e\.resourcesPath\}\)/
+  );
+  assert.match(updated, /extensionHostPath:r\.extensionHostPath\?\?n,nodePath:r\.nodePath/);
+  assert.match(
+    updated,
+    /KW\(\{extensionHostPath:r\.extensionHostPath\?\?n,extensionId:e\.extensionId/
   );
 });
 
@@ -4223,7 +4428,14 @@ test('injectLinuxOwlFeatureBindingPatch adds fallback for missing private Electr
   const updated = injectLinuxOwlFeatureBindingPatch(OWL_FEATURE_BINDING_BUNDLE_26_616);
 
   assert.match(updated, /codexLinuxOwlFeatureBindingFallback/);
-  assert.match(updated, /try\{return Ge\.parse\(e\.call\(process,`electron_common_owl_features`\)\)\}catch\{\}/);
+  assert.match(
+    updated,
+    /codexLinuxOwlFeatureBindingParsed=Ge\.parse\(e\.call\(process,`electron_common_owl_features`\)\)/
+  );
+  assert.match(
+    updated,
+    /codexLinuxOwlFeatureBindingParsed\.isOwlFeatureEnabled\(`__codex_linux_owl_probe__`\)/
+  );
   assert.match(updated, /let t=nt\(rt\(`enable-features`\)\),n=nt\(rt\(`disable-features`\)\)/);
   assert.match(updated, /return t\.includes\(codexLinuxOwlFeatureName\)&&!n\.includes\(codexLinuxOwlFeatureName\)/);
   assert.doesNotThrow(() => new Function(updated));
@@ -4234,7 +4446,29 @@ test('injectLinuxOwlFeatureBindingPatch supports nullable 26.623 Owl binding hel
 
   assert.match(updated, /codexLinuxOwlFeatureBindingFallback/);
   assert.match(updated, /if\(typeof e==`function`\)\{let t;try\{t=e\.call\(process,Ve\)\}catch\(e\)\{if\(!st\(e\)\)throw e\}/);
-  assert.match(updated, /if\(t!=null\)try\{return Ge\.parse\(t\)\}catch\{\}/);
+  assert.match(updated, /if\(t!=null\)\{let codexLinuxOwlFeatureBindingParsed;try\{codexLinuxOwlFeatureBindingParsed=Ge\.parse\(t\)\}catch\{\}/);
+  assert.match(
+    updated,
+    /codexLinuxOwlFeatureBindingParsed\.isOwlFeatureEnabled\(`__codex_linux_owl_probe__`\)/
+  );
+  assert.match(updated, /return t\.includes\(codexLinuxOwlFeatureName\)&&!n\.includes\(codexLinuxOwlFeatureName\)/);
+  assert.doesNotThrow(() => new Function(updated));
+});
+
+test('injectLinuxOwlFeatureBindingPatch probes 26.707 Owl binding before returning it', () => {
+  const updated = injectLinuxOwlFeatureBindingPatch(OWL_FEATURE_BINDING_BUNDLE_26_707);
+
+  assert.match(updated, /codexLinuxOwlFeatureBindingFallback/);
+  assert.match(updated, /codexLinuxOwlFeatureBindingParsed=Zt\.parse\(t\)/);
+  assert.match(
+    updated,
+    /codexLinuxOwlFeatureBindingParsed\.isOwlFeatureEnabled\(`__codex_linux_owl_probe__`\)/
+  );
+  assert.match(
+    updated,
+    /Unsupported Owl feature:`\)\)return codexLinuxOwlFeatureBindingParsed/
+  );
+  assert.match(updated, /let t=ln\(un\(`enable-features`\)\),n=ln\(un\(`disable-features`\)\)/);
   assert.match(updated, /return t\.includes\(codexLinuxOwlFeatureName\)&&!n\.includes\(codexLinuxOwlFeatureName\)/);
   assert.doesNotThrow(() => new Function(updated));
 });
@@ -4260,7 +4494,7 @@ test('injectLinuxOwlFeatureBindingPatch reports diagnostics when Owl anchors are
     () => injectLinuxOwlFeatureBindingPatch('const noop = true;', { sourceName: 'main.js' }),
     {
       message:
-        /Could not patch Linux Owl feature binding fallback into the Electron bundle\. Source: main\.js\. Missing anchors: Owl native feature binding name, Owl linkedBinding helper, Electron feature switch readers, isOwlFeatureEnabled predicate\. Detected anchors: owlFeatureBinding=no, linkedBindingHelper=no, featureSwitchReader=no, featurePredicate=no\./
+        /Could not patch Linux Owl feature binding fallback into the Electron bundle\. Source: main\.js\. Missing anchors: Owl native feature binding name, Owl linkedBinding helper, Electron feature switch readers, Electron feature switch normalizer, isOwlFeatureEnabled predicate\. Detected anchors: owlFeatureBinding=no, linkedBindingHelper=no, featureSwitchReader=no, featureSwitchNormalizer=no, featurePredicate=no\./
     }
   );
 });
@@ -4379,6 +4613,23 @@ test('injectLinuxRemoteControlPatch supports 26.608 Mac node_repl guard drift', 
   assert.match(
     updated,
     /return c==null\?\{\.\.\.s,deviceAttestation:ve\(\{platform:i\}\)\}:\{\.\.\.s,\.\.\.c,deviceAttestation:ve\(\{platform:i\}\)\}/
+  );
+});
+
+test('injectLinuxRemoteControlPatch supports 26.707 Windows node_repl drift', () => {
+  const updated = injectLinuxRemoteControlPatch(
+    REMOTE_CONTROL_FEATURE_AVAILABILITY_BUNDLE_26_707
+  );
+
+  assert.match(updated, /codexLinuxRemoteControlFeatureAvailability/);
+  assert.match(updated, /codexLinuxRemoteControlFeatures=r===`linux`&&n\.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==`1`\?\{\.\.\.e,control:!0,computerUse:!0,computerUseNodeRepl:!0\}:e/);
+  assert.match(
+    updated,
+    /a=r===`win32`&&codexLinuxRemoteControlFeatures\.computerUse===!0\?\{\.\.\.codexLinuxRemoteControlFeatures,computerUseNodeRepl:!0\}:codexLinuxRemoteControlFeatures/
+  );
+  assert.match(
+    updated,
+    /o=r===`win32`&&n\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`\?\{\.\.\.a,computerUse:!0,computerUseNodeRepl:!0\}:a/
   );
 });
 
@@ -4772,6 +5023,24 @@ test('injectLinuxAvatarOverlayPatch supports 26.623 presentation and orb-drag dr
   assert.match(updated, /this\.dockPresentation\([A-Za-z_$][\w$]*\.anchor,[A-Za-z_$][\w$]*\.onDock\);return/);
   assert.match(updated, /codexLinuxAvatarOverlaySuppressThrow/);
   assert.match(updated, /throwWithVelocity\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*=!1\)/);
+});
+
+test('injectLinuxAvatarOverlayPatch supports 26.707 window-server drag drift', () => {
+  const updated = injectLinuxAvatarOverlayPatch(AVATAR_OVERLAY_NATIVE_COMPOSITION_BUNDLE_26_707);
+
+  assert.match(updated, /codexLinuxAvatarOverlay/);
+  assert.doesNotThrow(() => new Function(updated));
+  assert.match(updated, /publishRemoteHostedPIPContentHost\(\),this\.codexLinuxRecoverAvatarOverlayVisibility/);
+  assert.match(
+    updated,
+    /this\.windowServerDragActive=codexLinuxAvatarOverlayRendererDrag\?!1:this\.layoutMode===`native`&&![A-Za-z_$][\w$]*&&this\.compositionHost\.performWindowDrag\(\)/
+  );
+  assert.match(
+    updated,
+    /[A-Za-z_$][\w$]*\.getCursorPointForSource\(\{native:process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==`1`\?null:[A-Za-z_$][\w$]*\.cursorSource===`native`\?[A-Za-z_$][\w$]*\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:this\.codexLinuxAvatarOverlayScreenPoint/
+  );
+  assert.match(updated, /this\.windowServerDragActive=!1,this\.windowServerDragWindowX=null,this\.persistWindowBounds/);
+  assert.match(updated, /codexLinuxAvatarOverlayAnchor=\{\.\.\.this\.anchor,x:this\.anchor\.x\+\([A-Za-z_$][\w$]*-this\.anchor\.x\)\*[A-Za-z_$][\w$]*/);
 });
 
 test('injectLinuxAvatarOverlayPatch keeps 26.623 presentation wake on the current Linux anchor', () => {
@@ -5230,6 +5499,25 @@ test('injectLinuxPetYappingUsagePatch supports 26.623.141536 Rolldown JSX export
   );
 });
 
+test('injectLinuxPetYappingUsagePatch supports 26.707 Rolldown JSX exports', () => {
+  const updated = injectLinuxPetYappingUsagePatch(PET_YAPPING_USAGE_RENDERER_BUNDLE_26_707);
+
+  assert.match(updated, /codexLinuxPetYappingUsage/);
+  assert.match(updated, /tQ as codexLinuxFetchUsage/);
+  assert.match(updated, /Vet as O/);
+  assert.match(updated, /\$\.useState\(null\)/);
+  assert.match(updated, /function codexLinuxPetYappingUsage\(\)\{[\s\S]*?function Xt\(/);
+  assert.doesNotMatch(updated, /Z=O\(\);function codexLinuxPetYappingUsage/);
+  assert.match(
+    updated,
+    /children:\[V,\(0,Z\.jsx\)\(codexLinuxPetYappingUsage,\{\}\)\]/
+  );
+  assert.match(
+    updated,
+    /let t=pn\(e\.querySelector\(`\.codex-usage-yap-wrap`\)\)\?\?pn\(e\.querySelector\(Tn\)\),n=mn\(e\.querySelector\(En\)\)/
+  );
+});
+
 test('injectLinuxPetYappingUsageCssPatch adds pixel yapping styles', () => {
   const updated = injectLinuxPetYappingUsageCssPatch(PET_YAPPING_USAGE_CSS_CURRENT);
 
@@ -5269,7 +5557,8 @@ for (const [label, fixture] of [
   ['26.417', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_417],
   ['26.422', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_422],
   ['26.506', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_506],
-  ['26.527', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_527]
+  ['26.527', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_527],
+  ['26.707', WORKTREE_ENVIRONMENT_MAIN_BUNDLE_26_707]
 ]) {
   test(`injectLinuxWorktreeEnvironmentMainPatch adds environment propagation to the ${label} main bundle`, () => {
     const updated = injectLinuxWorktreeEnvironmentMainPatch(fixture);
@@ -5278,7 +5567,7 @@ for (const [label, fixture] of [
     assert.match(updated, /function codexLinuxResolveWorktreeLocalEnvironmentPath\(e,t\)/);
     assert.match(
       updated,
-      /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:[A-Za-z_$][\w$]*\.streamId,(?:allowSetupFailure:!0,)?setUpSyncedBranch:[A-Za-z_$][\w$]*\.launchMode===`create-stable-worktree`\?!1:void 0/
+      /localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:[A-Za-z_$][\w$]*\.streamId,(?:allowSetupFailure:!0,)?(?:worktreesRoot:[^,]+,)?setUpSyncedBranch:[A-Za-z_$][\w$]*\.launchMode===`create-stable-worktree`\?!1:void 0/
     );
     assert.match(
       updated,
@@ -5290,13 +5579,17 @@ for (const [label, fixture] of [
       updated,
       /hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`/
     );
-    if (label === '26.506' || label === '26.527') {
+    if (label === '26.506' || label === '26.527' || label === '26.707') {
       assert.match(updated, /operationSource:`worktree_pending_create`/);
       assert.match(updated, /operationSource:`worktree_managed_create`/);
     }
-    if (label === '26.527') {
+    if (label === '26.527' || label === '26.707') {
       assert.match(updated, /allowSetupFailure:!0/);
       assert.doesNotMatch(updated, /hasLocalEnvironment:i\.localEnvironmentConfigPath!=null/);
+    }
+    if (label === '26.707') {
+      assert.match(updated, /S\$=e\.o\(a\.M\(\)\)/);
+      assert.match(updated, /worktreesRoot:gi\(this\.options\.settingsStore\)/);
     }
   });
 }
@@ -5430,6 +5723,16 @@ test('injectLinuxWorktreeEnvironmentWorkerPatch supports 26.623 TextEncoder logs
   assert.match(updated, /await vZ\(g,codexLinuxLocalEnvironmentConfigPath\?\?`__none__`,o,`worktree`,s\)/);
 });
 
+test('injectLinuxWorktreeEnvironmentWorkerPatch preserves 26.707 worktrees root parameter', () => {
+  const updated = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_26_707);
+
+  assert.match(updated, /codexLinuxWorktreeEnvironmentWorker/);
+  assert.match(
+    updated,
+    /allowSetupFailure:i=!1,setUpSyncedBranch:a=!0,host:o,signal:s,onLog:c,onWorktreePathAllocated:l,onSetupStart:u,worktreesRoot:d/
+  );
+});
+
 test('injectLinuxWorktreeEnvironmentWorkerPatch is idempotent', () => {
   const once = injectLinuxWorktreeEnvironmentWorkerPatch(WORKTREE_ENVIRONMENT_WORKER_BUNDLE_CURRENT);
   const twice = injectLinuxWorktreeEnvironmentWorkerPatch(once);
@@ -5466,7 +5769,8 @@ for (const [label, fixture] of [
   ['26.513', TERMINAL_PANEL_BLOCK_26_513],
   ['26.602', TERMINAL_PANEL_BLOCK_26_602],
   ['26.611', TERMINAL_PANEL_BLOCK_26_611],
-  ['26.623', TERMINAL_PANEL_BLOCK_26_623]
+  ['26.623', TERMINAL_PANEL_BLOCK_26_623],
+  ['26.707', TERMINAL_PANEL_BLOCK_26_707]
 ]) {
   test(
     `injectLinuxTerminalLifecyclePatch adds a Linux terminal handoff guard to the ${label} renderer bundle`,
@@ -5507,6 +5811,14 @@ for (const [label, fixture] of [
         assert.match(
           updated,
           /c&&\!i\.isSessionStarted\(c\)&&\(codexLinuxTraceTerminalAttachScheduled/
+        );
+      }
+      if (label === '26.707') {
+        assert.match(updated, /h!=null&&\(clearTimeout\(h\),h=null\)/);
+        assert.match(updated, /b\(\),p\.dispose\(\)/);
+        assert.match(
+          updated,
+          /o&&\!Al\.isSessionStarted\(o\)&&\(codexLinuxTraceTerminalAttachScheduled/
         );
       }
     }
@@ -8169,6 +8481,8 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       repairedPaths: ['/home/user/.codex/chrome-native-hosts-v2.json'],
       missingPaths: [],
       errors: [],
+      extensionHostPath:
+        '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host',
       nodePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
       nodeReplPath:
         '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node_repl'
@@ -8349,6 +8663,8 @@ test('createInstallDiagnosticManifest includes release, runtime, native module, 
       repairedPaths: ['/home/user/.codex/chrome-native-hosts-v2.json'],
       missingPaths: [],
       errors: [],
+      extensionHostPath:
+        '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/chrome-extension-host',
       nodePath: '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node',
       nodeReplPath:
         '/home/user/.local/share/codex-linux-app/channels/stable/app/resources/node_repl'

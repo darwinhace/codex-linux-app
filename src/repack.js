@@ -1017,6 +1017,10 @@ const LINUX_OWL_FEATURE_BINDING_PATTERN =
   /function (?<helperFn>[A-Za-z_$][\w$]*)\(\)\{let (?<bindingVar>[A-Za-z_$][\w$]*)=process\._linkedBinding;if\(typeof \k<bindingVar>!=`function`\)throw Error\(`Owl feature binding is unavailable`\);return (?<schemaVar>[A-Za-z_$][\w$]*)\.parse\(\k<bindingVar>\.call\(process,`electron_common_owl_features`\)\)\}/;
 const LINUX_OWL_FEATURE_BINDING_NULLABLE_PATTERN =
   /function (?<helperFn>[A-Za-z_$][\w$]*)\(\)\{let (?<bindingVar>[A-Za-z_$][\w$]*)=process\._linkedBinding;if\(typeof \k<bindingVar>!=`function`\)return null;let (?<nativeFeaturesVar>[A-Za-z_$][\w$]*);try\{\k<nativeFeaturesVar>=\k<bindingVar>\.call\(process,(?<featureBindingNameVar>[A-Za-z_$][\w$]*)\)\}catch\((?<errorVar>[A-Za-z_$][\w$]*)\)\{if\((?<missingBindingFn>[A-Za-z_$][\w$]*)\(\k<errorVar>\)\)return null;throw \k<errorVar>\}return (?<schemaVar>[A-Za-z_$][\w$]*)\.parse\(\k<nativeFeaturesVar>\)\}/;
+const LINUX_OWL_FEATURE_SWITCH_READER_PATTERN =
+  /function (?<fn>[A-Za-z_$][\w$]*)\(e\)\{return (?:[A-Za-z_$][\w$]*\.)?app\.commandLine\.getSwitchValue\(e\)\.split\(`,`\)(?:\.filter\(Boolean\))?\}/g;
+const LINUX_OWL_FEATURE_SWITCH_NORMALIZER_PATTERN =
+  /function (?<fn>[A-Za-z_$][\w$]*)\(e\)\{return ?(?:e\.filter\(Boolean\)|\(0,[A-Za-z_$][\w$]*\.default\)\(e\)\.filter\(e=>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?\.some\(t=>t===e\)\))\}/g;
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_CURRENT = 'process.platform===`win32`?{autoHideMenuBar:!0}:{}';
 const LINUX_MENU_BAR_AUTO_HIDE_SNIPPET_26_609 =
   'process.platform===`win32`||process.platform===`linux`?{autoHideMenuBar:!0}:{}';
@@ -1034,18 +1038,28 @@ const LINUX_TITLE_BAR_OVERLAY_TRANSPARENT_PATCHED_OPTIONS_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\((?<scaleVar>[A-Za-z_$][\w$]*)=1,codexLinuxTitleBarOverlayTheme=null\)\{let codexLinuxTitleBarOverlayEnabled=process\.platform===`linux`&&process\?\.env\?\.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH!==`1`,codexLinuxTitleBarOverlaySymbolColor=codexLinuxTitleBarOverlayTheme\?\.symbolColor\?\?\((?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.shouldUseDarkColors\?`#c7c7c7`:`#4b5563`\);return\{color:(?<colorVar>[A-Za-z_$][\w$]*),symbolColor:codexLinuxTitleBarOverlayEnabled\?codexLinuxTitleBarOverlaySymbolColor:\k<electronVar>\.nativeTheme\.shouldUseDarkColors\?(?<darkColorVar>[A-Za-z_$][\w$]*):(?<lightColorVar>[A-Za-z_$][\w$]*),height:Math\.round\((?<heightVar>[A-Za-z_$][\w$]*)\*\k<scaleVar>\)\}\}\/\* codexLinuxTitleBarOverlayColors codexLinuxTitleBarOverlayThemeSync \*\//;
 const LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN =
   /setWindowZoom\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<zoomVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow\.fromWebContents\(\k<webContentsVar>\);\k<windowVar>==null\|\|this\.windowAppearances\.get\(\k<windowVar>\.id\)!==`primary`\|\|\(process\.platform===`darwin`\?\k<windowVar>\.setWindowButtonPosition\((?<buttonPositionFn>[A-Za-z_$][\w$]*)\(\k<zoomVar>\)\):\(process\.platform===`win32`\|\|process\.platform===`linux`\)&&\(this\.windowZooms\.set\(\k<windowVar>\.id,\k<zoomVar>\),\k<windowVar>\.setTitleBarOverlay\((?<overlayFn>[A-Za-z_$][\w$]*)\(\k<zoomVar>\)\)\)\)\}/;
+const LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_QUICK_CHAT_PATTERN =
+  /setWindowZoom\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<zoomVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow\.fromWebContents\(\k<webContentsVar>\),(?<appearanceVar>[A-Za-z_$][\w$]*)=\k<windowVar>&&this\.windowAppearances\.get\(\k<windowVar>\.id\);\k<windowVar>==null\|\|\k<appearanceVar>!==`primary`&&\k<appearanceVar>!==`quickChat`\|\|\(process\.platform===`darwin`\?\k<windowVar>\.setWindowButtonPosition\((?<buttonPositionFn>[A-Za-z_$][\w$]*)\(\k<zoomVar>\)\):\(process\.platform===`win32`\|\|process\.platform===`linux`\)&&\(this\.windowZooms\.set\(\k<windowVar>\.id,\k<zoomVar>\),\k<windowVar>\.setTitleBarOverlay\((?<overlayFn>[A-Za-z_$][\w$]*)\(\k<zoomVar>\)\)\)\)\}/;
 const LINUX_TITLE_BAR_OVERLAY_APP_SYNC_PATTERN =
   /installApplicationMenuTitleBarOverlaySync\((?<windowVar>[A-Za-z_$][\w$]*),(?<appearanceVar>[A-Za-z_$][\w$]*)\)\{if\(process\.platform!==`win32`&&process\.platform!==`linux`\|\|\k<appearanceVar>!==`primary`\)return;let (?<handlerVar>[A-Za-z_$][\w$]*)=\(\)=>\{\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.setTitleBarOverlay\((?<overlayFn>[A-Za-z_$][\w$]*)\(this\.windowZooms\.get\(\k<windowVar>\.id\)\)\)\};return (?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.on\(`updated`,\k<handlerVar>\),\k<handlerVar>\(\),\(\)=>\{\k<electronVar>\.nativeTheme\.off\(`updated`,\k<handlerVar>\)\}\}/;
+const LINUX_TITLE_BAR_OVERLAY_APP_SYNC_QUICK_CHAT_PATTERN =
+  /installApplicationMenuTitleBarOverlaySync\((?<windowVar>[A-Za-z_$][\w$]*),(?<appearanceVar>[A-Za-z_$][\w$]*)\)\{if\(process\.platform!==`win32`&&process\.platform!==`linux`\|\|\k<appearanceVar>!==`primary`&&\k<appearanceVar>!==`quickChat`\)return;let (?<handlerVar>[A-Za-z_$][\w$]*)=\(\)=>\{\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.setTitleBarOverlay\((?<overlayFn>[A-Za-z_$][\w$]*)\(this\.windowZooms\.get\(\k<windowVar>\.id\)\)\)\};return (?<electronVar>[A-Za-z_$][\w$]*)\.nativeTheme\.on\(`updated`,\k<handlerVar>\),\k<handlerVar>\(\),\(\)=>\{\k<electronVar>\.nativeTheme\.off\(`updated`,\k<handlerVar>\)\}\}/;
 const LINUX_TITLE_BAR_OVERLAY_MESSAGE_CASE_PATTERN =
   /case`power-save-blocker-set`:this\.updatePowerSaveBlocker\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<messageVar>[A-Za-z_$][\w$]*)\.shouldBlock,\k<messageVar>\.keepRemoteControlAwakeWhilePluggedIn\);break;/;
 const LINUX_TITLE_BAR_OVERLAY_EXISTING_MESSAGE_CASE_PATTERN =
   /case`codex-linux-title-bar-overlay-theme-set`:this(?:\.windowManager)?\.codexLinuxSetTitleBarOverlayTheme\((?<webContentsVar>[A-Za-z_$][\w$]*),(?<messageVar>[A-Za-z_$][\w$]*)\);break;(?<powerCase>case`power-save-blocker-set`:this\.updatePowerSaveBlocker\(\k<webContentsVar>,\k<messageVar>\.shouldBlock,\k<messageVar>\.keepRemoteControlAwakeWhilePluggedIn\);break;)/;
 const LINUX_NATIVE_WINDOW_FRAME_PRIMARY_BRANCH_PATTERN =
   /(?<platformVar>[A-Za-z_$][\w$]*)===`win32`\|\|\k<platformVar>===`linux`\?\{titleBarStyle:`hidden`,titleBarOverlay:(?<overlayFn>[A-Za-z_$][\w$]*)\((?<zoomVar>[A-Za-z_$][\w$]*)\)\}:\{titleBarStyle:`default`\}/;
+const LINUX_NATIVE_WINDOW_FRAME_QUICK_CHAT_PRIMARY_BRANCH_PATTERN =
+  /(?<platformVar>[A-Za-z_$][\w$]*)===`win32`\|\|\k<platformVar>===`linux`\?\{titleBarStyle:`hidden`,titleBarOverlay:(?<overlayFn>[A-Za-z_$][\w$]*)\((?<zoomVar>[A-Za-z_$][\w$]*)\),\.\.\.(?<appearanceVar>[A-Za-z_$][\w$]*)===`quickChat`\?\{resizable:!0\}:\{\}\}:\{titleBarStyle:`default`,\.\.\.\k<appearanceVar>===`quickChat`\?\{resizable:!0\}:\{\}\}/;
 const LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN =
   /(?<windowVar>[A-Za-z_$][\w$]*)\.setResizable\(!1\),\k<windowVar>\.setMaximizable\(!1\),\k<windowVar>\.setFullScreenable\(!1\)/;
+const LINUX_PRIMARY_WINDOW_MODE_DISABLE_MAXIMIZE_CONTROLS_PATTERN =
+  /(?<windowVar>[A-Za-z_$][\w$]*)\.setMaximizable\(!1\),\k<windowVar>\.setFullScreenable\(!1\)/;
 const LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN =
   /show:(?<showVar>[A-Za-z_$][\w$]*),parent:(?<parentVar>[A-Za-z_$][\w$]*),focusable:(?<focusableVar>[A-Za-z_$][\w$]*),\.\.\.process\.platform/;
+const LINUX_WINDOW_FOCUSABLE_OPTION_26_707_PATTERN =
+  /show:(?<showVar>[A-Za-z_$][\w$]*),parent:(?<parentVar>[A-Za-z_$][\w$]*),\.\.\.(?<focusableVar>[A-Za-z_$][\w$]*)===void 0\?\{\}:\{focusable:\k<focusableVar>\},\.\.\.process\.platform/;
 const LINUX_WINDOW_ICON_BROWSER_WINDOW_PATTERN =
   /new (?<electronVar>[A-Za-z_$][\w$]*)\.BrowserWindow\(\{(?<options>width:[\s\S]{0,3000}?)(?<webPreferences>webPreferences:(?:[A-Za-z_$][\w$]*|\{[^}]*\}))\}\);this\.applyWindowBackdrop/;
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_CURRENT =
@@ -1065,23 +1079,23 @@ const LINUX_CLOSE_CANCEL_BEFORE_QUIT_SNIPPET_26_429 =
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_REPLACEMENT_26_429 =
   'n.app.on(`before-quit`,o=>{let s=Pw(),c=t.Yn().some(e=>e.status===`ACTIVE`);if(e||i.canQuitWithoutPrompt()||r||!s&&!c){g=!0,a.markAppQuitting();return}let l=n.app.getName();if(n.dialog.showMessageBoxSync({type:`warning`,buttons:[`Quit`,`Cancel`],defaultId:0,cancelId:1,noLink:!0,title:`Quit ${l}?`,message:`Quit ${l}?`,detail:ED({hasInProgressLocalConversation:s,hasEnabledAutomations:c})})!==0){o.preventDefault();if(process.platform===`linux`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CLOSE_CANCEL_PATCH!==`1`){let e=a.showLastActivePrimaryWindow();e?(e.isMinimized()&&e.restore(),e.show(),e.focus()):Promise.resolve(s(`local`)).then(e=>{e&&!e.isDestroyed()&&(e.isMinimized()&&e.restore(),e.show(),e.focus())})}return}i.markQuitApproved(),g=!0,a.markAppQuitting()})';
 const LINUX_CLOSE_CANCEL_BEFORE_QUIT_GENERIC_PATTERN =
-  /(?<prefix>[A-Za-z_$][\w$]*\.app\.on\(`before-quit`,(?<eventVar>[A-Za-z_$][\w$]*)=>\{[\s\S]*?buttons:\[`Quit`,`Cancel`\][\s\S]*?\{)\k<eventVar>\.preventDefault\(\);return(?<suffix>\}[\s\S]*?,[A-Za-z_$][\w$]*\.app\.on\(`activate`,\(\)=>\{[A-Za-z_$][\w$]*\|\|\((?<windowsVar>[A-Za-z_$][\w$]*)\.showLastActivePrimaryWindow\(\)\|\|(?<ensureWindowCall>[A-Za-z_$][\w$]*\((?:`local`)?\)),[A-Za-z_$][\w$]*\.refresh\(\)\)\}\))/;
+  /(?<prefix>[A-Za-z_$][\w$]*\.app\.on\(`before-quit`,(?<eventVar>[A-Za-z_$][\w$]*)=>\{[\s\S]*?showMessageBoxSync\([\s\S]*?\)!==0\)\{)\k<eventVar>\.preventDefault\(\);return(?<suffix>\}[\s\S]*?,[A-Za-z_$][\w$]*\.app\.on\(`activate`,\(\)=>\{[A-Za-z_$][\w$]*\|\|\((?<windowsVar>[A-Za-z_$][\w$]*)\.showLastActivePrimaryWindow\(\)\|\|(?<ensureWindowCall>[A-Za-z_$][\w$]*\((?:`local`)?\)),[A-Za-z_$][\w$]*\.refresh\(\)\)\}\))/;
 const LINUX_NOTIFICATION_SOUND_SHOW_PATTERN =
   /(?<showVar>[A-Za-z_$][\w$]*)\.show\(\)\}stageNotificationSoundIfNeeded\(\)\{/;
 const LINUX_NOTIFICATION_SOUND_CHILD_PROCESS_PATTERN =
   /(?<childProcessVar>[A-Za-z_$][\w$]*)=require\(`node:child_process`\)/;
 const LINUX_WORKTREE_ENVIRONMENT_MAIN_HELPER_PATTERN =
-  /var (?<thresholdVar>[A-Za-z_$][\w$]*)=32e3,(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`worktree-service`\),(?<classVar>[A-Za-z_$][\w$]*)=class\{/;
+  /var (?<prefixDeclarations>(?:[A-Za-z_$][\w$]*=[^,;]+,)*)?(?<thresholdVar>[A-Za-z_$][\w$]*)=32e3,(?<loggerVar>[A-Za-z_$][\w$]*)=(?<loggerObject>[A-Za-z_$][\w$]*)\.(?<loggerFactory>[A-Za-z_$][\w$]*)\(`worktree-service`\),(?<classVar>[A-Za-z_$][\w$]*)=class\{/;
 const LINUX_WORKTREE_ENVIRONMENT_PENDING_REQUEST_PATTERN =
-  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.hostConfig,(?<operationSource>operationSource:`[^`]+`,)?cwd:(?<pathModuleVar>[A-Za-z_$][\w$]*)\.(?<pathResolver>[A-Za-z_$][\w$]*)\((?<entryVar>[A-Za-z_$][\w$]*)\.sourceWorkspaceRoot\),startingState:\k<entryVar>\.startingState,localEnvironmentConfigPath:\k<entryVar>\.localEnvironmentConfigPath,streamId:(?<runtimeVar>[A-Za-z_$][\w$]*)\.streamId,(?<allowSetupFailure>allowSetupFailure:!0,)?setUpSyncedBranch:\k<entryVar>\.launchMode===`create-stable-worktree`\?!1:void 0\},signal:\k<runtimeVar>\.abortController\.signal\}\);/;
+  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.hostConfig,(?<operationSource>operationSource:`[^`]+`,)?cwd:(?<pathModuleVar>[A-Za-z_$][\w$]*)\.(?<pathResolver>[A-Za-z_$][\w$]*)\((?<entryVar>[A-Za-z_$][\w$]*)\.sourceWorkspaceRoot\),startingState:\k<entryVar>\.startingState,localEnvironmentConfigPath:\k<entryVar>\.localEnvironmentConfigPath,streamId:(?<runtimeVar>[A-Za-z_$][\w$]*)\.streamId,(?<allowSetupFailure>allowSetupFailure:!0,)?(?<worktreesRootParam>worktreesRoot:[^,}]+,)?setUpSyncedBranch:\k<entryVar>\.launchMode===`create-stable-worktree`\?!1:void 0\},signal:\k<runtimeVar>\.abortController\.signal\}\);/;
 const LINUX_WORKTREE_ENVIRONMENT_PENDING_READY_LOG_REPLACEMENT_CURRENT =
   'hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`';
 const LINUX_WORKTREE_ENVIRONMENT_MANAGED_REQUEST_PATTERN =
-  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.getHostConfigForHostId\((?<hostVar>[A-Za-z_$][\w$]*)\),(?<operationSource>operationSource:`[^`]+`,)?cwd:(?<pathModuleVar>[A-Za-z_$][\w$]*)\.(?<pathResolver>[A-Za-z_$][\w$]*)\((?<cwdVar>[A-Za-z_$][\w$]*)\),startingState:(?<startingStateVar>[A-Za-z_$][\w$]*),localEnvironmentConfigPath:(?<envVar>[A-Za-z_$][\w$]*),streamId:(?<streamVar>[A-Za-z_$][\w$]*)\}\}\),(?<newbornVar>[A-Za-z_$][\w$]*)=this\.newbornWorktreeRoots\.has\(\k<resultVar>\.worktreeGitRoot\);/;
+  /let (?<resultVar>[A-Za-z_$][\w$]*)=await this\.requestGitWorker\(\{method:`create-worktree`,params:\{hostConfig:this\.options\.getHostConfigForHostId\((?<hostVar>[A-Za-z_$][\w$]*)\),(?<operationSource>operationSource:`[^`]+`,)?cwd:(?<pathModuleVar>[A-Za-z_$][\w$]*)\.(?<pathResolver>[A-Za-z_$][\w$]*)\((?<cwdVar>[A-Za-z_$][\w$]*)\),startingState:(?<startingStateVar>[A-Za-z_$][\w$]*),localEnvironmentConfigPath:(?<envVar>[A-Za-z_$][\w$]*),streamId:(?<streamVar>[A-Za-z_$][\w$]*)(?<worktreesRootParam>,worktreesRoot:[^}]+)?\}\}\),(?<newbornVar>[A-Za-z_$][\w$]*)=this\.newbornWorktreeRoots\.has\(\k<resultVar>\.worktreeGitRoot\);/;
 const LINUX_WORKTREE_ENVIRONMENT_MANAGED_READY_LOG_REPLACEMENT_CURRENT =
   'hasLocalEnvironment:codexLinuxResolvedLocalEnvironmentPath!=null&&codexLinuxResolvedLocalEnvironmentPath!==`__none__`';
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_HELPER_PATTERN =
-  /async function (?<createWorktreeFn>[A-Za-z_$][\w$]*)\(\{gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,(?<allowSetupFailureParam>allowSetupFailure:[A-Za-z_$][\w$]*=!1,)?setUpSyncedBranch:(?<setUpSyncedBranchVar>[A-Za-z_$][\w$]*)=!0,(?<clientParamName>appServerClient|host):(?<appServerClientVar>[A-Za-z_$][\w$]*),signal:(?<signalVar>[A-Za-z_$][\w$]*),onLog:(?<onLogVar>[A-Za-z_$][\w$]*),onWorktreePathAllocated:(?<onWorktreePathAllocatedVar>[A-Za-z_$][\w$]*)(?<onSetupStartParam>,onSetupStart:[A-Za-z_$][\w$]*)?\}\)\{/;
+  /async function (?<createWorktreeFn>[A-Za-z_$][\w$]*)\(\{gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,(?<allowSetupFailureParam>allowSetupFailure:[A-Za-z_$][\w$]*=!1,)?setUpSyncedBranch:(?<setUpSyncedBranchVar>[A-Za-z_$][\w$]*)=!0,(?<clientParamName>appServerClient|host):(?<appServerClientVar>[A-Za-z_$][\w$]*),signal:(?<signalVar>[A-Za-z_$][\w$]*),onLog:(?<onLogVar>[A-Za-z_$][\w$]*),onWorktreePathAllocated:(?<onWorktreePathAllocatedVar>[A-Za-z_$][\w$]*)(?<onSetupStartParam>,onSetupStart:[A-Za-z_$][\w$]*)?(?<worktreesRootParam>,worktreesRoot:[A-Za-z_$][\w$]*)?\}\)\{/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CLEANUP_HELPER_PATTERN =
   /async function (?<cleanupFn>[A-Za-z_$][\w$]*)\(e,t,n,r,i\)\{return\(await (?<environmentRunnerFn>[A-Za-z_$][\w$]*)\(\{workspaceRoot:e,localEnvironment:t,scriptType:`cleanup`,(?<clientParamName>appServerClient|host):i,onLog:n,signal:r\}\)\)\?\.setupResult\?\?null\}/;
 const LINUX_WORKTREE_ENVIRONMENT_WORKER_CREATE_PATTERN =
@@ -1130,6 +1144,8 @@ const BUNDLED_PLUGIN_MARKETPLACE_FILTER_26_609_PATTERN =
   /async function (?<fn>[A-Za-z_$][\w$]*)\(e\)\{let (?<marketplaceVar>[A-Za-z_$][\w$]*)=\{\.\.\.(?<filterFn>[A-Za-z_$][\w$]*)\(\{marketplacePluginNames:e\.marketplacePluginNames,marketplace:await (?<readMarketplaceFn>[A-Za-z_$][\w$]*)\(e\.sourceMarketplaceRoot\)\}\),name:e\.marketplaceName\},(?<stagingVar>[A-Za-z_$][\w$]*)=/;
 const CHROME_NATIVE_HOST_RUNTIME_PATHS_REGISTRATION_PATTERN =
   /async function (?<fn>[A-Za-z_$][\w$]*)\((?<arg>[A-Za-z_$][\w$]*)\)\{let (?<targetVar>[A-Za-z_$][\w$]*)=(?<targetFn>[A-Za-z_$][\w$]*)\(\),(?<runtimeVar>[A-Za-z_$][\w$]*)=(?<runtimeFn>[A-Za-z_$][\w$]*)\(\{devRuntimeRepoRoot:\k<arg>\.devRuntimeRepoRoot,nativeHostName:\k<arg>\.nativeHostName,resourcesPath:\k<arg>\.resourcesPath\}\),(?<hostVar>[A-Za-z_$][\w$]*)=await (?<installFn>[A-Za-z_$][\w$]*)\(/;
+const CHROME_NATIVE_HOST_RUNTIME_PATHS_LIFECYCLE_26_707_PATTERN =
+  /async function (?<fn>[A-Za-z_$][\w$]*)\((?<arg>[A-Za-z_$][\w$]*)\)\{let (?<targetVar>[A-Za-z_$][\w$]*)=(?<targetFn>[A-Za-z_$][\w$]*)\(\),(?<hostVar>[A-Za-z_$][\w$]*)=await (?<hostFn>[A-Za-z_$][\w$]*)\(\{pluginRoot:\k<arg>\.pluginRoot,target:\k<targetVar>\}\),(?<runtimeVar>[A-Za-z_$][\w$]*)=await (?<runtimeFn>[A-Za-z_$][\w$]*)\(\{codexHome:\k<arg>\.codexHome,devRuntimeRepoRoot:\k<arg>\.devRuntimeRepoRoot,nativeHostName:\k<arg>\.nativeHostName,resourcesPath:\k<arg>\.resourcesPath\}\)/;
 const CHROME_NATIVE_HOST_RUNTIME_PATHS_RETURN_26_616_PATTERN =
   /return\{codexCliPath:await (?<copyCliFn>[A-Za-z_$][\w$]*)\(\{codexCliPath:(?<codexCliVar>[A-Za-z_$][\w$]*),codexHome:(?<arg>[A-Za-z_$][\w$]*)\.codexHome,nativeHostName:\k<arg>\.nativeHostName\}\),nodePath:(?<nodeVar>[A-Za-z_$][\w$]*),nodeModuleDirs:(?<nodeModuleDirsFn>[A-Za-z_$][\w$]*)\(\k<arg>\.resourcesPath\),nodeReplPath:(?<nodeReplVar>[A-Za-z_$][\w$]*)\}/;
 const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_PATTERN =
@@ -1138,6 +1154,8 @@ const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_OVERRIDES_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\((?<featuresVar>[A-Za-z_$][\w$]*),\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*)=(?<buildFlavorDefault>[^,]+),env:(?<envVar>[A-Za-z_$][\w$]*)=(?<envDefault>[^,]+),platform:(?<platformVar>[A-Za-z_$][\w$]*)=(?<platformDefault>[^}]+)\}=\{\}\)\{let (?<computedVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`win32`&&\k<envVar>\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`\?\{\.\.\.\k<featuresVar>,computerUse:!0,computerUseNodeRepl:!0\}:\k<featuresVar>,(?<overridesVar>[A-Za-z_$][\w$]*)=(?<overrideExpr>[^;]+);return \k<overridesVar>==null\?\k<computedVar>:\{\.\.\.\k<computedVar>,\.\.\.\k<overridesVar>\}\}/;
 const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_DEVICE_ATTESTATION_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\((?<featuresVar>[A-Za-z_$][\w$]*),\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*)=(?<buildFlavorDefault>[^,]+),env:(?<envVar>[A-Za-z_$][\w$]*)=(?<envDefault>[^,]+),platform:(?<platformVar>[A-Za-z_$][\w$]*)=(?<platformDefault>[^}]+)\}=\{\}\)\{let (?<computedVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`win32`&&\k<envVar>\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`\?\{\.\.\.\k<featuresVar>,computerUse:!0,computerUseNodeRepl:!0\}:\k<featuresVar>,(?<overridesVar>[A-Za-z_$][\w$]*)=(?<overrideExpr>[^;]+);return \k<overridesVar>==null\?\{\.\.\.\k<computedVar>,deviceAttestation:(?<deviceFn>[A-Za-z_$][\w$]*)\(\{platform:\k<platformVar>\}\)\}:\{\.\.\.\k<computedVar>,\.\.\.\k<overridesVar>,deviceAttestation:\k<deviceFn>\(\{platform:\k<platformVar>\}\)\}\}/;
+const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_WINDOWS_NODE_REPL_PATTERN =
+  /function (?<fnName>[A-Za-z_$][\w$]*)\((?<featuresVar>[A-Za-z_$][\w$]*),\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*)=(?<buildFlavorDefault>[^,]+),env:(?<envVar>[A-Za-z_$][\w$]*)=(?<envDefault>[^,]+),platform:(?<platformVar>[A-Za-z_$][\w$]*)=(?<platformDefault>[^}]+)\}=\{\}\)\{let (?<windowsNodeReplVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`win32`&&\k<featuresVar>\.computerUse===!0\?\{\.\.\.\k<featuresVar>,computerUseNodeRepl:!0\}:\k<featuresVar>,(?<computedVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`win32`&&\k<envVar>\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`\?\{\.\.\.\k<windowsNodeReplVar>,computerUse:!0,computerUseNodeRepl:!0\}:\k<windowsNodeReplVar>,(?<overridesVar>[A-Za-z_$][\w$]*)=(?<overrideExpr>[^;]+);return \k<overridesVar>==null\?\{\.\.\.\k<computedVar>,deviceAttestation:(?<deviceFn>[A-Za-z_$][\w$]*)\(\{platform:\k<platformVar>\}\)\}:\{\.\.\.\k<computedVar>,\.\.\.\k<overridesVar>,deviceAttestation:\k<deviceFn>\(\{platform:\k<platformVar>\}\)\}\}/;
 const LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_MAC_NODE_REPL_PATTERN =
   /function (?<fnName>[A-Za-z_$][\w$]*)\((?<featuresVar>[A-Za-z_$][\w$]*),\{buildFlavor:(?<buildFlavorVar>[A-Za-z_$][\w$]*)=(?<buildFlavorDefault>[^,]+),env:(?<envVar>[A-Za-z_$][\w$]*)=(?<envDefault>[^,]+),platform:(?<platformVar>[A-Za-z_$][\w$]*)=(?<platformDefault>[^}]+)\}=\{\}\)\{let (?<macVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`darwin`&&!(?<internalFn>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\(\k<buildFlavorVar>\)&&\k<featuresVar>\.computerUseNodeRepl!=null\?\{\.\.\.\k<featuresVar>,computerUseNodeRepl:!1\}:\k<featuresVar>,(?<windowsNodeReplVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`win32`&&\k<featuresVar>\.computerUse===!0\?\{\.\.\.\k<macVar>,computerUseNodeRepl:!0\}:\k<macVar>,(?<computedVar>[A-Za-z_$][\w$]*)=\k<platformVar>===`win32`&&\k<envVar>\.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===`1`\?\{\.\.\.\k<windowsNodeReplVar>,computerUse:!0,computerUseNodeRepl:!0\}:\k<windowsNodeReplVar>,(?<overridesVar>[A-Za-z_$][\w$]*)=(?<overrideExpr>[^;]+);return \k<overridesVar>==null\?\{\.\.\.\k<computedVar>,deviceAttestation:(?<deviceFn>[A-Za-z_$][\w$]*)\(\{platform:\k<platformVar>\}\)\}:\{\.\.\.\k<computedVar>,\.\.\.\k<overridesVar>,deviceAttestation:\k<deviceFn>\(\{platform:\k<platformVar>\}\)\}\}/;
 const LINUX_REMOTE_CONTROL_VISIBILITY_PATTERN =
@@ -1157,7 +1175,7 @@ const LINUX_AVATAR_OVERLAY_CREATE_FRONTMOST_PATTERN =
 const LINUX_AVATAR_OVERLAY_CREATE_WINDOW_END_PATTERN =
   /\}\),(?<windowVar>[A-Za-z_$][\w$]*)\}positionWindow\((?<positionArgs>[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*)\)\{/;
 const LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN =
-  /showWindow\((?<windowVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<wasOpenVar>[A-Za-z_$][\w$]*)=this\.isOpen\(\);(?<revealExpr>this\.[A-Za-z_$][\w$]*&&=\(\k<windowVar>\.setOpacity\(1\),!1\),)?\k<windowVar>\.moveTop\(\),\k<windowVar>\.showInactive\(\),!\k<wasOpenVar>&&this\.isOpen\(\)&&(?<openStateExpr>(?:\(this\.finishPendingPresentation\(\),this\.broadcastOpenState\(\)\)|this\.broadcastOpenState\(\)))(?<postOpenExpr>;let (?<pendingPresentationVar>[A-Za-z_$][\w$]*)=this\.pendingPresentation;\k<pendingPresentationVar>!=null&&\(this\.pendingPresentation=null,\k<pendingPresentationVar>\.velocity==null\?\(this\.dockRestoreAnchor=\k<pendingPresentationVar>\.target,this\.animatePresentationTo\(\k<pendingPresentationVar>\.target,[A-Za-z_$][\w$]*\(this\.anchor,\k<pendingPresentationVar>\.target\),\(\)=>\{this\.dockRestoreAnchor===\k<pendingPresentationVar>\.target&&\(this\.dockRestoreAnchor=null\)\}\)\):this\.startMomentum\(\k<pendingPresentationVar>\.velocity\.x,\k<pendingPresentationVar>\.velocity\.y,!0\)\))?\}/;
+  /showWindow\((?<windowVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<wasOpenVar>[A-Za-z_$][\w$]*)=this\.isOpen\(\);(?<revealExpr>this\.[A-Za-z_$][\w$]*&&=\(\k<windowVar>\.setOpacity\(1\),!1\),)?\k<windowVar>\.moveTop\(\),\k<windowVar>\.showInactive\(\),(?<postShowExpr>(?:this\.compositionHost\.publishRemoteHostedPIPContentHost\(\),)?)!\k<wasOpenVar>&&this\.isOpen\(\)&&(?<openStateExpr>(?:\(this\.finishPendingPresentation\(\),this\.broadcastOpenState\(\)\)|this\.broadcastOpenState\(\)))(?<postOpenExpr>;let (?<pendingPresentationVar>[A-Za-z_$][\w$]*)=this\.pendingPresentation;\k<pendingPresentationVar>!=null&&\(this\.pendingPresentation=null,\k<pendingPresentationVar>\.velocity==null\?\(this\.dockRestoreAnchor=\k<pendingPresentationVar>\.target,this\.animatePresentationTo\(\k<pendingPresentationVar>\.target,[A-Za-z_$][\w$]*\(this\.anchor,\k<pendingPresentationVar>\.target\),\(\)=>\{this\.dockRestoreAnchor===\k<pendingPresentationVar>\.target&&\(this\.dockRestoreAnchor=null\)\}\)\):this\.startMomentum\(\k<pendingPresentationVar>\.velocity\.x,\k<pendingPresentationVar>\.velocity\.y,!0\)\))?\}/;
 const LINUX_AVATAR_OVERLAY_OPEN_METHOD_PATTERN =
   /async open\((?<openerVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=await this\.ensureWindow\((?<ensureWindowArg>[A-Za-z_$][\w$]*)?\);this\.globalState\.set\((?<openStateVar>[A-Za-z_$][\w$]*),!0\),this\.positionWindow\(\k<windowVar>,\k<openerVar>\),this\.rendererReady&&\(this\.showWindow\(\k<windowVar>\),this\.applyPointerInteractivityPolicy\(\)\)\}/;
 const LINUX_AVATAR_OVERLAY_OPEN_METHOD_26_608_PATTERN =
@@ -1174,6 +1192,8 @@ const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_PATTERN =
   /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*),(?<animateVar>[A-Za-z_$][\w$]*),(?<nativeMoveVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<currentBoundsVar>[A-Za-z_$][\w$]*)=\k<windowVar>\.getContentBounds\(\);if\((?<equalFn>[A-Za-z_$][\w$]*)\(\k<currentBoundsVar>,\k<boundsVar>\)\)return;let (?<sameSizeVar>[A-Za-z_$][\w$]*)=\k<currentBoundsVar>\.width===\k<boundsVar>\.width&&\k<currentBoundsVar>\.height===\k<boundsVar>\.height;\k<sameSizeVar>&&!\k<nativeMoveVar>&&this\.compositionHost\.prepareDragFollowForOverlayMove\(\k<boundsVar>\),\k<windowVar>\.setContentBounds\(\k<boundsVar>,\k<animateVar>\),\(\k<nativeMoveVar>\|\|!\k<sameSizeVar>\)&&this\.compositionHost\.moveBackingCanvases\(\)\}/;
 const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_611_PATTERN =
   /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*),(?<animateVar>[A-Za-z_$][\w$]*),(?<nativeMoveVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<currentBoundsVar>[A-Za-z_$][\w$]*)=\k<windowVar>\.getContentBounds\(\);if\((?<equalFn>[A-Za-z_$][\w$]*)\(\k<currentBoundsVar>,\k<boundsVar>\)\)\{this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.position\(\k<windowVar>,\k<boundsVar>\);return\}let (?<sameSizeVar>[A-Za-z_$][\w$]*)=\k<currentBoundsVar>\.width===\k<boundsVar>\.width&&\k<currentBoundsVar>\.height===\k<boundsVar>\.height;\k<sameSizeVar>&&!\k<nativeMoveVar>&&this\.compositionHost\.prepareDragFollowForOverlayMove\(\k<boundsVar>\),\k<windowVar>\.setContentBounds\(\k<boundsVar>,\k<animateVar>&&!this\.nativeCompositionSupported\),this\.\k<positionControllerVar>\.position\(\k<windowVar>,\k<boundsVar>\),\(\k<nativeMoveVar>\|\|!\k<sameSizeVar>\)&&this\.compositionHost\.moveBackingCanvases\(\)\}/;
+const LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_707_PATTERN =
+  /setWindowBounds\((?<windowVar>[A-Za-z_$][\w$]*),(?<boundsVar>[A-Za-z_$][\w$]*),(?<animateVar>[A-Za-z_$][\w$]*),(?<nativeMoveVar>[A-Za-z_$][\w$]*)\)\{if\(\k<windowVar>\.isDestroyed\(\)\)return;let (?<currentBoundsVar>[A-Za-z_$][\w$]*)=\k<windowVar>\.getContentBounds\(\);if\((?<equalFn>[A-Za-z_$][\w$]*)\(\k<currentBoundsVar>,\k<boundsVar>\)\)\{this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.position\(\k<windowVar>,\k<boundsVar>\);return\}let (?<sameSizeVar>[A-Za-z_$][\w$]*)=\k<currentBoundsVar>\.width===\k<boundsVar>\.width&&\k<currentBoundsVar>\.height===\k<boundsVar>\.height;\k<windowVar>\.setContentBounds\(\k<boundsVar>,\k<animateVar>&&!this\.nativeCompositionSupported\),this\.\k<positionControllerVar>\.position\(\k<windowVar>,\k<boundsVar>\),\(\k<nativeMoveVar>\|\|!\k<sameSizeVar>\)&&this\.compositionHost\.moveBackingCanvases\(\)\}/;
 const LINUX_AVATAR_OVERLAY_POINTER_POLICY_PATTERN =
   /applyPointerInteractivityPolicy\(\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\)\{this\.mousePassthroughEnabled=!1;return\}let (?<passthroughVar>[A-Za-z_$][\w$]*)=!this\.pointerInteractive;if\(this\.mousePassthroughEnabled!==\k<passthroughVar>\)\{if\(this\.mousePassthroughEnabled=\k<passthroughVar>,\k<passthroughVar>\)\{\k<windowVar>\.setIgnoreMouseEvents\(!0,\{forward:!0\}\);return\}\k<windowVar>\.setIgnoreMouseEvents\(!1\),this\.refreshCursorAtCurrentMousePosition\(\k<windowVar>\)\}\}/;
 const LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN =
@@ -1192,12 +1212,16 @@ const LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN =
   /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<eventVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\),this\.(?<suppressVar>[A-Za-z_$][\w$]*)=!1,this\.clearDetachedDisplayRestore\(\);let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.clear\(\);let (?<nativePointVar>[A-Za-z_$][\w$]*)=(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\),(?<rendererPointVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerScreenX!=null&&\k<eventVar>\.pointerScreenY!=null\?\{x:\k<eventVar>\.pointerScreenX,y:\k<eventVar>\.pointerScreenY\}:(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<sourcePointVar>[A-Za-z_$][\w$]*)=\k<nativePointVar>\?\?\k<rendererPointVar>,(?<pointerAnchorXVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowX-\k<layoutVar>\.mascot\.left,(?<pointerAnchorYVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowY-\k<layoutVar>\.mascot\.top;this\.dragState=new (?<dragStateCtor>[A-Za-z_$][\w$]*)\(\k<nativePointVar>==null\?`renderer`:`native`,\k<pointerAnchorXVar>,\k<pointerAnchorYVar>,\k<electronVar>\.screen\.getDisplayNearestPoint\(\k<sourcePointVar>\)\.bounds\)\}/;
 const LINUX_AVATAR_OVERLAY_START_DRAG_26_623_PATTERN =
   /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<eventVar>[A-Za-z_$][\w$]*),(?<usesOrbPhysicsVar>[A-Za-z_$][\w$]*)=!1\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\),this\.dockRestoreAnchor=null,this\.cancelOrbDragFollow\(\),this\.(?<suppressVar>[A-Za-z_$][\w$]*)=!1,this\.clearDetachedDisplayRestore\(\);let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.clear\(\);let (?<nativePointVar>[A-Za-z_$][\w$]*)=(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\),(?<rendererPointVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerScreenX!=null&&\k<eventVar>\.pointerScreenY!=null\?\{x:\k<eventVar>\.pointerScreenX,y:\k<eventVar>\.pointerScreenY\}:(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<sourcePointVar>[A-Za-z_$][\w$]*)=\k<nativePointVar>\?\?\k<rendererPointVar>,(?<pointerAnchorXVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowX-\k<layoutVar>\.mascot\.left,(?<pointerAnchorYVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowY-\k<layoutVar>\.mascot\.top;this\.dragState=new (?<dragStateCtor>[A-Za-z_$][\w$]*)\(\k<nativePointVar>==null\?`renderer`:`native`,\k<pointerAnchorXVar>,\k<pointerAnchorYVar>,\k<electronVar>\.screen\.getDisplayNearestPoint\(\k<sourcePointVar>\)\.bounds,\k<usesOrbPhysicsVar>\)\}/;
+const LINUX_AVATAR_OVERLAY_START_DRAG_26_707_PATTERN =
+  /startDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<eventVar>[A-Za-z_$][\w$]*),(?<usesOrbPhysicsVar>[A-Za-z_$][\w$]*)=!1\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelMomentum\(\),this\.dockRestoreAnchor=null,this\.cancelOrbDragFollow\(\),this\.windowServerDragActive=!1,this\.windowServerDragDirection=null,this\.windowServerDragWindowX=\k<windowVar>\.getContentBounds\(\)\.x,this\.(?<suppressVar>[A-Za-z_$][\w$]*)=!1,this\.clearDetachedDisplayRestore\(\);let (?<layoutVar>[A-Za-z_$][\w$]*)=this\.getLayout\(\k<windowVar>\);this\.(?<positionControllerVar>[A-Za-z_$][\w$]*)\.clear\(\);let (?<nativePointVar>[A-Za-z_$][\w$]*)=(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\),(?<rendererPointVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerScreenX!=null&&\k<eventVar>\.pointerScreenY!=null\?\{x:\k<eventVar>\.pointerScreenX,y:\k<eventVar>\.pointerScreenY\}:(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<sourcePointVar>[A-Za-z_$][\w$]*)=\k<nativePointVar>\?\?\k<rendererPointVar>,(?<pointerAnchorXVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowX-\k<layoutVar>\.mascot\.left,(?<pointerAnchorYVar>[A-Za-z_$][\w$]*)=\k<eventVar>\.pointerWindowY-\k<layoutVar>\.mascot\.top;this\.dragState=new (?<dragStateCtor>[A-Za-z_$][\w$]*)\(\k<nativePointVar>==null\?`renderer`:`native`,\k<pointerAnchorXVar>,\k<pointerAnchorYVar>,\k<electronVar>\.screen\.getDisplayNearestPoint\(\k<sourcePointVar>\)\.bounds,\k<usesOrbPhysicsVar>\),this\.windowServerDragActive=this\.layoutMode===`native`&&!\k<usesOrbPhysicsVar>&&this\.compositionHost\.performWindowDrag\(\),this\.windowServerDragActive\|\|\(this\.windowServerDragWindowX=null\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN =
   /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\|\|\(this\.cancelMomentum\(\),this\.dragState\.hasMoved=!0,this\.moveDragToCurrentCursor\(\k<windowVar>\)\)\}endDrag/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_611_PATTERN =
   /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\)return;this\.cancelMomentum\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;\k<dragStateVar>\.recordMovementIntent\(\);let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_623_PATTERN =
   /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\)return;this\.cancelMomentum\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;\k<dragStateVar>\.recordMovementIntent\(\);let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&\(\k<dragStateVar>\.usesOrbPhysics\?\(this\.orbDragFollowTarget=\k<nextPointVar>,this\.scheduleOrbDragFollow\(\k<windowVar>\)\):this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\)\}/;
+const LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_707_PATTERN =
+  /moveDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|this\.dragState==null\)return;this\.cancelMomentum\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>\.recordMovementIntent\(\),this\.windowServerDragActive\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&\(\k<dragStateVar>\.usesOrbPhysics\?\(this\.orbDragFollowTarget=\k<nextPointVar>,this\.scheduleOrbDragFollow\(\k<windowVar>\)\):this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_PATTERN =
   /moveDragToCurrentCursor\((?<windowVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<cursorVar>[A-Za-z_$][\w$]*)=n\.screen\.getCursorScreenPoint\(\),(?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\);\k<dragStateVar>\.displayBounds=\k<displayBoundsVar>(?:,this\.resolutionKey=[^,}]+)?,this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayBoundsVar>\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_527_PATTERN =
@@ -1208,12 +1232,16 @@ const LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN =
   /moveDragToPointer\((?<windowVar>[A-Za-z_$][\w$]*),(?<cursorVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.recordMove\(\k<displayVar>\.bounds\),this\.anchor=\{\.\.\.this\.anchor,x:\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY\},this\.applyLayout\(\k<windowVar>,\k<displayVar>,!1,!1\)\}/;
 const LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_623_PATTERN =
   /moveDragToPointer\((?<windowVar>[A-Za-z_$][\w$]*),(?<cursorVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.recordMove\(\k<displayVar>\.bounds\);let (?<targetXVar>[A-Za-z_$][\w$]*)=\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,(?<targetYVar>[A-Za-z_$][\w$]*)=\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY,(?<easeVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.usesOrbPhysics\?(?<orbEaseVar>[A-Za-z_$][\w$]*):1,(?<nextAnchorVar>[A-Za-z_$][\w$]*)=\{\.\.\.this\.anchor,x:this\.anchor\.x\+\(\k<targetXVar>-this\.anchor\.x\)\*\k<easeVar>,y:this\.anchor\.y\+\(\k<targetYVar>-this\.anchor\.y\)\*\k<easeVar>\},(?<currentBoundsVar>[A-Za-z_$][\w$]*)=\k<windowVar>\.getContentBounds\(\);this\.anchor=\k<nextAnchorVar>,this\.applyLayout\(\k<windowVar>,\k<displayVar>,!1,!1\),this\.layout!=null&&(?<equalFn>[A-Za-z_$][\w$]*)\(\k<currentBoundsVar>,this\.layout\.windowBounds\)&&\(this\.anchor\.x!==Math\.round\(\k<nextAnchorVar>\.x\)\|\|this\.anchor\.y!==Math\.round\(\k<nextAnchorVar>\.y\)\)&&this\.compositionHost\.settleDragFollowSurfaces\(\)\}/;
+const LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_707_PATTERN =
+  /moveDragToPointer\((?<windowVar>[A-Za-z_$][\w$]*),(?<cursorVar>[A-Za-z_$][\w$]*)\)\{let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>==null\)return;let (?<displayBoundsVar>[A-Za-z_$][\w$]*)=(?<displayFn>[A-Za-z_$][\w$]*)\(\k<cursorVar>,\k<dragStateVar>\.displayBounds\),(?<displayVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getDisplayMatching\(\k<displayBoundsVar>\);\k<dragStateVar>\.recordMove\(\k<displayVar>\.bounds\);let (?<targetXVar>[A-Za-z_$][\w$]*)=\k<cursorVar>\.x-\k<dragStateVar>\.pointerAnchorX,(?<targetYVar>[A-Za-z_$][\w$]*)=\k<cursorVar>\.y-\k<dragStateVar>\.pointerAnchorY,(?<easeVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.usesOrbPhysics\?(?<orbEaseVar>[A-Za-z_$][\w$]*):1;this\.anchor=\{\.\.\.this\.anchor,x:this\.anchor\.x\+\(\k<targetXVar>-this\.anchor\.x\)\*\k<easeVar>,y:this\.anchor\.y\+\(\k<targetYVar>-this\.anchor\.y\)\*\k<easeVar>\},this\.applyLayout\(\k<windowVar>,\k<displayVar>,!1,!1\)\}/;
 const LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN =
   /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|\(this\.dragState\?\.hasMoved&&this\.moveDragToCurrentCursor\(\k<windowVar>\),this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\)\)\}/;
 const LINUX_AVATAR_OVERLAY_END_DRAG_26_611_PATTERN =
   /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>\?\.hasMovementIntent\)\{let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}this\.(?<suppressVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\?\.shouldSuppressRendererThrow\(\)\?\?!1,this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\)\}/;
 const LINUX_AVATAR_OVERLAY_END_DRAG_26_623_PATTERN =
   /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelOrbDragFollow\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState;if\(\k<dragStateVar>\?\.hasMovementIntent\)\{let (?<cursorVar>[A-Za-z_$][\w$]*)=(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}this\.(?<suppressVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\?\.shouldSuppressRendererThrow\(\)\?\?!1,this\.dragState=null,this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\);let (?<dockTargetVar>[A-Za-z_$][\w$]*)=this\.dockTarget,(?<currentAnchorVar>[A-Za-z_$][\w$]*)=(?<anchorFn>[A-Za-z_$][\w$]*)\(this\.anchor,this\.presentationOffset\);\k<dockTargetVar>!=null&&(?<dockCheckFn>[A-Za-z_$][\w$]*)\(\{current:\k<currentAnchorVar>,next:\k<currentAnchorVar>,target:\{x:\k<dockTargetVar>\.anchor\.centerX,y:\k<dockTargetVar>\.anchor\.centerY\}\}\)\.shouldDock&&this\.dockPresentation\(\k<dockTargetVar>\.anchor,\k<dockTargetVar>\.onDock\)\}/;
+const LINUX_AVATAR_OVERLAY_END_DRAG_26_707_PATTERN =
+  /endDrag\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<pointVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\)return;this\.cancelOrbDragFollow\(\);let (?<dragStateVar>[A-Za-z_$][\w$]*)=this\.dragState,(?<serverDragVar>[A-Za-z_$][\w$]*)=this\.windowServerDragActive,(?<serverDisplayVar>[A-Za-z_$][\w$]*)=null;if\(\k<serverDragVar>&&\k<dragStateVar>!=null\)\{let (?<serverPointVar>[A-Za-z_$][\w$]*)=(?<coercePointFn>[A-Za-z_$][\w$]*)\(this\.compositionHost\.getCursorPosition\(\)\)\?\?\(\k<pointVar>==null\?(?<electronVar>[A-Za-z_$][\w$]*)\.screen\.getCursorScreenPoint\(\):\{x:\k<pointVar>\.pointerScreenX,y:\k<pointVar>\.pointerScreenY\}\),(?<serverDisplayCalcVar>[A-Za-z_$][\w$]*)=\k<electronVar>\.screen\.getDisplayNearestPoint\(\k<serverPointVar>\),(?<serverAnchorVar>[A-Za-z_$][\w$]*)=\{\.\.\.this\.anchor,x:\k<serverPointVar>\.x-\k<dragStateVar>\.pointerAnchorX,y:\k<serverPointVar>\.y-\k<dragStateVar>\.pointerAnchorY\};\k<serverDisplayVar>=\k<serverDisplayCalcVar>,this\.updateWindowServerDragPlacement\(\k<windowVar>,\k<windowVar>\.getContentBounds\(\),\k<serverAnchorVar>,\k<serverDisplayCalcVar>\),this\.sendWindowServerDragDirection\(\k<windowVar>,null\)\}else if\(\k<dragStateVar>\?\.hasMovementIntent\)\{let (?<cursorVar>[A-Za-z_$][\w$]*)=\k<electronVar>\.screen\.getCursorScreenPoint\(\),(?<nextPointVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\.getCursorPointForSource\(\{native:\k<dragStateVar>\.cursorSource===`native`\?\k<coercePointFn>\(this\.compositionHost\.getCursorPosition\(\)\):null,renderer:\{x:\k<pointVar>\?\.pointerScreenX\?\?\k<cursorVar>\.x,y:\k<pointVar>\?\.pointerScreenY\?\?\k<cursorVar>\.y\}\}\);\k<nextPointVar>!=null&&this\.moveDragToPointer\(\k<windowVar>,\k<nextPointVar>\)\}this\.(?<suppressVar>[A-Za-z_$][\w$]*)=\k<dragStateVar>\?\.shouldSuppressRendererThrow\(\)\?\?!1,this\.dragState=null,this\.windowServerDragActive=!1,this\.windowServerDragWindowX=null,\k<serverDragVar>\?this\.persistWindowBounds\(\k<windowVar>,\k<serverDisplayVar>\?\?this\.getCurrentDisplay\(\)\):this\.reclampWindowToVisibleDisplay\(\{shouldPersist:!0\}\);let (?<dockTargetVar>[A-Za-z_$][\w$]*)=this\.dockTarget,(?<currentAnchorVar>[A-Za-z_$][\w$]*)=(?<anchorFn>[A-Za-z_$][\w$]*)\(this\.anchor,this\.presentationOffset\);\k<dockTargetVar>!=null&&(?<dockCheckFn>[A-Za-z_$][\w$]*)\(\{current:\k<currentAnchorVar>,next:\k<currentAnchorVar>,target:\{x:\k<dockTargetVar>\.anchor\.centerX,y:\k<dockTargetVar>\.anchor\.centerY\}\}\)\.shouldDock&&this\.dockPresentation\(\k<dockTargetVar>\.anchor,\k<dockTargetVar>\.onDock\)\}/;
 const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN =
   /throwWithVelocity\((?<webContentsIdVar>[A-Za-z_$][\w$]*),(?<velocityXVar>[A-Za-z_$][\w$]*),(?<velocityYVar>[A-Za-z_$][\w$]*)\)\{let (?<windowVar>[A-Za-z_$][\w$]*)=this\.window;if\(\k<windowVar>==null\|\|\k<windowVar>\.isDestroyed\(\)\|\|\k<windowVar>\.webContents\.id!==\k<webContentsIdVar>\|\|!Number\.isFinite\(\k<velocityXVar>\)\|\|!Number\.isFinite\(\k<velocityYVar>\)\|\|\k<velocityXVar>===0&&\k<velocityYVar>===0\)return;/;
 const LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_26_623_PATTERN =
@@ -1253,13 +1281,14 @@ const BROWSER_USE_VIEW_MENU_INSERTION_REPLACEMENT =
 const LINUX_TERMINAL_PATCH_MARKER = 'codexLinuxTerminalMounts';
 
 function buildLinuxWorktreeEnvironmentMainHelperReplacement({
+  prefixDeclarations = '',
   thresholdVar,
   loggerVar,
   loggerObject,
   loggerFactory,
   classVar
 }) {
-  return `var codexLinuxWorktreeEnvironmentBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};function codexLinuxListEnvironmentConfigPaths(e){let t=codexLinuxWorktreeEnvironmentBuiltins.fs,n=codexLinuxWorktreeEnvironmentBuiltins.path;if(!e||!t||!n)return[];let r=n.join(e,\`.codex\`,\`environments\`),i;try{i=t.readdirSync(r,{withFileTypes:!0})}catch{return[]}return i.filter(e=>e.isFile()&&e.name.endsWith(\`.toml\`)).map(e=>n.join(r,e.name)).sort()}function codexLinuxResolveWorktreeLocalEnvironmentPath(e,t){if(t===\`__none__\`||t!=null)return t;let n=codexLinuxListEnvironmentConfigPaths(e);return n.length===1?n[0]:null}/* ${LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER} */var ${thresholdVar}=32e3,${loggerVar}=${loggerObject}.${loggerFactory}(\`worktree-service\`),${classVar}=class{`;
+  return `var codexLinuxWorktreeEnvironmentBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};function codexLinuxListEnvironmentConfigPaths(e){let t=codexLinuxWorktreeEnvironmentBuiltins.fs,n=codexLinuxWorktreeEnvironmentBuiltins.path;if(!e||!t||!n)return[];let r=n.join(e,\`.codex\`,\`environments\`),i;try{i=t.readdirSync(r,{withFileTypes:!0})}catch{return[]}return i.filter(e=>e.isFile()&&e.name.endsWith(\`.toml\`)).map(e=>n.join(r,e.name)).sort()}function codexLinuxResolveWorktreeLocalEnvironmentPath(e,t){if(t===\`__none__\`||t!=null)return t;let n=codexLinuxListEnvironmentConfigPaths(e);return n.length===1?n[0]:null}/* ${LINUX_WORKTREE_ENVIRONMENT_MAIN_PATCH_MARKER} */var ${prefixDeclarations}${thresholdVar}=32e3,${loggerVar}=${loggerObject}.${loggerFactory}(\`worktree-service\`),${classVar}=class{`;
 }
 
 function buildLinuxWorktreeEnvironmentPendingRequestReplacement(
@@ -1270,11 +1299,12 @@ function buildLinuxWorktreeEnvironmentPendingRequestReplacement(
     entryVar,
     runtimeVar,
     operationSource,
-    allowSetupFailure
+    allowSetupFailure,
+    worktreesRootParam
   },
   { loggerVar }
 ) {
-  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(${pathModuleVar}.${pathResolver}(${entryVar}.sourceWorkspaceRoot),${entryVar}.localEnvironmentConfigPath);codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`pending\`,launchMode:${entryVar}.launchMode},sensitive:{sourceWorkspaceRoot:${entryVar}.sourceWorkspaceRoot}}):${entryVar}.localEnvironmentConfigPath==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`pending\`,launchMode:${entryVar}.launchMode},sensitive:{sourceWorkspaceRoot:${entryVar}.sourceWorkspaceRoot,configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.hostConfig,${operationSource ?? ''}cwd:${pathModuleVar}.${pathResolver}(${entryVar}.sourceWorkspaceRoot),startingState:${entryVar}.startingState,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${runtimeVar}.streamId,${allowSetupFailure ?? ''}setUpSyncedBranch:${entryVar}.launchMode===\`create-stable-worktree\`?!1:void 0},signal:${runtimeVar}.abortController.signal});`;
+  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(${pathModuleVar}.${pathResolver}(${entryVar}.sourceWorkspaceRoot),${entryVar}.localEnvironmentConfigPath);codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`pending\`,launchMode:${entryVar}.launchMode},sensitive:{sourceWorkspaceRoot:${entryVar}.sourceWorkspaceRoot}}):${entryVar}.localEnvironmentConfigPath==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`pending\`,launchMode:${entryVar}.launchMode},sensitive:{sourceWorkspaceRoot:${entryVar}.sourceWorkspaceRoot,configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.hostConfig,${operationSource ?? ''}cwd:${pathModuleVar}.${pathResolver}(${entryVar}.sourceWorkspaceRoot),startingState:${entryVar}.startingState,localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${runtimeVar}.streamId,${allowSetupFailure ?? ''}${worktreesRootParam ?? ''}setUpSyncedBranch:${entryVar}.launchMode===\`create-stable-worktree\`?!1:void 0},signal:${runtimeVar}.abortController.signal});`;
 }
 
 function buildLinuxWorktreeEnvironmentManagedRequestReplacement(
@@ -1288,11 +1318,12 @@ function buildLinuxWorktreeEnvironmentManagedRequestReplacement(
     startingStateVar,
     envVar,
     streamVar,
-    operationSource
+    operationSource,
+    worktreesRootParam
   },
   { loggerVar }
 ) {
-  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(${pathModuleVar}.${pathResolver}(${cwdVar}),${envVar});codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar}}}):${envVar}==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar},configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.getHostConfigForHostId(${hostVar}),${operationSource ?? ''}cwd:${pathModuleVar}.${pathResolver}(${cwdVar}),startingState:${startingStateVar},localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${streamVar}}}),${newbornVar}=this.newbornWorktreeRoots.has(${resultVar}.worktreeGitRoot);`;
+  return `let codexLinuxResolvedLocalEnvironmentPath=codexLinuxResolveWorktreeLocalEnvironmentPath(${pathModuleVar}.${pathResolver}(${cwdVar}),${envVar});codexLinuxResolvedLocalEnvironmentPath===\`__none__\`?${loggerVar}().info(\`[worktree-create] explicit-no-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar}}}):${envVar}==null&&codexLinuxResolvedLocalEnvironmentPath!=null&&${loggerVar}().info(\`[worktree-create] auto-selected-single-environment\`,{safe:{flow:\`managed\`},sensitive:{cwd:${cwdVar},configPath:codexLinuxResolvedLocalEnvironmentPath}});let ${resultVar}=await this.requestGitWorker({method:\`create-worktree\`,params:{hostConfig:this.options.getHostConfigForHostId(${hostVar}),${operationSource ?? ''}cwd:${pathModuleVar}.${pathResolver}(${cwdVar}),startingState:${startingStateVar},localEnvironmentConfigPath:codexLinuxResolvedLocalEnvironmentPath,streamId:${streamVar}${worktreesRootParam ?? ''}}}),${newbornVar}=this.newbornWorktreeRoots.has(${resultVar}.worktreeGitRoot);`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerHelperReplacement(
@@ -1305,11 +1336,12 @@ function buildLinuxWorktreeEnvironmentWorkerHelperReplacement(
     signalVar,
     onLogVar,
     onWorktreePathAllocatedVar,
-    onSetupStartParam = ''
+    onSetupStartParam = '',
+    worktreesRootParam = ''
   },
   { fsApiVar }
 ) {
-  return `var codexLinuxWorktreeEnvironmentWorkerBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};async function codexLinuxListEnvironmentConfigPaths(e,t){let n=await t.platformPath(),r=n.join(e,\`.codex\`,\`environments\`),i;try{i=typeof t?.readDirectory===\`function\`?await t.readDirectory(r):typeof ${fsApiVar}!==\`undefined\`&&${fsApiVar}?.readdir?await ${fsApiVar}.readdir(r,t):[]}catch{return[]}return i.filter(e=>typeof e===\`string\`&&e.endsWith(\`.toml\`)).map(e=>n.join(r,e)).sort()}async function codexLinuxResolveWorktreeEnvironmentConfigPath(e,t,n){if(t===\`__none__\`)return{configPath:t,source:\`explicit-none\`};if(t!=null)return{configPath:t,source:\`explicit-selection\`};let r=await codexLinuxListEnvironmentConfigPaths(e,n);return r.length===1?{configPath:r[0],source:\`single-environment-fallback\`}:{configPath:null,source:\`missing\`}}function codexLinuxResolveWorktreeSourceWorkspaceRoot(e){let t=codexLinuxWorktreeEnvironmentWorkerBuiltins.fs,n=codexLinuxWorktreeEnvironmentWorkerBuiltins.path;if(!e||!t||!n)return null;let r=n.join(e,\`.git\`),i;try{i=t.readFileSync(r,\`utf8\`)}catch{return null}let a=i.match(/^gitdir:\\s*(.+)$/m)?.[1]?.trim();if(!a)return null;let o=n.normalize(n.isAbsolute(a)?a:n.resolve(e,a)),s=n.dirname(o),c=n.dirname(s);return n.basename(s)!==\`worktrees\`||n.basename(c)!==\`.git\`?null:n.dirname(c)}/* ${LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER} */async function ${createWorktreeFn}({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,${allowSetupFailureParam ?? ''}setUpSyncedBranch:${setUpSyncedBranchVar}=!0,${clientParamName}:${appServerClientVar},signal:${signalVar},onLog:${onLogVar},onWorktreePathAllocated:${onWorktreePathAllocatedVar}${onSetupStartParam}}){`;
+  return `var codexLinuxWorktreeEnvironmentWorkerBuiltins=typeof process.getBuiltinModule===\`function\`?{fs:process.getBuiltinModule(\`node:fs\`),path:process.getBuiltinModule(\`node:path\`)}:{fs:null,path:null};async function codexLinuxListEnvironmentConfigPaths(e,t){let n=await t.platformPath(),r=n.join(e,\`.codex\`,\`environments\`),i;try{i=typeof t?.readDirectory===\`function\`?await t.readDirectory(r):typeof ${fsApiVar}!==\`undefined\`&&${fsApiVar}?.readdir?await ${fsApiVar}.readdir(r,t):[]}catch{return[]}return i.filter(e=>typeof e===\`string\`&&e.endsWith(\`.toml\`)).map(e=>n.join(r,e)).sort()}async function codexLinuxResolveWorktreeEnvironmentConfigPath(e,t,n){if(t===\`__none__\`)return{configPath:t,source:\`explicit-none\`};if(t!=null)return{configPath:t,source:\`explicit-selection\`};let r=await codexLinuxListEnvironmentConfigPaths(e,n);return r.length===1?{configPath:r[0],source:\`single-environment-fallback\`}:{configPath:null,source:\`missing\`}}function codexLinuxResolveWorktreeSourceWorkspaceRoot(e){let t=codexLinuxWorktreeEnvironmentWorkerBuiltins.fs,n=codexLinuxWorktreeEnvironmentWorkerBuiltins.path;if(!e||!t||!n)return null;let r=n.join(e,\`.git\`),i;try{i=t.readFileSync(r,\`utf8\`)}catch{return null}let a=i.match(/^gitdir:\\s*(.+)$/m)?.[1]?.trim();if(!a)return null;let o=n.normalize(n.isAbsolute(a)?a:n.resolve(e,a)),s=n.dirname(o),c=n.dirname(s);return n.basename(s)!==\`worktrees\`||n.basename(c)!==\`.git\`?null:n.dirname(c)}/* ${LINUX_WORKTREE_ENVIRONMENT_WORKER_PATCH_MARKER} */async function ${createWorktreeFn}({gitManager:e,workspaceRoot:t,startingState:n,localEnvironmentConfigPath:r,${allowSetupFailureParam ?? ''}setUpSyncedBranch:${setUpSyncedBranchVar}=!0,${clientParamName}:${appServerClientVar},signal:${signalVar},onLog:${onLogVar},onWorktreePathAllocated:${onWorktreePathAllocatedVar}${onSetupStartParam}${worktreesRootParam}}){`;
 }
 
 function buildLinuxWorktreeEnvironmentWorkerCleanupHelperReplacement({
@@ -1397,9 +1429,10 @@ function buildLinuxAvatarOverlayShowWindowMethod({
   wasOpenVar,
   revealExpr = '',
   openStateExpr = 'this.broadcastOpenState()',
+  postShowExpr = '',
   postOpenExpr = ''
 }) {
-  return `showWindow(${windowVar}){if(${windowVar}.isDestroyed())return;let ${wasOpenVar}=this.isOpen();this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),${revealExpr}${windowVar}.showInactive(),this.codexLinuxRecoverAvatarOverlayVisibility(${windowVar}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),!${wasOpenVar}&&this.isOpen()&&(${openStateExpr})${postOpenExpr}}`;
+  return `showWindow(${windowVar}){if(${windowVar}.isDestroyed())return;let ${wasOpenVar}=this.isOpen();this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),${revealExpr}${windowVar}.showInactive(),${postShowExpr}this.codexLinuxRecoverAvatarOverlayVisibility(${windowVar}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar},!0),!${wasOpenVar}&&this.isOpen()&&(${openStateExpr})${postOpenExpr}}`;
 }
 
 function appendNamedImportAlias(imports, importedName, aliasName) {
@@ -1460,7 +1493,14 @@ function findLinuxPetYappingUsageJsxRuntime(bundleSource) {
   };
 }
 
-const LINUX_PET_YAPPING_USAGE_ROLLDOWN_REQUEST_IMPORT_NAMES = ['Ay', 'vD', 'YN', 'a', 'pv'];
+const LINUX_PET_YAPPING_USAGE_ROLLDOWN_REQUEST_IMPORT_NAMES = [
+  'Ay',
+  'vD',
+  'YN',
+  'a',
+  'pv',
+  'tQ'
+];
 const LINUX_PET_YAPPING_USAGE_ROLLDOWN_JSX_IMPORT_NAMES = [
   'yA',
   'Lz',
@@ -1470,7 +1510,8 @@ const LINUX_PET_YAPPING_USAGE_ROLLDOWN_JSX_IMPORT_NAMES = [
   'tZ',
   'xl',
   'lc',
-  'vl'
+  'vl',
+  'Vet'
 ];
 const LINUX_PET_YAPPING_USAGE_ROLLDOWN_SPLIT_REQUEST_IMPORTS = [
   {
@@ -1628,7 +1669,7 @@ function buildLinuxBundledBrowserChromeMarketplaceHelper() {
 }
 
 function buildLinuxChromeNativeHostRuntimePathsHelper() {
-  return `function codexLinuxChromeNativeHostRuntimePaths({runtimePaths:e,resourcesPath:t}){/* ${LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_MARKER} */if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CHROME_NATIVE_HOST_RUNTIME_PATH_PATCH===\`1\`||typeof t!==\`string\`)return e;let n=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:path\`):null,r=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:fs\`):null;if(!n||!r)return e;let i=n.join(t,\`node\`),a=n.join(t,\`node_repl\`),o=n.join(t,\`cua_node\`,\`lib\`,\`node_modules\`);try{r.accessSync(i,r.constants.X_OK),r.accessSync(a,r.constants.X_OK)}catch{return e}let s=Array.isArray(e.nodeModuleDirs)?[...e.nodeModuleDirs]:[];try{r.statSync(o).isDirectory()&&!s.includes(o)&&s.push(o)}catch{}return{...e,nodePath:i,nodeReplPath:a,nodeModuleDirs:s}}`;
+  return `function codexLinuxChromeNativeHostRuntimePaths({runtimePaths:e,resourcesPath:t}){/* ${LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_MARKER} */if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_CHROME_NATIVE_HOST_RUNTIME_PATH_PATCH===\`1\`||typeof t!==\`string\`)return e;let n=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:path\`):null,r=typeof process.getBuiltinModule===\`function\`?process.getBuiltinModule(\`node:fs\`):null;if(!n||!r)return e;let i=n.join(t,\`node\`),a=n.join(t,\`node_repl\`),o=n.join(t,\`cua_node\`,\`lib\`,\`node_modules\`),s=n.join(t,\`chrome-extension-host\`);try{r.accessSync(i,r.constants.X_OK),r.accessSync(a,r.constants.X_OK)}catch{return e}let c=Array.isArray(e.nodeModuleDirs)?[...e.nodeModuleDirs]:[];try{r.statSync(o).isDirectory()&&!c.includes(o)&&c.push(o)}catch{}let l=null;try{r.accessSync(s,r.constants.X_OK),l=s}catch{}return{...e,nodePath:i,nodeReplPath:a,nodeModuleDirs:c,...l==null?{}:{extensionHostPath:l}}}`;
 }
 
 function buildLinuxBrowserUseHostFetchHelper({
@@ -1658,6 +1699,8 @@ const TERMINAL_CLEANUP_PATTERN_26_415 =
   /return (?<observerVar>[A-Za-z_$][\w$]*)\.observe\(e\),\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)=!0,(?<frameVar>[A-Za-z_$][\w$]*)!=null&&\(cancelAnimationFrame\(\k<frameVar>\),\k<frameVar>=null\),\k<observerVar>\.disconnect\(\),(?<dataDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<titleDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<keyDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<registerDisposeVar>[A-Za-z_$][\w$]*)\(\),(?<fitRef>[A-Za-z_$][\w$]*)\.current=null,(?<sessionRef>[A-Za-z_$][\w$]*)\.current=null,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1,(?<resumeSessionVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.close\((?<createdSessionVar>[A-Za-z_$][\w$]*)\),(?<terminalVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<terminalRef>[A-Za-z_$][\w$]*)\.current=null\}/;
 const TERMINAL_CLEANUP_PATTERN_26_611 =
   /return (?<observerVar>[A-Za-z_$][\w$]*)\.observe\(e\),\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)=!0,(?<frameVar>[A-Za-z_$][\w$]*)!=null&&\(cancelAnimationFrame\(\k<frameVar>\),\k<frameVar>=null\),\k<observerVar>\.disconnect\(\),(?<dataDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<titleDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<keyDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<registerDisposeVar>[A-Za-z_$][\w$]*)\(\),(?<fitRef>[A-Za-z_$][\w$]*)\.current=null,(?<sessionRef>[A-Za-z_$][\w$]*)\.current=null,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1,(?<resumeSessionVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.close\((?<createdSessionVar>[A-Za-z_$][\w$]*)\),(?<extraCleanupVar>[A-Za-z_$][\w$]*)\(\),(?<terminalVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<terminalRef>[A-Za-z_$][\w$]*)\.current=null\}/;
+const TERMINAL_CLEANUP_PATTERN_26_707 =
+  /return (?<observerVar>[A-Za-z_$][\w$]*)\.observe\(e\),\(\)=>\{(?<guardVar>[A-Za-z_$][\w$]*)=!0,(?<frameVar>[A-Za-z_$][\w$]*)!=null&&\(cancelAnimationFrame\(\k<frameVar>\),\k<frameVar>=null\),(?<timeoutVar>[A-Za-z_$][\w$]*)!=null&&clearTimeout\(\k<timeoutVar>\),\k<observerVar>\.disconnect\(\),(?<dataDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<titleDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<keyDisposeVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<registerDisposeVar>[A-Za-z_$][\w$]*)\(\),(?<fitRef>[A-Za-z_$][\w$]*)\.current=null,(?<sessionRef>[A-Za-z_$][\w$]*)\.current=null,(?<attachStateRef>[A-Za-z_$][\w$]*)\.current=!1,(?<resumeSessionVar>[A-Za-z_$][\w$]*)\|\|(?<service>[A-Za-z_$][\w$]*)\.close\((?<createdSessionVar>[A-Za-z_$][\w$]*)\),(?<extraCleanupVar>[A-Za-z_$][\w$]*)\(\),(?<terminalVar>[A-Za-z_$][\w$]*)\.dispose\(\),(?<terminalRef>[A-Za-z_$][\w$]*)\.current=null\}/;
 const INVALID_TERMINAL_HELPER_ESCAPE_PATTERN = '${"${"}';
 const LINUX_NEW_THREAD_MODEL_PATCH_MARKER = 'codexLinuxPendingModelSettings';
 const NEW_THREAD_MODEL_STATE_MARKERS = [
@@ -2844,18 +2887,26 @@ function injectLinuxTitleBarOverlayThemeSyncPatch(bundleSource, sourceName) {
     );
   }
 
-  const windowZoomMatch = updated.match(LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN);
+  const windowZoomPattern =
+    updated.match(LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_QUICK_CHAT_PATTERN) != null
+      ? LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_QUICK_CHAT_PATTERN
+      : LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN;
+  const windowZoomMatch = updated.match(windowZoomPattern);
   if (windowZoomMatch?.groups) {
     updated = updated.replace(
-      LINUX_TITLE_BAR_OVERLAY_WINDOW_ZOOM_PATTERN,
+      windowZoomPattern,
       buildLinuxTitleBarOverlayWindowZoomReplacement(windowZoomMatch.groups)
     );
   }
 
-  const appSyncMatch = updated.match(LINUX_TITLE_BAR_OVERLAY_APP_SYNC_PATTERN);
+  const appSyncPattern =
+    updated.match(LINUX_TITLE_BAR_OVERLAY_APP_SYNC_QUICK_CHAT_PATTERN) != null
+      ? LINUX_TITLE_BAR_OVERLAY_APP_SYNC_QUICK_CHAT_PATTERN
+      : LINUX_TITLE_BAR_OVERLAY_APP_SYNC_PATTERN;
+  const appSyncMatch = updated.match(appSyncPattern);
   if (appSyncMatch?.groups) {
     updated = updated.replace(
-      LINUX_TITLE_BAR_OVERLAY_APP_SYNC_PATTERN,
+      appSyncPattern,
       buildLinuxTitleBarOverlayAppSyncReplacement(appSyncMatch.groups)
     );
   }
@@ -2931,7 +2982,7 @@ function buildLinuxTitleBarOverlayWindowZoomReplacement({
   windowVar,
   zoomVar
 }) {
-  return `codexLinuxApplyTitleBarOverlay(${windowVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY!==\`1\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`||${windowVar}==null||${windowVar}.isDestroyed?.())return;let ${webContentsVar}=this.windowZooms.get(${windowVar}.id)??1,${zoomVar}=this.codexLinuxTitleBarOverlayThemes.get(${windowVar}.id)??null;${windowVar}.setTitleBarOverlay(${overlayFn}(${webContentsVar},${zoomVar}))}codexLinuxSetTitleBarOverlayTheme(${webContentsVar},${zoomVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY!==\`1\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`)return;let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar});if(${windowVar}==null||this.windowAppearances.get(${windowVar}.id)!==\`primary\`)return;let codexLinuxTitleBarOverlayTheme=${zoomVar}&&typeof ${zoomVar}.color===\`string\`&&typeof ${zoomVar}.symbolColor===\`string\`&&${zoomVar}.color.length<=120&&${zoomVar}.symbolColor.length<=120?{color:${zoomVar}.color,symbolColor:${zoomVar}.symbolColor}:null;if(codexLinuxTitleBarOverlayTheme==null)return;this.codexLinuxTitleBarOverlayThemes.set(${windowVar}.id,codexLinuxTitleBarOverlayTheme),this.codexLinuxApplyTitleBarOverlay(${windowVar})}setWindowZoom(${webContentsVar},${zoomVar}){let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar});${windowVar}==null||this.windowAppearances.get(${windowVar}.id)!==\`primary\`||(process.platform===\`darwin\`?${windowVar}.setWindowButtonPosition(${buttonPositionFn}(${zoomVar})):(process.platform===\`win32\`||process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`)&&(this.windowZooms.set(${windowVar}.id,${zoomVar}),process.platform===\`linux\`?this.codexLinuxApplyTitleBarOverlay(${windowVar}):${windowVar}.setTitleBarOverlay(${overlayFn}(${zoomVar}))))}`;
+  return `codexLinuxApplyTitleBarOverlay(${windowVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY!==\`1\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`||${windowVar}==null||${windowVar}.isDestroyed?.())return;let ${webContentsVar}=this.windowZooms.get(${windowVar}.id)??1,${zoomVar}=this.codexLinuxTitleBarOverlayThemes.get(${windowVar}.id)??null;${windowVar}.setTitleBarOverlay(${overlayFn}(${webContentsVar},${zoomVar}))}codexLinuxSetTitleBarOverlayTheme(${webContentsVar},${zoomVar}){if(process.platform!==\`linux\`||process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY!==\`1\`||process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`)return;let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar}),codexLinuxTitleBarOverlayAppearance=${windowVar}&&this.windowAppearances.get(${windowVar}.id);if(${windowVar}==null||codexLinuxTitleBarOverlayAppearance!==\`primary\`&&codexLinuxTitleBarOverlayAppearance!==\`quickChat\`)return;let codexLinuxTitleBarOverlayTheme=${zoomVar}&&typeof ${zoomVar}.color===\`string\`&&typeof ${zoomVar}.symbolColor===\`string\`&&${zoomVar}.color.length<=120&&${zoomVar}.symbolColor.length<=120?{color:${zoomVar}.color,symbolColor:${zoomVar}.symbolColor}:null;if(codexLinuxTitleBarOverlayTheme==null)return;this.codexLinuxTitleBarOverlayThemes.set(${windowVar}.id,codexLinuxTitleBarOverlayTheme),this.codexLinuxApplyTitleBarOverlay(${windowVar})}setWindowZoom(${webContentsVar},${zoomVar}){let ${windowVar}=${electronVar}.BrowserWindow.fromWebContents(${webContentsVar}),codexLinuxTitleBarOverlayAppearance=${windowVar}&&this.windowAppearances.get(${windowVar}.id);${windowVar}==null||codexLinuxTitleBarOverlayAppearance!==\`primary\`&&codexLinuxTitleBarOverlayAppearance!==\`quickChat\`||(process.platform===\`darwin\`?${windowVar}.setWindowButtonPosition(${buttonPositionFn}(${zoomVar})):(process.platform===\`win32\`||process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`)&&(this.windowZooms.set(${windowVar}.id,${zoomVar}),process.platform===\`linux\`?this.codexLinuxApplyTitleBarOverlay(${windowVar}):${windowVar}.setTitleBarOverlay(${overlayFn}(${zoomVar}))))}`;
 }
 
 function buildLinuxTitleBarOverlayAppSyncReplacement({
@@ -2941,7 +2992,7 @@ function buildLinuxTitleBarOverlayAppSyncReplacement({
   overlayFn,
   windowVar
 }) {
-  return `installApplicationMenuTitleBarOverlaySync(${windowVar},${appearanceVar}){if((process.platform!==\`win32\`&&!(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`))||process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`||${appearanceVar}!==\`primary\`)return;let ${handlerVar}=()=>{${windowVar}.isDestroyed()||${windowVar}.setTitleBarOverlay(${overlayFn}(this.windowZooms.get(${windowVar}.id)))};return ${electronVar}.nativeTheme.on(\`updated\`,${handlerVar}),${handlerVar}(),()=>{${electronVar}.nativeTheme.off(\`updated\`,${handlerVar})}}`;
+  return `installApplicationMenuTitleBarOverlaySync(${windowVar},${appearanceVar}){if((process.platform!==\`win32\`&&!(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`))||process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_TITLE_BAR_OVERLAY_PATCH===\`1\`||${appearanceVar}!==\`primary\`&&${appearanceVar}!==\`quickChat\`)return;let ${handlerVar}=()=>{${windowVar}.isDestroyed()||${windowVar}.setTitleBarOverlay(${overlayFn}(this.windowZooms.get(${windowVar}.id)))};return ${electronVar}.nativeTheme.on(\`updated\`,${handlerVar}),${handlerVar}(),()=>{${electronVar}.nativeTheme.off(\`updated\`,${handlerVar})}}`;
 }
 
 export function applyLinuxNativeWindowFramePatch(bundleSource, options = {}) {
@@ -2962,6 +3013,20 @@ export function injectLinuxNativeWindowFramePatch(bundleSource, options = {}) {
   if (bundleSource.includes(LINUX_NATIVE_WINDOW_FRAME_PATCH_MARKER)) {
     return bundleSource;
   }
+  if (LINUX_NATIVE_WINDOW_FRAME_QUICK_CHAT_PRIMARY_BRANCH_PATTERN.test(bundleSource)) {
+    return replaceRegexOrThrow(
+      bundleSource,
+      LINUX_NATIVE_WINDOW_FRAME_QUICK_CHAT_PRIMARY_BRANCH_PATTERN,
+      ({ appearanceVar, overlayFn, platformVar, zoomVar }) =>
+        buildLinuxNativeWindowFramePrimaryBranch({
+          appearanceVar,
+          overlayFn,
+          platformVar,
+          zoomVar
+        }),
+      buildLinuxNativeWindowFramePatchErrorMessage(bundleSource, options.sourceName)
+    );
+  }
   return replaceRegexOrThrow(
     bundleSource,
     LINUX_NATIVE_WINDOW_FRAME_PRIMARY_BRANCH_PATTERN,
@@ -2971,9 +3036,18 @@ export function injectLinuxNativeWindowFramePatch(bundleSource, options = {}) {
   );
 }
 
-function buildLinuxNativeWindowFramePrimaryBranch({ overlayFn, platformVar, zoomVar }) {
-  const hiddenOverlay = `{titleBarStyle:\`hidden\`,titleBarOverlay:${overlayFn}(${zoomVar})}`;
-  return `${platformVar}===\`win32\`?${hiddenOverlay}:${platformVar}===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`?${hiddenOverlay}:${platformVar}===\`linux\`?{frame:!0}:{titleBarStyle:\`default\`}/* ${LINUX_NATIVE_WINDOW_FRAME_PATCH_MARKER} */`;
+function buildLinuxNativeWindowFramePrimaryBranch({
+  appearanceVar = null,
+  overlayFn,
+  platformVar,
+  zoomVar
+}) {
+  const quickChatSpread =
+    appearanceVar == null ? '' : `,...${appearanceVar}===\`quickChat\`?{resizable:!0}:{}`;
+  const hiddenOverlay = `{titleBarStyle:\`hidden\`,titleBarOverlay:${overlayFn}(${zoomVar})${quickChatSpread}}`;
+  const linuxFrame = `{frame:!0${quickChatSpread}}`;
+  const defaultFrame = `{titleBarStyle:\`default\`${quickChatSpread}}`;
+  return `${platformVar}===\`win32\`?${hiddenOverlay}:${platformVar}===\`linux\`&&process?.env?.CODEX_DESKTOP_ENABLE_LINUX_TITLE_BAR_OVERLAY===\`1\`?${hiddenOverlay}:${platformVar}===\`linux\`?${linuxFrame}:${defaultFrame}/* ${LINUX_NATIVE_WINDOW_FRAME_PATCH_MARKER} */`;
 }
 
 export function applyLinuxPrimaryWindowModeControlsPatch(bundleSource, options = {}) {
@@ -2994,16 +3068,28 @@ export function injectLinuxPrimaryWindowModeControlsPatch(bundleSource, options 
   if (bundleSource.includes(LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH_MARKER)) {
     return bundleSource;
   }
+  if (LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN.test(bundleSource)) {
+    return replaceRegexOrThrow(
+      bundleSource,
+      LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN,
+      ({ windowVar }) => buildLinuxPrimaryWindowModeControlsReplacement({ windowVar }),
+      buildLinuxPrimaryWindowModeControlsPatchErrorMessage(bundleSource, options.sourceName)
+    );
+  }
   return replaceRegexOrThrow(
     bundleSource,
-    LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN,
-    ({ windowVar }) => buildLinuxPrimaryWindowModeControlsReplacement({ windowVar }),
+    LINUX_PRIMARY_WINDOW_MODE_DISABLE_MAXIMIZE_CONTROLS_PATTERN,
+    ({ windowVar }) => buildLinuxPrimaryWindowModeControlsMaximizeReplacement({ windowVar }),
     buildLinuxPrimaryWindowModeControlsPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
 
 function buildLinuxPrimaryWindowModeControlsReplacement({ windowVar }) {
   return `process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH!==\`1\`?(${windowVar}.setResizable(!0),${windowVar}.setMaximizable(!0),${windowVar}.setFullScreenable(!0),typeof ${windowVar}.setMinimizable===\`function\`&&${windowVar}.setMinimizable(!0),typeof ${windowVar}.setClosable===\`function\`&&${windowVar}.setClosable(!0),typeof ${windowVar}.setMovable===\`function\`&&${windowVar}.setMovable(!0)):(${windowVar}.setResizable(!1),${windowVar}.setMaximizable(!1),${windowVar}.setFullScreenable(!1))/* ${LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH_MARKER} */`;
+}
+
+function buildLinuxPrimaryWindowModeControlsMaximizeReplacement({ windowVar }) {
+  return `process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH!==\`1\`?(${windowVar}.setResizable(!0),${windowVar}.setMaximizable(!0),${windowVar}.setFullScreenable(!0),typeof ${windowVar}.setMinimizable===\`function\`&&${windowVar}.setMinimizable(!0),typeof ${windowVar}.setClosable===\`function\`&&${windowVar}.setClosable(!0),typeof ${windowVar}.setMovable===\`function\`&&${windowVar}.setMovable(!0)):(${windowVar}.setMaximizable(!1),${windowVar}.setFullScreenable(!1))/* ${LINUX_PRIMARY_WINDOW_MODE_CONTROLS_PATCH_MARKER} */`;
 }
 
 export function applyLinuxWindowFocusableOptionPatch(bundleSource, options = {}) {
@@ -3024,9 +3110,18 @@ export function injectLinuxWindowFocusableOptionPatch(bundleSource, options = {}
   if (bundleSource.includes(LINUX_WINDOW_FOCUSABLE_OPTION_PATCH_MARKER)) {
     return bundleSource;
   }
+  if (LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN.test(bundleSource)) {
+    return replaceRegexOrThrow(
+      bundleSource,
+      LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN,
+      ({ focusableVar, parentVar, showVar }) =>
+        buildLinuxWindowFocusableOptionReplacement({ focusableVar, parentVar, showVar }),
+      buildLinuxWindowFocusableOptionPatchErrorMessage(bundleSource, options.sourceName)
+    );
+  }
   return replaceRegexOrThrow(
     bundleSource,
-    LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN,
+    LINUX_WINDOW_FOCUSABLE_OPTION_26_707_PATTERN,
     ({ focusableVar, parentVar, showVar }) =>
       buildLinuxWindowFocusableOptionReplacement({ focusableVar, parentVar, showVar }),
     buildLinuxWindowFocusableOptionPatchErrorMessage(bundleSource, options.sourceName)
@@ -3424,14 +3519,40 @@ export function applyLinuxChromeNativeHostRuntimePathsPatch(bundleSource, option
 }
 
 export function injectLinuxChromeNativeHostRuntimePathsPatch(bundleSource, options = {}) {
-  if (bundleSource.includes(LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_MARKER)) {
-    return bundleSource;
-  }
-
   const errorMessage = buildLinuxChromeNativeHostRuntimePathsPatchErrorMessage(
     bundleSource,
     options.sourceName
   );
+  const helperPrefix = bundleSource.includes(LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_MARKER)
+    ? ''
+    : buildLinuxChromeNativeHostRuntimePathsHelper();
+  const lifecycleMatch = bundleSource.match(CHROME_NATIVE_HOST_RUNTIME_PATHS_LIFECYCLE_26_707_PATTERN);
+  if (lifecycleMatch?.groups) {
+    const { arg, hostVar, runtimeVar } = lifecycleMatch.groups;
+    const extensionHostPath = `${runtimeVar}.extensionHostPath??${hostVar}`;
+    if (
+      bundleSource.includes(`extensionHostPath:${extensionHostPath},nodePath:${runtimeVar}.nodePath`) &&
+      bundleSource.includes(`KW({extensionHostPath:${extensionHostPath},extensionId:${arg}.extensionId`)
+    ) {
+      return bundleSource;
+    }
+    const updated = replaceRegexOrThrow(
+      bundleSource,
+      CHROME_NATIVE_HOST_RUNTIME_PATHS_LIFECYCLE_26_707_PATTERN,
+      ({ fn, arg, targetVar, targetFn, hostVar, hostFn, runtimeVar, runtimeFn }) =>
+        `${helperPrefix}async function ${fn}(${arg}){let ${targetVar}=${targetFn}(),${hostVar}=await ${hostFn}({pluginRoot:${arg}.pluginRoot,target:${targetVar}}),${runtimeVar}=codexLinuxChromeNativeHostRuntimePaths({runtimePaths:await ${runtimeFn}({codexHome:${arg}.codexHome,devRuntimeRepoRoot:${arg}.devRuntimeRepoRoot,nativeHostName:${arg}.nativeHostName,resourcesPath:${arg}.resourcesPath}),resourcesPath:${arg}.resourcesPath})`,
+      errorMessage
+    );
+    const registryField = `extensionHostPath:${hostVar},nodePath:${runtimeVar}.nodePath`;
+    const manifestCall = `KW({extensionHostPath:${hostVar},extensionId:${arg}.extensionId`;
+    if (!updated.includes(registryField) || !updated.includes(manifestCall)) {
+      throw new Error(errorMessage);
+    }
+    return updated
+      .replace(registryField, `extensionHostPath:${extensionHostPath},nodePath:${runtimeVar}.nodePath`)
+      .replace(manifestCall, `KW({extensionHostPath:${extensionHostPath},extensionId:${arg}.extensionId`);
+  }
+
   const returnMatch = bundleSource.match(CHROME_NATIVE_HOST_RUNTIME_PATHS_RETURN_26_616_PATTERN);
   if (returnMatch?.groups) {
     const updated = replaceRegexOrThrow(
@@ -3441,15 +3562,32 @@ export function injectLinuxChromeNativeHostRuntimePathsPatch(bundleSource, optio
         `return codexLinuxChromeNativeHostRuntimePaths({runtimePaths:{codexCliPath:await ${copyCliFn}({codexCliPath:${codexCliVar},codexHome:${arg}.codexHome,nativeHostName:${arg}.nativeHostName}),nodePath:${nodeVar},nodeModuleDirs:${nodeModuleDirsFn}(${arg}.resourcesPath),nodeReplPath:${nodeReplVar}},resourcesPath:${arg}.resourcesPath})`,
       errorMessage
     );
-    return `${buildLinuxChromeNativeHostRuntimePathsHelper()}${updated}`;
+    return `${helperPrefix}${updated}`;
   }
-  return replaceRegexOrThrow(
+  const registrationMatch = bundleSource.match(CHROME_NATIVE_HOST_RUNTIME_PATHS_REGISTRATION_PATTERN);
+  if (!registrationMatch?.groups) {
+    if (bundleSource.includes(LINUX_CHROME_NATIVE_HOST_RUNTIME_PATHS_PATCH_MARKER)) {
+      return bundleSource;
+    }
+    throw new Error(errorMessage);
+  }
+  const updated = replaceRegexOrThrow(
     bundleSource,
     CHROME_NATIVE_HOST_RUNTIME_PATHS_REGISTRATION_PATTERN,
     ({ fn, arg, targetVar, targetFn, runtimeVar, runtimeFn, hostVar, installFn }) =>
-      `${buildLinuxChromeNativeHostRuntimePathsHelper()}async function ${fn}(${arg}){let ${targetVar}=${targetFn}(),${runtimeVar}=codexLinuxChromeNativeHostRuntimePaths({runtimePaths:${runtimeFn}({devRuntimeRepoRoot:${arg}.devRuntimeRepoRoot,nativeHostName:${arg}.nativeHostName,resourcesPath:${arg}.resourcesPath}),resourcesPath:${arg}.resourcesPath}),${hostVar}=await ${installFn}(`,
+      `${helperPrefix}async function ${fn}(${arg}){let ${targetVar}=${targetFn}(),${runtimeVar}=codexLinuxChromeNativeHostRuntimePaths({runtimePaths:${runtimeFn}({devRuntimeRepoRoot:${arg}.devRuntimeRepoRoot,nativeHostName:${arg}.nativeHostName,resourcesPath:${arg}.resourcesPath}),resourcesPath:${arg}.resourcesPath}),${hostVar}=await ${installFn}(`,
     errorMessage
   );
+  const { runtimeVar, hostVar } = registrationMatch.groups;
+  const extensionHostPath = `${runtimeVar}.extensionHostPath??${hostVar}`;
+  const registryField = `extensionHostPath:${hostVar},`;
+  const manifestCall = `extensionHostPath:${hostVar},extensionId:`;
+  if (!updated.includes(registryField) || !updated.includes(manifestCall)) {
+    throw new Error(errorMessage);
+  }
+  return updated
+    .replace(registryField, `extensionHostPath:${extensionHostPath},`)
+    .replace(manifestCall, `extensionHostPath:${extensionHostPath},extensionId:`);
 }
 
 export function applyLinuxOwlFeatureBindingPatch(bundleSource, options = {}) {
@@ -3470,13 +3608,20 @@ export function injectLinuxOwlFeatureBindingPatch(bundleSource, options = {}) {
   if (bundleSource.includes(LINUX_OWL_FEATURE_BINDING_PATCH_MARKER)) {
     return bundleSource;
   }
+  const switchFunctions = resolveLinuxOwlFeatureSwitchFunctions(
+    bundleSource,
+    options.sourceName
+  );
   return replaceFirstMatchingRegexOrThrow(
     bundleSource,
     [
       {
         pattern: LINUX_OWL_FEATURE_BINDING_PATTERN,
         replacement: ({ helperFn, bindingVar, schemaVar }) =>
-          `function ${helperFn}(){/* ${LINUX_OWL_FEATURE_BINDING_PATCH_MARKER} */let ${bindingVar}=process._linkedBinding;if(typeof ${bindingVar}==\`function\`){try{return ${schemaVar}.parse(${bindingVar}.call(process,\`electron_common_owl_features\`))}catch{}}${buildLinuxOwlFeatureSwitchFallback()}}`
+          `function ${helperFn}(){/* ${LINUX_OWL_FEATURE_BINDING_PATCH_MARKER} */let ${bindingVar}=process._linkedBinding;if(typeof ${bindingVar}==\`function\`){${buildLinuxOwlFeatureNativeBindingReturn(
+            schemaVar,
+            `${bindingVar}.call(process,\`electron_common_owl_features\`)`
+          )}}${buildLinuxOwlFeatureSwitchFallback(switchFunctions)}}`
       },
       {
         pattern: LINUX_OWL_FEATURE_BINDING_NULLABLE_PATTERN,
@@ -3489,15 +3634,65 @@ export function injectLinuxOwlFeatureBindingPatch(bundleSource, options = {}) {
           nativeFeaturesVar,
           schemaVar
         }) =>
-          `function ${helperFn}(){/* ${LINUX_OWL_FEATURE_BINDING_PATCH_MARKER} */let ${bindingVar}=process._linkedBinding;if(typeof ${bindingVar}==\`function\`){let ${nativeFeaturesVar};try{${nativeFeaturesVar}=${bindingVar}.call(process,${featureBindingNameVar})}catch(${errorVar}){if(!${missingBindingFn}(${errorVar}))throw ${errorVar}}if(${nativeFeaturesVar}!=null)try{return ${schemaVar}.parse(${nativeFeaturesVar})}catch{}}${buildLinuxOwlFeatureSwitchFallback()}}`
+          `function ${helperFn}(){/* ${LINUX_OWL_FEATURE_BINDING_PATCH_MARKER} */let ${bindingVar}=process._linkedBinding;if(typeof ${bindingVar}==\`function\`){let ${nativeFeaturesVar};try{${nativeFeaturesVar}=${bindingVar}.call(process,${featureBindingNameVar})}catch(${errorVar}){if(!${missingBindingFn}(${errorVar}))throw ${errorVar}}if(${nativeFeaturesVar}!=null){${buildLinuxOwlFeatureNativeBindingReturn(
+            schemaVar,
+            nativeFeaturesVar
+          )}}}${buildLinuxOwlFeatureSwitchFallback(switchFunctions)}}`
       }
     ],
     buildLinuxOwlFeatureBindingPatchErrorMessage(bundleSource, options.sourceName)
   );
 }
 
-function buildLinuxOwlFeatureSwitchFallback() {
-  return 'return{isOwlFeatureEnabled:codexLinuxOwlFeatureName=>{let t=nt(rt(`enable-features`)),n=nt(rt(`disable-features`));return t.includes(codexLinuxOwlFeatureName)&&!n.includes(codexLinuxOwlFeatureName)}}';
+function buildLinuxOwlFeatureNativeBindingReturn(schemaVar, nativeFeaturesExpression) {
+  return `let codexLinuxOwlFeatureBindingParsed;try{codexLinuxOwlFeatureBindingParsed=${schemaVar}.parse(${nativeFeaturesExpression})}catch{}if(codexLinuxOwlFeatureBindingParsed!=null){try{codexLinuxOwlFeatureBindingParsed.isOwlFeatureEnabled(\`__codex_linux_owl_probe__\`);return codexLinuxOwlFeatureBindingParsed}catch(codexLinuxOwlFeatureBindingError){if(codexLinuxOwlFeatureBindingError instanceof Error&&codexLinuxOwlFeatureBindingError.message.startsWith(\`Unsupported Owl feature:\`))return codexLinuxOwlFeatureBindingParsed}}`;
+}
+
+function buildLinuxOwlFeatureSwitchFallback({ normalizerFn, readerFn }) {
+  return `return{isOwlFeatureEnabled:codexLinuxOwlFeatureName=>{let t=${normalizerFn}(${readerFn}(\`enable-features\`)),n=${normalizerFn}(${readerFn}(\`disable-features\`));return t.includes(codexLinuxOwlFeatureName)&&!n.includes(codexLinuxOwlFeatureName)}}`;
+}
+
+function resolveLinuxOwlFeatureSwitchFunctions(bundleSource, sourceName) {
+  const switchFunctions = findLinuxOwlFeatureSwitchFunctions(bundleSource);
+  if (!switchFunctions.readerFn || !switchFunctions.normalizerFn) {
+    throw new Error(buildLinuxOwlFeatureBindingPatchErrorMessage(bundleSource, sourceName));
+  }
+  return switchFunctions;
+}
+
+function findLinuxOwlFeatureSwitchFunctions(bundleSource) {
+  const anchorIndex = bundleSource.indexOf('electron_common_owl_features');
+  const reader = findNearestRegexMatch(
+    bundleSource,
+    LINUX_OWL_FEATURE_SWITCH_READER_PATTERN,
+    anchorIndex
+  );
+  const normalizer = findNearestRegexMatch(
+    bundleSource,
+    LINUX_OWL_FEATURE_SWITCH_NORMALIZER_PATTERN,
+    reader?.index ?? anchorIndex
+  );
+  return {
+    normalizerFn: normalizer?.groups?.fn,
+    readerFn: reader?.groups?.fn
+  };
+}
+
+function findNearestRegexMatch(bundleSource, pattern, anchorIndex) {
+  pattern.lastIndex = 0;
+  const effectiveAnchorIndex = anchorIndex >= 0 ? anchorIndex : 0;
+  let best = null;
+  for (const match of bundleSource.matchAll(pattern)) {
+    if (
+      best == null ||
+      Math.abs(match.index - effectiveAnchorIndex) <
+        Math.abs(best.index - effectiveAnchorIndex)
+    ) {
+      best = match;
+    }
+  }
+  pattern.lastIndex = 0;
+  return best;
 }
 
 export function applyLinuxChromeExtensionSettingsPatch(bundleSource, options = {}) {
@@ -3604,6 +3799,25 @@ export function injectLinuxRemoteControlPatch(bundleSource, options = {}) {
           deviceFn
         }) =>
           `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0,computerUse:!0,computerUseNodeRepl:!0}:${featuresVar},${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...codexLinuxRemoteControlFeatures,computerUse:!0,computerUseNodeRepl:!0}:codexLinuxRemoteControlFeatures,${overridesVar}=${overrideExpr};return ${overridesVar}==null?{...${computedVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}:{...${computedVar},...${overridesVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
+      },
+      {
+        pattern: LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_WINDOWS_NODE_REPL_PATTERN,
+        replacement: ({
+          fnName,
+          featuresVar,
+          buildFlavorVar,
+          buildFlavorDefault,
+          envVar,
+          envDefault,
+          platformVar,
+          platformDefault,
+          windowsNodeReplVar,
+          computedVar,
+          overridesVar,
+          overrideExpr,
+          deviceFn
+        }) =>
+          `function ${fnName}(${featuresVar},{buildFlavor:${buildFlavorVar}=${buildFlavorDefault},env:${envVar}=${envDefault},platform:${platformVar}=${platformDefault}}={}){let codexLinuxRemoteControlFeatures=${platformVar}===\`linux\`&&${envVar}.CODEX_DESKTOP_DISABLE_LINUX_REMOTE_CONTROL_PATCH!==\`1\`?{...${featuresVar},control:!0,computerUse:!0,computerUseNodeRepl:!0}:${featuresVar},${windowsNodeReplVar}=${platformVar}===\`win32\`&&codexLinuxRemoteControlFeatures.computerUse===!0?{...codexLinuxRemoteControlFeatures,computerUseNodeRepl:!0}:codexLinuxRemoteControlFeatures,${computedVar}=${platformVar}===\`win32\`&&${envVar}.CODEX_ELECTRON_ENABLE_WINDOWS_COMPUTER_USE===\`1\`?{...${windowsNodeReplVar},computerUse:!0,computerUseNodeRepl:!0}:${windowsNodeReplVar},${overridesVar}=${overrideExpr};return ${overridesVar}==null?{...${computedVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}:{...${computedVar},...${overridesVar},deviceAttestation:${deviceFn}({platform:${platformVar}})}}/* ${LINUX_REMOTE_CONTROL_PATCH_MARKER} */`
       },
       {
         pattern: LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_MAC_NODE_REPL_PATTERN,
@@ -3941,12 +4155,13 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
     updated = replaceRegexOrThrow(
       updated,
       LINUX_AVATAR_OVERLAY_SHOW_WINDOW_PATTERN,
-      ({ windowVar, wasOpenVar, revealExpr, openStateExpr, postOpenExpr }) =>
+      ({ windowVar, wasOpenVar, revealExpr, openStateExpr, postShowExpr, postOpenExpr }) =>
         buildLinuxAvatarOverlayShowWindowMethod({
           windowVar,
           wasOpenVar,
           revealExpr: revealExpr ?? '',
           openStateExpr,
+          postShowExpr: postShowExpr ?? '',
           postOpenExpr: postOpenExpr ?? ''
         }),
       errorMessage
@@ -3954,6 +4169,20 @@ export function injectLinuxAvatarOverlayPatch(bundleSource, options = {}) {
     updated = replaceFirstMatchingRegexOrThrow(
       updated,
       [
+        {
+          pattern: LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_707_PATTERN,
+          replacement: ({
+            windowVar,
+            boundsVar,
+            animateVar,
+            nativeMoveVar,
+            currentBoundsVar,
+            equalFn,
+            positionControllerVar,
+            sameSizeVar
+          }) =>
+            `setWindowBounds(${windowVar},${boundsVar},${animateVar},${nativeMoveVar}){if(${windowVar}.isDestroyed())return;let ${currentBoundsVar}=${windowVar}.getContentBounds();if(${equalFn}(${currentBoundsVar},${boundsVar})){this.${positionControllerVar}.position(${windowVar},${boundsVar}),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar});return}let ${sameSizeVar}=${currentBoundsVar}.width===${boundsVar}.width&&${currentBoundsVar}.height===${boundsVar}.height;${windowVar}.setContentBounds(${boundsVar},${animateVar}&&!this.nativeCompositionSupported),this.${positionControllerVar}.position(${windowVar},${boundsVar}),(${nativeMoveVar}||!${sameSizeVar})&&this.compositionHost.moveBackingCanvases(),this.codexLinuxKeepAvatarOverlayFrontmost(${windowVar})}`
+        },
         {
           pattern: LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_611_PATTERN,
           replacement: ({
@@ -4064,6 +4293,27 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
           `startDrag(${webContentsIdVar},${eventVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;this.cancelMomentum(),this.${suppressVar}=!1,this.clearDetachedDisplayRestore();let ${layoutVar}=this.getLayout(${windowVar});this.${positionControllerVar}.clear();let codexLinuxAvatarOverlayRendererDrag=process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`,${nativePointVar}=codexLinuxAvatarOverlayRendererDrag?null:${coercePointFn}(this.compositionHost.getCursorPosition()),${rendererPointVar}=${eventVar}.pointerScreenX!=null&&${eventVar}.pointerScreenY!=null?{x:${eventVar}.pointerScreenX,y:${eventVar}.pointerScreenY}:${electronVar}.screen.getCursorScreenPoint(),${sourcePointVar}=${nativePointVar}??${rendererPointVar},${pointerAnchorXVar}=${eventVar}.pointerWindowX-${layoutVar}.mascot.left,${pointerAnchorYVar}=${eventVar}.pointerWindowY-${layoutVar}.mascot.top;this.dragState=new ${dragStateCtor}(${nativePointVar}==null?\`renderer\`:\`native\`,${pointerAnchorXVar},${pointerAnchorYVar},${electronVar}.screen.getDisplayNearestPoint(${sourcePointVar}).bounds)}`
       },
       {
+        pattern: LINUX_AVATAR_OVERLAY_START_DRAG_26_707_PATTERN,
+        replacement: ({
+          webContentsIdVar,
+          eventVar,
+          usesOrbPhysicsVar,
+          windowVar,
+          suppressVar,
+          layoutVar,
+          positionControllerVar,
+          nativePointVar,
+          coercePointFn,
+          rendererPointVar,
+          electronVar,
+          sourcePointVar,
+          pointerAnchorXVar,
+          pointerAnchorYVar,
+          dragStateCtor
+        }) =>
+          `startDrag(${webContentsIdVar},${eventVar},${usesOrbPhysicsVar}=!1){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;this.cancelMomentum(),this.dockRestoreAnchor=null,this.cancelOrbDragFollow(),this.windowServerDragActive=!1,this.windowServerDragDirection=null,this.windowServerDragWindowX=${windowVar}.getContentBounds().x,this.${suppressVar}=!1,this.clearDetachedDisplayRestore();let ${layoutVar}=this.getLayout(${windowVar});this.${positionControllerVar}.clear();let codexLinuxAvatarOverlayRendererDrag=process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`,${nativePointVar}=codexLinuxAvatarOverlayRendererDrag?null:${coercePointFn}(this.compositionHost.getCursorPosition()),${rendererPointVar}=${eventVar}.pointerScreenX!=null&&${eventVar}.pointerScreenY!=null?{x:${eventVar}.pointerScreenX,y:${eventVar}.pointerScreenY}:${electronVar}.screen.getCursorScreenPoint(),${sourcePointVar}=${nativePointVar}??${rendererPointVar},${pointerAnchorXVar}=${eventVar}.pointerWindowX-${layoutVar}.mascot.left,${pointerAnchorYVar}=${eventVar}.pointerWindowY-${layoutVar}.mascot.top;this.dragState=new ${dragStateCtor}(${nativePointVar}==null?\`renderer\`:\`native\`,${pointerAnchorXVar},${pointerAnchorYVar},${electronVar}.screen.getDisplayNearestPoint(${sourcePointVar}).bounds,${usesOrbPhysicsVar}),this.windowServerDragActive=codexLinuxAvatarOverlayRendererDrag?!1:this.layoutMode===\`native\`&&!${usesOrbPhysicsVar}&&this.compositionHost.performWindowDrag(),this.windowServerDragActive||(this.windowServerDragWindowX=null)}`
+      },
+      {
         pattern: LINUX_AVATAR_OVERLAY_START_DRAG_26_623_PATTERN,
         replacement: ({
           webContentsIdVar,
@@ -4110,6 +4360,20 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
           `moveDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||this.dragState==null)return;this.cancelMomentum();let ${dragStateVar}=this.dragState;${dragStateVar}.recordMovementIntent();let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`?null:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&this.moveDragToPointer(${windowVar},${nextPointVar})}codexLinuxAvatarOverlayScreenPoint(e){return e!=null&&Number.isFinite(e.pointerScreenX)&&Number.isFinite(e.pointerScreenY)?{x:e.pointerScreenX,y:e.pointerScreenY}:e!=null&&Number.isFinite(e.cursorScreenX)&&Number.isFinite(e.cursorScreenY)?{x:e.cursorScreenX,y:e.cursorScreenY}:null}`
       },
       {
+        pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_707_PATTERN,
+        replacement: ({
+          webContentsIdVar,
+          pointVar,
+          windowVar,
+          dragStateVar,
+          cursorVar,
+          electronVar,
+          nextPointVar,
+          coercePointFn
+        }) =>
+          `moveDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar}||this.dragState==null)return;this.cancelMomentum();let ${dragStateVar}=this.dragState;if(${dragStateVar}.recordMovementIntent(),this.windowServerDragActive)return;let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`?null:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&(${dragStateVar}.usesOrbPhysics?(this.orbDragFollowTarget=${nextPointVar},this.scheduleOrbDragFollow(${windowVar})):this.moveDragToPointer(${windowVar},${nextPointVar}))}codexLinuxAvatarOverlayScreenPoint(e){return e!=null&&Number.isFinite(e.pointerScreenX)&&Number.isFinite(e.pointerScreenY)?{x:e.pointerScreenX,y:e.pointerScreenY}:e!=null&&Number.isFinite(e.cursorScreenX)&&Number.isFinite(e.cursorScreenY)?{x:e.cursorScreenX,y:e.cursorScreenY}:null}`
+      },
+      {
         pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_623_PATTERN,
         replacement: ({
           webContentsIdVar,
@@ -4148,6 +4412,23 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
         pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN,
         replacement: ({ windowVar, cursorVar, dragStateVar, displayBoundsVar, displayFn, displayVar, electronVar }) =>
           `moveDragToPointer(${windowVar},${cursorVar}){let ${dragStateVar}=this.dragState;if(${dragStateVar}==null)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayLayout=this.getLayout(${windowVar}),codexLinuxAvatarOverlayBounds=${windowVar}.getContentBounds(),codexLinuxAvatarOverlayNext={x:Math.round(${cursorVar}.x-${dragStateVar}.pointerAnchorX-codexLinuxAvatarOverlayLayout.mascot.left),y:Math.round(${cursorVar}.y-${dragStateVar}.pointerAnchorY-codexLinuxAvatarOverlayLayout.mascot.top),width:codexLinuxAvatarOverlayBounds.width,height:codexLinuxAvatarOverlayBounds.height};this.anchor={...this.anchor,x:codexLinuxAvatarOverlayNext.x+codexLinuxAvatarOverlayLayout.mascot.left,y:codexLinuxAvatarOverlayNext.y+codexLinuxAvatarOverlayLayout.mascot.top,width:this.mascotSize.width,height:this.mascotSize.height};let codexLinuxAvatarOverlayDisplay=${electronVar}.screen.getDisplayNearestPoint({x:this.anchor.x,y:this.anchor.y});${dragStateVar}.recordMove(codexLinuxAvatarOverlayDisplay.bounds),${dragStateVar}.lastScreenPoint=${cursorVar},${dragStateVar}.display=codexLinuxAvatarOverlayDisplay,this.displayId=codexLinuxAvatarOverlayDisplay.id,this.displayBounds=codexLinuxAvatarOverlayDisplay.bounds,this.layout={...codexLinuxAvatarOverlayLayout,windowBounds:codexLinuxAvatarOverlayNext,mascot:{...codexLinuxAvatarOverlayLayout.mascot,left:codexLinuxAvatarOverlayLayout.mascot.left,top:codexLinuxAvatarOverlayLayout.mascot.top},viewport:{width:codexLinuxAvatarOverlayNext.width,height:codexLinuxAvatarOverlayNext.height}},this.setWindowBounds(${windowVar},codexLinuxAvatarOverlayNext,!1,!1),this.sendLayoutToRenderer(${windowVar});return}let ${displayBoundsVar}=${displayFn}(${cursorVar},${dragStateVar}.displayBounds),${displayVar}=${electronVar}.screen.getDisplayMatching(${displayBoundsVar});${dragStateVar}.recordMove(${displayVar}.bounds),this.anchor={...this.anchor,x:${cursorVar}.x-${dragStateVar}.pointerAnchorX,y:${cursorVar}.y-${dragStateVar}.pointerAnchorY},this.applyLayout(${windowVar},${displayVar},!1,!1)}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_707_PATTERN,
+        replacement: ({
+          windowVar,
+          cursorVar,
+          dragStateVar,
+          displayBoundsVar,
+          displayFn,
+          displayVar,
+          electronVar,
+          targetXVar,
+          targetYVar,
+          easeVar,
+          orbEaseVar
+        }) =>
+          `moveDragToPointer(${windowVar},${cursorVar}){let ${dragStateVar}=this.dragState;if(${dragStateVar}==null)return;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayLayout=this.getLayout(${windowVar}),codexLinuxAvatarOverlayBounds=${windowVar}.getContentBounds(),${targetXVar}=${cursorVar}.x-${dragStateVar}.pointerAnchorX,${targetYVar}=${cursorVar}.y-${dragStateVar}.pointerAnchorY,${easeVar}=${dragStateVar}.usesOrbPhysics?${orbEaseVar}:1,codexLinuxAvatarOverlayAnchor={...this.anchor,x:this.anchor.x+(${targetXVar}-this.anchor.x)*${easeVar},y:this.anchor.y+(${targetYVar}-this.anchor.y)*${easeVar}},codexLinuxAvatarOverlayNext={x:Math.round(codexLinuxAvatarOverlayAnchor.x-codexLinuxAvatarOverlayLayout.mascot.left),y:Math.round(codexLinuxAvatarOverlayAnchor.y-codexLinuxAvatarOverlayLayout.mascot.top),width:codexLinuxAvatarOverlayBounds.width,height:codexLinuxAvatarOverlayBounds.height};this.anchor={...this.anchor,x:codexLinuxAvatarOverlayNext.x+codexLinuxAvatarOverlayLayout.mascot.left,y:codexLinuxAvatarOverlayNext.y+codexLinuxAvatarOverlayLayout.mascot.top,width:this.mascotSize.width,height:this.mascotSize.height};let codexLinuxAvatarOverlayDisplay=${electronVar}.screen.getDisplayNearestPoint({x:this.anchor.x,y:this.anchor.y});${dragStateVar}.recordMove(codexLinuxAvatarOverlayDisplay.bounds),${dragStateVar}.lastScreenPoint=${cursorVar},${dragStateVar}.display=codexLinuxAvatarOverlayDisplay,this.displayId=codexLinuxAvatarOverlayDisplay.id,this.displayBounds=codexLinuxAvatarOverlayDisplay.bounds,this.layout={...codexLinuxAvatarOverlayLayout,windowBounds:codexLinuxAvatarOverlayNext,mascot:{...codexLinuxAvatarOverlayLayout.mascot,left:codexLinuxAvatarOverlayLayout.mascot.left,top:codexLinuxAvatarOverlayLayout.mascot.top},viewport:{width:codexLinuxAvatarOverlayNext.width,height:codexLinuxAvatarOverlayNext.height}},this.setWindowBounds(${windowVar},codexLinuxAvatarOverlayNext,!1,!1),this.sendLayoutToRenderer(${windowVar});return}let ${displayBoundsVar}=${displayFn}(${cursorVar},${dragStateVar}.displayBounds),${displayVar}=${electronVar}.screen.getDisplayMatching(${displayBoundsVar});${dragStateVar}.recordMove(${displayVar}.bounds);let ${targetXVar}=${cursorVar}.x-${dragStateVar}.pointerAnchorX,${targetYVar}=${cursorVar}.y-${dragStateVar}.pointerAnchorY,${easeVar}=${dragStateVar}.usesOrbPhysics?${orbEaseVar}:1;this.anchor={...this.anchor,x:this.anchor.x+(${targetXVar}-this.anchor.x)*${easeVar},y:this.anchor.y+(${targetYVar}-this.anchor.y)*${easeVar}},this.applyLayout(${windowVar},${displayVar},!1,!1)}`
       },
       {
         pattern: LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_623_PATTERN,
@@ -4194,6 +4475,30 @@ function injectLinuxAvatarOverlayDragCoordsPatch(bundleSource, errorMessage) {
           suppressVar
         }) =>
           `endDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;let ${dragStateVar}=this.dragState;if(${dragStateVar}?.hasMovementIntent){let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`?null:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&this.moveDragToPointer(${windowVar},${nextPointVar})}this.${suppressVar}=${dragStateVar}?.shouldSuppressRendererThrow()??!1;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayDisplay=${dragStateVar}?.display;this.dragState=null,this.persistWindowBounds(${windowVar},codexLinuxAvatarOverlayDisplay??this.getCurrentDisplay());return}this.dragState=null,this.reclampWindowToVisibleDisplay({shouldPersist:!0})}`
+      },
+      {
+        pattern: LINUX_AVATAR_OVERLAY_END_DRAG_26_707_PATTERN,
+        replacement: ({
+          webContentsIdVar,
+          pointVar,
+          windowVar,
+          dragStateVar,
+          serverDragVar,
+          serverDisplayVar,
+          serverPointVar,
+          coercePointFn,
+          electronVar,
+          serverDisplayCalcVar,
+          serverAnchorVar,
+          cursorVar,
+          nextPointVar,
+          suppressVar,
+          dockTargetVar,
+          currentAnchorVar,
+          anchorFn,
+          dockCheckFn
+        }) =>
+          `endDrag(${webContentsIdVar},${pointVar}){let ${windowVar}=this.window;if(${windowVar}==null||${windowVar}.isDestroyed()||${windowVar}.webContents.id!==${webContentsIdVar})return;this.cancelOrbDragFollow();let ${dragStateVar}=this.dragState,${serverDragVar}=this.windowServerDragActive,${serverDisplayVar}=null;if(${serverDragVar}&&${dragStateVar}!=null){let ${serverPointVar}=${coercePointFn}(this.compositionHost.getCursorPosition())??(${pointVar}==null?${electronVar}.screen.getCursorScreenPoint():{x:${pointVar}.pointerScreenX,y:${pointVar}.pointerScreenY}),${serverDisplayCalcVar}=${electronVar}.screen.getDisplayNearestPoint(${serverPointVar}),${serverAnchorVar}={...this.anchor,x:${serverPointVar}.x-${dragStateVar}.pointerAnchorX,y:${serverPointVar}.y-${dragStateVar}.pointerAnchorY};${serverDisplayVar}=${serverDisplayCalcVar},this.updateWindowServerDragPlacement(${windowVar},${windowVar}.getContentBounds(),${serverAnchorVar},${serverDisplayCalcVar}),this.sendWindowServerDragDirection(${windowVar},null)}else if(${dragStateVar}?.hasMovementIntent){let ${cursorVar}=${electronVar}.screen.getCursorScreenPoint(),${nextPointVar}=${dragStateVar}.getCursorPointForSource({native:process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`?null:${dragStateVar}.cursorSource===\`native\`?${coercePointFn}(this.compositionHost.getCursorPosition()):null,renderer:this.codexLinuxAvatarOverlayScreenPoint(${pointVar})??{x:${pointVar}?.pointerScreenX??${cursorVar}.x,y:${pointVar}?.pointerScreenY??${cursorVar}.y}});${nextPointVar}!=null&&this.moveDragToPointer(${windowVar},${nextPointVar})}this.${suppressVar}=${dragStateVar}?.shouldSuppressRendererThrow()??!1;if(process.platform===\`linux\`&&process?.env?.CODEX_DESKTOP_DISABLE_LINUX_AVATAR_OVERLAY_PATCH!==\`1\`){let codexLinuxAvatarOverlayDisplay=${dragStateVar}?.display??${serverDisplayVar};this.dragState=null,this.windowServerDragActive=!1,this.windowServerDragWindowX=null,this.persistWindowBounds(${windowVar},codexLinuxAvatarOverlayDisplay??this.getCurrentDisplay());let ${dockTargetVar}=this.dockTarget,${currentAnchorVar}=${anchorFn}(this.anchor,this.presentationOffset);${dockTargetVar}!=null&&${dockCheckFn}({current:${currentAnchorVar},next:${currentAnchorVar},target:{x:${dockTargetVar}.anchor.centerX,y:${dockTargetVar}.anchor.centerY}}).shouldDock&&this.dockPresentation(${dockTargetVar}.anchor,${dockTargetVar}.onDock);return}this.dragState=null,this.windowServerDragActive=!1,this.windowServerDragWindowX=null,${serverDragVar}?this.persistWindowBounds(${windowVar},${serverDisplayVar}??this.getCurrentDisplay()):this.reclampWindowToVisibleDisplay({shouldPersist:!0});let ${dockTargetVar}=this.dockTarget,${currentAnchorVar}=${anchorFn}(this.anchor,this.presentationOffset);${dockTargetVar}!=null&&${dockCheckFn}({current:${currentAnchorVar},next:${currentAnchorVar},target:{x:${dockTargetVar}.anchor.centerX,y:${dockTargetVar}.anchor.centerY}}).shouldDock&&this.dockPresentation(${dockTargetVar}.anchor,${dockTargetVar}.onDock)}`
       },
       {
         pattern: LINUX_AVATAR_OVERLAY_END_DRAG_26_623_PATTERN,
@@ -4852,6 +5157,10 @@ export function injectLinuxTerminalLifecyclePatch(bundleSource, options = {}) {
       {
         pattern: TERMINAL_CLEANUP_PATTERN_26_611,
         replacement: (groups) => buildTerminalCleanupReplacement(groups)
+      },
+      {
+        pattern: TERMINAL_CLEANUP_PATTERN_26_707,
+        replacement: (groups) => buildTerminalCleanupReplacement(groups)
       }
     ],
     errorMessage
@@ -4879,11 +5188,12 @@ function buildTerminalCleanupReplacement({
   resumeSessionVar,
   service,
   createdSessionVar,
+  timeoutVar,
   extraCleanupVar,
   terminalVar,
   terminalRef
 }) {
-  return `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(${guardVar})return;${guardVar}=!0,${frameVar}!=null&&(cancelAnimationFrame(${frameVar}),${frameVar}=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),${observerVar}.disconnect(),${dataDisposeVar}.dispose(),${titleDisposeVar ? `${titleDisposeVar}.dispose(),` : ''}${keyDisposeVar}.dispose(),${registerDisposeVar}(),${fitRef}.current=null,${sessionRef}.current=null,${attachStateRef}.current=!1,codexLinuxPreserveSession||${resumeSessionVar}||${service}.close(${createdSessionVar}),${extraCleanupVar ? `${extraCleanupVar}(),` : ''}${terminalVar}.dispose(),${terminalRef}.current=null,codexLinuxTraceTerminalCleanup(codexLinuxTerminalMountKey),codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),${observerVar}.observe(e),codexLinuxDisposeCurrentMount`;
+  return `return codexLinuxDisposeCurrentMount=(codexLinuxPreserveSession=!1)=>{if(${guardVar})return;${guardVar}=!0,${frameVar}!=null&&(cancelAnimationFrame(${frameVar}),${frameVar}=null),codexLinuxAttachFrame!=null&&(cancelAnimationFrame(codexLinuxAttachFrame),codexLinuxAttachFrame=null),${timeoutVar ? `${timeoutVar}!=null&&(clearTimeout(${timeoutVar}),${timeoutVar}=null),` : ''}${observerVar}.disconnect(),${dataDisposeVar}.dispose(),${titleDisposeVar ? `${titleDisposeVar}.dispose(),` : ''}${keyDisposeVar}.dispose(),${registerDisposeVar}(),${fitRef}.current=null,${sessionRef}.current=null,${attachStateRef}.current=!1,codexLinuxPreserveSession||${resumeSessionVar}||${service}.close(${createdSessionVar}),${extraCleanupVar ? `${extraCleanupVar}(),` : ''}${terminalVar}.dispose(),${terminalRef}.current=null,codexLinuxTraceTerminalCleanup(codexLinuxTerminalMountKey),codexLinuxReleaseTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount)},codexLinuxSetTerminalMount(codexLinuxTerminalMountKey,codexLinuxDisposeCurrentMount),${observerVar}.observe(e),codexLinuxDisposeCurrentMount`;
 }
 
 function buildLinuxTerminalLifecycleHelpers() {
@@ -8485,7 +8795,9 @@ function analyzeLinuxNativeWindowFrameBundle(bundleSource) {
   const detected = {
     titleBarStyleHidden: bundleSource.includes('titleBarStyle:`hidden`'),
     titleBarStyleDefault: bundleSource.includes('titleBarStyle:`default`'),
-    linuxHiddenTitleBarBranch: LINUX_NATIVE_WINDOW_FRAME_PRIMARY_BRANCH_PATTERN.test(bundleSource),
+    linuxHiddenTitleBarBranch:
+      LINUX_NATIVE_WINDOW_FRAME_PRIMARY_BRANCH_PATTERN.test(bundleSource) ||
+      LINUX_NATIVE_WINDOW_FRAME_QUICK_CHAT_PRIMARY_BRANCH_PATTERN.test(bundleSource),
     titleBarOverlayOption: bundleSource.includes('titleBarOverlay')
   };
 
@@ -8504,7 +8816,9 @@ function analyzeLinuxPrimaryWindowModeControlsBundle(bundleSource) {
   const detected = {
     windowModeMessage: bundleSource.includes('electron-set-window-mode'),
     primaryWindowModeState: bundleSource.includes('primaryWindowMode'),
-    disableControlsSequence: LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN.test(bundleSource)
+    disableControlsSequence:
+      LINUX_PRIMARY_WINDOW_MODE_DISABLE_CONTROLS_PATTERN.test(bundleSource) ||
+      LINUX_PRIMARY_WINDOW_MODE_DISABLE_MAXIMIZE_CONTROLS_PATTERN.test(bundleSource)
   };
 
   return {
@@ -8522,7 +8836,9 @@ function analyzeLinuxWindowFocusableOptionBundle(bundleSource) {
     browserWindowConstructor: /new [A-Za-z_$][\w$]*\.BrowserWindow\(\{/.test(bundleSource),
     parentOption: bundleSource.includes('parent:'),
     focusableOption: bundleSource.includes('focusable:'),
-    unconditionalFocusableOption: LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN.test(bundleSource)
+    unconditionalFocusableOption:
+      LINUX_WINDOW_FOCUSABLE_OPTION_PATTERN.test(bundleSource) ||
+      LINUX_WINDOW_FOCUSABLE_OPTION_26_707_PATTERN.test(bundleSource)
   };
 
   return {
@@ -8579,11 +8895,16 @@ function analyzeLinuxAboutDialogBundle(bundleSource) {
 function analyzeLinuxCloseCancelBundle(bundleSource) {
   const detected = {
     beforeQuitHandler: /[A-Za-z_$][\w$]*\.app\.on\(`before-quit`/.test(bundleSource),
-    quitCancelPrompt: bundleSource.includes('buttons:[`Quit`,`Cancel`]'),
+    quitCancelPrompt:
+      bundleSource.includes('buttons:[`Quit`,`Cancel`]') ||
+      (bundleSource.includes('desktop.quitConfirmation.quit') &&
+        bundleSource.includes('desktop.quitConfirmation.cancel')),
     cancelPreventDefault: /[A-Za-z_$][\w$]*\.preventDefault\(\);return/.test(bundleSource),
     showLastActivePrimaryWindow: bundleSource.includes('showLastActivePrimaryWindow()'),
     ensureWindowDependency:
-      bundleSource.includes('ensureHostWindow:') || bundleSource.includes('ensureLocalWindow:')
+      bundleSource.includes('ensureHostWindow:') ||
+      bundleSource.includes('ensureLocalWindow:') ||
+      bundleSource.includes('ensureWindow:')
   };
 
   return {
@@ -8736,11 +9057,12 @@ function analyzeLinuxOwlFeatureBindingBundle(bundleSource) {
   const linkedBindingHelper =
     LINUX_OWL_FEATURE_BINDING_PATTERN.test(bundleSource) ||
     LINUX_OWL_FEATURE_BINDING_NULLABLE_PATTERN.test(bundleSource);
+  const switchFunctions = findLinuxOwlFeatureSwitchFunctions(bundleSource);
   const detected = {
     owlFeatureBinding: bundleSource.includes('electron_common_owl_features'),
     linkedBindingHelper,
-    featureSwitchReader:
-      bundleSource.includes('enable-features') && bundleSource.includes('disable-features'),
+    featureSwitchReader: switchFunctions.readerFn != null,
+    featureSwitchNormalizer: switchFunctions.normalizerFn != null,
     featurePredicate: bundleSource.includes('isOwlFeatureEnabled')
   };
 
@@ -8750,6 +9072,7 @@ function analyzeLinuxOwlFeatureBindingBundle(bundleSource) {
       !detected.owlFeatureBinding && 'Owl native feature binding name',
       !detected.linkedBindingHelper && 'Owl linkedBinding helper',
       !detected.featureSwitchReader && 'Electron feature switch readers',
+      !detected.featureSwitchNormalizer && 'Electron feature switch normalizer',
       !detected.featurePredicate && 'isOwlFeatureEnabled predicate'
     ].filter(Boolean)
   };
@@ -8763,6 +9086,7 @@ function analyzeLinuxRemoteControlBundle(bundleSource) {
       LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_PATTERN.test(bundleSource) ||
       LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_OVERRIDES_PATTERN.test(bundleSource) ||
       LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_DEVICE_ATTESTATION_PATTERN.test(bundleSource) ||
+      LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_WINDOWS_NODE_REPL_PATTERN.test(bundleSource) ||
       LINUX_REMOTE_CONTROL_FEATURE_AVAILABILITY_WITH_MAC_NODE_REPL_PATTERN.test(bundleSource)
   };
 
@@ -8884,7 +9208,8 @@ function analyzeLinuxAvatarOverlayBundle(bundleSource) {
     setWindowBounds: LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_PATTERN.test(bundleSource),
     setWindowBoundsNativeComposition:
       LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_PATTERN.test(bundleSource) ||
-      LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_611_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_611_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_SET_WINDOW_BOUNDS_NATIVE_COMPOSITION_26_707_PATTERN.test(bundleSource),
     pointerPassthroughPolicy: LINUX_AVATAR_OVERLAY_POINTER_POLICY_PATTERN.test(bundleSource),
     windowOptions:
       LINUX_AVATAR_OVERLAY_WINDOW_OPTIONS_PATTERN.test(bundleSource) ||
@@ -8898,12 +9223,14 @@ function analyzeLinuxAvatarOverlayBundle(bundleSource) {
       bundleSource.includes('codexLinuxAvatarOverlayScreenPoint') ||
       LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_PATTERN.test(bundleSource) ||
       LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_611_PATTERN.test(bundleSource) ||
-      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_623_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_623_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_METHOD_26_707_PATTERN.test(bundleSource),
     startDrag:
       bundleSource.includes('pointerWindowX:') ||
       LINUX_AVATAR_OVERLAY_START_DRAG_PATTERN.test(bundleSource) ||
       LINUX_AVATAR_OVERLAY_START_DRAG_26_611_PATTERN.test(bundleSource) ||
-      LINUX_AVATAR_OVERLAY_START_DRAG_26_623_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_START_DRAG_26_623_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_START_DRAG_26_707_PATTERN.test(bundleSource),
     moveDragCursor:
       (bundleSource.includes('moveDragToCurrentCursor') &&
         (bundleSource.includes('codexLinuxAvatarOverlayPoint??') ||
@@ -8911,11 +9238,13 @@ function analyzeLinuxAvatarOverlayBundle(bundleSource) {
           LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_527_PATTERN.test(bundleSource) ||
           LINUX_AVATAR_OVERLAY_MOVE_DRAG_CURSOR_26_608_PATTERN.test(bundleSource))) ||
       LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_611_PATTERN.test(bundleSource) ||
-      LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_623_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_623_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_MOVE_DRAG_POINTER_26_707_PATTERN.test(bundleSource),
     endDrag:
       bundleSource.includes('this.persistWindowBounds') ||
       LINUX_AVATAR_OVERLAY_END_DRAG_PATTERN.test(bundleSource) ||
-      LINUX_AVATAR_OVERLAY_END_DRAG_26_623_PATTERN.test(bundleSource),
+      LINUX_AVATAR_OVERLAY_END_DRAG_26_623_PATTERN.test(bundleSource) ||
+      LINUX_AVATAR_OVERLAY_END_DRAG_26_707_PATTERN.test(bundleSource),
     throwWithVelocity:
       bundleSource.includes('this.persistWindowBounds(i);return') ||
       LINUX_AVATAR_OVERLAY_THROW_WITH_VELOCITY_PATTERN.test(bundleSource) ||
@@ -9070,7 +9399,8 @@ function analyzeTerminalBundle(bundleSource) {
     cleanup:
       TERMINAL_CLEANUP_PATTERN_LEGACY.test(bundleSource) ||
       TERMINAL_CLEANUP_PATTERN_26_415.test(bundleSource) ||
-      TERMINAL_CLEANUP_PATTERN_26_611.test(bundleSource)
+      TERMINAL_CLEANUP_PATTERN_26_611.test(bundleSource) ||
+      TERMINAL_CLEANUP_PATTERN_26_707.test(bundleSource)
   };
 
   return {
@@ -12064,7 +12394,10 @@ function isObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function repairChromeNativeHostRegistryEntry(entry, { resourcesDir, nodePath, nodeReplPath }) {
+function repairChromeNativeHostRegistryEntry(
+  entry,
+  { resourcesDir, extensionHostPath, nodePath, nodeReplPath }
+) {
   if (!isObject(entry) || !isObject(entry.paths)) {
     return {
       entry,
@@ -12088,6 +12421,7 @@ function repairChromeNativeHostRegistryEntry(entry, { resourcesDir, nodePath, no
   const nodeModuleDir = path.join(resourcesDir, 'cua_node', 'lib', 'node_modules');
   const repairedPaths = {
     ...paths,
+    extensionHostPath,
     nodePath,
     nodeReplPath,
     nodeModuleDirs: mergeNodeModuleDirs(paths.nodeModuleDirs, nodeModuleDir)
@@ -12113,8 +12447,13 @@ export async function repairLinuxChromeNativeHostRuntimeRegistries({
 }) {
   const nodePath = path.join(resourcesDir, 'node');
   const nodeReplPath = path.join(resourcesDir, 'node_repl');
+  const extensionHostPath = path.join(resourcesDir, CHROME_EXTENSION_HOST_FILE_NAME);
   await assertLinuxExecutableFile(nodePath, 'Chrome native host registry node command');
   await assertLinuxExecutableFile(nodeReplPath, 'Chrome native host registry node_repl command');
+  await assertLinuxExecutableFile(
+    extensionHostPath,
+    'Chrome native host registry extension host command'
+  );
 
   const registryPaths = getChromeNativeHostV2RegistryPaths({ homeDir, stateHome });
   const repairedPaths = [];
@@ -12135,6 +12474,7 @@ export async function repairLinuxChromeNativeHostRuntimeRegistries({
       const entries = registry.entries.map((entry) => {
         const repair = repairChromeNativeHostRegistryEntry(entry, {
           resourcesDir,
+          extensionHostPath,
           nodePath,
           nodeReplPath
         });
@@ -12171,7 +12511,8 @@ export async function repairLinuxChromeNativeHostRuntimeRegistries({
     missingPaths,
     errors,
     nodePath,
-    nodeReplPath
+    nodeReplPath,
+    extensionHostPath
   };
 }
 
@@ -12274,6 +12615,9 @@ export async function installLinuxChromeBundledPluginHost({
   }
 
   const installedTargetPaths = [];
+  const installManifestPaths = [
+    path.join(resourcesDir, 'plugins', 'openai-bundled', 'plugins', 'chrome', 'scripts', 'installManifest.mjs')
+  ];
   for (const targetPath of targetPaths) {
     await ensureDir(path.dirname(targetPath));
     await writeExecutable(
@@ -12285,6 +12629,26 @@ exec '${hostExecutablePath.replaceAll("'", "'\\''")}' "$@"
     );
     await assertLinuxExecutableFile(targetPath, 'Installed Chrome bundled plugin host wrapper');
     installedTargetPaths.push(targetPath);
+    installManifestPaths.push(
+      path.join(
+        targetPath,
+        '..',
+        '..',
+        '..',
+        '..',
+        'scripts',
+        'installManifest.mjs'
+      )
+    );
+  }
+
+  for (const installManifestPath of [...new Set(installManifestPaths.map((entry) => path.resolve(entry)))]) {
+    if (await fileExists(installManifestPath)) {
+      await patchLinuxChromePluginInstallManifestHost({
+        installManifestPath,
+        hostExecutablePath
+      });
+    }
   }
 
   logger?.info?.(
@@ -12296,6 +12660,22 @@ exec '${hostExecutablePath.replaceAll("'", "'\\''")}' "$@"
     targetPaths: installedTargetPaths,
     hostExecutablePath
   };
+}
+
+async function patchLinuxChromePluginInstallManifestHost({ installManifestPath, hostExecutablePath }) {
+  const source = await fs.promises.readFile(installManifestPath, 'utf8');
+  if (source.includes('codexLinuxStableChromeExtensionHost')) {
+    return;
+  }
+  const pattern =
+    /extensionHostPath:(?<pathFn>[A-Za-z_$][\w$]*)\((?<rootVar>[A-Za-z_$][\w$]*)\),extensionId:/;
+  const match = source.match(pattern);
+  if (!match?.groups) {
+    throw new Error(`Could not patch Chrome plugin install manifest host path: ${installManifestPath}`);
+  }
+  const { pathFn, rootVar } = match.groups;
+  const replacement = `extensionHostPath:process.platform===\`linux\`?${JSON.stringify(hostExecutablePath)}:${pathFn}(${rootVar})/* codexLinuxStableChromeExtensionHost */,extensionId:`;
+  await fs.promises.writeFile(installManifestPath, source.replace(pattern, replacement), 'utf8');
 }
 
 async function listExistingChromePluginCacheEntries(chromeCacheRoot, { releaseVersion = null } = {}) {
